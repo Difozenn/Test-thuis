@@ -1,0 +1,12 @@
+{
+    "default_base_dir": "C:/Users/Rob_v/Desktop/Test-main/Com-port-mdb-scanner-main",
+    "default_scan_mode": "OPUS",
+    "default_scanner_type": "USB",
+    "email_sender": "robvl48@gmail.com",
+    "email_receiver": "rob_vanlooy@hotmail.com",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": "587",
+    "smtp_user": "robvl48@gmail.com",
+    "smtp_password": "vkmu zpsb asta lgvj",
+    "email_enabled": false
+}

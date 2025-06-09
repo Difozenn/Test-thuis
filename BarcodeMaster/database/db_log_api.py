@@ -35,11 +35,24 @@ def init_db():
             event TEXT,
             details TEXT,
             project TEXT,
-            user TEXT
+            user TEXT,
+            status TEXT
         )
     ''')
     conn.commit()
     conn.close()
+
+
+@app.route('/init_db', methods=['POST'])
+def initialize_database_endpoint():
+    try:
+        init_db() # Call the existing local init_db function
+        logging.info("[db_log_api] /init_db called, database initialized/verified.")
+        return jsonify({'success': True, 'message': 'Database initialized successfully.'}), 200
+    except Exception as e:
+        logging.error(f"[db_log_api] /init_db failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/log', methods=['POST'])
 def log_event():
@@ -97,6 +110,20 @@ def log_event():
         logging.info("  [EXCEPTION] Failed to insert log entry!")
         logging.info(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/delete_log/<int:log_id>', methods=['POST'])
+def delete_log_entry(log_id):
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('DELETE FROM logs WHERE id = ?', (log_id,))
+        conn.commit()
+        conn.close()
+        logging.info(f"[db_log_api] Log entry with id {log_id} deleted.")
+        return jsonify({'success': True, 'message': f'Log entry {log_id} deleted successfully.'}), 200
+    except Exception as e:
+        logging.error(f"[db_log_api] Failed to delete log entry {log_id}: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
@@ -156,7 +183,7 @@ def logs_html():
     {project_results_frame}
     <table id="logsTable">
     <caption>Laatste 100 logs</caption>
-    <tr><th>ID</th><th>Tijdstip</th><th>Event</th><th>Details</th><th>Project</th><th>Status</th><th>User</th></tr>
+    <tr><th>ID</th><th>Tijdstip</th><th>Event</th><th>Details</th><th>Project</th><th>Status</th><th>User</th><th>Acties</th></tr>
     '''
     from datetime import datetime
     import os, re
@@ -199,6 +226,7 @@ def logs_html():
             html += f'<td></td>'
         html += f'<td>{status_val}</td>'
         html += f'<td>{row["user"]}</td>'
+        html += f'<td><button onclick="deleteLog({row["id"]})" style="padding:3px 6px; font-size:0.9em; cursor:pointer;">Verwijder</button></td>'
         html += '</tr>'
     html += "</table>"
     html += '''
@@ -235,9 +263,37 @@ def logs_html():
     }
     // Initial filter on load
     window.onload = function() { filterLogs(); };
+
+    function deleteLog(logId) {
+        if (confirm('Weet u zeker dat u dit log wilt verwijderen (ID: ' + logId + ')?')) {
+            fetch('/delete_log/' + logId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Log verwijderd!');
+                    // Remove the row from the table or reload
+                    // For simplicity, we reload. For better UX, remove the row directly.
+                    location.reload();
+                } else {
+                    alert('Fout bij verwijderen log: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Fout bij verwijderen log.');
+            });
+        }
+    }
     </script>
-    </body></html>
+    </body>
+    </html>
     '''
+    conn.close()
     return html
 
 import traceback

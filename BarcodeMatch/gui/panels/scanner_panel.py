@@ -580,13 +580,13 @@ class ScannerPanel(ttk.Frame):
             sent_closed = False
             closed_error = None
             config_file = get_config_path()
-            project_name = None
-            if os.path.exists(config_file):
+            excel_path = self.excel_var.get() # Get the actual Excel path
+            project_name = os.path.splitext(os.path.basename(excel_path))[0] if excel_path else 'Onbekend project'
+            # Only send CLOSED event if an OPEN event exists
+            if config_file and os.path.exists(config_file):
                 try:
                     with open(config_file, 'r') as f:
                         config = json.load(f)
-                    excel_path = ''
-                    project_name = os.path.splitext(os.path.basename(excel_path))[0] if excel_path else 'Onbekend project'
                     # Only send CLOSED event if an OPEN event exists
                     if config.get('database_enabled', False):
                         try:

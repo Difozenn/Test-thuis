@@ -11,6 +11,6 @@
         "OPUS"
     ],
     "scanner_panel_event_type": "OPEN",
-    "scanner_panel_event_type_locked": false,
-    "database_panel_api_config_locked": true
+    "scanner_panel_event_type_locked": true,
+    "database_panel_api_config_locked": false
 }

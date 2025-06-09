@@ -5,6 +5,11 @@ from config_utils import get_config, save_config
 import os
 import sqlite3
 import requests
+import subprocess
+import time
+import sys
+import threading
+import socket
 
 PANEL_BG = "#f0f0f0"
 
@@ -16,6 +21,8 @@ class AdminPanel(tk.Frame):
         self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../database/central_logging.sqlite'))
         self.api_url = get_config().get('api_url', 'http://localhost:5000')
         self.config = get_config()
+        self.lan_ip = 'Detecting...'
+        threading.Thread(target=self._detect_lan_ip, daemon=True).start()
         # Sectioned config/actions area
         self.admin_frame = ttk.LabelFrame(frame, text="Database Beheer", padding=10)
         self.admin_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -39,7 +46,7 @@ class AdminPanel(tk.Frame):
         view_log_btn = ttk.Button(self.admin_frame, text="View DB Log", command=self.open_db_log_viewer)
         view_log_btn.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
         # --- Row 2: Database Maintenance ---
-        self.init_btn = ttk.Button(self.admin_frame, text="Initialize Database", command=self.init_db)
+        self.init_btn = ttk.Button(self.admin_frame, text="Start Database API", command=self.init_db)
         self.clear_btn = ttk.Button(self.admin_frame, text="Clear Logs", command=self.clear_logs)
         self.refresh_btn = ttk.Button(self.admin_frame, text="Refresh Info", command=self.update_db_info)
         self.init_btn.grid(row=2, column=0, padx=5, pady=5, sticky='ew')
@@ -147,8 +154,56 @@ class AdminPanel(tk.Frame):
         exists = os.path.exists(self.db_path)
         size = os.path.getsize(self.db_path) if exists else 0
         count = self.get_log_count()
-        self.db_info_label.config(text=f"DB Path: {self.db_path}\nExists: {exists} | Size: {size} bytes | Log Entries: {count}")
+        lan_ip = getattr(self, 'lan_ip', 'Detecting...')
+        self.db_info_label.config(text=f"DB Path: {self.db_path}\nExists: {exists} | Size: {size} bytes | Log Entries: {count}\nLan IP: {lan_ip}")
         self.start_api_status_thread()
+
+    def _detect_lan_ip(self):
+        ip = '127.0.0.1'  # Default to loopback
+
+        # Attempt 1: Get IPs associated with the hostname
+        try:
+            hostname = socket.gethostname()
+            addresses = socket.gethostbyname_ex(hostname)[2]
+            for addr in addresses:
+                if not addr.startswith('127.') and not addr.startswith('169.254.'):
+                    # Basic check for IPv4 format
+                    if addr.count('.') == 3 and all(0 <= int(p) < 256 for p in addr.split('.')):
+                        ip = addr
+                        break  # Use the first valid one found
+            # If 'ip' is still '127.0.0.1', gethostbyname_ex didn't find a better one or failed.
+        except socket.gaierror: # Hostname not resolvable
+            pass
+        except Exception:
+            pass # Other errors
+
+        # Attempt 2: If previous attempt yielded 127.0.0.1, try UDP connection trick
+        if ip == '127.0.0.1':
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.settimeout(0.1)  # Short timeout
+                s.connect(('8.8.8.8', 80))  # Google's public DNS
+                potential_ip = s.getsockname()[0]
+                s.close()
+                if not potential_ip.startswith('127.'):
+                    ip = potential_ip
+            except Exception:
+                # Attempt 3: Fallback UDP trick if public DNS fails (e.g., no internet)
+                if ip == '127.0.0.1': # Check again, as previous attempt might have failed
+                    try:
+                        s_local = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        s_local.settimeout(0.1)
+                        s_local.connect(('10.255.255.255', 1)) # Non-routable private IP
+                        potential_ip_local = s_local.getsockname()[0]
+                        s_local.close()
+                        if not potential_ip_local.startswith('127.'):
+                            ip = potential_ip_local
+                    except Exception:
+                        pass # ip remains '127.0.0.1'
+
+        self.lan_ip = ip
+        self.after(0, self.update_db_info)
+
 
     def get_log_count(self):
         try:
@@ -161,18 +216,91 @@ class AdminPanel(tk.Frame):
         except Exception:
             return 'N/A'
 
+    def _get_db_api_script_path(self):
+        """Determines the path to the db_log_api.py script or db_log_api.exe."""
+        try:
+            # Prefer .exe if present (for packaged apps)
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                # PyInstaller bundle
+                exe_path = os.path.join(sys._MEIPASS, 'database', 'db_log_api.exe')
+                py_path = os.path.join(sys._MEIPASS, 'database', 'db_log_api.py')
+            else:
+                # Running from source
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                exe_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'database', 'db_log_api.exe'))
+                py_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'database', 'db_log_api.py'))
+            if os.path.exists(exe_path):
+                return exe_path
+            elif os.path.exists(py_path):
+                return py_path
+            else:
+                return None
+        except Exception:
+            return None # Path determination error
+
     def init_db(self):
-        # Try API first
+        threading.Thread(target=self._init_db_worker, daemon=True).start()
+
+    def _init_db_worker(self):
+        db_api_script_path = self._get_db_api_script_path()
+        is_exe = db_api_script_path and db_api_script_path.endswith('.exe')
+
+        def show_messagebox(kind, title, msg):
+            # Schedule messagebox on the main thread
+            self.after(0, lambda: getattr(messagebox, kind)(title, msg))
+        def update_info():
+            self.after(0, self.update_db_info)
+
+        if not db_api_script_path or not os.path.exists(db_api_script_path):
+            show_messagebox("showerror", "Script Not Found",
+                f"Database API script/exe (db_log_api.py or db_log_api.exe) could not be located.\n"
+                f"Expected at: {db_api_script_path or 'path determination error'}\n"
+                "API server cannot be launched. Will attempt local DB initialization only.")
+        else:
+            try:
+                if is_exe:
+                    subprocess.Popen([db_api_script_path], cwd=os.path.dirname(db_api_script_path))
+                else:
+                    python_executable = "pythonw.exe" if os.name == 'nt' else "python"
+                    script_dir = os.path.dirname(db_api_script_path)
+                    creation_flags = 0
+                    if os.name == 'nt' and python_executable == "python.exe":
+                        creation_flags = subprocess.CREATE_NO_WINDOW
+                    subprocess.Popen([python_executable, db_api_script_path],
+                                     cwd=script_dir,
+                                     creationflags=creation_flags)
+                show_messagebox("showinfo", "Server Launch",
+                    "Attempting to start the Database API server.\n"
+                    "Please wait about 5 seconds for it to initialize.")
+                time.sleep(5)
+            except FileNotFoundError:
+                show_messagebox("showerror", "Execution Error",
+                    f"Could not launch: {db_api_script_path}.\n"
+                    "Please ensure the file is present and, if a Python script, that Python is installed and in your system's PATH.")
+            except Exception as e:
+                show_messagebox("showerror", "Launch Error", f"Failed to launch Database API server: {e}")
+        # --- Attempt to connect to the API (which was hopefully just launched or already running) ---
         try:
             url = self.api_url.rstrip('/') + '/init_db'
-            resp = requests.post(url, timeout=5)
+            resp = requests.post(url, timeout=10)
             if resp.status_code == 200 and resp.json().get('success'):
-                messagebox.showinfo("Success", "Database initialized via API.")
-                self.update_db_info()
+                show_messagebox("showinfo", "Success", "Database initialized via API.")
+                update_info()
                 return
-        except Exception:
-            pass
-        # Fallback to local
+            else:
+                error_message = resp.json().get('message', 'Unknown API error') if resp.headers.get('content-type') == 'application/json' else resp.text
+                show_messagebox("showerror", "API Error",
+                    f"Failed to initialize DB via API (Status: {resp.status_code}): {error_message}\n"
+                    "This could be due to the server still starting, an issue on the server, or it was not launched successfully.")
+        except requests.exceptions.RequestException as e:
+            show_messagebox("showerror", "API Connection Error",
+                f"Could not connect to API to initialize DB: {e}\n"
+                "Ensure the Database API server was launched successfully, is not blocked by a firewall, and the API URL in config.json is correct.")
+        except Exception as e:
+            show_messagebox("showerror", "API Call Error",
+                f"An unexpected error occurred during API call: {e}")
+        # --- Fallback to local DB initialization if API method failed ---
+        show_messagebox("showinfo", "Fallback", "Attempting local database initialization as API method failed or was skipped.")
         try:
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
@@ -181,13 +309,14 @@ class AdminPanel(tk.Frame):
                 timestamp TEXT,
                 event TEXT,
                 details TEXT,
-                user TEXT)''')
+                user TEXT
+                )''')
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "Database initialized locally.")
-            self.update_db_info()
+            show_messagebox("showinfo", "Success", "Database initialized locally (fallback).")
+            update_info()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to initialize DB: {e}")
+            show_messagebox("showerror", "Local DB Error", f"Failed to initialize DB locally: {e}")
 
     def open_logs_html(self):
         import webbrowser

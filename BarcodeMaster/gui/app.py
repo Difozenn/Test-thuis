@@ -14,7 +14,7 @@ PANEL_BG = "#f0f0f0"
 class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Settings Panel App")
+        self.title("BarcodeMaster")
         self.geometry("800x600")
         # Set window icon if available
         icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "database.png")

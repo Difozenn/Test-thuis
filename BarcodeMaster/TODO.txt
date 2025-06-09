@@ -1,0 +1,5 @@
+admin initialize DB werkt niet
+admin add lan ip to db path
+admin entire db button
+html click project case insensitive
+help pdf

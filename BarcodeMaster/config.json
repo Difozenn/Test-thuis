@@ -1,0 +1,16 @@
+{
+    "database_enabled": true,
+    "api_url": "http://localhost:5000/log",
+    "user": "NESTING",
+    "admin_db_init_enabled": true,
+    "scanner_panel_com_port": "",
+    "scanner_panel_type": "USB",
+    "admin_terminate_db_on_exit": true,
+    "scanner_panel_open_event_users": [
+        "GANNOMAT",
+        "OPUS"
+    ],
+    "scanner_panel_event_type": "OPEN",
+    "scanner_panel_event_type_locked": false,
+    "database_panel_api_config_locked": true
+}

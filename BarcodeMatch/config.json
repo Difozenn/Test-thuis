@@ -1,0 +1,17 @@
+{
+    "buildnr": "v2",
+    "database_enabled": true,
+    "api_url": "http://localhost:5000/log",
+    "user": "OPUS",
+    "default_scanner_type": "USB",
+    "default_base_dir": "C:/OPUS/KORPUS",
+    "default_scan_mode": "OPUS",
+    "email_sender": "",
+    "email_receiver": "",
+    "smtp_server": "",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_password": "",
+    "email_enabled": false,
+    "email_send_mode": "daily"
+}

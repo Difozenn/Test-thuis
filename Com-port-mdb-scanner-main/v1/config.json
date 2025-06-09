@@ -1,0 +1,16 @@
+{
+    "email_sender": "dsfsdf",
+    "email_receiver": "dfs",
+    "smtp_server": "sdf",
+    "smtp_port": "587",
+    "smtp_user": "sdf",
+    "smtp_password": "sdf",
+    "email_enabled": false,
+    "email_send_mode": "per_scan",
+    "default_scanner_type": "USB",
+    "default_scan_mode": "OPUS",
+    "default_base_dir": "C:/OPUS",
+    "api_url": "http://localhost:5000/log",
+    "user": "OPUS",
+    "database_enabled": false
+}

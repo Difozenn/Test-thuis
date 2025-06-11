@@ -1,959 +1,658 @@
-import os
-
-import time
-print(f'[DIAG] scanner_panel.py import start {time.time()}')
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import os
-import json
-from config_utils import update_config, get_config_path
-import threading
 import pandas as pd
+import threading
+import time
+import keyboard
 import serial
 import serial.tools.list_ports
-import time
-import keyboard  # For global keyboard hook
-
-
-
-    # --- Scanner Panel Content ---
-    # (rest of your widget setup code)
+import os
+from config_utils import load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
-    def __init__(self, parent, main_app):
-        print(f'[DIAG] ScannerPanel __init__ start {time.time()}')
-    def get_log_state(self):
-        try:
-            return self.results_text.get("1.0", "end-1c")
-        except Exception:
-            return ""
+    def __init__(self, parent, main_app, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.main_app = main_app # Store main_app for later use
 
-    def set_log_state(self, log_content):
-        try:
-            self.results_text.delete("1.0", "end")
-            if log_content:
-                self.results_text.insert("end", log_content)
-        except Exception:
-            pass
+        # --- Variables ---
+        self.barcode_data = {}
+        self.selected_item_id = None
+        self.excel_file_path_var = tk.StringVar()
+        self.scanner_type_var = tk.StringVar(value="USB")
+        self.com_port_var = tk.StringVar()
+        self.baud_rate_var = tk.StringVar(value="9600")
 
-    def build_tab(self):
-        
-        # --- Scanner Panel Content ---
-        self.main_frame = ttk.Frame(self, padding="10")
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
-        self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=1)
-        self.main_frame.rowconfigure(0, weight=0)  # Top row: Scanner Type + Excel
-        self.main_frame.rowconfigure(1, weight=0)  # COM/USB row
-        self.main_frame.rowconfigure(2, weight=1)  # Results row (expand)
-        self.main_frame.grid_propagate(False)
-
-        # --- Initialize config variables and StringVars ---
-        config_file = get_config_path()
-        default_scanner_type = "COM"
-        default_base_dir = "C:/OPUS"
-        default_scan_mode = "OPUS"
-        default_excel_file = ""
-        default_com_port = ""
-        default_baud_rate = "9600"
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                try:
-                    config = json.load(f)
-                    default_scanner_type = config.get('default_scanner_type', 'COM')
-                    default_base_dir = config.get('default_base_dir', 'C:/OPUS')
-                    default_scan_mode = config.get('default_scan_mode', 'OPUS')
-                    default_excel_file = ''
-                    default_com_port = config.get('default_com_port', '')
-                    default_baud_rate = config.get('default_baud_rate', '9600')
-                except Exception:
-                    pass
-        self.scanner_type_var = tk.StringVar(value=default_scanner_type)
-        self.scanner_type_var.trace_add('write', lambda *args: self.save_scanner_type_to_config())
-        self.base_dir_var = tk.StringVar(value=default_base_dir)
-        self.base_dir_var.trace_add('write', lambda *args: self.save_base_dir_to_config())
-        self.scan_mode_var = tk.StringVar(value=default_scan_mode)
-        self.scan_mode_var.trace_add('write', lambda *args: self.save_scan_mode_to_config())
-        self.excel_var = tk.StringVar(value=default_excel_file)  # Do not trace or save to config
-        self.com_port_var = tk.StringVar(value=default_com_port)
-        self.main_frame.rowconfigure(0, weight=0)  # Top row: Scanner Type + Excel
-        self.main_frame.rowconfigure(1, weight=0)  # COM/USB row
-        self.main_frame.rowconfigure(2, weight=1)  # Results row (expand)
-        self.main_frame.grid_propagate(False)
-
-        # --- Initialize config variables and StringVars ---
-        config_file = get_config_path()
-        default_scanner_type = "COM"
-        default_base_dir = "C:/OPUS"
-        default_scan_mode = "OPUS"
-        default_excel_file = ""
-        default_com_port = ""
-        default_baud_rate = "9600"
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                try:
-                    config = json.load(f)
-                    default_scanner_type = config.get('default_scanner_type', 'COM')
-                    default_base_dir = config.get('default_base_dir', 'C:/OPUS')
-                    default_scan_mode = config.get('default_scan_mode', 'OPUS')
-                    default_excel_file = ''
-                    default_com_port = config.get('default_com_port', '')
-                    default_baud_rate = config.get('default_baud_rate', '9600')
-                except Exception:
-                    pass
-        self.scanner_type_var = tk.StringVar(value=default_scanner_type)
-        self.scanner_type_var.trace_add('write', lambda *args: self.save_scanner_type_to_config())
-        self.base_dir_var = tk.StringVar(value=default_base_dir)
-        self.base_dir_var.trace_add('write', lambda *args: self.save_base_dir_to_config())
-        self.scan_mode_var = tk.StringVar(value=default_scan_mode)
-        self.scan_mode_var.trace_add('write', lambda *args: self.save_scan_mode_to_config())
-        self.excel_var = tk.StringVar(value=default_excel_file)  # Do not trace or save to config
-        self.com_port_var = tk.StringVar(value=default_com_port)
-        self.com_port_var.trace_add('write', lambda *args: self.save_com_port_to_config())
-        self.baud_rate_var = tk.StringVar(value=default_baud_rate)
-        self.baud_rate_var.trace_add('write', lambda *args: self.save_baud_rate_to_config())
-        self.baud_rate_var = tk.StringVar(value=default_baud_rate)
-        self.baud_rate_var.trace_add('write', lambda *args: self.save_baud_rate_to_config())
-
-        # --- State restoration and diagnostics (after config vars are set) ---
-        try:
-            if hasattr(self, 'main_app') and hasattr(self, 'excel_var'):
-                excel_file = getattr(self.main_app, 'scanner_excel_file', None)
-                treeview_state = getattr(self.main_app, 'scanner_treeview_state', None)
-                log_state = getattr(self.main_app, 'scanner_log_state', None)
-                
-                if excel_file and self.excel_var.get() == excel_file:
-                    if treeview_state:
-                        try:
-                            self.set_treeview_state(treeview_state)
-                            
-                        except Exception as e:
-                            pass
-                    if log_state:
-                        try:
-                            self.set_log_state(log_state)
-                            
-                        except Exception as e:
-                            pass
-        except Exception as e:
-            pass
-        # --- Top row: Scanner Type (left) and Excel file (right) ---
-        self.main_frame.columnconfigure(0, weight=1, minsize=200)
-        self.main_frame.columnconfigure(1, weight=1, minsize=200)
-        self.main_frame.rowconfigure(1, weight=0)
-
-        # Scanner Type selection (left)
-        self.scanner_type_frame = ttk.LabelFrame(self.main_frame, text="Scanner Type", padding="5")
-        self.scanner_type_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=5)
-        self.scanner_type_frame.columnconfigure(0, weight=0)
-        self.scanner_type_frame.columnconfigure(1, weight=0)
-        self.scanner_type_frame.columnconfigure(2, weight=1)
-        self.com_radio = ttk.Radiobutton(self.scanner_type_frame, text="COM-poort scanner", variable=self.scanner_type_var, value="COM", command=self.update_scanner_type)
-        self.com_radio.grid(row=0, column=0, sticky="w", padx=(5, 10))
-        self.usb_radio = ttk.Radiobutton(self.scanner_type_frame, text="USB-toetsenbord scanner", variable=self.scanner_type_var, value="USB", command=self.update_scanner_type)
-        self.usb_radio.grid(row=0, column=1, sticky="w", padx=5)
-
-        # Excel file selection (right)
-        self.excel_frame = ttk.LabelFrame(self.main_frame, text="Excel Bestand", padding="5")
-        self.excel_frame.grid(row=0, column=1, sticky="ew", padx=10, pady=5)
-        self.excel_frame.columnconfigure(0, weight=1)
-        self.excel_frame.columnconfigure(1, weight=0)
-        excel_entry = ttk.Entry(self.excel_frame, textvariable=self.excel_var)
-        excel_entry.grid(row=0, column=0, sticky="ew", padx=(5, 0))
-        ttk.Button(self.excel_frame, text="Excel Selecteren", command=self._browse_excel).grid(row=0, column=1, padx=(5, 5))
-
-        # --- Scanner mode container (for toggling COM/USB) ---
-        self.scanner_mode_container = ttk.Frame(self.main_frame)
-        self.scanner_mode_container.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=5)
-        self.scanner_mode_container.columnconfigure(0, weight=1)
-
-        # --- COM section ---
-        self.com_frame = ttk.LabelFrame(self.scanner_mode_container, text="COM Poort", padding="5", borderwidth=2, relief="solid")
-        self.com_frame.columnconfigure(0, weight=0)
-        self.com_frame.columnconfigure(1, weight=1)
-        self.com_frame.columnconfigure(2, weight=0)
-        self.com_frame.columnconfigure(3, weight=0)
-        self.com_frame.columnconfigure(4, weight=1)
-        ttk.Label(self.com_frame, text="Selecteer COM Poort:").grid(row=0, column=0, padx=5, sticky=tk.W)
-        self.com_port_combo = ttk.Combobox(self.com_frame, textvariable=self.com_port_var)
-        self.com_port_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5))
-        ttk.Button(self.com_frame, text="Poorten Vernieuwen", command=self.refresh_ports).grid(row=0, column=2, padx=5)
-        ttk.Label(self.com_frame, text="Baud Rate:").grid(row=1, column=0, padx=5, sticky=tk.W)
-        ttk.Entry(self.com_frame, textvariable=self.baud_rate_var).grid(row=1, column=1, sticky="ew", padx=(0, 5))
-        self.connect_button = ttk.Button(self.com_frame, text="Verbinden", command=self.connect_com_port)
-        self.connect_button.grid(row=1, column=2, padx=5, sticky="ew")
-        self.com_status_label = ttk.Label(self.com_frame, text="Status: Niet verbonden", foreground="red")
-        self.com_status_label.grid(row=2, column=0, columnspan=3, sticky="w", padx=5, pady=(5,0))
-
-        # --- USB section ---
-        self.usb_frame = ttk.LabelFrame(self.scanner_mode_container, text="USB Keyboard Scanner", padding="5", borderwidth=2, relief="solid")
-        self.usb_frame.columnconfigure(0, weight=1)
-        self.usb_scan_var = tk.StringVar()
-        self.usb_entry = ttk.Entry(self.usb_frame, textvariable=self.usb_scan_var)
-        self.usb_entry.grid(row=0, column=0, sticky="ew", padx=5)
-        self.usb_entry.bind('<Return>', self.process_usb_scan)
-
-        # --- Show/hide COM and USB frames based on scanner type ---
-        self.update_scanner_type()
-
-        # --- Results section ---
-        self.results_frame = ttk.LabelFrame(self.main_frame, text="Resultaten", padding="5")
-        self.results_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
-        self.results_frame.columnconfigure(0, weight=1)
-        self.results_frame.rowconfigure(0, weight=3)
-        self.results_frame.rowconfigure(1, weight=1)
-        self.scanned_tree = ttk.Treeview(self.results_frame, columns=('Status', 'Item'), show='headings')
-        self.scanned_tree.heading('Status', text='Status')
-        self.scanned_tree.heading('Item', text='Item')
-        self.scanned_tree.column('Status', width=100, stretch=True, anchor='e')
-        # Context menu for treeview
-        self.tree_menu = tk.Menu(self.scanned_tree, tearoff=0)
-        self.tree_menu.add_command(label="Status op OK zetten", command=self.set_status_ok)
-        self.tree_menu.add_command(label="Status wissen", command=self.clear_status)
-        self.scanned_tree.bind("<Button-3>", self.show_tree_menu)  # Windows/Linux right-click
-        self.scanned_tree.bind("<Button-2>", self.show_tree_menu)  # Mac right-click
-        self.tree_scroll = ttk.Scrollbar(self.results_frame, orient='vertical', command=self.scanned_tree.yview)
-        self.scanned_tree.configure(yscrollcommand=self.tree_scroll.set)
-        self.scanned_tree.grid(row=0, column=0, sticky="nsew")
-        self.tree_scroll.grid(row=0, column=1, sticky="ns")
-
-        self.results_text = tk.Text(self.results_frame, height=8)
-        self.results_text.grid(row=1, column=0, sticky="nsew", columnspan=2)
-
-
-        print(f"[DIAG] Before restore: hasattr(scanned_tree)={hasattr(self, 'scanned_tree')}, hasattr(results_text)={hasattr(self, 'results_text')}")
-        print("===TEST B===")
-        if not hasattr(self, 'scanned_tree') or not hasattr(self, 'results_text'):
-            print(f"[DIAG] self.__dict__ keys: {list(self.__dict__.keys())}")
-
-        # Restore treeview and log viewer state if available and Excel file matches
-        try:
-            if hasattr(self, 'main_app') and hasattr(self, 'excel_var'):
-                excel_file = getattr(self.main_app, 'scanner_excel_file', None)
-                treeview_state = getattr(self.main_app, 'scanner_treeview_state', None)
-                log_state = getattr(self.main_app, 'scanner_log_state', None)
-                print(f"[DIAG] build_tab restore check: main_app.scanner_excel_file={excel_file}, self.excel_var.get()={self.excel_var.get()}")
-                print(f"[DIAG] build_tab restore check: treeview_state={treeview_state}")
-                print(f"[DIAG] build_tab restore check: log_state={log_state[:60] if log_state else log_state}")
-                # Remove hasattr check so errors surface
-                if excel_file and self.excel_var.get() == excel_file:
-                    if treeview_state:
-                        try:
-                            self.set_treeview_state(treeview_state)
-                            
-                        except Exception as e:
-                            pass
-                    if log_state:
-                        try:
-                            self.set_log_state(log_state)
-                            
-                        except Exception as e:
-                            pass
-        except Exception as e:
-            pass
-
-
-
-        copyright_label = tk.Label(self, text=" 2025 RVL", font=(None, 9), fg="#888888")
-        copyright_label.pack(side=tk.BOTTOM, pady=2)
-        print('[DIAG] ScannerPanel.build_tab completed successfully')
-
-        # Returns a list of (status, item) for all rows
-        state = []
-        for item_id in self.scanned_tree.get_children():
-            values = self.scanned_tree.item(item_id, 'values')
-            state.append(tuple(values))
-        return state
-
-    def get_treeview_state(self):
-        # Returns a list of (status, item) for all rows
-        state = []
-        for item_id in self.scanned_tree.get_children():
-            values = self.scanned_tree.item(item_id, 'values')
-            state.append(tuple(values))
-        return state
-
-    def set_treeview_state(self, state):
-        # Clear and repopulate the treeview from a list of (status, item)
-        for item in self.scanned_tree.get_children():
-            self.scanned_tree.delete(item)
-        for row in state:
-            self.scanned_tree.insert('', 'end', values=row)
-
-
-
-    def __init__(self, parent, main_app):
-        super().__init__(parent)
-
-        self.parent = parent
-        self.main_app = main_app
-        self.scanned_items = {}
-        self.selected_item = None
-        self.keyboard_scanner_enabled = False
-        self._usb_scan_buffer = ''
+        # --- Threading and Serial ---
+        self.ser = None
+        self.is_reading_com = False
+        self.com_read_thread = None
         self._usb_listener_thread = None
-        self._usb_listener_running = False
+        self._stop_usb_listener_event = threading.Event()
+
+        # --- USB Keyboard Scanner State ---
+        self.barcode_buffer = []
+        self.last_key_time = 0
+        self._pending_config_updates = {} # For staging config changes
+
+        # --- Initialization ---
         self.build_tab()
-
-    def save_scanner_type_to_config(self):
-        try:
-            updates = {'default_scanner_type': self.scanner_type_var.get()}
-            update_config(updates)
-        except Exception as e:
-            print(f"Error saving scanner type to config (ScannerPanel): {e}")
-
-    def save_base_dir_to_config(self):
-        try:
-            updates = {'default_base_dir': self.base_dir_var.get()}
-            update_config(updates)
-        except Exception as e:
-            print(f"Error saving base dir to config (ScannerPanel): {e}")
-
-    def save_scan_mode_to_config(self):
-        try:
-            updates = {'default_scan_mode': self.scan_mode_var.get()}
-            update_config(updates)
-        except Exception as e:
-            print(f"Error saving scan mode to config (ScannerPanel): {e}")
-
-    def save_excel_file_to_config(self):
-        # Project rule: Excel file path should NOT be saved to config.json
-        pass
-
-    def save_com_port_to_config(self):
-        try:
-            updates = {'default_com_port': self.com_port_var.get()}
-            update_config(updates)
-        except Exception as e:
-            print(f"Error saving com port to config (ScannerPanel): {e}")
-
-    def save_baud_rate_to_config(self):
-        try:
-            updates = {'default_baud_rate': self.baud_rate_var.get()}
-            update_config(updates)
-        except Exception as e:
-            print(f"Error saving baud rate to config (ScannerPanel): {e}")
+        self._load_config()
+        self._on_scanner_type_change() # Set initial UI state
 
     def build_tab(self):
+        """Gebruikersinterface voor het scannerpaneel bouwen met grid-layout."""
+        self.columnconfigure(0, weight=1)
+        # Row 0: top_row_frame (Scanner Type & Excel File)
+        # Row 1: scanner_options_frame
+        # Row 2: tree_frame (this will expand)
+        # Row 3: log_frame
+        self.rowconfigure(2, weight=1)  # tree_frame zal uitbreiden
+
+        # --- Hoofdcontainer voor bovenste rij (Scannertype en Excel-bestand) ---
+        top_row_frame = ttk.Frame(self)
+        top_row_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
+        top_row_frame.columnconfigure(0, weight=1)
+        top_row_frame.columnconfigure(1, weight=1)
+
+        # --- Scannertype Frame (links in top_row_frame) ---
+        scanner_type_frame = ttk.Labelframe(top_row_frame, text="Scannertype")
+        scanner_type_frame.grid(row=0, column=0, sticky="nsew", padx=(10,5), pady=5)
+
+        # --- Excel-bestand Frame (rechts in top_row_frame) ---
+        excel_frame = ttk.Labelframe(top_row_frame, text="Excel-bestand")
+        excel_frame.grid(row=0, column=1, sticky="nsew", padx=(5,10), pady=5)
+        excel_frame.columnconfigure(1, weight=1) # Zorgt ervoor dat entry-widget uitbreidt
         
-        # --- Scanner Panel Content ---
-        self.main_frame = ttk.Frame(self, padding="10")
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
-        self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=1)
-        self.main_frame.rowconfigure(0, weight=0)  # Top row: Scanner Type + Excel
-        self.main_frame.rowconfigure(1, weight=0)  # COM/USB row
-        self.main_frame.rowconfigure(2, weight=1)  # Results row (expand)
-        self.main_frame.grid_propagate(False)
+        # --- Frame voor scanner-specifieke opties (onder top_row_frame) ---
+        scanner_options_frame = ttk.Frame(self)
+        scanner_options_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=0)
+        scanner_options_frame.columnconfigure(0, weight=1)
 
-        # --- Initialize config variables and StringVars ---
-        config_file = get_config_path()
-        default_scanner_type = "COM"
-        default_base_dir = "C:/OPUS"
-        default_scan_mode = "OPUS"
-        default_excel_file = ""
-        default_com_port = ""
-        default_baud_rate = "9600"
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                try:
-                    config = json.load(f)
-                    default_scanner_type = config.get('default_scanner_type', 'COM')
-                    default_base_dir = config.get('default_base_dir', 'C:/OPUS')
-                    default_scan_mode = config.get('default_scan_mode', 'OPUS')
-                    default_excel_file = ''
-                    default_com_port = config.get('default_com_port', '')
-                    default_baud_rate = config.get('default_baud_rate', '9600')
-                except Exception:
-                    pass
-        self.scanner_type_var = tk.StringVar(value=default_scanner_type)
-        self.scanner_type_var.trace_add('write', lambda *args: self.save_scanner_type_to_config())
-        self.base_dir_var = tk.StringVar(value=default_base_dir)
-        self.base_dir_var.trace_add('write', lambda *args: self.save_base_dir_to_config())
-        self.scan_mode_var = tk.StringVar(value=default_scan_mode)
-        self.scan_mode_var.trace_add('write', lambda *args: self.save_scan_mode_to_config())
-        self.excel_var = tk.StringVar(value=default_excel_file)  # Do not trace or save to config
-        self.com_port_var = tk.StringVar(value=default_com_port)
-        self.com_port_var.trace_add('write', lambda *args: self.save_com_port_to_config())
-        self.baud_rate_var = tk.StringVar(value=default_baud_rate)
-        self.baud_rate_var.trace_add('write', lambda *args: self.save_baud_rate_to_config())
-        self.baud_rate_var = tk.StringVar(value=default_baud_rate)
-        self.baud_rate_var.trace_add('write', lambda *args: self.save_baud_rate_to_config())
+        # --- PanedWindow for resizable Treeview and Log Viewer ---
+        main_paned_window = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        main_paned_window.grid(row=2, column=0, sticky="nsew", padx=10, pady=5)
 
-        # --- State restoration and diagnostics (after config vars are set) ---
-        try:
-            if hasattr(self, 'main_app') and hasattr(self, 'excel_var'):
-                excel_file = getattr(self.main_app, 'scanner_excel_file', None)
-                treeview_state = getattr(self.main_app, 'scanner_treeview_state', None)
-                log_state = getattr(self.main_app, 'scanner_log_state', None)
-                
-                if excel_file and self.excel_var.get() == excel_file:
-                    if treeview_state:
-                        try:
-                            self.set_treeview_state(treeview_state)
-                            
-                        except Exception as e:
-                            pass
-                    if log_state:
-                        try:
-                            self.set_log_state(log_state)
-                            
-                        except Exception as e:
-                            pass
-        except Exception as e:
-            pass
-        # --- Top row: Scanner Type (left) and Excel file (right) ---
-        self.main_frame.columnconfigure(0, weight=1, minsize=200)
-        self.main_frame.columnconfigure(1, weight=1, minsize=200)
-        self.main_frame.rowconfigure(1, weight=0)
+        # --- Scangegevens Frame (Treeview) in Top Pane ---
+        tree_frame = ttk.Labelframe(main_paned_window, text="Scangegevens")
+        tree_frame.columnconfigure(0, weight=1)
+        tree_frame.rowconfigure(0, weight=1)
+        main_paned_window.add(tree_frame, weight=3) # Give more initial space to treeview
 
-        # Scanner Type selection (left)
-        self.scanner_type_frame = ttk.LabelFrame(self.main_frame, text="Scanner Type", padding="5")
-        self.scanner_type_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=5)
-        self.scanner_type_frame.columnconfigure(0, weight=0)
-        self.scanner_type_frame.columnconfigure(1, weight=0)
-        self.scanner_type_frame.columnconfigure(2, weight=1)
-        self.com_radio = ttk.Radiobutton(self.scanner_type_frame, text="COM-poort scanner", variable=self.scanner_type_var, value="COM", command=self.update_scanner_type)
-        self.com_radio.grid(row=0, column=0, sticky="w", padx=(5, 10))
-        self.usb_radio = ttk.Radiobutton(self.scanner_type_frame, text="USB-toetsenbord scanner", variable=self.scanner_type_var, value="USB", command=self.update_scanner_type)
-        self.usb_radio.grid(row=0, column=1, sticky="w", padx=5)
+        # --- Log Viewer Frame in Bottom Pane ---
+        log_frame = ttk.Labelframe(main_paned_window, text="Logboek")
+        log_frame.columnconfigure(0, weight=1)
+        log_frame.rowconfigure(0, weight=1)
+        main_paned_window.add(log_frame, weight=1) # Give less initial space to log
 
-        # Excel file selection (right)
-        self.excel_frame = ttk.LabelFrame(self.main_frame, text="Excel Bestand", padding="5")
-        self.excel_frame.grid(row=0, column=1, sticky="ew", padx=10, pady=5)
-        self.excel_frame.columnconfigure(0, weight=1)
-        self.excel_frame.columnconfigure(1, weight=0)
-        excel_entry = ttk.Entry(self.excel_frame, textvariable=self.excel_var)
-        excel_entry.grid(row=0, column=0, sticky="ew", padx=(5, 0))
-        ttk.Button(self.excel_frame, text="Excel Selecteren", command=self._browse_excel).grid(row=0, column=1, padx=(5, 5))
+        # --- Inhoud Scannertype Frame ---
+        ttk.Radiobutton(scanner_type_frame, text="USB-toetsenbord", variable=self.scanner_type_var, value="USB", command=self._on_scanner_type_change).pack(side="left", padx=10, pady=5)
+        ttk.Radiobutton(scanner_type_frame, text="COM-poort", variable=self.scanner_type_var, value="COM", command=self._on_scanner_type_change).pack(side="left", padx=10, pady=5)
 
-        # --- Scanner mode container (for toggling COM/USB) ---
-        self.scanner_mode_container = ttk.Frame(self.main_frame)
-        self.scanner_mode_container.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=5)
-        self.scanner_mode_container.columnconfigure(0, weight=1)
-
-        # --- COM section ---
-        self.com_frame = ttk.LabelFrame(self.scanner_mode_container, text="COM Poort", padding="5", borderwidth=2, relief="solid")
-        self.com_frame.columnconfigure(0, weight=0)
+        # --- Scanner-specifieke frames (geplaatst in scanner_options_frame) ---
+        self.com_frame = ttk.Frame(scanner_options_frame)
+        self.com_frame.grid(row=0, column=0, sticky="ew")
         self.com_frame.columnconfigure(1, weight=1)
-        self.com_frame.columnconfigure(2, weight=0)
-        self.com_frame.columnconfigure(3, weight=0)
-        self.com_frame.columnconfigure(4, weight=1)
-        ttk.Label(self.com_frame, text="Selecteer COM Poort:").grid(row=0, column=0, padx=5, sticky=tk.W)
-        self.com_port_combo = ttk.Combobox(self.com_frame, textvariable=self.com_port_var)
-        self.com_port_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5))
-        ttk.Button(self.com_frame, text="Poorten Vernieuwen", command=self.refresh_ports).grid(row=0, column=2, padx=5)
-        ttk.Label(self.com_frame, text="Baud Rate:").grid(row=1, column=0, padx=5, sticky=tk.W)
-        ttk.Entry(self.com_frame, textvariable=self.baud_rate_var).grid(row=1, column=1, sticky="ew", padx=(0, 5))
-        self.connect_button = ttk.Button(self.com_frame, text="Verbinden", command=self.connect_com_port)
-        self.connect_button.grid(row=1, column=2, padx=5, sticky="ew")
-        self.com_status_label = ttk.Label(self.com_frame, text="Status: Niet verbonden", foreground="red")
-        self.com_status_label.grid(row=2, column=0, columnspan=3, sticky="w", padx=5, pady=(5,0))
 
-        # --- USB section ---
-        self.usb_frame = ttk.LabelFrame(self.scanner_mode_container, text="USB Keyboard Scanner", padding="5", borderwidth=2, relief="solid")
-        self.usb_frame.columnconfigure(0, weight=1)
-        self.usb_scan_var = tk.StringVar()
-        self.usb_entry = ttk.Entry(self.usb_frame, textvariable=self.usb_scan_var)
-        self.usb_entry.grid(row=0, column=0, sticky="ew", padx=5)
-        self.usb_entry.bind('<Return>', self.process_usb_scan)
+        self.usb_frame = ttk.Frame(scanner_options_frame)
+        self.usb_frame.grid(row=0, column=0, sticky="ew")
 
-        # --- Show/hide COM and USB frames based on scanner type ---
-        self.update_scanner_type()
+        # --- Inhoud Excel-bestand Frame ---
+        ttk.Label(excel_frame, text="Bestandspad:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        excel_entry = ttk.Entry(excel_frame, textvariable=self.excel_file_path_var, state='readonly')
+        excel_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        browse_button = ttk.Button(excel_frame, text="Bladeren...", command=self._browse_excel_file)
+        browse_button.grid(row=0, column=2, padx=5, pady=5)
 
-        # --- Results section ---
-        self.results_frame = ttk.LabelFrame(self.main_frame, text="Resultaten", padding="5")
-        self.results_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
-        self.results_frame.columnconfigure(0, weight=1)
-        self.results_frame.rowconfigure(0, weight=3)
-        self.results_frame.rowconfigure(1, weight=1)
-        self.scanned_tree = ttk.Treeview(self.results_frame, columns=('Status', 'Item'), show='headings')
-        self.scanned_tree.heading('Status', text='Status')
-        self.scanned_tree.heading('Item', text='Item')
-        self.scanned_tree.column('Status', width=100, stretch=True, anchor='e')
-        # Context menu for treeview
-        self.tree_menu = tk.Menu(self.scanned_tree, tearoff=0)
-        self.tree_menu.add_command(label="Status op OK zetten", command=self.set_status_ok)
-        self.tree_menu.add_command(label="Status wissen", command=self.clear_status)
-        self.scanned_tree.bind("<Button-3>", self.show_tree_menu)  # Windows/Linux right-click
-        self.scanned_tree.bind("<Button-2>", self.show_tree_menu)  # Mac right-click
-        self.tree_scroll = ttk.Scrollbar(self.results_frame, orient='vertical', command=self.scanned_tree.yview)
-        self.scanned_tree.configure(yscrollcommand=self.tree_scroll.set)
-        self.scanned_tree.grid(row=0, column=0, sticky="nsew")
-        self.tree_scroll.grid(row=0, column=1, sticky="ns")
+        # --- Inhoud COM-poort Frame ---
+        ttk.Label(self.com_frame, text="COM-poort:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.com_port_combo = ttk.Combobox(self.com_frame, textvariable=self.com_port_var, state='readonly', width=10)
+        self.com_port_combo.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.refresh_com_button = ttk.Button(self.com_frame, text="Vernieuwen", command=self._update_com_ports)
+        self.refresh_com_button.grid(row=0, column=2, padx=5, pady=5)
+        self.connect_button = ttk.Button(self.com_frame, text="Verbinden", command=self._connect_com_port)
+        self.connect_button.grid(row=0, column=3, padx=5, pady=5)
 
-        self.results_text = tk.Text(self.results_frame, height=8)
-        self.results_text.grid(row=1, column=0, sticky="nsew", columnspan=2)
+        # --- Inhoud USB Frame ---
+        ttk.Label(self.usb_frame, text="USB-scanner is actief indien geselecteerd. Scans worden globaal vastgelegd.").pack(padx=5, pady=5, fill="x")
 
-        copyright_label = tk.Label(self, text=" 2025 RVL", font=(None, 9), fg="#888888")
-        copyright_label.pack(side=tk.BOTTOM, pady=2)
+        # --- Treeview ---
+        self.tree = ttk.Treeview(tree_frame, columns=('Status', 'Item'), show='headings')
+        self.tree.heading('Status', text='Status')
+        self.tree.heading('Item', text='Item')
+        self.tree.column('Status', width=100, anchor='e') # Status first, aligned right
+        self.tree.column('Item', width=300, anchor='w')   # Item (was Barcode)
+        self.tree.tag_configure('OK', background='light green')
+        self.tree.tag_configure('DUPLICATE', background='orange')
+        self.tree.tag_configure('NOT_FOUND', background='light coral')
+        self.tree.tag_configure('NOT_OK', background='white')
+        
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self.tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
 
-    def update_scanner_type(self):
-        # Robust toggling for keyboard logger
-        if hasattr(self, 'com_frame') and hasattr(self, 'usb_frame'):
-            self.com_frame.pack_forget()
-            self.usb_frame.pack_forget()
-            if self.scanner_type_var.get() == 'USB':
-                self.usb_frame.pack(fill="x", expand=True)
-                self.usb_listener_enabled = True
-                # Start USB listener thread if not already running
-                if not getattr(self, '_usb_listener_running', False):
-                    self._usb_listener_thread = threading.Thread(target=self._start_usb_listener, daemon=True)
-                    self._usb_listener_thread.start()
-                    self._usb_listener_running = True
-            else:
-                self.com_frame.pack(fill="x", expand=True)
-                self.usb_listener_enabled = False
+        # --- Log Viewer ---
+        self.log_text = tk.Text(log_frame, height=6, wrap=tk.WORD, state='disabled')
+        log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
+        self.log_text.configure(yscrollcommand=log_scroll.set)
+        self.log_text.grid(row=0, column=0, sticky='nsew')
+        log_scroll.grid(row=0, column=1, sticky='ns')
 
-    def _start_usb_listener(self):
-        # Runs in a background thread
-        keyboard.on_press(self._on_key_event)
-        keyboard.wait()  # Keeps the thread alive
+        # --- Context Menu ---
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="Markeer als OK", command=self._mark_item_ok)
+        self.context_menu.add_command(label="Markeer als NIET OK", command=self._mark_item_not_ok)
+        self.tree.bind("<Button-3>", self._show_context_menu)
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
-    def _on_key_event(self, event):
-        # Only process if USB mode is selected, the frame is visible, and the listener is enabled
-        try:
-            if not getattr(self, 'usb_listener_enabled', False):
-                return
-            if not hasattr(self, 'scanner_type_var') or self.scanner_type_var.get() != 'USB':
-                return
-            if hasattr(self, 'usb_frame') and not self.usb_frame.winfo_ismapped():
-                return
-            # Ignore modifier keys
-            if event.event_type != 'down' or event.name in ['shift', 'ctrl', 'alt', 'caps lock', 'tab', 'esc', 'windows', 'left windows', 'right windows']:
-                return
-            if event.name == 'enter':
-                scan = self._usb_scan_buffer
-                self._usb_scan_buffer = ''
-                if scan:
-                    # Schedule processing in the Tkinter main thread
-                    self.after(0, self.process_usb_scan, scan)
-            elif len(event.name) == 1:
-                self._usb_scan_buffer += event.name
-            elif event.name == 'space':
-                self._usb_scan_buffer += ' '
-        except Exception as e:
-            print(f"[USB Keylogger Error]: {e}")
+        # Initial setup
+        self._log("Scannerpaneel geïnitialiseerd.")
+        self._update_com_ports()
 
-    def process_usb_scan(self, scan=None):
-        # If called from Entry, scan is None and use the Entry value
-        if scan is None:
-            scan = self.usb_scan_var.get()
-        self.results_text.see('end')
+    # --- Configuration Helper Methods ---
+    def _get_config_setting(self, section, key, default_value=None):
+        config = _load_full_config()
+        return config.get(section, {}).get(key, default_value)
 
-    def process_com_scan(self, scan):
-        # Compare COM scan value to Excel list, set status OK if found, update Excel
-        found = False
-        for item_id in self.scanned_tree.get_children():
-            values = list(self.scanned_tree.item(item_id, 'values'))
-            if len(values) >= 2 and str(values[1]).strip() == str(scan).strip():
-                found = True
-                if values[0] == 'OK':
-                    self.results_text.insert('end', f"COM-scan al op OK: {scan}\n")
-                    self.results_text.see('end')
-                else:
-                    values[0] = 'OK'
-                    self.scanned_tree.item(item_id, values=values)
-                    self.results_text.insert('end', f"COM-scan gevonden en op OK gezet: {scan}\n")
-                    self.results_text.see('end')
-                    self._save_treeview_to_excel()
-                    if all(self.scanned_tree.item(i, 'values')[0] == 'OK' for i in self.scanned_tree.get_children()):
-                        self._on_all_items_ok()
-                break
-        if not found:
-            self.results_text.insert('end', f"[WAARSCHUWING] COM-scan niet gevonden in Excel: {scan}\n")
-            self.results_text.see('end')
+    def _set_config_setting(self, section, key, value):
+        if section not in self._pending_config_updates:
+            self._pending_config_updates[section] = {}
+        self._pending_config_updates[section][key] = value
+        # Note: This does not save immediately. save_config() will handle that.
 
-    def _on_all_items_ok(self):
-        # Show popup immediately
-        messagebox.showinfo("Alle items OK", "Alle items zijn gescand en op OK gezet.")
-        log_msg = "[LOG] Alle items gescand en op OK gezet."
-        self.results_text.insert('end', log_msg + " (verwerken...)\n")
-        self.results_text.see('end')
+    def _load_config(self):
+        """Loads configuration settings using the new helper method."""
+        self.scanner_type_var.set(self._get_config_setting('Scanner', 'type', 'USB'))
+        self.com_port_var.set(self._get_config_setting('Scanner', 'com_port', ''))
+        self.baud_rate_var.set(self._get_config_setting('Scanner', 'baud_rate', '9600'))
+        last_file = self._get_config_setting('Paths', 'last_excel_file', '')
+        if last_file and os.path.exists(last_file):
+            self.excel_file_path_var.set(last_file)
+            # Call _load_excel_data without triggering another config save immediately
+            # The config for last_file is already loaded here.
+            # _load_excel_data will still update the treeview.
+            super().after(10, lambda: self._load_excel_data(last_file, update_config_path=False))
 
-        def background_success_logic():
-            import requests
-            import json
-            import os
-            sent_to_db = False
-            sent_email = False
-            sent_closed = False
-            closed_error = None
-            config_file = get_config_path()
-            excel_path = self.excel_var.get() # Get the actual Excel path
-            project_name = os.path.splitext(os.path.basename(excel_path))[0] if excel_path else 'Onbekend project'
-            # Only send CLOSED event if an OPEN event exists
-            if config_file and os.path.exists(config_file):
-                try:
-                    with open(config_file, 'r') as f:
-                        config = json.load(f)
-                    # Only send CLOSED event if an OPEN event exists
-                    if config.get('database_enabled', False):
-                        try:
-                            api_url = config.get('api_url', 'http://localhost:5000/log')
-                            user = config.get('user', 'user')
-                            # Query logs for this project (GET /logs), look for an OPEN event
-                            found_open = True
-                            if found_open:
-                                closed_payload = {
-                                    "event": "CLOSED",
-                                    "details": "Project gesloten na alle items OK.",
-                                    "project": project_name,
-                                    "user": user
-                                }
-                                closed_resp = requests.post(api_url, json=closed_payload, timeout=5)
-                                if closed_resp.status_code == 200:
-                                    closed_json = closed_resp.json()
-                                    if closed_json.get('success'):
-                                        sent_closed = True
-                                    elif closed_json.get('already_closed'):
-                                        closed_error = "[INFO] Project was already closed (CLOSED event not added again)."
-                                    else:
-                                        closed_error = f"[FOUT] CLOSED event niet gelukt: {closed_resp.text}"
-                                else:
-                                    closed_error = f"[FOUT] CLOSED event niet gelukt: {closed_resp.text}"
-                            else:
-                                closed_error = "[INFO] Geen OPEN event gevonden voor dit project, geen CLOSED event verzonden."
-                        except Exception as e:
-                            pass
-                    # Email sending
-                    if config.get('email_enabled', False):
-                        try:
-                            from email.mime.text import MIMEText
-                            sender = config.get('email_sender', '')
-                            receiver = config.get('email_receiver', '')
-                            msg = MIMEText("Alle items zijn gescand en op OK gezet.")
-                            msg['Subject'] = "Alle items OK"
-                            # Place your email sending logic here
-                            # Example: send_email(sender, receiver, msg)
-                            sent_email = True
-                        except Exception as e:
-                            pass
-                except Exception as e:
-                    def ui_config_error():
-                        self.results_text.insert('end', f"[FOUT] Config lezen: {e}\n")
-                        self.results_text.see('end')
-                    self.after(0, ui_config_error)
-            # Always log the result in the log viewer
-            def ui_update():
-                status_parts = []
-                if sent_to_db:
-                    status_parts.append("(naar database gestuurd)")
-                if sent_closed:
-                    status_parts.append("(CLOSED event verzonden)")
-                if sent_email:
-                    status_parts.append("(e-mail verzonden)")
-                if not status_parts:
-                    status_parts.append("(niet verzonden)")
-                log_full = f"{log_msg} {' '.join(status_parts)}\n"
-                self.results_text.insert('end', log_full)
-                if closed_error:
-                    self.results_text.insert('end', f"{closed_error}\n")
-                self.results_text.see('end')
-            self.after(0, ui_update)
-        import threading
-        threading.Thread(target=background_success_logic, daemon=True).start()
+    def save_config(self):
+        """Saves accumulated configuration settings and clears pending updates."""
+        # Stage current values before saving everything
+        self._set_config_setting('Scanner', 'type', self.scanner_type_var.get())
+        self._set_config_setting('Scanner', 'com_port', self.com_port_var.get())
+        self._set_config_setting('Scanner', 'baud_rate', self.baud_rate_var.get())
+        # self._set_config_setting('Paths', 'last_excel_file', self.excel_file_path_var.get()) # Already handled by _load_excel_data
 
-
-    def _browse_directory(self):
-        scan_mode = self.scan_mode_var.get()
-        if scan_mode == "GANNOMAT":
-            mdb_file = filedialog.askopenfilename(
-                filetypes=[("Access Database", "*.mdb;*.accdb")],
-                title="Selecteer GANNOMAT .mdb bestand"
-            )
-            if mdb_file:
-                self.directory_var.set(mdb_file)
-                self.results_text.delete(1.0, tk.END)
-                self.results_text.insert(tk.END, f"Selected file: {mdb_file}\n")
-                self.results_text.see(tk.END)
+        if self._pending_config_updates:
+            _save_full_config(self._pending_config_updates)
+            self._pending_config_updates.clear()
+            self._log("Configuratie opgeslagen.")
         else:
-            directory = filedialog.askdirectory()
-            if directory:
-                self.directory_var.set(directory)
-                if not self.base_dir_var.get():
-                    self.base_dir_var.set(directory)
-                self.results_text.delete(1.0, tk.END)
-                self.results_text.insert(tk.END, f"Selected directory: {directory}\n")
-                self.results_text.see(tk.END)
+            self._log("Geen configuratiewijzigingen om op te slaan.")
 
-    def _browse_base_directory(self):
-        directory = filedialog.askdirectory()
-        if directory:
-            self.base_dir_var.set(directory)
+    def _log(self, message):
+        """Adds a message to the log viewer with a timestamp."""
+        # This check prevents errors if logging is called during shutdown
+        if not self.winfo_exists():
+            return
+        def _do_log():
+            if self.log_text.winfo_exists():
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                self.log_text.config(state='normal')
+                self.log_text.insert(tk.END, f"{timestamp} - {message}\n")
+                self.log_text.config(state='disabled')
+                self.log_text.see(tk.END)
+        self.after(0, _do_log)
 
-    def _start_scan(self):
-        scan_mode = self.scan_mode_var.get()
-        path = self.directory_var.get()
-        if scan_mode == "GANNOMAT":
-            if not path or not (path.lower().endswith('.mdb') or path.lower().endswith('.accdb')):
-                messagebox.showwarning("Missing File", "Please select a .mdb file to scan.")
-                return
-            self.scan_button.config(state=tk.DISABLED)
-            threading.Thread(target=self._scan_thread, args=(path, scan_mode), daemon=True).start()
-        else:
-            if not path:
-                messagebox.showwarning("Missing Directory", "Please select a directory to scan.")
-                return
-            self.scan_button.config(state=tk.DISABLED)
-            threading.Thread(target=self._scan_thread, args=(path, scan_mode), daemon=True).start()
-
-    def _on_scan_mode_change(self, event=None):
-        self.save_scan_mode_to_config()
-
-    def _scan_thread(self, path, scan_mode):
-        try:
-            self.progress_var.set(0)
-            self.status_label.config(text="Scannen gestart...")
-            if scan_mode == "GANNOMAT" and (path.lower().endswith('.mdb') or path.lower().endswith('.accdb')):
-                try:
-                    import pyodbc
-                except ImportError:
-                    self.results_text.insert('end', 'pyodbc is niet geïnstalleerd. Kan MDB-bestanden niet scannen.\n')
-                    self.scan_button.config(state=tk.NORMAL)
-                    messagebox.showerror("Scanfout", "pyodbc is niet geïnstalleerd. Kan MDB-bestanden niet scannen.")
-                    return
-                results = []
-                try:
-                    conn_str = (
-                        r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
-                        f'DBQ={path};'
-                    )
-                    conn = pyodbc.connect(conn_str, autocommit=True)
-                    cursor = conn.cursor()
-                    tables = [tbl_info.table_name for tbl_info in cursor.tables(tableType='TABLE')]
-                    program_table = None
-                    fallback_table = None
-                    for table in tables:
-                        columns = [column.column_name for column in cursor.columns(table=table)]
-                        if table.lower() == 'program' and 'ProgramNumber' in columns:
-                            program_table = table
-                    # ... Add logic to extract and display data ...
-                    self.results_text.insert('end', f"Scanned {len(results)} items from MDB.\n")
-                except Exception as e:
-                    self.results_text.insert('end', f"Error scanning MDB: {e}\n")
-                finally:
-                    self.scan_button.config(state=tk.NORMAL)
-            else:
-                # Directory scan logic (OPUS mode)
-                self.results_text.insert('end', f"Scanning directory: {path}\n")
-                # ... Add directory scanning logic ...
-                self.scan_button.config(state=tk.NORMAL)
-        except Exception as e:
-            self.results_text.insert('end', f"Scan error: {e}\n")
-            self.scan_button.config(state=tk.NORMAL)
-
-    def process_usb_scan(self, event=None):
-        # Get scan value from entry or argument
-        scan = self.usb_scan_var.get() if event is None else event
-        if event is None:
-            self.usb_scan_var.set('')
-        found = False
-        for item_id in self.scanned_tree.get_children():
-            values = list(self.scanned_tree.item(item_id, 'values'))
-            if len(values) >= 2 and str(values[1]).strip() == str(scan).strip():
-                found = True
-                if values[0] == 'OK':
-                    self.results_text.insert('end', f"Scan al op OK: {scan}\n")
-                    self.results_text.see('end')
-                else:
-                    values[0] = 'OK'
-                    self.scanned_tree.item(item_id, values=values)
-                    self.results_text.insert('end', f"Scan gevonden en op OK gezet: {scan}\n")
-                    self.results_text.see('end')
-                    self._save_treeview_to_excel()
-                    if all(self.scanned_tree.item(i, 'values')[0] == 'OK' for i in self.scanned_tree.get_children()):
-                        self._on_all_items_ok()
-                break
-        if not found:
-            self.results_text.insert('end', f"[WAARSCHUWING] Scan niet gevonden in Excel: {scan}\n")
-            self.results_text.see('end')
-
-    def connect_com_port(self):
-        # Add logic to connect to COM port
-        pass
-
-    def disconnect_com(self):
-        # Add logic to disconnect from COM port
-        pass
-
-    def update_scanner_type(self):
+    def _on_scanner_type_change(self, *args):
+        """Verwerkt UI-wijzigingen wanneer het scannertype wordt gewijzigd."""
         scanner_type = self.scanner_type_var.get()
+        self._log(f"Scannertype gewijzigd naar {scanner_type}.")
         if scanner_type == "COM":
-            self.com_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-            self.usb_frame.grid_forget()
+            self.com_frame.grid(row=0, column=0, sticky="ew")
+            self.usb_frame.grid_remove()
+            self._stop_usb_listener()
+            self._update_com_ports()
         elif scanner_type == "USB":
-            self.usb_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-            self.com_frame.grid_forget()
+            self.usb_frame.grid(row=0, column=0, sticky="ew")
+            self.com_frame.grid_remove()
+            self._disconnect_com_port()
+            self._start_usb_listener()
+        else:
+            self.com_frame.grid_remove()
+            self.usb_frame.grid_remove()
 
-    def _browse_excel(self):
-        # Logic to browse for Excel file
-        from tkinter import filedialog
+    def _browse_excel_file(self):
+        """Opent een dialoogvenster om een Excel-bestand te selecteren."""
         file_path = filedialog.askopenfilename(
             title="Selecteer Excel-bestand",
-            filetypes=[("Excel Files", "*.xlsx"), ("All Files", "*.*")]
+            filetypes=(("Excel-bestanden", "*.xlsx *.xls"), ("Alle bestanden", "*.*"))
         )
         if file_path:
-            self.excel_var.set(file_path)
-            self.load_excel_to_treeview(file_path)
-            # Persist selection to config
-            if hasattr(self, 'save_excel_file_to_config'):
-                self.save_excel_file_to_config()
+            self._load_excel_data(file_path)
 
-    def load_excel_to_treeview(self, file_path):
-        """Load Excel data and populate the scanned_tree widget."""
+    def _generate_updated_path(self, original_path):
+        """Generates the path for the '_updated' version of an Excel file."""
+        if not original_path:
+            return None
+        directory, filename = os.path.split(original_path)
+        name, ext = os.path.splitext(filename)
+        if name.endswith("_updated"):
+            return original_path # Already an updated path
+        updated_name = f"{name}_updated{ext}"
+        return os.path.join(directory, updated_name)
+
+    def _load_excel_data(self, file_path, update_config_path=True):
+        """Laadt gegevens uit het geselecteerde Excel-bestand en vult de treeview."""
         try:
-            print(f'[DIAG] importing pandas in scanner_panel.py {time.time()}')
-            import pandas as pd
-            print(f'[DIAG] pandas imported in scanner_panel.py {time.time()}')
-            import os
-            # Prefer _updated.xlsx if it exists
-            base, ext = os.path.splitext(file_path)
-            updated_path = f"{base}_updated.xlsx"
-            actual_file = file_path
-            if os.path.exists(updated_path):
-                actual_file = updated_path
-            df = pd.read_excel(actual_file)
-            # Clear existing treeview
-            for item in self.scanned_tree.get_children():
-                self.scanned_tree.delete(item)
-            # Determine columns
-            import os
-            import math
-            if 'Status' in df.columns and 'Item' in df.columns:
-                for _, row in df.iterrows():
-                    status = row.get('Status', '')
-                    item = row.get('Item', '')
-                    # Convert NaN or 'nan' to blank
-                    if isinstance(status, float) and math.isnan(status):
-                        status = ''
-                    elif isinstance(status, str) and status.lower() == 'nan':
-                        status = ''
-                    if isinstance(item, float) and math.isnan(item):
-                        item = ''
-                    elif isinstance(item, str) and item.lower() == 'nan':
-                        item = ''
-                    if isinstance(item, str):
-                        item = os.path.splitext(item)[0]
-                    self.scanned_tree.insert('', 'end', values=(status, item))
+            path_to_load = file_path
+            potential_updated_path = self._generate_updated_path(file_path)
+            if potential_updated_path and os.path.exists(potential_updated_path):
+                self._log(f"Laden van bijgewerkte versie: {potential_updated_path}")
+                path_to_load = potential_updated_path
             else:
-                # Fallback: ensure Status is leftmost if present, and strip extensions from string values
-                for _, row in df.iterrows():
-                    row_dict = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
-                    # Try to find 'Status' and move to front
-                    status_val = row_dict.pop('Status', '') if 'Status' in row_dict else ''
-                    # Convert NaN or 'nan' to blank for status
-                    if isinstance(status_val, float) and math.isnan(status_val):
-                        status_val = ''
-                    elif isinstance(status_val, str) and status_val.lower() == 'nan':
-                        status_val = ''
-                    # Remove extension and convert NaN for all string/float values
-                    row_values = []
-                    for v in row_dict.values():
-                        if isinstance(v, float) and math.isnan(v):
-                            row_values.append('')
-                        elif isinstance(v, str) and v.lower() == 'nan':
-                            row_values.append('')
-                        elif isinstance(v, str) and '.' in v:
-                            row_values.append(os.path.splitext(v)[0])
-                        else:
-                            row_values.append(v)
-                    self.scanned_tree.insert('', 'end', values=(status_val, *row_values))
-            self.results_text.insert('end', f"Excel geladen: {file_path}\n")
-            self.results_text.see('end')
-            # Check if all items are OK after loading
-            if all(self.scanned_tree.item(i, 'values')[0] == 'OK' for i in self.scanned_tree.get_children() if len(self.scanned_tree.item(i, 'values')) > 0):
-                self._on_all_items_ok()
+                self._log(f"Laden van origineel bestand: {file_path}")
+
+            self._log(f"Effectief Excel-bestand laden: {path_to_load}")
+            df = pd.read_excel(path_to_load)
+
+            # Updated column check: 'Item' is required.
+            if 'Item' not in df.columns:
+                messagebox.showerror("Fout", "Excel-bestand moet de kolom 'Item' bevatten.")
+                self._log("[FOUT] Excel-bestand mist vereiste kolom 'Item'.")
+                return
+
+            self.barcode_data.clear()
+            self.tree.delete(*self.tree.get_children()) # Clear existing tree items
+
+            for index, row in df.iterrows():
+                barcode_val = str(row['Item'])
+                description_val = str(row['Omschrijving']) if 'Omschrijving' in df.columns else ""
+
+                raw_status_from_excel = row.get('Status', 'NIET OK') # Get raw status
+                status_from_excel = str(raw_status_from_excel).strip().upper()
+
+                # Ensure status is one of the valid ones, default to NIET OK
+                if status_from_excel not in ['OK', 'NIET OK', 'DUPLICAAT']:
+                    self._log(f"[WARN] Ongeldige status '{status_from_excel}' (origineel: '{raw_status_from_excel}') voor item '{barcode_val}' in Excel. Standaard naar 'NIET OK'.")
+                    status_from_excel = 'NIET OK'
+
+                # Determine the tag based on the processed status for Treeview
+                tree_tag = 'NOT_OK'
+                if status_from_excel == 'OK':
+                    tree_tag = 'OK'
+                elif status_from_excel == 'DUPLICAAT':
+                    tree_tag = 'DUPLICATE'
+                
+                # Treeview: Status, Item. Status from Excel, Tag based on status.
+                item_id = self.tree.insert('', 'end', values=(status_from_excel, barcode_val), tags=(tree_tag,))
+                self.barcode_data[barcode_val] = {
+                    'description': description_val,
+                    'status': status_from_excel, # Store the processed status
+                    'id': item_id,
+                    'item_value': barcode_val
+                }
+
+            self._log(f"{len(self.barcode_data)} items geladen uit {os.path.basename(path_to_load)}.")
+            # self.excel_file_path_var should store the original path selected by the user
+            # or the path that was last loaded from config, to correctly derive _updated path for saving.
+            self.excel_file_path_var.set(file_path) 
+            if update_config_path:
+                # Save the original user-selected path to config, not the potentially loaded _updated one.
+                self._set_config_setting('Paths', 'last_excel_file', file_path)
+                self.save_config() 
+            # After loading, immediately save to ensure the loaded data (even from original) is in an _updated file if changes occur
+            # Or, only save when a change actually occurs. Let's opt for saving on change.
+            # self._save_updated_excel() # Consider if initial save is needed or only on change.
+        except FileNotFoundError:
+            messagebox.showerror("Fout", f"Bestand niet gevonden: {file_path}")
+            self._log(f"[FOUT] Bestand niet gevonden: {file_path}")
         except Exception as e:
-            self.results_text.insert('end', f"[FOUT] Kan Excel niet laden: {e}\n")
-            self.results_text.see('end')
+            messagebox.showerror("Fout", f"Lezen van Excel-bestand mislukt: {e}")
+            self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}")
 
+    def _check_barcode(self, barcode):
+        """Controleert de gescande barcode aan de hand van de geladen gegevens en werkt de UI bij."""
+        self._log(f"Barcode controleren: {barcode}")
+        item = self.barcode_data.get(barcode)
 
-    def refresh_ports(self):
-        # Add logic to refresh COM ports
-        pass
-
-    def set_status_ok(self):
-        # Set the selected item's status to 'OK' in the treeview and update Excel
-        if self.selected_item:
-            values = list(self.scanned_tree.item(self.selected_item, 'values'))
-            if len(values) >= 2:
-                values[0] = 'OK'
-                self.scanned_tree.item(self.selected_item, values=values)
-                self.results_text.insert('end', f"Status op OK gezet voor: {values[1]}\n")
-                self.results_text.see('end')
-                self._save_treeview_to_excel()
-                # Check if all items are OK after manual edit
-                if all(self.scanned_tree.item(i, 'values')[0] == 'OK' for i in self.scanned_tree.get_children() if len(self.scanned_tree.item(i, 'values')) > 0):
-                    self._on_all_items_ok()
-
-    def clear_status(self):
-        # Clear the selected item's status in the treeview and update Excel
-        if self.selected_item:
-            values = list(self.scanned_tree.item(self.selected_item, 'values'))
-            if len(values) >= 2:
-                values[0] = ''
-                self.scanned_tree.item(self.selected_item, values=values)
-                self.results_text.insert('end', f"Status gewist voor: {values[1]}\n")
-                self.results_text.see('end')
-                self._save_treeview_to_excel()
-
-    def _save_treeview_to_excel(self):
-        # Save the current treeview to an _updated.xlsx file
-        excel_path = self.excel_var.get()
-        if not excel_path or not os.path.exists(excel_path):
-            self.results_text.insert('end', "Geen geldig Excel-bestand geladen. Kan wijzigingen niet opslaan.\n")
-            self.results_text.see('end')
+        if not item:
+            self._log(f"[NIET GEVONDEN] Barcode {barcode} niet in de lijst.")
+            # Overweeg een optische/auditieve feedback voor niet gevonden barcodes
             return
-        import pandas as pd
-        items = []
-        for item_id in self.scanned_tree.get_children():
-            values = self.scanned_tree.item(item_id, 'values')
-            if len(values) >= 2:
-                items.append({'Status': values[0], 'Item': values[1]})
-        # Try to preserve the original column name for 'Item'
-        try:
-            df_orig = pd.read_excel(excel_path)
-            if 'ProgramNumber' in df_orig.columns:
-                item_col = 'ProgramNumber'
-            elif 'Relative Path' in df_orig.columns:
-                item_col = 'Relative Path'
-            else:
-                item_col = df_orig.columns[0]
-            # Map items back to original columns
-            new_rows = []
-            for item in items:
-                row = {col: '' for col in df_orig.columns}
-                row['Status'] = item['Status']
-                row[item_col] = item['Item']
-                new_rows.append(row)
-            df_new = pd.DataFrame(new_rows, columns=df_orig.columns)
-        except Exception as e:
-            # Fallback: just save Status and Item
-            df_new = pd.DataFrame(items)
-        updated_path = os.path.splitext(excel_path)[0] + "_updated.xlsx"
-        try:
-            df_new.to_excel(updated_path, index=False)
-            self.results_text.insert('end', f"Wijzigingen opgeslagen in: {updated_path}\n")
-            self.results_text.see('end')
-        except Exception as e:
-            self.results_text.insert('end', f"Fout bij opslaan van wijzigingen: {e}\n")
-            self.results_text.see('end')
 
-    def show_tree_menu(self, event):
-        # Select the row under the mouse and show the context menu
-        item_id = self.scanned_tree.identify_row(event.y)
-        if item_id:
-            self.scanned_tree.selection_set(item_id)
-            self.selected_item = item_id
-            try:
-                self.tree_menu.tk_popup(event.x_root, event.y_root)
-            finally:
-                self.tree_menu.grab_release()
+        item_id = item['id']
+        current_status = item['status']
+
+        if current_status == 'OK' or current_status == 'DUPLICAAT': # Behandel DUPLICAAT ook als al OK
+            self._log(f"[DUPLICAAT] Barcode {barcode} al gescand als OK.")
+            item['status'] = 'DUPLICAAT' # Zorg ervoor dat de status DUPLICAAT is
+            self._update_treeview(item_id, 'DUPLICATE') # Gebruik de Engelse tag voor consistentie met tag_configure
         else:
-            self.scanned_tree.selection_remove(self.scanned_tree.selection())
-            self.selected_item = None
+            self._log(f"[OK] Barcode {barcode} komt overeen.")
+            item['status'] = 'OK'
+            self._update_treeview(item_id, 'OK')
+            self._save_updated_excel() # Save changes
+            self._all_items_ok_check()
 
-    def update_scanned_tree(self):
-        # Add logic to update scanned tree
-        pass
+
+    def _update_com_ports(self):
+        """Updates the list of available COM ports."""
+        try:
+            ports = [port.device for port in serial.tools.list_ports.comports()]
+            self.com_port_combo['values'] = ports
+            if ports:
+                # If current selection is not in new list, or nothing is selected, select first port
+                if self.com_port_var.get() not in ports or not self.com_port_var.get():
+                    self.com_port_var.set(ports[0])
+            else:
+                self.com_port_var.set('') # No ports available
+            self._log(f"Beschikbare COM-poorten bijgewerkt: {ports if ports else 'Geen'}")
+        except Exception as e:
+            self._log(f"[FOUT] Kon COM-poorten niet oplijsten: {e}")
+            messagebox.showerror("COM Fout", f"Fout bij het oplijsten van COM-poorten: {e}")
+            self.com_port_combo['values'] = []
+            self.com_port_var.set('')
+
+    def _connect_com_port(self):
+        """Connects to or disconnects from the selected COM port."""
+        if self.ser and self.ser.is_open:
+            self._disconnect_com_port()
+            return
+        port = self.com_port_var.get()
+        if not port:
+            messagebox.showerror("Fout", "Geen COM-poort geselecteerd.")
+            self._log("[FOUT] Verbindingspoging mislukt: Geen COM-poort geselecteerd.")
+            return
+        try:
+            self.ser = serial.Serial(port=port, baudrate=int(self.baud_rate_var.get()), timeout=1)
+            self.is_reading_com = True
+            self.com_read_thread = threading.Thread(target=self._read_com_port, daemon=True)
+            self.com_read_thread.start()
+            self.connect_button.config(text="Verbinding verbreken")
+            self._log(f"Verbonden met {port}.")
+            self.com_port_combo.config(state='disabled')
+            self.refresh_com_button.config(state='disabled')
+        except serial.SerialException as e:
+            messagebox.showerror("Verbindingsfout", f"Verbinden met {port} mislukt: {e}")
+            self._log(f"[FOUT] Verbinden met {port} mislukt: {e}")
+            self.ser = None
+
+    def _disconnect_com_port(self):
+        """Disconnects from the serial port."""
+        self.is_reading_com = False
+        if self.com_read_thread and self.com_read_thread.is_alive():
+            self.com_read_thread.join(timeout=1)
+        if self.ser and self.ser.is_open:
+            port_name = self.ser.port
+            self.ser.close()
+            self._log(f"Verbinding verbroken met {port_name}.")
+        self.ser = None
+        if self.winfo_exists():
+            self.connect_button.config(text="Verbinden")
+            self.com_port_combo.config(state='readonly')
+            self.refresh_com_button.config(state='normal')
+
+    def _read_com_port(self):
+        """Leest gegevens van de seriële poort in een aparte thread."""
+        port_name = self.ser.port # Store before thread potentially outlives self.ser validity
+        self._log(f"COM-poort leesthread gestart voor {port_name}.")
+        while self.is_reading_com and self.ser and self.ser.is_open:
+            try:
+                if self.ser.in_waiting > 0:
+                    line = self.ser.readline().decode('utf-8').strip()
+                    if line:
+                        self._log(f"COM-gegevens ontvangen: {line}")
+                        self.after(0, self._check_barcode, line)
+            except serial.SerialException as e:
+                self._log(f"[FOUT] Seriële fout: {e}")
+                break # Exit thread on serial error
+            except Exception as e:
+                self._log(f"[FOUT] Een onverwachte fout is opgetreden in de COM-leeslus: {e}")
+                break # Exit thread on other critical error
+            time.sleep(0.1)
+        self._log(f"COM-poort leesthread voor {port_name} beëindigd.")
+
+    def _start_usb_listener(self):
+        """Starts the USB keyboard listener thread."""
+        if self.scanner_type_var.get() != "USB":
+            return
+        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
+            return
+        self._stop_usb_listener_event.clear()
+        self._usb_listener_thread = threading.Thread(target=self._usb_listener_loop, daemon=True)
+        self._usb_listener_thread.start()
+
+    def _stop_usb_listener(self):
+        """Stops the USB keyboard listener thread."""
+        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
+            self._stop_usb_listener_event.set()
+            self._usb_listener_thread.join(timeout=1)
+            self._usb_listener_thread = None
+            self._log("USB listener stop signal sent.")
+
+    def _usb_listener_loop(self):
+        """De lus die luistert naar toetsenbordgebeurtenissen."""
+        self._log("USB-luisterthread gestart.")
+        keyboard.on_press(self._on_key_press)
+        self._stop_usb_listener_event.wait()
+        keyboard.unhook_all()
+        self._log("USB-luisterthread gestopt.")
+
+    def _on_key_press(self, event):
+        """Callback for the keyboard listener."""
+        if self._stop_usb_listener_event.is_set():
+            return
+        self.after(0, self._process_key_event, event)
+
+    def _process_key_event(self, event):
+        """Process the key event in the main thread."""
+        if not self.winfo_exists():
+            return
+        current_time = time.time()
+        if current_time - self.last_key_time > 0.1: # Timeout to reset buffer
+            self.barcode_buffer.clear()
+
+        self.last_key_time = current_time
+
+        if event.name == 'enter':
+            if self.barcode_buffer:
+                barcode = "".join(self.barcode_buffer)
+                self._log(f"USB-scan gedetecteerd: {barcode}")
+                self._check_barcode(barcode)
+                self.barcode_buffer.clear()
+        elif len(event.name) == 1:
+            self.barcode_buffer.append(event.name)
+
+    def _update_treeview(self, item_id, status_tag):
+        """Updates a single item in the treeview with a new status and tag."""
+        original_barcode_val = None
+        for barcode_key, data_dict in self.barcode_data.items():
+            if data_dict.get('id') == item_id:
+                original_barcode_val = data_dict.get('item_value', barcode_key)
+                break
+        
+        if original_barcode_val is None:
+            try:
+                current_values = self.tree.item(item_id, 'values')
+                if current_values and len(current_values) > 1:
+                    original_barcode_val = current_values[1] # Item is at index 1
+                else:
+                    self._log(f"[FOUT] Kon originele itemwaarde niet vinden voor treeview-update (ID: {item_id}) en tree-item-waarden zijn ongeldig.")
+                    return # Return if we can't get the barcode value
+            except tk.TclError:
+                 self._log(f"[FOUT] Kon originele itemwaarde niet vinden voor treeview-update (ID: {item_id}) en tree-item niet toegankelijk.")
+                 return # Return if tree item is not accessible
+
+        new_status_text = ''
+        if status_tag == 'OK':
+            new_status_text = 'OK'
+        elif status_tag == 'DUPLICATE':
+            new_status_text = 'DUPLICAAT'
+        elif status_tag == 'NOT_OK':
+            new_status_text = 'NIET OK'
+        else:
+            # Fallback if an unexpected tag is passed, though this shouldn't happen with current logic
+            new_status_text = status_tag 
+            self._log(f"[WARN] Onverwachte status_tag '{status_tag}' ontvangen in _update_treeview.")
+
+        try:
+            self.tree.item(item_id, values=(new_status_text, original_barcode_val), tags=(status_tag,))
+            self.tree.see(item_id) # Scroll to the updated item
+        except tk.TclError as e:
+            self._log(f"[FOUT] Kon item {item_id} niet bijwerken in de treeview: {e}")
+
+    def _on_tree_select(self, event):
+        """Handle item selection in the treeview to store the selected item ID."""
+        selected_items = self.tree.selection()
+        if selected_items:
+            self.selected_item_id = selected_items[0]
+
+    def _show_context_menu(self, event):
+        """Display the context menu at the cursor's position."""
+        item_id = self.tree.identify_row(event.y)
+        if item_id:
+            self.tree.selection_set(item_id)
+            self.selected_item_id = item_id
+            self.context_menu.post(event.x_root, event.y_root)
+
+    def _mark_item_ok(self):
+        """Manually mark the selected item as OK."""
+        if not self.selected_item_id:
+            self._log("[INFO] Geen item geselecteerd om als OK te markeren.")
+            return
+        
+        # Treeview columns are ('Status', 'Item'). 'Item' (barcode value) is at index 1.
+        try:
+            selected_values = self.tree.item(self.selected_item_id, 'values')
+            if not selected_values or len(selected_values) < 2:
+                self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als OK: ongeldige item-waarden.")
+                return
+            barcode = selected_values[1]
+        except tk.TclError:
+            self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als OK: treeview-fout bij ophalen waarden.")
+            return
+
+        if barcode in self.barcode_data:
+            self.barcode_data[barcode]['status'] = 'OK'
+            self._update_treeview(self.selected_item_id, 'OK')
+            self._log(f"{barcode} handmatig gemarkeerd als OK.")
+            self._save_updated_excel() # Save changes
+            self._all_items_ok_check()
+
+    def _mark_item_not_ok(self):
+        """Manually mark the selected item as NOT OK."""
+        if not self.selected_item_id:
+            self._log("[INFO] Geen item geselecteerd om als NIET OK te markeren.")
+            return
+        
+        # Treeview columns are ('Status', 'Item'). 'Item' (barcode value) is at index 1.
+        try:
+            selected_values = self.tree.item(self.selected_item_id, 'values')
+            if not selected_values or len(selected_values) < 2:
+                self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als NIET OK: ongeldige item-waarden.")
+                return
+            barcode = selected_values[1]
+        except tk.TclError:
+            self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als NIET OK: treeview-fout bij ophalen waarden.")
+            return
+
+        if barcode in self.barcode_data:
+            self.barcode_data[barcode]['status'] = 'NIET OK'
+            self._update_treeview(self.selected_item_id, 'NOT_OK') # Use tag for consistency
+            self._log(f"{barcode} handmatig gemarkeerd als NIET OK.")
+            self._save_updated_excel() # Save changes
+
+    def _save_updated_excel(self):
+        """Saves the current barcode_data to an _updated.xlsx file."""
+        original_path = self.excel_file_path_var.get()
+        if not original_path:
+            self._log("[WARN] Kan status niet opslaan: geen Excel-bestandspad ingesteld.")
+            return
+
+        save_path = self._generate_updated_path(original_path)
+        if not save_path:
+            self._log("[FOUT] Kan geen geldig opslagpad genereren voor bijgewerkt Excel-bestand.")
+            return
+
+        if not self.barcode_data:
+            self._log("[INFO] Geen data om op te slaan in bijgewerkt Excel-bestand.")
+            # Optionally, if an _updated file exists, we might want to delete it or leave it.
+            # For now, do nothing if no data.
+            return
+
+        try:
+            data_to_save = []
+            for barcode_val, item_data in self.barcode_data.items():
+                data_to_save.append({
+                    'Item': item_data.get('item_value', barcode_val),
+                    'Status': item_data.get('status', 'NIET OK'),
+                    'Omschrijving': item_data.get('description', '')
+                })
+            
+            df = pd.DataFrame(data_to_save)
+            # Ensure column order, especially if Omschrijving might be missing in some items
+            columns_ordered = ['Item', 'Status']
+            if any('Omschrijving' in d for d in data_to_save):
+                 if not df['Omschrijving'].isnull().all(): # only add if there's actual data
+                    columns_ordered.append('Omschrijving')
+            df = df[columns_ordered]
+
+            df.to_excel(save_path, index=False)
+            self._log(f"Status succesvol opgeslagen in {os.path.basename(save_path)}.")
+        except Exception as e:
+            self._log(f"[FOUT] Opslaan van bijgewerkt Excel-bestand {save_path} mislukt: {e}")
+            messagebox.showerror("Opslaan Mislukt", f"Kon status niet opslaan naar {os.path.basename(save_path)}: {e}")
+
+    def _all_items_ok_check(self):
+        """Check if all items are OK and trigger subsequent actions like DB logging and email.
+        """
+        if not self.barcode_data:
+            return
+
+        all_ok = all(item['status'] == 'OK' for item in self.barcode_data.values())
+        if not all_ok:
+            return
+
+        self._log("Alle items zijn succesvol gescand! Acties na voltooiing worden uitgevoerd.")
+        messagebox.showinfo("Voltooid", "Alle items zijn succesvol gescand!")
+
+        excel_path = self.excel_file_path_var.get()
+        if not excel_path:
+            self._log("[WARN] Geen Excel-bestandspad gevonden, kan projectnaam niet bepalen voor logging/email.")
+            return
+
+        project_name = os.path.splitext(os.path.basename(excel_path))[0]
+
+        # --- 1. Database Logging ---
+        try:
+            db_panel = self.main_app.database_panel
+            if db_panel.database_enabled_var.get():
+                self._log(f"Database logging ingeschakeld. Project '{project_name}' wordt als gesloten gelogd.")
+                db_panel.log_project_closed(project_name)
+            else:
+                self._log("Database logging is niet ingeschakeld.")
+        except AttributeError:
+            self._log("[FOUT] Kon database paneel niet vinden via self.main_app.database_panel.")
+        except Exception as e:
+            self._log(f"[FOUT] Kon projectstatus niet loggen naar database: {e}")
+
+        # --- 2. Email Notification ---
+        try:
+            email_panel = self.main_app.email_panel
+            self._log(f"Email-notificatie aanroepen voor project '{project_name}'.")
+            # The method itself checks if email is enabled and mode is 'per_scan'
+            email_panel.send_project_complete_email(project_name, excel_path)
+        except AttributeError:
+            self._log("[FOUT] Kon email paneel niet vinden via self.main_app.email_panel.")
+        except Exception as e:
+            self._log(f"[FOUT] Kon e-mailnotificatie niet versturen: {e}")
+
+
+    def on_close(self):
+        """Verwerkt opschoning wanneer het paneel wordt gesloten."""
+        self._log("Scannerpaneel sluiten...")
+        self.save_config()
+        self._stop_usb_listener()
+        self._disconnect_com_port()
+        self._log("Scannerpaneel gesloten.")

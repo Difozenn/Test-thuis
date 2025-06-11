@@ -16,7 +16,10 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), 'central_logging.sqlite')
+# Construct the absolute path to the database file
+# This assumes the script is in a subdirectory of the project root.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(project_root, 'database', 'central_logging.sqlite')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

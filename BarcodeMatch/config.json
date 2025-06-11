@@ -1,10 +1,10 @@
 {
     "buildnr": "v2",
     "database_enabled": true,
-    "api_url": "http://localhost:5000/log",
+    "api_url": "http://192.168.244.160:5001/log",
     "user": "OPUS",
     "default_scanner_type": "USB",
-    "default_base_dir": "C:/OPUS/KORPUS",
+    "default_base_dir": "Y:\\Kl_Gannomat\\backend\\jobs",
     "default_scan_mode": "OPUS",
     "email_sender": "",
     "email_receiver": "",
@@ -13,5 +13,13 @@
     "smtp_user": "",
     "smtp_password": "",
     "email_enabled": false,
-    "email_send_mode": "daily"
+    "email_send_mode": "daily",
+    "Paths": {
+        "last_excel_file": "Y:/OPUS/KORPUS/0526_a/0526_a.xlsx"
+    },
+    "Scanner": {
+        "type": "USB",
+        "com_port": "",
+        "baud_rate": "9600"
+    }
 }

@@ -162,6 +162,7 @@ class ImportPanel(ttk.Frame):
                     tables = [tbl_info.table_name for tbl_info in cursor.tables(tableType='TABLE')]
                     program_table = None
                     fallback_table = None
+                    mdb_filename_without_extension = os.path.splitext(os.path.basename(path))[0]
                     for table in tables:
                         columns = [column.column_name for column in cursor.columns(table=table)]
                         if table.lower() == 'program' and 'ProgramNumber' in columns:
@@ -172,11 +173,13 @@ class ImportPanel(ttk.Frame):
                     if program_table:
                         cursor.execute(f'SELECT ProgramNumber FROM [{program_table}]')
                         for row in cursor.fetchall():
-                            results.append({'MDB File': os.path.basename(path), 'ProgramNumber': row.ProgramNumber})
+                            item_name = f"{mdb_filename_without_extension}:{row.ProgramNumber}"
+                            results.append({'MDB File': os.path.basename(path), 'Item': item_name})
                     elif fallback_table:
                         cursor.execute(f'SELECT ProgramNumber FROM [{fallback_table}]')
                         for row in cursor.fetchall():
-                            results.append({'MDB File': os.path.basename(path), 'ProgramNumber': row.ProgramNumber})
+                            item_name = f"{mdb_filename_without_extension}:{row.ProgramNumber}"
+                            results.append({'MDB File': os.path.basename(path), 'Item': item_name})
                     else:
                         self.after(0, lambda: self.results_text.insert('end', f"Geen tabel met 'ProgramNumber' kolom gevonden in {os.path.basename(path)}\n"))
                     conn.close()
@@ -198,7 +201,14 @@ class ImportPanel(ttk.Frame):
                             if filename.lower().endswith(('.hop', '.hops')):
                                 total_files += 1
                     return total_files
-                base_dir = self.base_dir_var.get() or path
+                base_dir = self.base_dir_var.get()
+                if base_dir:
+                    path_drive = os.path.splitdrive(os.path.abspath(path))[0]
+                    base_drive = os.path.splitdrive(os.path.abspath(base_dir))[0]
+                    if path_drive.lower() != base_drive.lower():
+                        base_dir = path  # Fallback to scan path if drives are different
+                else:
+                    base_dir = path
                 print(f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}, using base_dir: {base_dir}")
                 self.total_files = count_files()
                 print(f"[DEBUG] [SCAN THREAD] Total .hop/.hops files found: {self.total_files}")
@@ -211,7 +221,7 @@ class ImportPanel(ttk.Frame):
                     for filename in filenames:
                         if filename.lower().endswith(('.hop', '.hops')):
                             rel_path = os.path.relpath(os.path.join(root, filename), base_dir)
-                            found_files.append(rel_path)
+                            found_files.append({'Item': rel_path}) # Standardized to dict with 'Item' key
                             self.processed_files += 1
                             if self.processed_files % 10 == 0 or self.processed_files == self.total_files:
                                 self.after(0, lambda: self._update_progress(self.processed_files, self.total_files))
@@ -244,9 +254,9 @@ class ImportPanel(ttk.Frame):
         else:
             folder_name = os.path.basename(os.path.normpath(directory))
         if scan_mode == "GANNOMAT":
-            if 'ProgramNumber' in df.columns:
-                df = df[['ProgramNumber']]
-                df['Status'] = ''
+            if 'Item' in df.columns: # Changed from ProgramNumber to Item
+                df = df[['Item']] # Changed from ProgramNumber to Item
+                df['Status'] = '' # Ensure Status column is added
             excel_path = os.path.join(export_dir, f"{folder_name}_GANNOMAT.xlsx")
         else:
             # Always add Status column for OPUS
@@ -267,12 +277,13 @@ class ImportPanel(ttk.Frame):
     def _show_results(self, results, scan_mode, path):
         self.results_text.delete(1.0, tk.END)
         if scan_mode == "GANNOMAT":
+            self.results_text.insert(tk.END, f"Scanned file: {os.path.basename(path)} (mode: {scan_mode})\n")
             for row in results:
-                self.results_text.insert(tk.END, f"MDB: {row['MDB File']} | ProgramNumber: {row['ProgramNumber']}\n")
-        else:
+                self.results_text.insert(tk.END, f"{row['Item']}\n")
+        else: # Opus mode
             self.results_text.insert(tk.END, f"Scanned directory: {path} (mode: {scan_mode})\n")
-            for file in results:
-                self.results_text.insert(tk.END, f"{file}\n")
+            for row in results: # Changed from file to row, to reflect list of dicts
+                self.results_text.insert(tk.END, f"{row['Item']}\n") # Access 'Item' key
 
     def browse_directory(self):
         scan_mode = self.scan_mode_var.get() if hasattr(self, 'scan_mode_var') else "OPUS"

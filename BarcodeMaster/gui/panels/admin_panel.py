@@ -19,7 +19,7 @@ class AdminPanel(tk.Frame):
         frame = tk.Frame(self, bg=PANEL_BG)
         frame.pack(fill='both', expand=True)
         self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../database/central_logging.sqlite'))
-        self.api_url = get_config().get('api_url', 'http://localhost:5000')
+        self.api_url = get_config().get('api_url', 'http://localhost:5001')
         self.config = get_config()
         self.lan_ip = 'Detecting...'
         threading.Thread(target=self._detect_lan_ip, daemon=True).start()

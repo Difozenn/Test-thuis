@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, font as tkfont # Added font import as tkfont
 import pandas as pd
 import threading
 import time
@@ -7,6 +7,7 @@ import keyboard
 import serial
 import serial.tools.list_ports
 import os
+import re
 from config_utils import load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
@@ -119,8 +120,22 @@ class ScannerPanel(ttk.Frame):
         self.tree = ttk.Treeview(tree_frame, columns=('Status', 'Item'), show='headings')
         self.tree.heading('Status', text='Status')
         self.tree.heading('Item', text='Item')
-        self.tree.column('Status', width=100, anchor='e') # Status first, aligned right
+        self.tree.column('Status', width=150, minwidth=150, stretch=tk.NO, anchor='center') # Status column, centered text
         self.tree.column('Item', width=300, anchor='w')   # Item (was Barcode)
+        # Define a bold font for the 'OK' status
+        self.bold_ok_font = None # Initialize
+        try:
+            # Create a bold version of the default Tk font.
+            default_font_details = tkfont.nametofont("TkDefaultFont").actual()
+            self.bold_ok_font = tkfont.Font(family=default_font_details["family"],
+                                         size=default_font_details["size"],
+                                         weight="bold")
+        except tk.TclError as e:
+            self._log(f"[WARN] Kon vetgedrukt lettertype niet aanmaken voor 'OK' status (TclError): {e}. Gebruikt standaard.")
+        except Exception as e: # Catch any other unexpected errors
+            self._log(f"[WARN] Kon vetgedrukt lettertype niet aanmaken voor 'OK' status (Algemene Fout): {e}. Gebruikt standaard.")
+
+        # Configure OK tag (bold font removed as it applies to the whole row)
         self.tree.tag_configure('OK', background='light green')
         self.tree.tag_configure('DUPLICATE', background='orange')
         self.tree.tag_configure('NOT_FOUND', background='light coral')
@@ -143,7 +158,7 @@ class ScannerPanel(ttk.Frame):
         # --- Context Menu ---
         self.context_menu = tk.Menu(self, tearoff=0)
         self.context_menu.add_command(label="Markeer als OK", command=self._mark_item_ok)
-        self.context_menu.add_command(label="Markeer als NIET OK", command=self._mark_item_not_ok)
+        self.context_menu.add_command(label="Status wissen", command=self._clear_item_status) # Changed from Markeer als NIET OK
         self.tree.bind("<Button-3>", self._show_context_menu)
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
@@ -269,26 +284,47 @@ class ScannerPanel(ttk.Frame):
                 barcode_val = str(row['Item'])
                 description_val = str(row['Omschrijving']) if 'Omschrijving' in df.columns else ""
 
-                raw_status_from_excel = row.get('Status', 'NIET OK') # Get raw status
-                status_from_excel = str(raw_status_from_excel).strip().upper()
+                # --- Start of new logic for status handling ---
+                raw_status_from_excel = row.get('Status', pd.NA) # Use pd.NA for missing/empty
 
-                # Ensure status is one of the valid ones, default to NIET OK
-                if status_from_excel not in ['OK', 'NIET OK', 'DUPLICAAT']:
-                    self._log(f"[WARN] Ongeldige status '{status_from_excel}' (origineel: '{raw_status_from_excel}') voor item '{barcode_val}' in Excel. Standaard naar 'NIET OK'.")
-                    status_from_excel = 'NIET OK'
+                display_status_for_treeview = ""  # Value for Treeview display
+                internal_status = 'NIET OK'       # Value for internal logic and saving
+                tree_tag = 'NOT_OK'               # Default tag for Treeview
 
-                # Determine the tag based on the processed status for Treeview
-                tree_tag = 'NOT_OK'
-                if status_from_excel == 'OK':
-                    tree_tag = 'OK'
-                elif status_from_excel == 'DUPLICAAT':
-                    tree_tag = 'DUPLICATE'
-                
-                # Treeview: Status, Item. Status from Excel, Tag based on status.
-                item_id = self.tree.insert('', 'end', values=(status_from_excel, barcode_val), tags=(tree_tag,))
+                if pd.isna(raw_status_from_excel):
+                    # If Excel status is NaN (empty), display blank, internal is 'NIET OK'
+                    display_status_for_treeview = ""
+                    # internal_status is already 'NIET OK'
+                    # tree_tag is already 'NOT_OK' (white background)
+                else:
+                    # If Excel status is not NaN, process it as a string
+                    processed_status_str = str(raw_status_from_excel).strip().upper()
+
+                    if processed_status_str == 'OK':
+                        display_status_for_treeview = 'OK'
+                        internal_status = 'OK'
+                        tree_tag = 'OK'
+                    elif processed_status_str == 'DUPLICAAT':
+                        display_status_for_treeview = 'DUPLICAAT'
+                        internal_status = 'DUPLICAAT'
+                        tree_tag = 'DUPLICATE'
+                    elif processed_status_str == 'NIET OK':
+                        display_status_for_treeview = 'NIET OK'
+                        internal_status = 'NIET OK'
+                        tree_tag = 'NOT_OK'
+                    else:
+                        # Unrecognized string in Status column
+                        self._log(f"[WARN] Ongeldige status '{processed_status_str}' (origineel: '{raw_status_from_excel}') voor item '{barcode_val}' in Excel. Standaard naar 'NIET OK'.")
+                        display_status_for_treeview = 'NIET OK' # Display 'NIET OK' for unrecognized strings
+                        internal_status = 'NIET OK' # Treat as 'NIET OK'
+                        tree_tag = 'NOT_OK'
+                # --- End of new logic for status handling ---
+
+                # Treeview: Status, Item.
+                item_id = self.tree.insert('', 'end', values=(display_status_for_treeview, barcode_val), tags=(tree_tag,))
                 self.barcode_data[barcode_val] = {
                     'description': description_val,
-                    'status': status_from_excel, # Store the processed status
+                    'status': internal_status, # Store the determined internal_status
                     'id': item_id,
                     'item_value': barcode_val
                 }
@@ -335,6 +371,19 @@ class ScannerPanel(ttk.Frame):
             self._save_updated_excel() # Save changes
             self._all_items_ok_check()
 
+
+    def _all_items_ok_check(self):
+        """Checks if all items in the list are marked as 'OK' or 'DUPLICATE'.
+        If so, triggers the project completion actions.
+        """
+        if not self.barcode_data:
+            return
+
+        all_scanned_correctly = all(item['status'] in ('OK', 'DUPLICATE') for item in self.barcode_data.values())
+
+        if all_scanned_correctly:
+            self._log("Alle items zijn gescand als OK. Start voltooiingsacties...")
+            self._perform_completion_actions()
 
     def _update_com_ports(self):
         """Updates the list of available COM ports."""
@@ -464,7 +513,7 @@ class ScannerPanel(ttk.Frame):
         elif len(event.name) == 1:
             self.barcode_buffer.append(event.name)
 
-    def _update_treeview(self, item_id, status_tag):
+    def _update_treeview(self, item_id, status_tag, display_override=None):
         """Updates a single item in the treeview with a new status and tag."""
         original_barcode_val = None
         for barcode_key, data_dict in self.barcode_data.items():
@@ -485,16 +534,22 @@ class ScannerPanel(ttk.Frame):
                  return # Return if tree item is not accessible
 
         new_status_text = ''
-        if status_tag == 'OK':
+        if display_override is not None:
+            new_status_text = display_override
+        elif status_tag == 'OK':
             new_status_text = 'OK'
         elif status_tag == 'DUPLICATE':
             new_status_text = 'DUPLICAAT'
         elif status_tag == 'NOT_OK':
-            new_status_text = 'NIET OK'
+            # If it's 'NOT_OK' and no override, it implies 'NIET OK' unless cleared
+            # The previous logic in _load_excel_data already handles setting blank for initial load if status is NaN
+            # For manual clearing, display_override="" is used.
+            # For marking as 'NIET OK' explicitly (if that was still a feature), it would be 'NIET OK'.
+            new_status_text = 'NIET OK' 
         else:
-            # Fallback if an unexpected tag is passed, though this shouldn't happen with current logic
+            # Fallback if an unexpected tag is passed
             new_status_text = status_tag 
-            self._log(f"[WARN] Onverwachte status_tag '{status_tag}' ontvangen in _update_treeview.")
+            self._log(f"[WARN] Onverwachte status_tag '{status_tag}' ontvangen in _update_treeview zonder display_override.")
 
         try:
             self.tree.item(item_id, values=(new_status_text, original_barcode_val), tags=(status_tag,))
@@ -515,6 +570,30 @@ class ScannerPanel(ttk.Frame):
             self.tree.selection_set(item_id)
             self.selected_item_id = item_id
             self.context_menu.post(event.x_root, event.y_root)
+
+    def _clear_item_status(self):
+        """Clears the status of the selected item in the treeview and data."""
+        if not self.selected_item_id:
+            self._log("[WARN] Poging om status te wissen zonder selectie.")
+            return
+
+        # Find the item in barcode_data using the tree item_id
+        item_to_update = None
+        barcode_key_of_item = None
+        for key, data_dict in self.barcode_data.items():
+            if data_dict.get('id') == self.selected_item_id:
+                item_to_update = data_dict
+                barcode_key_of_item = key
+                break
+
+        if item_to_update:
+            self._log(f"Status wissen voor item: {item_to_update.get('item_value', barcode_key_of_item)}")
+            item_to_update['status'] = None  # Set internal status to None for blank Excel cell
+            # Update Treeview: display blank, use 'NOT_OK' tag for white background
+            self._update_treeview(self.selected_item_id, 'NOT_OK', display_override="") 
+            self._save_updated_excel() # Save changes
+        else:
+            self._log(f"[FOUT] Kon item met ID {self.selected_item_id} niet vinden in barcode_data om status te wissen.")
 
     def _mark_item_ok(self):
         """Manually mark the selected item as OK."""
@@ -564,7 +643,9 @@ class ScannerPanel(ttk.Frame):
             self._save_updated_excel() # Save changes
 
     def _save_updated_excel(self):
-        """Saves the current barcode_data to an _updated.xlsx file."""
+        """Saves the current state of barcode_data to a new Excel file with '_updated' suffix.
+           Ensures that None status is written as a blank cell.
+        """
         original_path = self.excel_file_path_var.get()
         if not original_path:
             self._log("[WARN] Kan status niet opslaan: geen Excel-bestandspad ingesteld.")
@@ -586,7 +667,7 @@ class ScannerPanel(ttk.Frame):
             for barcode_val, item_data in self.barcode_data.items():
                 data_to_save.append({
                     'Item': item_data.get('item_value', barcode_val),
-                    'Status': item_data.get('status', 'NIET OK'),
+                    'Status': item_data.get('status'), # Ensure None is preserved for blank cell
                     'Omschrijving': item_data.get('description', '')
                 })
             
@@ -604,16 +685,10 @@ class ScannerPanel(ttk.Frame):
             self._log(f"[FOUT] Opslaan van bijgewerkt Excel-bestand {save_path} mislukt: {e}")
             messagebox.showerror("Opslaan Mislukt", f"Kon status niet opslaan naar {os.path.basename(save_path)}: {e}")
 
-    def _all_items_ok_check(self):
-        """Check if all items are OK and trigger subsequent actions like DB logging and email.
+    def _perform_completion_actions(self):
+        """Handles all actions after all items are successfully scanned.
+        This includes logging, database updates, and email notifications.
         """
-        if not self.barcode_data:
-            return
-
-        all_ok = all(item['status'] == 'OK' for item in self.barcode_data.values())
-        if not all_ok:
-            return
-
         self._log("Alle items zijn succesvol gescand! Acties na voltooiing worden uitgevoerd.")
         messagebox.showinfo("Voltooid", "Alle items zijn succesvol gescand!")
 
@@ -622,31 +697,52 @@ class ScannerPanel(ttk.Frame):
             self._log("[WARN] Geen Excel-bestandspad gevonden, kan projectnaam niet bepalen voor logging/email.")
             return
 
-        project_name = os.path.splitext(os.path.basename(excel_path))[0]
+        filename = os.path.basename(excel_path)
+        match = re.search(r'_([A-Z]{2}\d+)_', filename)
+        if match:
+            project_name = match.group(1)
+            self._log(f"Project-ID '{project_name}' geëxtraheerd uit bestandsnaam '{filename}'.")
+        else:
+            project_name = os.path.splitext(filename)[0]
+            self._log(f"[WAARSCHUWING] Kon project-ID niet uit bestandsnaam '{filename}' extraheren. Gebruik de volledige bestandsnaam als project: {project_name}")
 
         # --- 1. Database Logging ---
-        try:
-            db_panel = self.main_app.database_panel
-            if db_panel.database_enabled_var.get():
-                self._log(f"Database logging ingeschakeld. Project '{project_name}' wordt als gesloten gelogd.")
-                db_panel.log_project_closed(project_name)
-            else:
-                self._log("Database logging is niet ingeschakeld.")
-        except AttributeError:
-            self._log("[FOUT] Kon database paneel niet vinden via self.main_app.database_panel.")
-        except Exception as e:
-            self._log(f"[FOUT] Kon projectstatus niet loggen naar database: {e}")
+        db_panel = self.main_app.get_panel_by_name("Database")
+        if db_panel is not None:
+            try:
+                if db_panel.database_enabled_var.get():
+                    self._log(f"Database logging ingeschakeld. Project '{project_name}' wordt als gesloten gelogd.")
+                    db_panel.log_project_closed(project_name)
+                else:
+                    self._log("Database logging is niet ingeschakeld.")
+            except AttributeError:
+                self._log("[FOUT] Attribuut 'database_enabled_var' of 'log_project_closed' niet gevonden op Database paneel.")
+            except Exception as e:
+                self._log(f"[FOUT] Kon projectstatus niet loggen naar database: {e}")
+        else:
+            self._log("[WARN] Database paneel niet gevonden via self.main_app.get_panel_by_name('Database'). Overslaan database logging.")
 
         # --- 2. Email Notification ---
-        try:
-            email_panel = self.main_app.email_panel
-            self._log(f"Email-notificatie aanroepen voor project '{project_name}'.")
-            # The method itself checks if email is enabled and mode is 'per_scan'
-            email_panel.send_project_complete_email(project_name, excel_path)
-        except AttributeError:
-            self._log("[FOUT] Kon email paneel niet vinden via self.main_app.email_panel.")
-        except Exception as e:
-            self._log(f"[FOUT] Kon e-mailnotificatie niet versturen: {e}")
+        email_panel = self.main_app.get_panel_by_name("Email")
+        if email_panel is not None:
+            try:
+                email_is_enabled = email_panel.email_enabled_var.get()
+                email_mode_is_per_scan = email_panel.email_send_mode_var.get() == 'per_scan'
+
+                if email_is_enabled and email_mode_is_per_scan:
+                    self._log(f"Email-notificatie voorbereiden voor project '{project_name}' (emails ingeschakeld, modus 'per_scan').")
+                    email_panel.send_project_complete_email(project_name, excel_path)
+                elif not email_is_enabled:
+                    self._log(f"Email notificatie overgeslagen voor project '{project_name}': emails zijn niet ingeschakeld in Email paneel.")
+                elif not email_mode_is_per_scan:
+                    current_mode = email_panel.email_send_mode_var.get()
+                    self._log(f"Email notificatie overgeslagen voor project '{project_name}': email modus is '{current_mode}', niet 'per_scan'.")
+            except AttributeError:
+                self._log("[FOUT] Benodigde attributen (bv. 'email_enabled_var', 'email_send_mode_var', 'send_project_complete_email') niet gevonden op Email paneel.")
+            except Exception as e:
+                self._log(f"[FOUT] Fout bij verwerken email notificatie voor project '{project_name}': {e}")
+        else:
+            self._log("[WARN] Email paneel niet gevonden via self.main_app.get_panel_by_name('Email'). Overslaan email notificatie.")
 
 
     def on_close(self):

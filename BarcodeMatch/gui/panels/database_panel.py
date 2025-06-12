@@ -73,7 +73,7 @@ class DatabasePanel(ttk.Frame):
         db_enable_chk = ttk.Checkbutton(config_frame, text="Database Inschakelen", variable=self.database_enabled_var, command=self.toggle_database_enabled)
         db_enable_chk.grid(row=0, column=0, columnspan=2, padx=(0,10), sticky=tk.W)
         ttk.Label(config_frame, text="API URL:").grid(row=1, column=0, sticky=tk.W)
-        self.api_url_var = tk.StringVar(value=self.config.get('api_url', 'http://localhost:5000/log'))
+        self.api_url_var = tk.StringVar(value=self.config.get('api_url', 'http://localhost:5001/log'))
         api_url_entry = ttk.Entry(config_frame, textvariable=self.api_url_var, width=40)
         api_url_entry.grid(row=1, column=1, sticky=tk.W)
         ttk.Label(config_frame, text="Gebruiker:").grid(row=2, column=0, sticky=tk.W)
@@ -178,14 +178,14 @@ class DatabasePanel(ttk.Frame):
 
     def log_project_closed(self, project_name, on_error_recheck=None):
         """
-        Post a CLOSED event to the API. If POST fails and database is enabled, call on_error_recheck (if provided).
+        Post a AFGEMELD event to the API. If POST fails and database is enabled, call on_error_recheck (if provided).
         Returns True if success, False if error.
         """
         config_enabled = self.database_enabled_var.get() if hasattr(self, 'database_enabled_var') else True
-        api_url = self.api_url_var.get() if hasattr(self, 'api_url_var') else 'http://localhost:5000/log'
+        api_url = self.api_url_var.get() if hasattr(self, 'api_url_var') else 'http://localhost:5001/log'
         user = self.user_var.get() if hasattr(self, 'user_var') else 'user'
         payload = {
-            "event": "CLOSED",
+            "event": "AFGEMELD",
             "details": f"Project gesloten: {project_name}",
             "project": project_name,
             "user": user
@@ -249,7 +249,7 @@ class DatabasePanel(ttk.Frame):
             if error:
                 self.logs_tree.insert("", "end", values=("Fout", error, "", "", ""))
             found = False
-            # For each project, keep only the latest OPEN or CLOSED event per user
+            # For each project, keep only the latest OPEN or AFGEMELD event per user
             latest_status = {}
             from datetime import datetime
             for log in logs:
@@ -261,7 +261,7 @@ class DatabasePanel(ttk.Frame):
                     except Exception:
                         dt = ts
                     event = log.get('event', '').upper()
-                    if event in ('OPEN', 'CLOSED'):
+                    if event in ('OPEN', 'AFGEMELD'):
                         if project not in latest_status or (isinstance(dt, datetime) and isinstance(latest_status[project]['dt'], datetime) and dt > latest_status[project]['dt']):
                             latest_status[project] = {
                                 'dt': dt,

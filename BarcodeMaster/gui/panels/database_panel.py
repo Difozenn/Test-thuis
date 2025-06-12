@@ -57,7 +57,7 @@ class DatabasePanel(tk.Frame):
         config_frame.grid_columnconfigure(4, weight=0)
         db_enable_chk = ttk.Checkbutton(config_frame, text="Database Inschakelen", variable=self.database_enabled_var)
         db_enable_chk.grid(row=0, column=0, columnspan=2, padx=(0,10), sticky=tk.W)
-        self.api_url_var = tk.StringVar(value=self.config.get('api_url', 'http://localhost:5000/log'))
+        self.api_url_var = tk.StringVar(value=self.config.get('api_url', 'http://localhost:5001/log'))
         self.api_url_var.trace_add('write', self.save_api_url)
         self.user_var = tk.StringVar(value=self.config.get('user', os.environ.get('USERNAME', 'user')))
         self.user_var.trace_add('write', self.save_user)
@@ -143,10 +143,7 @@ class DatabasePanel(tk.Frame):
         if connected:
             self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Verbonden", foreground="green"))
         else:
-            msg = f"Niet verbonden"
-            if error_reason:
-                msg += f" ({error_reason})"
-            self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text=msg, foreground="red"))
+            self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Niet verbonden", foreground="red"))
 
     def check_connection(self):
         url = self.api_url_var.get()
@@ -183,7 +180,7 @@ class DatabasePanel(tk.Frame):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
         filename = os.path.splitext(os.path.basename(project_name))[0]
         details = f"Project {filename} gesloten op {timestamp}"
-        return self.log_event("CLOSED", details)
+        return self.log_event("AFGEMELD", details)
 
     def log_test_event(self):
         if not self.database_enabled_var.get():
@@ -207,7 +204,7 @@ class DatabasePanel(tk.Frame):
             except Exception:
                 ts_fmt = ts or ''
             details = log.get('details')
-            if log.get('event') == 'CLOSED' and details and details.startswith('Project '):
+            if log.get('event') == 'AFGEMELD' and details and details.startswith('Project '):
                 match = re.match(r"Project (.+?) gesloten op .+", details)
                 if match:
                     filename = os.path.splitext(os.path.basename(match.group(1)))[0]

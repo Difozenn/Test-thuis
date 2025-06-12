@@ -59,7 +59,7 @@ class BarcodeMatchApp:
                 print('[DB CHECK] Database disabled in config.')
                 self._set_db_status("Niet verbonden", "red")
                 return
-            url = config.get('api_url', 'http://localhost:5000/log')
+            url = config.get('api_url', 'http://localhost:5001/log')
             # Robustly replace only the trailing '/log' with '/logs'
             if url.endswith('/log'):
                 url = url[:-4] + '/logs'
@@ -84,7 +84,7 @@ class BarcodeMatchApp:
                         self._set_db_status("Verbonden", "green")
                 else:
                     print(f'[DB CHECK] Connection failed, status: {resp.status_code}, body: {resp.text}')
-                    self._set_db_status(f"Fout: {resp.status_code}", "red")
+                    self._set_db_status("Niet verbonden", "red")
             except Exception as e:
                 print(f'[DB CHECK] Exception during GET: {e}')
                 self._set_db_status("Niet verbonden", "red")
@@ -112,7 +112,7 @@ class BarcodeMatchApp:
                 print('[DB CHECK] Database disabled in config.')
                 self._set_db_status("Niet verbonden", "red")
                 return
-            url = config.get('api_url', 'http://localhost:5000/log')
+            url = config.get('api_url', 'http://localhost:5001/log')
             # Robustly replace only the trailing '/log' with '/logs'
             if url.endswith('/log'):
                 url = url[:-4] + '/logs'
@@ -137,7 +137,7 @@ class BarcodeMatchApp:
                         self._set_db_status("Verbonden", "green")
                 else:
                     print(f'[DB CHECK] Connection failed, status: {resp.status_code}, body: {resp.text}')
-                    self._set_db_status(f"Fout: {resp.status_code}", "red")
+                    self._set_db_status("Niet verbonden", "red")
             except Exception as e:
                 print(f'[DB CHECK] Exception during GET: {e}')
                 self._set_db_status("Niet verbonden", "red")

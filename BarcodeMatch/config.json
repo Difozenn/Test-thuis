@@ -1,10 +1,10 @@
 {
     "buildnr": "v2",
     "database_enabled": true,
-    "api_url": "http://192.168.244.160:5001/log",
+    "api_url": "http://localhost:5001/log",
     "user": "OPUS",
     "default_scanner_type": "USB",
-    "default_base_dir": "Y:\\Kl_Gannomat\\backend\\jobs",
+    "default_base_dir": "C:/OPUS",
     "default_scan_mode": "OPUS",
     "email_sender": "",
     "email_receiver": "",
@@ -15,7 +15,7 @@
     "email_enabled": false,
     "email_send_mode": "daily",
     "Paths": {
-        "last_excel_file": "Y:/OPUS/KORPUS/0526_a/0526_a.xlsx"
+        "last_excel_file": "C:/Users/Rob_v/Desktop/Hops-File-logger-main/0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx"
     },
     "Scanner": {
         "type": "USB",

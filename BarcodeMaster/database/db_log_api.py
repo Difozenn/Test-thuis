@@ -76,8 +76,8 @@ def log_event():
         status = ''
         if event == 'OPEN':
             status = 'OPEN'
-        elif event == 'CLOSED':
-            status = 'CLOSED'
+        elif event == 'AFGEMELD':
+            status = 'AFGEMELD'
             # Check if any relevant OPEN logs exist for this project and user
             try:
                 c.execute('SELECT id, project, user FROM logs WHERE event = ? AND status = ? AND project IS NOT NULL AND user IS NOT NULL', ('OPEN', 'OPEN'))
@@ -88,21 +88,21 @@ def log_event():
                     db_project = row['project'] if isinstance(row, sqlite3.Row) else row[1]
                     db_user = row['user'] if isinstance(row, sqlite3.Row) else row[2]
                     if db_project and db_project.lower() == project.lower() and db_user == user:
-                        c.execute('UPDATE logs SET status = ? WHERE id = ?', ('CLOSED', row['id']))
+                        c.execute('UPDATE logs SET status = ? WHERE id = ?', ('AFGEMELD', row['id']))
                         matched_project_case = db_project  # Use the case from the matched OPEN event
                         found_open = True
                 project = matched_project_case
                 conn.commit()
                 if not found_open:
                     # Check if all relevant logs are already closed
-                    c.execute('SELECT COUNT(*) FROM logs WHERE project IS NOT NULL AND user IS NOT NULL AND lower(project) = ? AND user = ? AND status = ?', (project.lower(), user, 'CLOSED'))
+                    c.execute('SELECT COUNT(*) FROM logs WHERE project IS NOT NULL AND user IS NOT NULL AND lower(project) = ? AND user = ? AND status = ?', (project.lower(), user, 'AFGEMELD'))
                     closed_count = c.fetchone()[0]
                     if closed_count > 0:
-                        logging.info(f"  [INFO] CLOSED event ignored: project '{project}' for user '{user}' already closed.")
+                        logging.info(f"  [INFO] AFGEMELD event ignored: project '{project}' for user '{user}' already closed.")
                         conn.close()
                         return jsonify({'success': False, 'error': 'Project already closed', 'already_closed': True}), 200
             except Exception as e:
-                logging.info(f"  [EXCEPTION] Failed to update OPEN logs to CLOSED: {e}")
+                logging.info(f"  [EXCEPTION] Failed to update OPEN logs to AFGEMELD: {e}")
         c.execute('INSERT INTO logs (timestamp, event, details, project, status, user) VALUES (?, ?, ?, ?, ?, ?)',
                   (timestamp, event, details, project, status, user))
         conn.commit()
@@ -199,7 +199,7 @@ def logs_html():
         except Exception:
             ts_fmt = ts or ''
         details = row["details"]
-        if row["event"] == "CLOSED" and details and details.startswith("Project "):
+        if row["event"] == "AFGEMELD" and details and details.startswith("Project "):
             match = re.match(r"Project (.+?) gesloten op .+", details)
             if match:
                 filename = os.path.splitext(os.path.basename(match.group(1)))[0]
@@ -207,7 +207,7 @@ def logs_html():
         html += f'<tr>'
         html += f'<td>{row["id"]}</td>'
         html += f'<td>{ts_fmt}</td>'
-        event_display = 'AFGEMELD' if row["event"] == "CLOSED" else row["event"]
+        event_display = 'AFGEMELD' if row["event"] == "AFGEMELD" else row["event"]
         html += f'<td>{event_display}</td>'
         html += f'<td>{details}</td>'
         # Robust project/status access for sqlite3.Row, dict, or tuple
@@ -430,4 +430,4 @@ def logs_project():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)

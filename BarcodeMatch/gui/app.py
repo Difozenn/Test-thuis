@@ -7,6 +7,7 @@ from gui.panels.scanner_panel import ScannerPanel
 from gui.panels.email_panel import EmailPanel
 from gui.panels.database_panel import DatabasePanel
 from gui.panels.help_panel import HelpPanel
+from gui.panels.settings_panel import SettingsPanel
 import os
 
 from gui.menu import create_menu
@@ -17,7 +18,7 @@ import json
 from config_utils import get_config_path, load_config
 
 class BarcodeMatchApp:
-    def __init__(self, root):
+    def __init__(self, root, skip_preload=False):
         self.root = root
         self.root.title("BarcodeMatch")
         self._set_icon()
@@ -27,19 +28,60 @@ class BarcodeMatchApp:
         self.db_connection_status_color = "red"
         self._db_status_callbacks = []
 
-        # Instantiate panels only once and store them
-        self.panels = {
-            "Import": ImportPanel(self.root, self),
-            "Scanner": ScannerPanel(self.root, self),
-            "Email": EmailPanel(self.root, self),
-            "Database": DatabasePanel(self.root, self),
-            "Help": HelpPanel(self.root, self),
+        # Initialize panels lazily - only create when needed
+        self.panels = {}
+        self._panel_classes = {
+            "Import": ImportPanel,
+            "Scanner": ScannerPanel,
+            "Email": EmailPanel,
+            "Database": DatabasePanel,
+            "Help": HelpPanel,
+            "Settings": SettingsPanel,
         }
+        
         self.current_panel_name = None
+        
+        # Create menu and start background services
         create_menu(self.root, self)
         self._start_db_connection_check()
+        
+        # Pre-load critical panels in background
+        if not skip_preload:
+            self._preload_critical_panels()
+
+    def _preload_critical_panels(self):
+        """Pre-load critical panels in background thread"""
+        def preload():
+            try:
+                # Pre-load Scanner panel as it's most commonly used
+                print('[DIAG] Pre-loading Scanner panel...')
+                self.get_panel_by_name("Scanner")
+                print('[DIAG] Scanner panel pre-loaded')
+                
+                # Pre-load Database panel for connection status
+                print('[DIAG] Pre-loading Database panel...')
+                self.get_panel_by_name("Database")
+                print('[DIAG] Database panel pre-loaded')
+            except Exception as e:
+                print(f'[DIAG ERROR] Panel pre-loading failed: {e}')
+        
+        threading.Thread(target=preload, daemon=True).start()
 
     def get_panel_by_name(self, name):
+        """Get panel by name, creating it lazily if needed"""
+        if name not in self.panels:
+            if name in self._panel_classes:
+                print(f'[DIAG] Creating panel: {name}')
+                try:
+                    panel_class = self._panel_classes[name]
+                    self.panels[name] = panel_class(self.root, self)
+                    print(f'[DIAG] Panel created successfully: {name}')
+                except Exception as e:
+                    print(f'[DIAG ERROR] Failed to create panel {name}: {e}')
+                    return None
+            else:
+                print(f'[DIAG ERROR] Unknown panel name: {name}')
+                return None
         return self.panels.get(name)
 
     def subscribe_db_status(self, callback):
@@ -165,7 +207,8 @@ class BarcodeMatchApp:
             "Scanner": "scanner.png",
             "Email": "email.png",
             "Database": "database.png",
-            "Help": "help.png"
+            "Help": "help.png",
+            "Settings": "settings.png"
         }
         self.tab_images = {}
         for name, filename in tab_icon_files.items():
@@ -232,16 +275,44 @@ def run_app():
     print('[DIAG] run_app() called')
     root = tk.Tk()
     root.withdraw()  # Hide main window for splash
+    
     from gui.splashscreen import SplashScreen
     import os
     logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'Logo.png')
     splash = SplashScreen(root, logo_path, duration=2000)
-    root.after(2000, lambda: (root.deiconify()))
-    app = BarcodeMatchApp(root)
-    root.mainloop()
-    print('[DIAG] BarcodeMatchApp created')
+
+    # Force the splash screen to draw immediately
+    splash.update_idletasks()
+    splash.update()
+
+    # This function will run in the background to initialize the app
+    def background_init():
+        """Initialize the application in a background thread."""
+        try:
+            print('[DIAG] Background initialization started')
+            # Create the app instance. Its own __init__ will start background tasks.
+            BarcodeMatchApp(root)
+            print('[DIAG] Background initialization completed')
+        except Exception as e:
+            print(f'[DIAG ERROR] Background initialization failed: {e}')
+            import traceback
+            traceback.print_exc()
+
+    # Start the background initialization
+    init_thread = threading.Thread(target=background_init, daemon=True)
+    init_thread.start()
+
+    # This function will run after the 2-second splash duration
+    def show_main_window():
+        splash.destroy()
+        root.deiconify()
+
+    # Schedule the main window to appear after 2 seconds
+    root.after(2000, show_main_window)
+    
     root.mainloop()
     print('[DIAG] mainloop exited')
+
 
 if __name__ == "__main__":
     print('[DIAG] __main__ entry, calling run_app()')

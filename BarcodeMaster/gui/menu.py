@@ -20,7 +20,7 @@ MENU_OPTIONS = [
 
 
 def create_menu(root):
-    menu_frame = tk.Frame(root, bg="#f0f0f0", height=75)
+    menu_frame = tk.Frame(root, height=75, bg="#e0e0e0", highlightthickness=0, bd=0, relief=tk.FLAT)
     menu_frame.pack(side=tk.TOP, fill=tk.X)
     menu_frame.pack_propagate(False)
 
@@ -38,9 +38,9 @@ def create_menu(root):
     def update_tabs():
         for idx, btn in enumerate(root._tab_buttons):
             if idx == root.active_tab.get():
-                btn.config(bg="#d0e0ff", relief=tk.SUNKEN)
+                btn.config(bg="#d0e0ff", relief=tk.FLAT, bd=0, highlightthickness=0)
             else:
-                btn.config(bg="#f0f0f0", relief=tk.RAISED)
+                btn.config(bg="#e0e0e0", relief=tk.FLAT, bd=0, highlightthickness=0)
 
     def open_panel_idx(idx):
         # Destroy any existing panels
@@ -55,8 +55,8 @@ def create_menu(root):
         update_tabs()
 
     for idx, opt in enumerate(MENU_OPTIONS):
-        btn = tk.Button(menu_frame, image=icon_img, command=lambda i=idx: open_panel_idx(i), width=75, height=75, bg="#f0f0f0", relief=tk.RAISED, bd=2)
-        btn.pack(side=tk.LEFT, padx=5, pady=0, fill=tk.Y)
+        btn = tk.Button(menu_frame, image=icon_img, command=lambda i=idx: open_panel_idx(i), width=75, height=75, relief=tk.FLAT, bd=0, bg="#e0e0e0", highlightthickness=0, overrelief=tk.FLAT)
+        btn.pack(side=tk.LEFT, pady=0, fill=tk.Y)
         root._tab_buttons.append(btn)
 
     # Open the first tab by default

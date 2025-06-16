@@ -186,7 +186,7 @@ class DatabasePanel(ttk.Frame):
         user = self.user_var.get() if hasattr(self, 'user_var') else 'user'
         payload = {
             "event": "AFGEMELD",
-            "details": f"Project gesloten: {project_name}",
+            "details": f"{project_name} afgemeld aan {user}",
             "project": project_name,
             "user": user
         }

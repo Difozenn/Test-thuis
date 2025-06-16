@@ -15,11 +15,12 @@
     "email_enabled": false,
     "email_send_mode": "daily",
     "Paths": {
-        "last_excel_file": "C:/Users/Rob_v/Desktop/Hops-File-logger-main/0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx"
+        "last_excel_file": ""
     },
     "Scanner": {
         "type": "USB",
         "com_port": "",
         "baud_rate": "9600"
-    }
+    },
+    "archive_on_all_ok": false
 }

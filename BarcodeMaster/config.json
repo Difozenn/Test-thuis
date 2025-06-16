@@ -1,16 +1,34 @@
 {
     "database_enabled": true,
     "api_url": "http://localhost:5001/log",
-    "user": "NESTING",
+    "user": "ACCURA",
     "admin_db_init_enabled": true,
     "scanner_panel_com_port": "",
-    "scanner_panel_type": "COM",
+    "scanner_panel_type": "USB",
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
-        "GANNOMAT",
-        "OPUS"
+        "OPUS",
+        "KL GANNOMAT",
+        "ACCURA"
     ],
+    "scanner_user_to_processing_type_map": {
+        "OPUS": "HOPS_PROCESSING",
+        "KL GANNOMAT": "MDB_PROCESSING",
+        "ACCURA": "GEEN_PROCESSING"
+    },
     "scanner_panel_event_type": "OPEN",
-    "scanner_panel_event_type_locked": true,
-    "database_panel_api_config_locked": true
+    "scanner_panel_event_type_locked": false,
+    "database_panel_api_config_locked": false,
+    "scanner_panel_open_event_user_logic_active": {
+        "OPUS": true,
+        "KL GANNOMAT": true,
+        "ACCURA": false
+    },
+    "scanner_panel_baud_rate": "9600",
+    "scanner_panel_com_connected": false,
+    "scanner_panel_open_event_user_paths": {
+        "OPUS": "C:/OPUS/KORPUS",
+        "KL GANNOMAT": "C:/GANNOMAT"
+    },
+    "master_background_service_active": true
 }

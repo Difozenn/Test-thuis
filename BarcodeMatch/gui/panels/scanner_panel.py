@@ -8,6 +8,7 @@ import serial
 import serial.tools.list_ports
 import os
 import re
+import re
 from config_utils import load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
@@ -281,7 +282,7 @@ class ScannerPanel(ttk.Frame):
             self.tree.delete(*self.tree.get_children()) # Clear existing tree items
 
             for index, row in df.iterrows():
-                barcode_val = str(row['Item'])
+                barcode_val = str(row['Item']).strip() # Strip leading/trailing whitespace
                 description_val = str(row['Omschrijving']) if 'Omschrijving' in df.columns else ""
 
                 # --- Start of new logic for status handling ---
@@ -350,7 +351,23 @@ class ScannerPanel(ttk.Frame):
     def _check_barcode(self, barcode):
         """Controleert de gescande barcode aan de hand van de geladen gegevens en werkt de UI bij."""
         self._log(f"Barcode controleren: {barcode}")
+
+        # Prioritize an exact match (fast and default)
         item = self.barcode_data.get(barcode)
+        original_barcode_from_excel = barcode if item else None
+
+        # If no exact match, try a more lenient match by ignoring all whitespace
+        if not item:
+            self._log(f"Exacte match niet gevonden. Poging tot een meer flexibele match...")
+            # Normalize by removing all whitespace characters
+            normalized_scanned = re.sub(r'\s', '', barcode)
+            for key, value in self.barcode_data.items():
+                normalized_key = re.sub(r'\s', '', key)
+                if normalized_key == normalized_scanned:
+                    item = value
+                    original_barcode_from_excel = key
+                    self._log(f"Flexibele match gevonden! Scanner: '{barcode}', Excel: '{original_barcode_from_excel}'")
+                    break # Stop after finding the first match
 
         if not item:
             self._log(f"[NIET GEVONDEN] Barcode {barcode} niet in de lijst.")
@@ -360,12 +377,15 @@ class ScannerPanel(ttk.Frame):
         item_id = item['id']
         current_status = item['status']
 
+        # Use the original barcode from Excel for logging if a lenient match was found
+        log_barcode = original_barcode_from_excel
+
         if current_status == 'OK' or current_status == 'DUPLICAAT': # Behandel DUPLICAAT ook als al OK
-            self._log(f"[DUPLICAAT] Barcode {barcode} al gescand als OK.")
+            self._log(f"[DUPLICAAT] Barcode {log_barcode} al gescand als OK.")
             item['status'] = 'DUPLICAAT' # Zorg ervoor dat de status DUPLICAAT is
             self._update_treeview(item_id, 'DUPLICATE') # Gebruik de Engelse tag voor consistentie met tag_configure
         else:
-            self._log(f"[OK] Barcode {barcode} komt overeen.")
+            self._log(f"[OK] Barcode {log_barcode} komt overeen.")
             item['status'] = 'OK'
             self._update_treeview(item_id, 'OK')
             self._save_updated_excel() # Save changes
@@ -373,17 +393,93 @@ class ScannerPanel(ttk.Frame):
 
 
     def _all_items_ok_check(self):
-        """Checks if all items in the list are marked as 'OK' or 'DUPLICATE'.
-        If so, triggers the project completion actions.
-        """
+        """Checks if all items are OK, then triggers completion actions and optional archiving."""
         if not self.barcode_data:
             return
 
-        all_scanned_correctly = all(item['status'] in ('OK', 'DUPLICATE') for item in self.barcode_data.values())
+        all_ok = all(item['status'] in ['OK', 'DUPLICATE'] for item in self.barcode_data.values())
 
-        if all_scanned_correctly:
-            self._log("Alle items zijn gescand als OK. Start voltooiingsacties...")
+        if all_ok:
+            self._log("Alle items zijn OK. Voltooiingsacties worden gestart.")
+            
+            # Perform the main completion actions (DB, email, etc.).
+            # This function will show its own completion message.
             self._perform_completion_actions()
+
+            # Now, handle archiving.
+            config = _load_full_config()
+            archive_enabled = config.get('archive_on_all_ok', False)
+
+            if archive_enabled:
+                self._log("Archivering is ingeschakeld. Starten met archiveren.")
+                # Use 'after' to avoid blocking the UI thread for the archiving process.
+                # _archive_files will show its own message and then clear the panel.
+                self.after(100, self._archive_files)
+            else:
+                self._log("Archivering is uitgeschakeld. Paneel wordt gereset om een nieuwe batch te starten.")
+                # If not archiving, we still need to clear the panel to start a new batch.
+                self._clear_panel_state()
+
+    def _archive_files(self):
+        """Archives the original and updated Excel files to an 'Archief' subfolder."""
+        original_path = self.excel_file_path_var.get()
+        if not original_path:
+            self._log("[FOUT] Kan niet archiveren: geen Excel-bestandspad beschikbaar.")
+            messagebox.showerror("Archiveringsfout", "Kan niet archiveren: geen Excel-bestandspad beschikbaar.")
+            return
+
+        updated_path = self._generate_updated_path(original_path)
+        
+        try:
+            directory = os.path.dirname(original_path)
+            archive_dir = os.path.join(directory, "Archief")
+            
+            if not os.path.exists(archive_dir):
+                os.makedirs(archive_dir)
+                self._log(f"Archiefmap aangemaakt: {archive_dir}")
+
+            files_to_move = []
+            if os.path.exists(original_path):
+                files_to_move.append(original_path)
+            if updated_path and os.path.exists(updated_path):
+                files_to_move.append(updated_path)
+
+            if not files_to_move:
+                self._log("Geen bestanden gevonden om te archiveren.")
+                messagebox.showwarning("Archiveren", "Kon de Excel-bestanden niet vinden om te archiveren.")
+                return
+
+            for file_path in files_to_move:
+                filename = os.path.basename(file_path)
+                destination = os.path.join(archive_dir, filename)
+                
+                if os.path.exists(destination):
+                    name, ext = os.path.splitext(filename)
+                    timestamp = time.strftime("%Y%m%d-%H%M%S")
+                    new_filename = f"{name}_{timestamp}{ext}"
+                    destination = os.path.join(archive_dir, new_filename)
+                    self._log(f"[WAARSCHUWING] Bestemming '{filename}' bestaat al. Hernoemen naar '{new_filename}'.")
+
+                os.rename(file_path, destination)
+                self._log(f"'{filename}' gearchiveerd naar '{destination}'")
+
+            messagebox.showinfo("Archivering Voltooid", 
+                                "Alle items zijn OK. De bestanden zijn gearchiveerd in de map 'Archief'.")
+            
+            self._clear_panel_state()
+
+        except Exception as e:
+            self._log(f"[FOUT] Fout tijdens archiveren: {e}")
+            messagebox.showerror("Archiveringsfout", f"Er is een fout opgetreden tijdens het archiveren van de bestanden:\n{e}")
+
+    def _clear_panel_state(self):
+        """Resets the panel to its initial state after completion and/or archiving."""
+        self.tree.delete(*self.tree.get_children())
+        self.barcode_data.clear()
+        self.excel_file_path_var.set("")
+        self._log("Paneel gereset.")
+        self._set_config_setting('Paths', 'last_excel_file', '')
+        self.save_config()
 
     def _update_com_ports(self):
         """Updates the list of available COM ports."""
@@ -698,9 +794,14 @@ class ScannerPanel(ttk.Frame):
             return
 
         filename = os.path.basename(excel_path)
+        # First try to extract project code using standard pattern
         match = re.search(r'_([A-Z]{2}\d+)_', filename)
         if match:
             project_name = match.group(1)
+            # Check if filename contains _REP patterns (case insensitive)
+            filename_upper = filename.upper()
+            if "_REP_" in filename_upper or "_REP" in filename_upper:
+                project_name = f"{project_name}_REP"
             self._log(f"Project-ID '{project_name}' geëxtraheerd uit bestandsnaam '{filename}'.")
         else:
             project_name = os.path.splitext(filename)[0]

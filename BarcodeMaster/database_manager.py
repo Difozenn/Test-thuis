@@ -1,7 +1,7 @@
 import threading
 import requests
 import time
-from config_utils import get_config
+from BarcodeMaster.config_utils import get_config
 
 class DatabaseManager:
     _instance = None

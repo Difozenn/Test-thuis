@@ -9,6 +9,7 @@ from gui.panels.scanner_panel import ScannerPanel
 from gui.panels.email_panel import EmailPanel
 from gui.panels.database_panel import DatabasePanel
 from gui.panels.help_panel import HelpPanel
+from gui.panels.settings_panel import SettingsPanel
 
 MENU_OPTIONS = [
     {"name": "Import", "panel": ImportPanel, "icon": "importeren.png"},
@@ -16,11 +17,12 @@ MENU_OPTIONS = [
     {"name": "Email", "panel": EmailPanel, "icon": "email.png"},
     {"name": "Database", "panel": DatabasePanel, "icon": "database.png"},
     {"name": "Help", "panel": HelpPanel, "icon": "help.png"},
+    {"name": "Settings", "panel": SettingsPanel, "icon": "settings.png"},
 ]
 
 def create_menu(root, main_app):
     menu_frame = tk.Frame(root, bg="#f0f0f0", height=75)
-    menu_frame.pack(side=tk.TOP, fill=tk.X)
+    menu_frame.pack(side=tk.TOP, fill=tk.X, padx=(5, 0))
     menu_frame.pack_propagate(False)
 
     # Load icons for each menu option
@@ -45,11 +47,12 @@ def create_menu(root, main_app):
         MENU_BG = "#f0f0f0"
         for idx, (btn, frame) in enumerate(zip(root._tab_buttons, root._tab_frames)):
             if idx == root.active_tab.get():
-                frame.config(bg="white", highlightbackground="white", highlightcolor="white", highlightthickness=2)
-                btn.config(bg=MENU_BG, activebackground="#d0e0ff", relief=tk.RAISED)
+                # Frame should not be highlighted, button color indicates active state
+                frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
+                btn.config(bg="#d0e0ff", relief=tk.FLAT)
             else:
                 frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
-                btn.config(bg=MENU_BG, activebackground="#d0e0ff", relief=tk.RAISED)
+                btn.config(bg=MENU_BG, relief=tk.FLAT)
 
     def open_panel_idx(idx):
         # Hide any existing panel
@@ -80,11 +83,11 @@ def create_menu(root, main_app):
             frame,
             image=icon_imgs[idx],
             command=lambda i=idx: open_panel_idx(i),
-            width=67, height=67,
+            width=75, height=75,
             bg=MENU_BG,
             activebackground="#d0e0ff",
             activeforeground="black",
-            relief=tk.RAISED,
+            relief=tk.FLAT,
             bd=0,
             highlightthickness=0,
             takefocus=0

@@ -5,17 +5,19 @@ import os
 import re
 import json
 import requests
-from config_utils import get_config, save_config
-from database_manager import DatabaseManager
+import threading
+from BarcodeMaster.config_utils import get_config, save_config
 
 PANEL_BG = "#f0f0f0"
 
 class DatabasePanel(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, app):
         super().__init__(master, bg=PANEL_BG)
+        self.app = app
         self.config = get_config()
-        self.manager = DatabaseManager()
+        self.api_status_thread_stop = threading.Event()
         self.build_panel()
+        self.start_api_status_thread()
 
     def toggle_database_enabled(self, *args):
         save_config({'database_enabled': self.database_enabled_var.get()})
@@ -64,9 +66,6 @@ class DatabasePanel(tk.Frame):
         # Lock state
         self.api_config_locked = self.config.get('database_panel_api_config_locked', False)
         self.api_lock_btn = ttk.Button(config_frame, text="Lock" if not self.api_config_locked else "Unlock", command=self.toggle_api_config_lock)
-        self._api_lock_btn_gridded = False
-        # Do not grid yet; controlled by set_lock_button_visibility
-        # self.api_lock_btn.grid(row=0, column=3, padx=(10,0), sticky=tk.E)
         ttk.Label(config_frame, text="API URL:").grid(row=1, column=0, sticky=tk.W, pady=(8,0))
         self.api_url_entry = ttk.Entry(config_frame, textvariable=self.api_url_var, width=40)
         self.api_url_entry.grid(row=1, column=1, sticky=tk.W)
@@ -82,13 +81,30 @@ class DatabasePanel(tk.Frame):
         # Restore API config lock UI state on panel creation
         self.apply_api_config_lock_ui()
 
+        self._create_lock_button()
+
+    def _create_lock_button(self):
+        self.lock_button_frame = tk.Frame(self, bg=PANEL_BG)
+        self.lock_button = ttk.Button(
+            self.lock_button_frame,
+            text="Admin Panel Vergrendelen",
+            command=self.app.lock_admin_panel
+        )
+        self.lock_button.pack(pady=10)
+
     def set_lock_button_visibility(self, visible):
-        if visible and not self._api_lock_btn_gridded:
+        """Shows or hides the admin lock button."""
+        if visible and self.winfo_exists():
+            self.lock_button_frame.pack(side='bottom', fill='x')
+        elif self.winfo_exists():
+            self.lock_button_frame.pack_forget()
+
+    def set_config_lock_visibility(self, visible):
+        """Shows or hides the API config lock button based on admin lock state."""
+        if visible and self.winfo_exists():
             self.api_lock_btn.grid(row=0, column=3, padx=(10,0), sticky=tk.E)
-            self._api_lock_btn_gridded = True
-        elif not visible and self._api_lock_btn_gridded:
-            self.api_lock_btn.grid_remove()
-            self._api_lock_btn_gridded = False
+        elif self.winfo_exists():
+            self.api_lock_btn.grid_forget()
 
     def save_api_url(self, *args):
         save_config({'api_url': self.api_url_var.get()})
@@ -128,7 +144,7 @@ class DatabasePanel(tk.Frame):
     def test_connection(self):
         url = self.api_url_var.get()
         try:
-            resp = requests.post(url, json={"event": "test_connect", "details": "Test verbinding", "user": self.user_var.get()}, timeout=3)
+            resp = requests.get(url, timeout=3)  # Changed to GET, removed JSON payload
             if resp.status_code == 200 and resp.json().get('success'):
                 self.set_connection_status(True)
                 messagebox.showinfo("Succes", "Verbinding met API geslaagd!")
@@ -189,33 +205,19 @@ class DatabasePanel(tk.Frame):
         if self.log_event("test_event", "Dit is een test van REST API logging."):
             messagebox.showinfo("Gelukt", "Test event gelogd naar centrale logging API.")
 
-    def refresh_logs_from_manager(self):
-        logs = self.manager.get_logs()
-        self.logs_tree.delete(*self.logs_tree.get_children())
-        from datetime import datetime
-        for log in logs:
-            event = log.get('event', '')
-            if event in ('test_connect', 'test_event'):
-                continue
-            ts = log.get('timestamp')
-            try:
-                dt = datetime.fromisoformat(ts)
-                ts_fmt = dt.strftime('%Y-%m-%d %H:%M')
-            except Exception:
-                ts_fmt = ts or ''
-            details = log.get('details')
-            if log.get('event') == 'AFGEMELD' and details and details.startswith('Project '):
-                match = re.match(r"Project (.+?) gesloten op .+", details)
-                if match:
-                    filename = os.path.splitext(os.path.basename(match.group(1)))[0]
-                    details = filename
-            self.logs_tree.insert('', 'end', values=(log.get('project', ''), ts_fmt, log.get('event'), details, log.get('status', ''), log.get('user')))
+    def start_api_status_thread(self):
+        threading.Thread(target=self._check_api_status_loop, daemon=True).start()
 
-    def periodic_update(self):
-        # Update status label
-        status, color = self.manager.get_status()
-        if self.connection_status_label.winfo_exists():
-            self.connection_status_label.config(text=status, foreground=color)
-        # Update logs
-        self.refresh_logs_from_manager()
-        self.after(1000, self.periodic_update)
+    def _check_api_status_loop(self):
+        while not self.api_status_thread_stop.is_set():
+            # Use the new service_status object for consistent state
+            api_status_str = self.app.service_status.services.get('db_api', 'stopped').upper()
+            is_active = "RUNNING" in api_status_str
+            if self.winfo_exists():
+                self.set_connection_status(is_active)
+            self.api_status_thread_stop.wait(1)
+
+    def shutdown(self):
+        """Graceful shutdown method to be called on application close."""
+        if hasattr(self, 'api_status_thread_stop'):
+            self.api_status_thread_stop.set()

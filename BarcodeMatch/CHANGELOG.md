@@ -4,6 +4,25 @@ Alle belangrijke wijzigingen aan dit project worden in dit bestand bijgehouden.
 
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/) (Nederlandse versie als beschikbaar, anders Engelse link behouden).
 
+## [Nog Niet Uitgebracht] - 2025-06-13
+
+### Changed
+- **Scannerpaneel: Verbeterde "_REP_" Projectcode Logica**
+  - De projectcode-extractie uit Excel-bestandsnamen is verbeterd om dynamisch "_REP" projectcodes te herkennen.
+  - Ondersteunt nu zowel "_REP_" als "_REP" patronen (hoofdletterongevoelig).
+  - Wanneer een bestandsnaam deze patronen bevat, wordt automatisch "_REP" toegevoegd aan de geëxtraheerde projectcode (bijv. "MO07544" wordt "MO07544_REP").
+  - Dit zorgt voor consistente behandeling van _REP_ projecten in database logging en e-mailnotificaties.
+  - Betreft: `gui/panels/scanner_panel.py`
+
+### Added
+- **Verbeterde Opstartprocedure met Achtergrond Threading**
+  - Applicatie-initialisatie verplaatst naar achtergrondthread voor snellere startup.
+  - Lazy loading van panelen - panelen worden alleen gemaakt wanneer nodig.
+  - Verbeterd splash screen met voortgangsindicatie tijdens laden.
+  - Kritieke panelen (Scanner, Database) worden vooraf geladen in achtergrond.
+  - Nieuwe `startup_utils.py` module voor herbruikbare startup management.
+  - Betreft: `gui/app.py`, `gui/splashscreen.py`, `startup_utils.py`
+
 ## [Nog Niet Uitgebracht] - 2025-06-10
 
 ### Changed
@@ -21,12 +40,21 @@ Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0
 - `scanner_panel.py`: De `build_tab` methode is gerefactord om een `ttk.PanedWindow` te gebruiken voor de hoofdinhoudsgebieden.
 
 ### Opgelost
+- **Scannerpaneel: Voltooiingsacties (Database/E-mail) mislukten**
+  - Een bug verholpen waarbij de database- en e-mailfuncties niet werden uitgevoerd nadat alle items waren gescand. De logica is gecorrigeerd zodat voltooiingsacties nu correct worden uitgevoerd, onafhankelijk van de archiveringsinstelling.
 - **Scannerpaneel: Laden van Status**
     - Een probleem verholpen waarbij itemstatussen (bijv. 'OK') uit `_updated.xlsx` bestanden niet correct werden gelezen en toegepast op de treeview bij het opstarten. De treeview geeft nu de opgeslagen statussen correct weer bij het laden van een bestand.
 - **Importpaneel: Crash bij Scannen Tussen Schijven**
     - Een crash verholpen in het Importpaneel die optrad wanneer de geselecteerde scanmap (bijv. op schijf `Y:`) en de basismap (bijv. op schijf `C:`) zich op verschillende schijven bevonden. De applicatie handelt deze situatie nu correct af zonder fouten.
 
+### Gewijzigd
+- In het Instellingen-paneel is de kop "Instellingen" verwijderd en zijn de beschrijvingen van de instellingen veranderd in tooltips voor een schonere interface.
+
 ### Toegevoegd
+- Instellingen paneel toegevoegd met een bijbehorende menuknop.
+- **Scannerpaneel: Automatische Archivering**
+  - Een nieuwe instelling toegevoegd in het Instellingen-paneel om Excel-bestanden (`.xlsx` en `_updated.xlsx`) automatisch te archiveren.
+  - Wanneer deze optie is ingeschakeld en alle items in een lijst als 'OK' zijn gemarkeerd, worden de bestanden verplaatst naar een nieuwe 'Archief'-map in dezelfde directory.
 - **Scannerpaneel: Persistente Statusupdates**
     - Wanneer de status van een item verandert (gescand, gemarkeerd als OK/Niet OK), wordt de volledige lijst opgeslagen in een `_updated.xlsx` bestand (bijv. `originele_naam_updated.xlsx`).
     - Bij het laden van een Excel-bestand (via Bladeren of bij opstarten vanuit `last_excel_file`), controleert het systeem nu automatisch op een `_updated.xlsx` versie en laadt deze indien aanwezig. Anders wordt het originele bestand geladen.
@@ -50,6 +78,3 @@ Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0
 - `scanner_panel.py`: `_check_barcode`, `_mark_item_ok`, `_mark_item_not_ok` aangepast om opslaan naar `_updated.xlsx` te activeren.
 - `scanner_panel.py`: `_all_items_ok_check` aangepast om methoden voor databaselogging en e-mailnotificatie aan te roepen.
 - `email_panel.py`: Herzien om volledige SMTP e-mailverzendmogelijkheden op te nemen.
-
-
-

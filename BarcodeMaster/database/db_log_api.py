@@ -128,6 +128,35 @@ def delete_log_entry(log_id):
         logging.error(f"[db_log_api] Failed to delete log entry {log_id}: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/clear_logs', methods=['POST'])
+def clear_all_logs():
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('DELETE FROM logs')
+        # Optional: Reset the autoincrement counter for SQLite
+        c.execute('DELETE FROM sqlite_sequence WHERE name="logs"')
+        conn.commit()
+        conn.close()
+        logging.info("[db_log_api] All log entries have been deleted.")
+        return jsonify({'success': True, 'message': 'All log entries cleared successfully.'}), 200
+    except Exception as e:
+        logging.error(f"[db_log_api] Failed to clear logs: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/logs/count', methods=['GET'])
+def get_logs_count():
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT COUNT(*) FROM logs')
+        count = c.fetchone()[0]
+        conn.close()
+        return jsonify({'success': True, 'count': count}), 200
+    except Exception as e:
+        logging.error(f"[db_log_api] Failed to get log count: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/logs', methods=['GET'])
 def get_logs():
     conn = get_db()

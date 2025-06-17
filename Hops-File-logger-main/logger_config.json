@@ -1,0 +1,12 @@
+{
+
+    "scan_interval_seconds": 30,
+    "excel_report_dir": "Y:\\OPUS\\RAPORTEN",
+    "seen_entries_file": "C:\\Users\\opususer\\Desktop\\Test\\Hops-File-logger-main\\.seen_entries.json",
+    "categories_file": "C:\\Users\\opususer\\Desktop\\Test\\Hops-File-logger-main\\categories.json",
+    "scan_files": [
+        "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
+        "C:\\TwinCAT\\CNC\\sub\\Field2.nc"
+    ]
+}

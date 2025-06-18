@@ -1,4 +1,6 @@
+import time
 import tkinter as tk
+import re
 from tkinter import ttk, messagebox, filedialog
 import serial.tools.list_ports
 import serial
@@ -72,6 +74,17 @@ class ScannerPanel(tk.Frame):
         self.event_frame = tk.LabelFrame(self, text="Event Type", bg="#f0f0f0", padx=10, pady=5)
         self.event_frame.pack(pady=(0, 10), fill='x', padx=20)
 
+        # --- Log Viewer Frame ---
+        self.log_viewer_frame = tk.LabelFrame(self, text="Log Viewer", bg="#f0f0f0", padx=10, pady=5)
+        self.log_viewer_frame.pack(pady=(0, 10), fill='both', expand=True, padx=20)
+
+        self.log_text = tk.Text(self.log_viewer_frame, height=10, bg="white", fg="black", state='disabled', wrap=tk.WORD)
+        self.log_scroll = tk.Scrollbar(self.log_viewer_frame, command=self.log_text.yview)
+        self.log_text.config(yscrollcommand=self.log_scroll.set)
+
+        self.log_scroll.pack(side='right', fill='y')
+        self.log_text.pack(side='left', fill='both', expand=True)
+
         # Frame for radio buttons and lock button (direct child of self.event_frame)
         self.radio_lock_frame = tk.Frame(self.event_frame, bg="#f0f0f0")
         self.radio_lock_frame.pack(fill='x', anchor='nw') # Anchor to keep it at the top
@@ -103,6 +116,8 @@ class ScannerPanel(tk.Frame):
         self.is_reading = False
         self.read_thread = None
 
+        self.open_projects = set() # To track open projects and prevent duplicates
+
         self.load_config_values() # Load saved settings
         # Listen to admin lock changes if the var is provided by MainApp
         if hasattr(self.app, 'admin_config_locked_var') and isinstance(self.app.admin_config_locked_var, tk.BooleanVar):
@@ -112,7 +127,7 @@ class ScannerPanel(tk.Frame):
             # Call it here to ensure state is set even if OPEN event is not default.
             self._update_admin_dependent_ui() 
         else:
-            print("[ScannerPanel] Warning: app.admin_config_locked_var not found or not a BooleanVar. User management UI might not reflect admin lock state correctly. Assuming locked.")
+            self.log_message("Warning: app.admin_config_locked_var not found or not a BooleanVar. User management UI might not reflect admin lock state correctly. Assuming locked.")
             # Default to locked state if var is missing, _update_admin_dependent_ui handles this
             self._update_admin_dependent_ui()
 
@@ -126,11 +141,21 @@ class ScannerPanel(tk.Frame):
         # Auto-connect if enabled in config
         config = get_config()
         if config.get('scanner_panel_com_auto_connect', False) and self.scanner_type_var.get() == 'COM':
-            print("[ScannerPanel] Auto-connect is ON. Attempting connection...")
+            self.log_message("Auto-connect is ON. Attempting connection...")
             # Use 'after' to ensure the main window is fully initialized before connecting
             self.after(100, self.connect_com)
 
         self._create_lock_button()
+
+    def log_message(self, message):
+        """Adds a timestamped message to the log viewer."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_message = f"[{timestamp}] {message}\n"
+        
+        self.log_text.config(state='normal')
+        self.log_text.insert(tk.END, formatted_message)
+        self.log_text.config(state='disabled')
+        self.log_text.see(tk.END)
 
     def _create_lock_button(self):
         self.lock_button_frame = tk.Frame(self, bg="#f0f0f0")
@@ -219,7 +244,7 @@ class ScannerPanel(tk.Frame):
         user_logic_states[username] = is_active
         save_config({'scanner_panel_open_event_user_logic_active': user_logic_states})
         self.scanner_panel_open_event_user_logic_active = user_logic_states # Update local cache
-        print(f"[ScannerPanel] Mappen-check actief voor {username} ingesteld op {is_active}")
+        self.log_message(f"Mappen-check actief voor {username} ingesteld op {is_active}")
 
     def _build_open_event_user_paths_ui(self):
         for widget in self.user_paths_frame.winfo_children():
@@ -336,10 +361,10 @@ class ScannerPanel(tk.Frame):
             # Update the main storage attribute as well
             self.scanner_panel_open_event_user_paths = user_paths
             # self._log(f"Set path for {username} to {directory}") # _log method might not exist, use print
-            print(f"[ScannerPanel] Set path for {username} to {directory}")
+            self.log_message(f"Set path for {username} to {directory}")
         else:
             # self._log(f"Path selection cancelled for {username}")
-            print(f"[ScannerPanel] Path selection cancelled for {username}")
+            self.log_message(f"Path selection cancelled for {username}")
 
     def _remove_user_config(self, username_to_remove):
         if not messagebox.askyesno("Bevestig Verwijdering", f"Weet u zeker dat u gebruiker '{username_to_remove}' en alle bijbehorende configuraties wilt verwijderen?"):
@@ -372,7 +397,7 @@ class ScannerPanel(tk.Frame):
             config_data['scanner_panel_open_event_user_paths'] = paths_map
         
         save_config(config_data) # Save the entire modified config_data dictionary
-        print(f"[ScannerPanel] Gebruiker '{username_to_remove}' verwijderd.")
+        self.log_message(f"Gebruiker '{username_to_remove}' verwijderd.")
 
         # Refresh local cache and UI
         self.load_config_values() # Reload all config values, including the map
@@ -419,7 +444,7 @@ class ScannerPanel(tk.Frame):
         
         save_config(config_data)
         log_message = f"Gebruiker '{new_username}' ({selected_processing_type}) toegevoegd."
-        print(f"[ScannerPanel] {log_message}")
+        self.log_message(log_message)
         # self._log_to_widget(log_message) # Replaced with print, as _log_to_widget doesn't exist
 
         # Clear input fields
@@ -438,7 +463,7 @@ class ScannerPanel(tk.Frame):
             try:
                 is_locked = self.app.admin_config_locked_var.get()
             except tk.TclError: # Can happen if the variable is being destroyed
-                print("[ScannerPanel] Warning: TclError reading admin_config_locked_var. Assuming locked.")
+                self.log_message("Warning: TclError reading admin_config_locked_var. Assuming locked.")
                 is_locked = True
         else:
             # This case is handled by the warning in __init__ as well.
@@ -537,176 +562,165 @@ class ScannerPanel(tk.Frame):
         from config_utils import get_config
         import traceback
         import re
+
+        event_type = self.event_type_var.get()
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
 
-        # Extract project from code using regex
-        project_code = code  # Default to full code
-        
-        # Try to extract project code using standard pattern
-        match = re.search(r'_([A-Z]{2}\d+)_', code)
-        if match:
-            project_code = match.group(1)
-            print(f"  [DEBUG] Regex match found: '{project_code}' from code: '{code}'")
-        else:
-            print(f"  [DEBUG] No regex match found in code: '{code}', using full code as project_code")
-        
-        # Dynamic logic for handling _REP_ project codes
-        code_upper = code.upper()  # Make case insensitive
-        if "_REP_" in code_upper or "_REP" in code_upper:
-            # Only append _REP if it's not already there
-            if not project_code.upper().endswith("_REP"):
-                project_code = f"{project_code}_REP"
-            print(f"  [DEBUG] _REP pattern detected in code, project_code updated to: '{project_code}'")
+        base_project_code, full_project_code = self._extract_project_code(code)
+        project_code_to_log = full_project_code
 
-        print("[ScannerPanel] log_scan_event called")
-        print(f"  Code: {code}")
-        print(f"  Extracted Project Code: {project_code}")
-        print(f"  Event type: {self.event_type_var.get()}")
-        print(f"  User: {config.get('user', 'unknown')}")
-        print(f"  API URL: {api_url}")
-        if not api_url:
-            print("  [ERROR] No API URL configured!")
+        if event_type == 'OPEN' and '_REP' not in full_project_code and base_project_code and base_project_code in self.open_projects:
+            self.log_message(f"Warning: Project {base_project_code} is al OPEN.")
+            self.usb_entry.config(bg='yellow')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
             return
 
-        event_type = self.event_type_var.get()
-        # For OPEN event, log for each user in config['scanner_panel_open_event_users'] (default: GANNOMAT, OPUS)
-        if event_type == 'OPEN':
-            open_users = config.get('scanner_panel_open_event_users', ['GANNOMAT', 'OPUS'])
-            current_user = config.get('user', 'unknown')
-            all_ok = True
+        self.log_message("log_scan_event called")
+        self.log_message(f"  Code: {code}")
+        self.log_message(f"  Base Project: {base_project_code}, Full Project: {project_code_to_log}")
+        self.log_message(f"  Event type: {event_type}")
 
-            # Log AFGEMELD event for current user
-            data_closed = {
+        if not api_url:
+            self.log_message("  [ERROR] API URL not configured, cannot log event.")
+            self.usb_entry.config(bg='red')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+            return
+
+        all_ok = True
+        current_user = config.get('user', 'unknown')
+
+        if event_type == 'OPEN':
+            data_afgemeld = {
                 'event': 'AFGEMELD',
                 'details': code,
-                'project': project_code,
+                'project': project_code_to_log,
                 'user': current_user
             }
-            print(f"  [OPEN LOGIC] Payload for current user (AFGEMELD): {data_closed}")
+            self.log_message(f"  [OPEN LOGIC] Payload for current user (AFGEMELD): {data_afgemeld}")
             try:
-                resp = requests.post(api_url, json=data_closed, timeout=3)
-                print(f"    Response status: {resp.status_code}")
-                print(f"    Response text: {resp.text}")
-                if not resp.ok:
+                resp_afgemeld = requests.post(api_url, json=data_afgemeld, timeout=3)
+                if resp_afgemeld.ok:
+                    if base_project_code:
+                        self.open_projects.discard(base_project_code)
+                else:
                     all_ok = False
-            except Exception as e:
-                print(f"    [EXCEPTION] Exception for current user!")
-                print(traceback.format_exc())
+            except Exception:
+                self.log_message(f"    [EXCEPTION] AFGEMELD request failed for user {current_user}!")
+                self.log_message(traceback.format_exc())
                 all_ok = False
 
-            # Load user-specific paths and logic active states. Ensure config is fresh.
-            current_config = get_config()
-            user_specific_paths = current_config.get('scanner_panel_open_event_user_paths', {})
-            user_logic_active_states = current_config.get('scanner_panel_open_event_user_logic_active', {})
+            open_users = config.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = config.get('scanner_panel_open_event_user_logic_active', {})
 
-            # Log OPEN events for other users
             for user in open_users:
                 if user == current_user:
                     continue
 
-                is_logic_active_for_user = user_logic_active_states.get(user, True) # Default to True
-
-                if is_logic_active_for_user:
-                    user_dir = user_specific_paths.get(user)
-                    if not user_dir or not os.path.isdir(user_dir) or user_dir == "Niet ingesteld":
-                        print(f"  [OPEN LOGIC] Mappen-check actief, maar geen geldig pad geconfigureerd voor gebruiker {user}. Pad: '{user_dir}'. Overslaan OPEN event.")
-                        continue
-
+                if user_logic_active_states.get(user, True):
+                    user_dir = self.scanner_panel_open_event_user_paths.get(user)
                     match_found = False
-                    try:
-                        if project_code and project_code.strip():
-                            for item_in_dir in os.listdir(user_dir):
-                                if project_code in item_in_dir:
-                                    match_found = True
-                                    break
-                        else:
-                            print(f"  [OPEN LOGIC] project_code is leeg of witruimte voor gebruiker {user}. Overslaan map scan.")
-                    except OSError as e_os:
-                        print(f"  [OPEN LOGIC] Fout bij toegang tot map {user_dir} voor gebruiker {user}: {e_os}. Overslaan OPEN event.")
-                        continue
-                    
+                    if user_dir and os.path.isdir(user_dir):
+                        try:
+                            if base_project_code and base_project_code.strip():
+                                for item_name in os.listdir(user_dir):
+                                    item_base_name, _ = os.path.splitext(item_name)
+                                    is_rep_scan = bool(re.search(r'_REP_?', full_project_code, re.IGNORECASE))
+                                    if is_rep_scan:
+                                        # For REP scans, match the full dynamic code
+                                        if item_base_name.upper() == full_project_code.upper():
+                                            match_found = True
+                                            break
+                                    else:
+                                        # For standard scans, match base code but exclude REP items
+                                        if item_base_name.upper() == base_project_code.upper() and '_REP_' not in item_name.upper():
+                                            match_found = True
+                                            break
+                        except OSError as e_os:
+                            self.log_message(f"  [OPEN LOGIC] Error accessing dir {user_dir} for {user}: {e_os}")
+                            continue
+
                     if match_found:
-                        print(f"  [OPEN LOGIC] Match gevonden voor project '{project_code}' in '{user_dir}' voor gebruiker '{user}'.")
+                        self.log_message(f"  [OPEN LOGIC] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
                         data_open = {
                             'event': 'OPEN',
-                            'details': f"Match gevonden voor {project_code} in gebruikersmap '{user_dir}'. Originele code: {code}",
-                            'project': project_code,
+                            'details': f"Match found for {project_code_to_log} in {user_dir}",
+                            'project': project_code_to_log,
                             'user': user
                         }
-                        print(f"  [OPEN LOGIC] Payload voor andere gebruiker '{user}' (OPEN - Mappen-check): {data_open}")
                         try:
                             resp_open = requests.post(api_url, json=data_open, timeout=3)
-                            print(f"    Response status voor {user} (OPEN): {resp_open.status_code}")
-                            if not resp_open.ok:
-                                all_ok = False
-                            else:
-                                # If OPEN event logged successfully, trigger the import
-                                print(f"  [IMPORT TRIGGER] Attempting to trigger import for user {user}, project {project_code}")
+                            if resp_open.ok:
+                                if base_project_code:
+                                    self.open_projects.add(base_project_code)
                                 self.background_import_service.trigger_import_for_event(
                                     user_type=user,
-                                    project_code=project_code,
+                                    project_code=project_code_to_log,
                                     event_details=f"Scan event: {code}",
                                     timestamp=datetime.now().isoformat()
                                 )
-                        except Exception as e_open_req:
-                            print(f"    [EXCEPTION] Request exceptie voor gebruiker {user} (OPEN - Mappen-check)!")
-                            print(traceback.format_exc())
+                            else:
+                                all_ok = False
+                        except Exception:
+                            self.log_message(f"    [EXCEPTION] OPEN request failed for user {user}!")
+                            self.log_message(traceback.format_exc())
                             all_ok = False
                     else:
-                        print(f"  [OPEN LOGIC] Geen match gevonden voor project '{project_code}' in '{user_dir}' voor gebruiker '{user}'. Overslaan OPEN event.")
+                        self.log_message(f"  [OPEN LOGIC] No match for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
                 else:
-                    # Mappen-check is niet actief, stuur OPEN event direct
-                    print(f"  [OPEN LOGIC] Mappen-check niet actief voor gebruiker '{user}'. Stuur OPEN event direct.")
-                    data_open_direct = {
-                        'event': 'OPEN',
-                        'details': f"Mappen-check niet actief. Originele code: {code}",
-                        'project': project_code,
-                        'user': user
-                    }
-                    print(f"  [OPEN LOGIC] Payload voor gebruiker '{user}' (OPEN - direct): {data_open_direct}")
-                    try:
-                        resp_open_direct = requests.post(api_url, json=data_open_direct, timeout=3)
-                        print(f"    Response status voor {user} (OPEN - direct): {resp_open_direct.status_code}")
-                        if not resp_open_direct.ok:
-                            all_ok = False
-                    except Exception as e_open_direct:
-                        print(f"    [EXCEPTION] Request exceptie voor gebruiker {user} (OPEN - direct)!")
-                        print(traceback.format_exc())
-                        all_ok = False
-            # UI feedback: green if all succeeded, red otherwise
+                    self.log_message(f"  [OPEN LOGIC] Logic inactive for user '{user}'. Skipping OPEN event.")
+
             if all_ok:
-                print("  [SUCCESS] All OPEN/AFGEMELD events logged, setting entry to green")
-                self.after(0, lambda: self.usb_entry.config(bg='#c8f7c5'))
+                self.usb_entry.config(bg='light green')
             else:
-                print("  [FAILURE] At least one OPEN/AFGEMELD event failed, setting entry to red")
-                self.after(0, lambda: self.usb_entry.config(bg='#f7c5c5'))
+                self.usb_entry.config(bg='red')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
         else:
-            # Default: log for current user only
             data = {
                 'event': event_type,
                 'details': code,
-                'project': project_code,
-                'user': config.get('user', 'unknown')
+                'project': project_code_to_log,
+                'user': current_user
             }
-            print(f"  Payload: {data}")
             try:
-                resp = requests.post(api_url, json=data, timeout=3)
-                print(f"  Response status: {resp.status_code}")
-                print(f"  Response text: {resp.text}")
-                if resp.ok:
-                    print("  [SUCCESS] Response OK, setting entry to green")
-                    self.after(0, lambda: self.usb_entry.config(bg='#c8f7c5'))  # light green
-                    self._set_dbpanel_connection_status(True)
+                response = requests.post(api_url, json=data, timeout=3)
+                if response.ok:
+                    if event_type == 'AFGEMELD' and base_project_code:
+                        self.open_projects.discard(base_project_code)
+                    self.usb_entry.config(bg='light green')
                 else:
-                    print("  [FAILURE] Response NOT OK, setting entry to red")
-                    self.after(0, lambda: self.usb_entry.config(bg='#f7c5c5'))  # light red
-                    self._set_dbpanel_connection_status(False)
+                    self.usb_entry.config(bg='red')
             except Exception as e:
-                print("  [EXCEPTION] Exception occurred during POST request!")
-                print(traceback.format_exc())
-                self.after(0, lambda: self.usb_entry.config(bg='#f7c5c5'))
-                self._set_dbpanel_connection_status(False, str(e))
+                self.log_message(f"    [EXCEPTION] Default request failed!")
+                self.log_message(traceback.format_exc())
+                self.usb_entry.config(bg='red')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+
+    def _extract_project_code(self, code):
+        import re
+        base_project_code = ""
+        full_project_code = ""
+        
+        # Find base project code (MOxxxxx or 5-6 digits)
+        mo_match = re.search(r'(MO\d{5})', code)
+        if mo_match:
+            base_project_code = mo_match.group(1)
+        else:
+            accura_match = re.search(r'(\d{5,6})', code)
+            if accura_match:
+                base_project_code = accura_match.group(1)
+
+        if not base_project_code:
+            return "", "" # No project code found
+
+        # Now find the full project code including the dynamic _REP_ part
+        rep_match = re.search(f'({re.escape(base_project_code)}_REP(?:_\\S*)?)', code, re.IGNORECASE)
+        if rep_match:
+            full_project_code = rep_match.group(1)
+        else:
+            full_project_code = base_project_code
+            
+        return base_project_code, full_project_code
 
     def _set_dbpanel_connection_status(self, connected, error_reason=None):
         # Try to find and update DatabasePanel connection status label
@@ -734,7 +748,7 @@ class ScannerPanel(tk.Frame):
 
     def connect_com(self):
         if self.ser and self.ser.is_open:
-            print("[ScannerPanel] COM port already connected.")
+            self.log_message("COM port already connected.")
             return
 
         port = self.com_port_var.get()
@@ -753,7 +767,7 @@ class ScannerPanel(tk.Frame):
         baud_rate = int(baud_rate_str)
 
         try:
-            print(f"[ScannerPanel] Verbinden met {port} op {baud_rate} baud...")
+            self.log_message(f"Verbinden met {port} op {baud_rate} baud...")
             self.ser = serial.Serial(port, baud_rate, timeout=1)
             
             if self.ser.is_open:
@@ -769,34 +783,34 @@ class ScannerPanel(tk.Frame):
                 self.is_reading = True
                 self.read_thread = threading.Thread(target=self._read_com_port_loop, daemon=True)
                 self.read_thread.start()
-                print(f"[ScannerPanel] Verbonden met {port}. Lees thread gestart.")
+                self.log_message(f"Verbonden met {port}. Lees thread gestart.")
 
         except serial.SerialException as e:
-            print(f"[ScannerPanel] SerialException: {e}")
+            self.log_message(f"SerialException: {e}")
             self.com_status_label.config(text="Verbindfout", fg="red")
             messagebox.showerror("COM Fout", f"Fout bij verbinden met {port}:\n{e}")
             self.ser = None
         except Exception as e:
-            print(f"[ScannerPanel] Algemene fout bij verbinden: {e}")
+            self.log_message(f"Algemene fout bij verbinden: {e}")
             self.com_status_label.config(text="Onbekende fout", fg="red")
             messagebox.showerror("COM Fout", f"Algemene fout: {e}")
             self.ser = None
 
     def disconnect_com(self):
-        print("[ScannerPanel] Poging tot verbreken COM poort...")
+        self.log_message("Poging tot verbreken COM poort...")
         self.is_reading = False  # Signal thread to stop
         if hasattr(self, 'read_thread') and self.read_thread and self.read_thread.is_alive():
-            print("[ScannerPanel] Wachten tot lees thread stopt...")
+            self.log_message("Wachten tot lees thread stopt...")
             self.read_thread.join()  # Wait indefinitely for the thread to finish
-            print("[ScannerPanel] Lees thread succesvol gestopt.")
+            self.log_message("Lees thread succesvol gestopt.")
         self.read_thread = None
 
         if hasattr(self, 'ser') and self.ser and self.ser.is_open:
             try:
                 self.ser.close()
-                print(f"[ScannerPanel] COM poort {self.ser.portstr} gesloten.")
+                self.log_message(f"COM poort {self.ser.portstr} gesloten.")
             except Exception as e:
-                print(f"[ScannerPanel] Fout bij sluiten COM poort: {e}")
+                self.log_message(f"Fout bij sluiten COM poort: {e}")
         
         self.ser = None
 

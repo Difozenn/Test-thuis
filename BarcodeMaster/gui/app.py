@@ -30,11 +30,12 @@ class MainApp(tk.Frame):
         self.parent.title("BarcodeMaster")
         self.parent.geometry("800x600")
         # Set window icon if available
-        icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "ico.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "ico.ico") # Changed to .ico
         if os.path.exists(icon_path):
             try:
-                self.parent.iconphoto(True, ImageTk.PhotoImage(file=icon_path))
-            except Exception:
+                self.parent.iconbitmap(icon_path) # Changed to iconbitmap for .ico
+            except Exception as e:
+                print(f"Error setting icon: {e}") # Added error logging
                 pass
         # Load icons
         db_icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'database.png')
@@ -129,7 +130,8 @@ class MainApp(tk.Frame):
                     try:
                         url = db_panel_instance.api_url_var.get()
                         user = db_panel_instance.user_var.get()
-                        resp = requests.post(url, json={"event": "test_connect", "details": "Test verbinding", "user": user}, timeout=3)
+                        params = {"event": "test_connect", "details": "Test verbinding", "user": user}
+                        resp = requests.get(url, params=params, timeout=3)
                         if resp.status_code == 200 and resp.json().get('success'):
                             result[0] = True
                         else:
@@ -232,6 +234,11 @@ class MainApp(tk.Frame):
                     panel.shutdown()
                 except Exception as e:
                     print(f"[MainApp] Error shutting down {panel.__class__.__name__}: {e}")
+            # Specifically ensure AdminPanel's backup thread is stopped if it has a shutdown method.
+            # This is redundant if AdminPanel is in self.panel_instances and its shutdown is generic,
+            # but good for clarity or if AdminPanel had special shutdown needs not covered by a generic loop.
+            # However, the loop above already covers it if AdminPanel has a 'shutdown' method.
+            # No specific extra call needed here if AdminPanel's shutdown is correctly implemented and called by the loop.
 
         # 2. Shutdown services that were started at boot
         if self.service_status.services:

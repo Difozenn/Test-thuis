@@ -1,277 +1,172 @@
 [
     {
-        "timestamp": "2025-06-17T21:41:00",
+        "timestamp": "2025-06-18T09:23:15.727782",
         "type": "new",
-        "entry": "manual_add_2025-06-17T21:41:00_0",
-        "category": "Bulo"
-    },
-    {
-        "timestamp": "2025-06-17T21:42:00",
-        "type": "new",
-        "entry": "manual_add_2025-06-17T21:42:00_0",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
         "category": "Maatwerk"
     },
     {
-        "timestamp": "2025-06-17T21:42:00",
+        "timestamp": "2025-06-18T09:23:15.739801",
         "type": "new",
-        "entry": "manual_add_2025-06-17T21:42:00_0",
+        "entry": "file_update_Field12.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T09:23:15.772640",
+        "type": "new",
+        "entry": "file_update_Field2.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
         "category": "Orgels"
     },
     {
-        "timestamp": "2025-06-17T21:42:00",
+        "timestamp": "2025-06-18T09:24:00",
         "type": "new",
-        "entry": "manual_add_2025-06-17T21:42:00_0",
+        "entry": "manual_add_2025-06-18T09:24:00_0",
+        "category": "Orgels"
+    },
+    {
+        "timestamp": "2025-06-18T09:24:00",
+        "type": "new",
+        "entry": "manual_add_2025-06-18T09:24:00_1",
+        "category": "Orgels"
+    },
+    {
+        "timestamp": "2025-06-18T09:24:00",
+        "type": "new",
+        "entry": "manual_add_2025-06-18T09:24:00_2",
+        "category": "Orgels"
+    },
+    {
+        "timestamp": "2025-06-18T09:24:00",
+        "type": "new",
+        "entry": "manual_add_2025-06-18T09:24:00_3",
+        "category": "Orgels"
+    },
+    {
+        "timestamp": "2025-06-18T09:24:00",
+        "type": "new",
+        "entry": "manual_add_2025-06-18T09:24:00_4",
+        "category": "Orgels"
+    },
+    {
+        "timestamp": "2025-06-18T09:43:04.742397",
+        "type": "new",
+        "entry": "file_update_Field12.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T09:43:45.483650",
+        "type": "new",
+        "entry": "file_update_Field12.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T09:49:27.604410",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Maatwerk"
+    },
+    {
+        "timestamp": "2025-06-18T09:49:27.609038",
+        "type": "new",
+        "entry": "file_update_Field12.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
         "category": "Projectwerk"
     },
     {
-        "timestamp": "2025-06-17T21:43:00",
-        "type": "new",
-        "entry": "manual_add_2025-06-17T21:43:00_0",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:28:11.973347",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:28:11.978459",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:28:11.985479",
+        "timestamp": "2025-06-18T09:49:27.633267",
         "type": "new",
         "entry": "file_update_Field2.nc",
         "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
+        "category": "Orgels"
     },
     {
-        "timestamp": "2025-06-18T06:29:32.831208",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:29:32.832235",
+        "timestamp": "2025-06-18T09:50:58.192644",
         "type": "new",
         "entry": "file_update_Field12.nc",
         "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
+        "category": "Projectwerk"
+    },
+    {
+        "timestamp": "2025-06-18T10:36:17.889661",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Maatwerk"
+    },
+    {
+        "timestamp": "2025-06-18T10:36:28.560715",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Maatwerk"
+    },
+    {
+        "timestamp": "2025-06-18T10:36:39.013243",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Maatwerk"
+    },
+    {
+        "timestamp": "2025-06-18T10:36:49.483927",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Maatwerk"
+    },
+    {
+        "timestamp": "2025-06-18T10:40:50.254313",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
         "category": "Allerlei"
     },
     {
-        "timestamp": "2025-06-18T06:29:32.839616",
+        "timestamp": "2025-06-18T10:40:55.684258",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T10:50:17.118798",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T11:18:15.661336",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T11:24:27.149831",
+        "type": "new",
+        "entry": "file_update_Field1.nc",
+        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
+        "category": "Allerlei"
+    },
+    {
+        "timestamp": "2025-06-18T11:37:09.734690",
         "type": "new",
         "entry": "file_update_Field2.nc",
         "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
+        "category": "Orgels"
     },
     {
-        "timestamp": "2025-06-18T06:30:42.694378",
+        "timestamp": "2025-06-18T11:43:05.810522",
         "type": "new",
         "entry": "file_update_Field1.nc",
         "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:30:42.695475",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
         "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:30:42.702267",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:31:31.319183",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:31:31.320195",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:31:31.326634",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:12.109315",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:12.110554",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:12.118033",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:52.811780",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:52.812853",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:32:52.820097",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:33:27.325484",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:33:27.326654",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:33:27.333494",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:34:52.317852",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:34:52.318955",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:34:52.325461",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:35:58.617088",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:35:58.618229",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:35:58.624828",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:19.270579",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:19.271724",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:19.278412",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:53.435088",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:53.437034",
-        "type": "new",
-        "entry": "file_update_Field12.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field12.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:39:53.446245",
-        "type": "new",
-        "entry": "file_update_Field2.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field2.nc",
-        "category": "Allerlei"
-    },
-    {
-        "timestamp": "2025-06-18T06:40:54.383739",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
-    },
-    {
-        "timestamp": "2025-06-18T06:40:58.552284",
-        "type": "new",
-        "entry": "file_update_Field1.nc",
-        "source_file": "C:\\TwinCAT\\CNC\\sub\\Field1.nc",
-        "category": "Reparaties"
     }
 ]

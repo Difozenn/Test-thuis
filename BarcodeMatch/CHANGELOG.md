@@ -4,6 +4,36 @@ Alle belangrijke wijzigingen aan dit project worden in dit bestand bijgehouden.
 
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/) (Nederlandse versie als beschikbaar, anders Engelse link behouden).
 
+## [Nog Niet Uitgebracht] - 2025-06-18
+
+### Added
+- **Databasepaneel: Handmatige Events via Rechtermuisknopmenu**
+  - Een rechtermuisknopmenu toegevoegd aan de logboekweergave in het databasepaneel.
+  - Gebruikers kunnen nu handmatig 'OPEN' en 'AFGEMELD' events loggen voor een geselecteerd project.
+  - Dit biedt meer controle voor het handmatig beheren van projectstatussen.
+  - Betreft: `gui/panels/database_panel.py`
+
+### Changed
+- **Databasepaneel: Logboekfiltering Aangepast**
+  - De logboekweergave in het databasepaneel filtert nu 'AFGEMELD' events om alleen die van de huidige dag te tonen.
+  - 'OPEN' events (en andere statussen) blijven zichtbaar ongeacht hun datum, waarbij per project de meest relevante status wordt getoond (voorkeur voor 'OPEN').
+  - Dit zorgt voor een schonere weergave van recente afgemelde projecten, terwijl openstaande projecten altijd inzichtelijk blijven.
+  - Betreft: `gui/panels/database_panel.py`
+
+
+### Added
+- **32-bit .exe met icoon**
+  - Een 32-bit uitvoerbaar bestand (`.exe`) is gecreëerd met PyInstaller.
+  - Alle vereiste dependencies uit `requirements.txt` zijn inbegrepen.
+  - Het applicatie-icoon (`ico.png`) is toegevoegd aan het uitvoerbare bestand.
+  - De build is uitgevoerd met de `BarcodeMatch.spec` configuratie om een `x86` architectuur te garanderen.
+
+## [Nog Niet Uitgebracht] - 2025-06-17
+
+### Added
+- **32-bit Applicatieversie**
+  - Een 32-bit versie van de applicatie is nu beschikbaar. De build-configuratie is bijgewerkt om `x86` als doelarchitectuur te specificeren, wat compatibiliteit met oudere systemen garandeert.
+
 ## [Nog Niet Uitgebracht] - 2025-06-13
 
 ### Changed

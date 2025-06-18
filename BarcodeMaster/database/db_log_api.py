@@ -57,19 +57,31 @@ def initialize_database_endpoint():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/log', methods=['POST'])
+@app.route('/log', methods=['POST', 'GET'])
 def log_event():
     import traceback
-    data = request.get_json(force=True)
-    logging.info("[db_log_api] /log called with data:", data)
+    if request.method == 'POST':
+        data = request.get_json(force=True)
+    else:  # GET request
+        data = request.args
+
+    logging.info(f"[db_log_api] /log called with data: {data}")
+    
     event = data.get('event')
     details = data.get('details')
     project = data.get('project', '')
     user = data.get('user', 'unknown')
     timestamp = datetime.now().isoformat()
+
     if not event:
         logging.info("  [ERROR] Missing event field!")
         return jsonify({'success': False, 'error': 'Missing event'}), 400
+
+    # Handle test_connect as a simple ping without DB interaction
+    if event == 'test_connect':
+        logging.info(f"  [INFO] Received test_connect from user '{user}'. Connection successful.")
+        return jsonify({'success': True})
+
     try:
         conn = get_db()
         c = conn.cursor()

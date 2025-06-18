@@ -224,8 +224,9 @@ class BarcodeMatchApp:
                 self.tab_images[name] = None
 
     def _set_icon(self):
-        ico_ico_path = os.path.join('assets', 'ico.ico')
-        ico_png_path = os.path.join('assets', 'ico.png')
+        script_dir = os.path.dirname(__file__)
+        ico_ico_path = os.path.join(script_dir, '..', 'assets', 'ico.ico')
+        ico_png_path = os.path.join(script_dir, '..', 'assets', 'ico.png')
         print(f'[ICON DIAG] ico.ico path: {os.path.abspath(ico_ico_path)} exists: {os.path.exists(ico_ico_path)}')
         print(f'[ICON DIAG] ico.png path: {os.path.abspath(ico_png_path)} exists: {os.path.exists(ico_png_path)}')
         icon_set = False

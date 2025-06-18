@@ -301,13 +301,12 @@ def generate_monthly_report(events):
 def generate_weekly_report(events):
     """
     Generates a weekly report for the current ISO week.
-    The report includes a summary of events per category and a bar chart.
+    Includes: Items per Category (Bar & Pie), Items per Worked Hour per Day (Bar), Usage per Scan File (Pie).
     """
     with REPORT_GENERATION_LOCK:
         now_dt = datetime.datetime.now()
         year, week_num, _ = now_dt.isocalendar()
 
-        # --- 1. Filter events for the current ISO week ---
         week_events = [
             event for event in events
             if datetime.datetime.fromisoformat(event['timestamp']).isocalendar()[:2] == (year, week_num)
@@ -317,79 +316,177 @@ def generate_weekly_report(events):
             print(f"[{datetime.datetime.now()}] [WEEKLY_REPORT] No events found for week {week_num}, {year}. Report not generated.")
             return
 
-        # --- 2. Prepare folder and filename ---
         report_dir = os.path.join(EXCEL_REPORT_DIR, 'Week Raporten')
-        try:
-            os.makedirs(report_dir, exist_ok=True)
-        except OSError as e:
-            print(f"[{datetime.datetime.now()}] [WEEKLY_REPORT_ERROR] Could not create report directory {report_dir}: {e}")
-            return
-        
+        os.makedirs(report_dir, exist_ok=True)
         report_path = os.path.join(report_dir, f"Week_{week_num}_{year}.xlsx")
 
-        # --- 3. Aggregate data ---
-        category_counts = defaultdict(int)
-        for event in week_events:
-            category = event.get('category', 'Allerlei') # Default category if not present
-            if event['type'] == 'new':
-                category_counts[category] += 1
-            elif event['type'] == 'duplicate':
-                # For duplicates, count each entry within the event if 'entries' exists and is a list
-                entries = event.get('entries', [])
-                if isinstance(entries, list):
-                    category_counts[category] += len(entries)
-                else:
-                    # If 'entries' is not a list (e.g. a single string path), count it as one
-                    category_counts[category] += 1 
-
-        # --- 4. Create Workbook and Worksheet ---
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = f"Week {week_num}"
-
-        # --- 5. Create Data Table ---
-        ws.append(["Categorie", "Aantal", "Percentage"])
-        total_events = sum(category_counts.values())
         
-        # Sort categories by count, descending, then alphabetically for ties
-        sorted_categories = sorted(category_counts.items(), key=lambda item: (-item[1], item[0]))
+        current_row = 1
+        ws.cell(row=current_row, column=1, value=f"Rapportage Week {week_num}, {year}").font = Font(bold=True, size=14)
+        current_row += 2
 
-        for category, count in sorted_categories:
-            percentage = (count / total_events) * 100 if total_events > 0 else 0
-            ws.append([category, count, percentage])
-            # Apply percentage format to the cell
-            ws.cell(row=ws.max_row, column=3).number_format = '0.00"%"'
+        # --- 1. Items per Category --- 
+        ws.cell(row=current_row, column=1, value="Items per Categorie").font = Font(bold=True)
+        current_row += 1
+        cat_header = ["Categorie", "Aantal", "Percentage"]
+        for col_idx, h_val in enumerate(cat_header, 1):
+            ws.cell(row=current_row, column=col_idx, value=h_val).font = Font(bold=True)
+        current_row += 1
+        
+        category_counts = defaultdict(int)
+        for event in week_events:
+            category = event.get('category', 'Allerlei')
+            if event['type'] == 'new':
+                category_counts[category] += 1
+            elif event['type'] == 'duplicate':
+                entries = event.get('entries', [])
+                category_counts[category] += len(entries) if isinstance(entries, list) else 1
+        
+        total_items_in_week = sum(category_counts.values())
+        start_data_row_cat, end_data_row_cat = 0, 0
 
-        # --- 6. Create Bar Chart ---
-        if ws.max_row > 1: # Check if there is data to chart
-            chart = BarChart()
-            chart.title = f"Meldingen per Categorie (Week {week_num}, {year})"
-            chart.x_axis.title = "Categorie"
-            chart.y_axis.title = "Aantal Meldingen"
-            chart.legend = None # No legend needed for a single series
+        if total_items_in_week > 0:
+            start_data_row_cat = current_row
+            sorted_categories = sorted(category_counts.items(), key=lambda item: (-item[1], item[0]))
+            for category, count in sorted_categories:
+                percentage = (count / total_items_in_week) * 100
+                ws.cell(row=current_row, column=1, value=category)
+                ws.cell(row=current_row, column=2, value=count)
+                ws.cell(row=current_row, column=3, value=percentage).number_format = '0.00"%"'
+                current_row += 1
+            end_data_row_cat = current_row - 1
 
-            # Data for the chart (counts)
-            data = Reference(ws, min_col=2, min_row=2, max_row=ws.max_row)
-            # Categories for the x-axis
-            cats = Reference(ws, min_col=1, min_row=2, max_row=ws.max_row)
+        current_row += 1 # Spacer
+
+        # --- 2. Items per Day per Worked Hour --- 
+        ws.cell(row=current_row, column=1, value="Items per Gewerkt Uur per Dag").font = Font(bold=True)
+        current_row += 1
+        daily_header = ["Dag", "Totaal Items", "Gewerkte Uren", "Items/Gew.Uur"]
+        for col_idx, h_val in enumerate(daily_header, 1):
+            ws.cell(row=current_row, column=col_idx, value=h_val).font = Font(bold=True)
+        current_row += 1
+
+        daily_item_counts = defaultdict(int)
+        for event in week_events:
+            event_dt = datetime.datetime.fromisoformat(event['timestamp'])
+            day_of_week = event_dt.weekday()
+            if event['type'] == 'new':
+                daily_item_counts[day_of_week] += 1
+            elif event['type'] == 'duplicate':
+                entries = event.get('entries', [])
+                daily_item_counts[day_of_week] += len(entries) if isinstance(entries, list) else 1
+
+        workday_hours_config = CONFIG.get('workday_hours', {})
+        days_of_week_names = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
+        start_data_row_daily, end_data_row_daily = current_row, 0
+
+        for i in range(7):
+            day_name = days_of_week_names[i]
+            items_on_day = daily_item_counts[i]
+            worked_hours_on_day = float(workday_hours_config.get(str(i), 0.0))
+            items_per_worked_hour = (items_on_day / worked_hours_on_day) if worked_hours_on_day > 0 else 0
             
-            chart.add_data(data, titles_from_data=False) # `data` is a single series of numbers
-            chart.set_categories(cats)
+            ws.cell(row=current_row, column=1, value=day_name)
+            ws.cell(row=current_row, column=2, value=items_on_day)
+            ws.cell(row=current_row, column=3, value=worked_hours_on_day)
+            ws.cell(row=current_row, column=4, value=items_per_worked_hour).number_format = '0.00'
+            current_row += 1
+        end_data_row_daily = current_row - 1
+        current_row += 1 # Spacer
 
-            # Style the chart
-            chart.style = 10 # Choose a chart style (optional)
-            chart.width = 20   # cm
-            chart.height = 12  # cm
+        # --- 3. Scan Files Usage --- 
+        ws.cell(row=current_row, column=1, value="Gebruik per Scan Bestand").font = Font(bold=True)
+        current_row += 1
+        scan_header = ["Scan Bestand", "Aantal Items", "Percentage"]
+        for col_idx, h_val in enumerate(scan_header, 1):
+            ws.cell(row=current_row, column=col_idx, value=h_val).font = Font(bold=True)
+        current_row += 1
 
-            # Add data labels to the bars
-            chart.dataLabels = DataLabelList()
-            chart.dataLabels.showVal = True
-            chart.dataLabels.showCatName = False
-            chart.dataLabels.showSerName = False
+        scan_files_config = CONFIG.get('scan_files', [])
+        scan_file_item_counts = defaultdict(int)
+        for event in week_events:
+            event_entries_paths = []
+            if event['type'] == 'new' and event.get('entry'):
+                event_entries_paths.append(event['entry'])
+            elif event['type'] == 'duplicate' and isinstance(event.get('entries'), list):
+                event_entries_paths.extend(event['entries'])
+            
+            for path in event_entries_paths:
+                if path in scan_files_config:
+                    scan_file_item_counts[os.path.basename(path)] += 1 # Use basename as key for counts
+        
+        total_items_from_scan_files = sum(scan_file_item_counts.values())
+        start_data_row_scan, end_data_row_scan = 0, 0
 
-            ws.add_chart(chart, "E2") # Position of the chart on the worksheet
+        if total_items_from_scan_files > 0:
+            start_data_row_scan = current_row
+            sorted_scan_files = sorted(scan_file_item_counts.items(), key=lambda item: (-item[1], item[0]))
+            for file_name, count in sorted_scan_files:
+                percentage = (count / total_items_from_scan_files) * 100
+                ws.cell(row=current_row, column=1, value=file_name)
+                ws.cell(row=current_row, column=2, value=count)
+                ws.cell(row=current_row, column=3, value=percentage).number_format = '0.00"%"'
+                current_row += 1
+            end_data_row_scan = current_row - 1
 
-        # --- 7. Save the Workbook ---
+        # --- Add Charts --- 
+        if total_items_in_week > 0 and start_data_row_cat <= end_data_row_cat:
+            # Original Category Bar Chart
+            bar_cat_orig = BarChart()
+            bar_cat_orig.title = f"Items per Categorie (Week {week_num})"
+            bar_cat_orig.x_axis.title = "Categorie"
+            bar_cat_orig.y_axis.title = "Aantal Items"
+            data_ref_cat_bar = Reference(ws, min_col=2, min_row=start_data_row_cat, max_row=end_data_row_cat)
+            cats_ref_cat_bar = Reference(ws, min_col=1, min_row=start_data_row_cat, max_row=end_data_row_cat)
+            bar_cat_orig.add_data(data_ref_cat_bar, titles_from_data=False)
+            bar_cat_orig.set_categories(cats_ref_cat_bar)
+            bar_cat_orig.legend = None
+            bar_cat_orig.dataLabels = DataLabelList(); bar_cat_orig.dataLabels.showVal = True
+            bar_cat_orig.width = 20; bar_cat_orig.height = 12
+            ws.add_chart(bar_cat_orig, "E2")
+
+            # New Category Pie Chart
+            pie_cat = PieChart()
+            pie_cat.title = f"Percentage per Categorie (Week {week_num})"
+            labels_ref_cat_pie = Reference(ws, min_col=1, min_row=start_data_row_cat, max_row=end_data_row_cat)
+            data_ref_cat_pie = Reference(ws, min_col=2, min_row=start_data_row_cat, max_row=end_data_row_cat)
+            pie_cat.add_data(data_ref_cat_pie, titles_from_data=False)
+            pie_cat.set_categories(labels_ref_cat_pie)
+            pie_cat.dataLabels = DataLabelList(); pie_cat.dataLabels.showPercent = True; pie_cat.dataLabels.showVal = False
+            pie_cat.width = 15; pie_cat.height = 10 # Slightly smaller
+            ws.add_chart(pie_cat, "E18")
+
+        if start_data_row_daily <= end_data_row_daily: # Check if daily data exists
+            # Items per Day per Worked Hour Bar Chart
+            bar_daily = BarChart()
+            bar_daily.title = "Items per Gewerkt Uur per Dag"
+            bar_daily.x_axis.title = "Dag van de Week"
+            bar_daily.y_axis.title = "Items / Gewerkt Uur"
+            labels_ref_daily = Reference(ws, min_col=1, min_row=start_data_row_daily, max_row=end_data_row_daily)
+            data_ref_daily = Reference(ws, min_col=4, min_row=start_data_row_daily, max_row=end_data_row_daily)
+            bar_daily.add_data(data_ref_daily, titles_from_data=False)
+            bar_daily.set_categories(labels_ref_daily)
+            bar_daily.legend = None
+            bar_daily.dataLabels = DataLabelList(); bar_daily.dataLabels.showVal = True
+            bar_daily.width = 20; bar_daily.height = 12
+            ws.add_chart(bar_daily, "M2")
+
+        if total_items_from_scan_files > 0 and start_data_row_scan <= end_data_row_scan:
+            # Scan Files Usage Pie Chart
+            pie_scan = PieChart()
+            pie_scan.title = "Percentage Gebruik per Scan Bestand"
+            labels_ref_scan = Reference(ws, min_col=1, min_row=start_data_row_scan, max_row=end_data_row_scan)
+            data_ref_scan = Reference(ws, min_col=2, min_row=start_data_row_scan, max_row=end_data_row_scan)
+            pie_scan.add_data(data_ref_scan, titles_from_data=False)
+            pie_scan.set_categories(labels_ref_scan)
+            pie_scan.dataLabels = DataLabelList(); pie_scan.dataLabels.showPercent = True; pie_scan.dataLabels.showVal = False
+            pie_scan.width = 15; pie_scan.height = 10
+            ws.add_chart(pie_scan, "M18")
+
+        # --- Save Workbook --- 
         try:
             print(f"[{datetime.datetime.now()}] [WEEKLY_REPORT] Attempting to save: {report_path}")
             wb.save(report_path)
@@ -399,11 +496,10 @@ def generate_weekly_report(events):
             traceback.print_exc()
         finally:
             if 'wb' in locals() and wb is not None:
-                try:
-                    wb.close()
-                except Exception as e_close:
-                    print(f"[{datetime.datetime.now()}] [WEEKLY_REPORT_ERROR] Error closing workbook: {e_close}")
-            gc.collect() # Suggest garbage collection
+                try: wb.close()
+                except Exception as e_close: print(f"[{datetime.datetime.now()}] [WEEKLY_REPORT_ERROR] Error closing workbook: {e_close}")
+            gc.collect()
+ # Suggest garbage collection
 
 def generate_yearly_report(events):
     """

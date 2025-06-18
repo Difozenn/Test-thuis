@@ -1,7 +1,7 @@
 {
 
     "scan_interval_seconds": 5,
-    "excel_report_dir": "C:\\OPUS\\RAPORTEN",
+    "excel_report_dir": "Y:\\OPUS\\RAPORTEN",
     "seen_entries_file": ".seen_entries.json",
     "categories_file": "categories.json",
     "scan_files": [

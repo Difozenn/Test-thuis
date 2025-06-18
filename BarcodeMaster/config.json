@@ -1,7 +1,7 @@
 {
     "database_enabled": true,
     "api_url": "http://localhost:5001/log",
-    "user": "ACCURA",
+    "user": "NESTING",
     "admin_db_init_enabled": true,
     "scanner_panel_com_port": "",
     "scanner_panel_type": "USB",
@@ -27,8 +27,11 @@
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,
     "scanner_panel_open_event_user_paths": {
-        "OPUS": "C:/OPUS/KORPUS",
         "KL GANNOMAT": "C:/GANNOMAT"
     },
-    "master_background_service_active": true
+    "master_background_service_active": true,
+    "backup_enabled": true,
+    "backup_directory": "C:/OPUS",
+    "backup_interval_minutes": 1440,
+    "last_backup_status": "Succesvol gebackupt naar C:/OPUS\\central_logging_backup.sqlite op 2025-06-18 20:54:45"
 }

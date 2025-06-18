@@ -130,58 +130,62 @@ class BackgroundImportService:
     def trigger_import_for_event(self, user_type, project_code, event_details, timestamp):
         """Verwerk een OPEN event en trigger automatische import indien nodig."""
         self.load_config() # Ensure config is up-to-date
-        # if not self.is_enabled(): # Removed master switch check
-        #     self._log("Automatische import is niet ingeschakeld (master switch).")
-        #     return
 
         self._log(f"Event ontvangen: User={user_type}, Project={project_code}. Controleren voor import...")
         
-        import_triggered_for_user = False
         processing_type = self.scanner_user_to_processing_type_map.get(user_type)
 
         if not self.scanner_user_logic_active.get(user_type, False):
-            self._log(f"{user_type} import overgeslagen: logica niet actief voor deze gebruiker in ScannerPanel config (scanner_panel_open_event_user_logic_active).")
+            self._log(f"{user_type} import overgeslagen: logica niet actief voor deze gebruiker.")
             return
 
         if processing_type == 'GEEN_PROCESSING':
-            self._log(f"'{user_type}' is geconfigureerd voor 'GEEN_PROCESSING'. Specifieke importlogica wordt overgeslagen.")
-            # The ScannerPanel.log_scan_event will still handle the database logging for OPEN events.
-            # This service's role is the automated file import, which is bypassed here.
+            self._log(f"'{user_type}' is geconfigureerd voor 'GEEN_PROCESSING'. Import overgeslagen.")
             return
 
         user_specific_path = self.scanner_user_paths.get(user_type)
         if not user_specific_path or not os.path.isdir(user_specific_path):
-            self._log(f"{user_type} import overgeslagen: pad niet ingesteld of ongeldig ('{user_specific_path}') in scanner_panel_open_event_user_paths.")
+            self._log(f"{user_type} import overgeslagen: pad niet ingesteld of ongeldig ('{user_specific_path}').")
             return
 
         if processing_type == 'HOPS_PROCESSING':
-            # Extract subfolder name from event_details for OPUS type processing
-            match = re.search(r"Scan event: (.*)$", event_details)
-            if match:
-                subfolder_name = match.group(1).strip()
-                specific_opus_subfolder_path = os.path.join(user_specific_path, subfolder_name)
+            base_code = self._get_base_code(project_code)
+            if not base_code:
+                self._log(f"HOPS_PROCESSING overgeslagen: kon basis project code niet vinden in '{project_code}'.")
+                return
 
-                if os.path.isdir(specific_opus_subfolder_path):
-                    self._log(f"HOPS_PROCESSING (voor {user_type}) wordt gestart (in achtergrond thread) voor specifieke map: {specific_opus_subfolder_path}")
-                    thread = threading.Thread(target=self._execute_opus_import_with_stats, args=(project_code, event_details, timestamp, specific_opus_subfolder_path))
-                    thread.start()
-                    import_triggered_for_user = True
-                else:
-                    self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: specifieke projectmap niet gevonden: '{specific_opus_subfolder_path}'.")
-                    self._log(f"  Event details: \"{event_details}\", Basis pad: \"{user_specific_path}\", Geëxtraheerde submap: \"{subfolder_name}\"")
-            else:
-                self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: kon project submap naam niet extraheren. Details: \"{event_details}\"")
+            match_found = False
+            try:
+                for item_name in os.listdir(user_specific_path):
+                    item_path = os.path.join(user_specific_path, item_name)
+                    if os.path.isdir(item_path):
+                        item_base_name, _ = os.path.splitext(item_name)
+                        is_rep_scan = bool(re.search(r'_REP_?', project_code, re.IGNORECASE))
+
+                        # Determine the code to match against
+                        code_to_match = project_code if is_rep_scan else base_code
+
+                        if item_base_name.upper() == code_to_match.upper():
+                            self._log(f"HOPS_PROCESSING (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                            thread = threading.Thread(target=self._execute_opus_import_with_stats, args=(project_code, event_details, timestamp, item_path))
+                            thread.start()
+                            match_found = True
+                            break  # Stop after finding the first match
+            except Exception as e:
+                self._log(f"Fout bij het zoeken naar HOPS map: {e}")
+
+            if not match_found:
+                self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: geen overeenkomende projectmap gevonden in '{user_specific_path}' voor project '{project_code}'.")
                 
         elif processing_type == 'MDB_PROCESSING':
             self._log(f"MDB_PROCESSING (voor {user_type}) wordt gestart (in achtergrond thread). Pad: {user_specific_path}")
             thread = threading.Thread(target=self._execute_gannomat_import_with_stats, args=(project_code, event_details, timestamp, user_specific_path))
             thread.start()
-            import_triggered_for_user = True
         
         elif processing_type:
-            self._log(f"Onbekend processing_type '{processing_type}' geconfigureerd voor gebruiker '{user_type}'. Geen import actie.")
+            self._log(f"Onbekend processing_type '{processing_type}' voor gebruiker '{user_type}'.")
         else:
-            self._log(f"Geen processing_type geconfigureerd voor gebruiker '{user_type}' in scanner_user_to_processing_type_map. Geen import actie.")
+            self._log(f"Geen processing_type geconfigureerd voor gebruiker '{user_type}'.")
 
         # The detailed success log and total_imports_triggered stat update will now happen within the thread
         # if import_triggered_for_user:
@@ -215,6 +219,19 @@ class BackgroundImportService:
             self._log(f"Fout in GANNOMAT import thread: {e}")
 
     # stop() method removed as it was tied to the global master switch.
+
+    def _get_base_code(self, project_code):
+        """Extracts the base project code (e.g., MO12345 or 123456) from a full project code string."""
+        import re
+        # Prioritize MOxxxxx pattern
+        mo_match = re.search(r'(MO\d{5})', project_code)
+        if mo_match:
+            return mo_match.group(0)
+        # Fallback for ACCURA style 5-6 digit codes
+        accura_match = re.search(r'(\d{5,6})', project_code)
+        if accura_match:
+            return accura_match.group(0)
+        return ""
 
     def _trigger_opus_import(self, project_event_code, details, timestamp, opus_scan_path):
         """Trigger automatische OPUS import en Excel generatie voor .hop/.hops bestanden in de gespecificeerde map."""
@@ -327,45 +344,46 @@ class BackgroundImportService:
             self.logger.error(f"Error saving OPUS Excel report for directory '{opus_scan_path}': {e}")
 
     def _trigger_gannomat_import(self, project_event_code, details, timestamp, gannomat_scan_path):
-        """Trigger automatische GANNOMAT import en Excel generatie voor .mdb/.accdb bestanden."""
+        """Trigger automatische GANNOMAT import en Excel generatie voor .mdb/.accdb bestanden die overeenkomen met de projectcode."""
         self._log(f"GANNOMAT import gestart voor project context: {project_event_code} in map: {gannomat_scan_path}")
 
         if not gannomat_scan_path or not os.path.isdir(gannomat_scan_path):
             self._log(f"GANNOMAT directory niet gevonden of ongeldig: {gannomat_scan_path}")
             self.logger.warning(f"GANNOMAT directory niet gevonden of ongeldig: {gannomat_scan_path}")
-            # self._log_import_event('GANNOMAT', project_event_code, f"Configuratiefout: GANNOMAT map '{gannomat_scan_path}' ongeldig.")
             return
 
         processed_files_count = 0
         excel_reports_generated = 0
+        match_found = False
         try:
             for filename in os.listdir(gannomat_scan_path):
-                if filename.lower().endswith(('.mdb', '.accdb')):
-                    db_file_path = os.path.join(gannomat_scan_path, filename)
-                    self._log(f"Verwerken GANNOMAT bestand: {db_file_path}")
-                    
-                    extracted_data = self._extract_raw_gannomat_data_from_db(db_file_path)
-                    
-                    if extracted_data:
-                        self._create_gannomat_excel_report(extracted_data, db_file_path)
-                        excel_reports_generated += 1
-                        self._log(f"Excel rapport gegenereerd voor {filename}.")
-                    else:
-                        self._log(f"Geen data geëxtraheerd uit {filename} voor Excel rapportage.")
-                    processed_files_count += 1
+                file_basename, file_ext = os.path.splitext(filename)
+                if file_ext.lower() in ('.mdb', '.accdb'):
+                    # Case-insensitive comparison of the file's base name with the project_event_code
+                    if file_basename.upper() == project_event_code.upper():
+                        db_file_path = os.path.join(gannomat_scan_path, filename)
+                        self._log(f"Overeenkomend GANNOMAT bestand gevonden: {db_file_path}. Verwerken...")
+                        match_found = True
+                        
+                        extracted_data = self._extract_raw_gannomat_data_from_db(db_file_path)
+                        
+                        if extracted_data:
+                            self._create_gannomat_excel_report(extracted_data, db_file_path)
+                            excel_reports_generated += 1
+                            self._log(f"Excel rapport gegenereerd voor {filename}.")
+                        else:
+                            self._log(f"Geen data geëxtraheerd uit {filename} voor Excel rapportage.")
+                        processed_files_count += 1
+                        break # Process only the first matched file
             
-            if processed_files_count > 0:
-                self._log(f"{processed_files_count} GANNOMAT bestanden verwerkt. {excel_reports_generated} Excel rapporten gegenereerd in {gannomat_scan_path}.")
-                # self._log_import_event('GANNOMAT', project_event_code, f"{excel_reports_generated} Excel rapport(en) gegenereerd uit {processed_files_count} MDB/ACCDB bestand(en) in {gannomat_scan_path}.")
-            else:
-                self._log(f"Geen .mdb/.accdb bestanden gevonden in GANNOMAT map '{gannomat_scan_path}'.")
-                # self._log_import_event('GANNOMAT', project_event_code, f"Geen .mdb/.accdb bestanden gevonden in {gannomat_scan_path}.")
+            if match_found and processed_files_count > 0:
+                self._log(f"{processed_files_count} GANNOMAT bestand(en) verwerkt. {excel_reports_generated} Excel rapporten gegenereerd voor project '{project_event_code}'.")
+            elif not match_found:
+                self._log(f"Geen overeenkomend .mdb/.accdb bestand gevonden in '{gannomat_scan_path}' voor project '{project_event_code}'.")
 
         except Exception as e:
-            self.logger.error(f"Algemene fout tijdens GANNOMAT import/Excel generatie voor pad {gannomat_scan_path} (project context: {project_event_code}): {e}")
-            self._log(f"Algemene fout GANNOMAT import: {str(e)}")
-            # self._log_import_event('GANNOMAT', project_event_code, f"Fout tijdens GANNOMAT verwerking: {str(e)}")
-
+            self.logger.error(f"Algemene fout tijdens GANNOMAT import voor pad {gannomat_scan_path} (project: {project_event_code}): {e}")
+            self._log(f"Algemene fout GANNOMAT import (project: {project_event_code}): {str(e)}")
         
     def _extract_raw_gannomat_data_from_db(self, db_path):
         """

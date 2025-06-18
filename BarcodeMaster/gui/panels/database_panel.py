@@ -161,17 +161,7 @@ class DatabasePanel(tk.Frame):
         else:
             self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Niet verbonden", foreground="red"))
 
-    def check_connection(self):
-        url = self.api_url_var.get()
-        try:
-            test_url = url.strip().replace('/log', '/logs')
-            resp = requests.get(test_url, timeout=3)
-            if resp.status_code == 200:
-                self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Verbonden", foreground="green"))
-            else:
-                self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Niet verbonden", foreground="red"))
-        except Exception:
-            self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Niet verbonden", foreground="red"))
+
 
     def log_event(self, event, details=None):
         if not self.database_enabled_var.get():
@@ -210,12 +200,20 @@ class DatabasePanel(tk.Frame):
 
     def _check_api_status_loop(self):
         while not self.api_status_thread_stop.is_set():
-            # Use the new service_status object for consistent state
-            api_status_str = self.app.service_status.services.get('db_api', 'stopped').upper()
-            is_active = "RUNNING" in api_status_str
-            if self.winfo_exists():
-                self.set_connection_status(is_active)
-            self.api_status_thread_stop.wait(1)
+            if self.database_enabled_var.get() and self.winfo_exists():
+                url = self.api_url_var.get()
+                try:
+                    # Use a GET request for the periodic status check.
+                    resp = requests.get(url, timeout=3)
+                    is_active = resp.status_code == 200 and resp.json().get('success')
+                    self.set_connection_status(is_active)
+                except Exception:
+                    self.set_connection_status(False)
+            else:
+                if self.winfo_exists():
+                    self.set_connection_status(False)
+            # Wait for 5 seconds to reduce server load.
+            self.api_status_thread_stop.wait(5)
 
     def shutdown(self):
         """Graceful shutdown method to be called on application close."""

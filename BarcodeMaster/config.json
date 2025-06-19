@@ -8,25 +8,23 @@
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
         "OPUS",
-        "KL GANNOMAT",
-        "ACCURA"
+        "KL GANNOMAT"
     ],
     "scanner_user_to_processing_type_map": {
         "OPUS": "HOPS_PROCESSING",
-        "KL GANNOMAT": "MDB_PROCESSING",
-        "ACCURA": "GEEN_PROCESSING"
+        "KL GANNOMAT": "MDB_PROCESSING"
     },
     "scanner_panel_event_type": "OPEN",
     "scanner_panel_event_type_locked": false,
     "database_panel_api_config_locked": false,
     "scanner_panel_open_event_user_logic_active": {
         "OPUS": true,
-        "KL GANNOMAT": true,
-        "ACCURA": false
+        "KL GANNOMAT": true
     },
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,
     "scanner_panel_open_event_user_paths": {
+        "OPUS": "C:/OPUS/KORPUS",
         "KL GANNOMAT": "C:/GANNOMAT"
     },
     "master_background_service_active": true,

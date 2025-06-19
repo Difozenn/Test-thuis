@@ -149,24 +149,38 @@ class BackgroundImportService:
             return
 
         if processing_type == 'HOPS_PROCESSING':
-            base_code = self._get_base_code(project_code)
-            if not base_code:
-                self._log(f"HOPS_PROCESSING overgeslagen: kon basis project code niet vinden in '{project_code}'.")
+            # The project_code passed in is now the one to use for matching,
+            # whether it's a base code or a full REP project name.
+            code_to_match = project_code
+            self._log(f"HOPS_PROCESSING: Using '{code_to_match}' for directory matching.")
+
+            if not code_to_match:
+                self._log("Could not determine a project code to match against. Aborting HOPS_PROCESSING.")
                 return
 
             match_found = False
             try:
+                is_rep_project_code = '_REP_' in code_to_match.upper()
                 for item_name in os.listdir(user_specific_path):
                     item_path = os.path.join(user_specific_path, item_name)
                     if os.path.isdir(item_path):
-                        item_base_name, _ = os.path.splitext(item_name)
-                        is_rep_scan = bool(re.search(r'_REP_?', project_code, re.IGNORECASE))
-
-                        # Determine the code to match against
-                        code_to_match = project_code if is_rep_scan else base_code
-
-                        if item_base_name.upper() == code_to_match.upper():
-                            self._log(f"HOPS_PROCESSING (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                        match_condition_met = False
+                        if is_rep_project_code:
+                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
+                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
+                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
+                            if ends_with_result:
+                                match_condition_met = True
+                                self._log(f"HOPS_PROCESSING (REP match) (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                        else: # Not a REP variant, use endswith for robustness with prefixes
+                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
+                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
+                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
+                            if ends_with_result:
+                                match_condition_met = True
+                                self._log(f"HOPS_PROCESSING (EndsWith match) (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                        
+                        if match_condition_met:
                             thread = threading.Thread(target=self._execute_opus_import_with_stats, args=(project_code, event_details, timestamp, item_path))
                             thread.start()
                             match_found = True
@@ -175,7 +189,7 @@ class BackgroundImportService:
                 self._log(f"Fout bij het zoeken naar HOPS map: {e}")
 
             if not match_found:
-                self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: geen overeenkomende projectmap gevonden in '{user_specific_path}' voor project '{project_code}'.")
+                self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: geen overeenkomende projectmap gevonden in '{user_specific_path}' voor project '{code_to_match}'.")
                 
         elif processing_type == 'MDB_PROCESSING':
             self._log(f"MDB_PROCESSING (voor {user_type}) wordt gestart (in achtergrond thread). Pad: {user_specific_path}")
@@ -288,8 +302,8 @@ class BackgroundImportService:
                 for filename in filenames:
                     if filename.lower().endswith(('.hop', '.hops')):
                         full_path = os.path.join(root, filename)
-                        relative_path = os.path.relpath(full_path, opus_scan_path)
-                        found_files_data.append({'Item': relative_path})
+                        # Store the full absolute path instead of relative path
+                        found_files_data.append({'Item': full_path})
             if found_files_data:
                 self._log(f"{len(found_files_data)} .hop/.hops bestanden verzameld uit '{opus_scan_path}'.")
             else:
@@ -356,15 +370,32 @@ class BackgroundImportService:
         excel_reports_generated = 0
         match_found = False
         try:
+            is_rep_project_code = '_REP_' in project_event_code.upper()
             for filename in os.listdir(gannomat_scan_path):
                 file_basename, file_ext = os.path.splitext(filename)
                 if file_ext.lower() in ('.mdb', '.accdb'):
-                    # Case-insensitive comparison of the file's base name with the project_event_code
-                    if file_basename.upper() == project_event_code.upper():
-                        db_file_path = os.path.join(gannomat_scan_path, filename)
-                        self._log(f"Overeenkomend GANNOMAT bestand gevonden: {db_file_path}. Verwerken...")
+                    match_condition_met = False
+                    db_file_path = "" # Define here to be accessible after condition
+
+                    if is_rep_project_code:
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        if ends_with_result:
+                            match_condition_met = True
+                            db_file_path = os.path.join(gannomat_scan_path, filename)
+                            self._log(f"Overeenkomend GANNOMAT bestand (REP match) gevonden: {db_file_path}. Verwerken...")
+                    else: # Not a REP variant, use endswith for robustness with prefixes
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        if ends_with_result:
+                            match_condition_met = True
+                            db_file_path = os.path.join(gannomat_scan_path, filename)
+                            self._log(f"Overeenkomend GANNOMAT bestand (EndsWith match) gevonden: {db_file_path}. Verwerken...")
+                    
+                    if match_condition_met:
                         match_found = True
-                        
                         extracted_data = self._extract_raw_gannomat_data_from_db(db_file_path)
                         
                         if extracted_data:
@@ -482,7 +513,7 @@ class BackgroundImportService:
 
             export_dir = os.path.dirname(db_path)
             base_name = os.path.splitext(mdb_basename)[0]
-            excel_path = os.path.join(export_dir, f"{base_name}_GANNOMAT.xlsx")
+            excel_path = os.path.join(export_dir, f"{base_name}.xlsx")
 
             df_export.to_excel(excel_path, index=False)
             self._log(f"GANNOMAT Excel rapport succesvol opgeslagen: {excel_path}")

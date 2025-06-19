@@ -88,7 +88,7 @@ DB_API_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'database'
 def show_splash(main_tk_root):  # Modified to accept main_tk_root
     splash = tk.Toplevel(main_tk_root)
     splash.overrideredirect(True)
-    splash.configure(bg='white')
+    # splash.configure(bg='white') # Remove explicit white background for Toplevel
     # Center splash
     w, h = 400, 400
     ws = splash.winfo_screenwidth()
@@ -98,17 +98,19 @@ def show_splash(main_tk_root):  # Modified to accept main_tk_root
     splash.geometry(f"{w}x{h}+{x}+{y}")
     # Load logo
     logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
-    pil_img = Image.open(logo_path).resize((350, 350), Image.LANCZOS)
+    pil_img = Image.open(logo_path).resize((400, 400), Image.LANCZOS) # Resize to fill 400x400 splash window
     img = ImageTk.PhotoImage(pil_img)
-    label = tk.Label(splash, image=img, bg='white')
+    # Set borderwidth and highlightthickness to 0 for the label
+    # Also, remove explicit bg='white' from label to let image transparency work if OS supports
+    label = tk.Label(splash, image=img, borderwidth=0, highlightthickness=0)
     label.image = img
     label.pack(expand=True)
 
     splash.update_idletasks()  # Process geometry and other idle tasks
     splash.update()          # Force redraw of the splash screen
 
-    splash.after(2000, splash.destroy) # Schedule splash destruction
-    main_tk_root.after(2010, main_tk_root.deiconify) # Schedule main window to appear after splash
+    splash.after(3000, splash.destroy) # Schedule splash destruction (3 seconds)
+    main_tk_root.after(3010, main_tk_root.deiconify) # Schedule main window to appear after splash
 
 def is_db_log_api_running():
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
@@ -122,8 +124,17 @@ def is_db_log_api_running():
 
 def start_db_log_api():
     python_exe = sys.executable
+    log_dir = os.path.join(os.path.dirname(__file__), 'database')
+    log_file_path = os.path.join(log_dir, 'db_log_api.log')
+
+    # Ensure the log directory exists
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Open the log file in append mode
+    log_file = open(log_file_path, 'a')
+
     # Use the globally defined DB_API_PATH
-    subprocess.Popen([python_exe, DB_API_PATH], cwd=os.path.dirname(DB_API_PATH), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen([python_exe, DB_API_PATH], cwd=os.path.dirname(DB_API_PATH), stdout=log_file, stderr=log_file)
 
 def manage_services(service_status):
     """Checks config, starts background services, and updates their status."""

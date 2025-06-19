@@ -257,7 +257,7 @@ class ImportPanel(ttk.Frame):
             if 'Item' in df.columns: # Changed from ProgramNumber to Item
                 df = df[['Item']] # Changed from ProgramNumber to Item
                 df['Status'] = '' # Ensure Status column is added
-            excel_path = os.path.join(export_dir, f"{folder_name}_GANNOMAT.xlsx")
+            excel_path = os.path.join(export_dir, f"{folder_name}.xlsx")
         else:
             # Always add Status column for OPUS
             if 'Status' not in df.columns:

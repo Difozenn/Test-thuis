@@ -119,18 +119,26 @@ class AdminPanel(tk.Frame):
         return label
 
     def _detect_lan_ip(self):
+        """
+        Performs LAN IP detection in a background thread and schedules the UI update
+        on the main thread to avoid threading issues with Tkinter.
+        """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                # This is a blocking call, so it's good it's in a thread.
                 s.connect(("8.8.8.8", 80))
-                self.lan_ip = s.getsockname()[0]
+                lan_ip = s.getsockname()[0]
         except Exception as e:
-            self.lan_ip = f"Fout: {e}"
-        if self.winfo_exists():
-            self.after(0, self.update_db_info)
+            lan_ip = f"Fout: {e}"
 
-    def update_db_info(self):
-        if self.winfo_exists():
-            self.lan_ip_label.config(text=self.lan_ip)
+        def _update_ui():
+            # This function will be executed on the main thread.
+            if self.winfo_exists():
+                self.lan_ip = lan_ip
+                self.lan_ip_label.config(text=self.lan_ip)
+        
+        # Schedule the UI update to run on the main thread.
+        self.after(0, _update_ui)
 
     def start_api_status_thread(self):
         threading.Thread(target=self._check_api_status_loop, daemon=True).start()

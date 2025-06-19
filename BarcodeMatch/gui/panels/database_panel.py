@@ -204,8 +204,8 @@ class DatabasePanel(ttk.Frame):
 
 
 
-    def log_event(self, event, project_name, details, on_error_recheck=None):
-        """Post a generic event to the API."""
+    def log_event(self, event, project_name, details, on_error_recheck=None, base_mo_code=None, is_rep_variant=None):
+        """Post a generic event to the API, optionally including base_mo_code and is_rep_variant."""
         if not self.database_enabled_var.get():
             return False
 
@@ -217,6 +217,10 @@ class DatabasePanel(ttk.Frame):
             "project": project_name,
             "user": user
         }
+        if base_mo_code is not None:
+            payload['base_mo_code'] = base_mo_code
+        if is_rep_variant is not None:
+            payload['is_rep_variant'] = is_rep_variant
 
         try:
             resp = requests.post(api_url, json=payload, timeout=5)
@@ -235,16 +239,15 @@ class DatabasePanel(ttk.Frame):
                 on_error_recheck()
             return False
 
-    def log_project_closed(self, project_name, on_error_recheck=None):
+    def log_project_closed(self, project_name, on_error_recheck=None, base_mo_code=None, is_rep_variant=None):
         """
-        Post a AFGEMELD event to the API. If POST fails and database is enabled, call on_error_recheck (if provided).
+        Post a AFGEMELD event to the API, including base_mo_code and is_rep_variant if provided.
+        If POST fails and database is enabled, call on_error_recheck (if provided).
         Returns True if success, False if error.
         """
-        config_enabled = self.database_enabled_var.get() if hasattr(self, 'database_enabled_var') else True
-        api_url = self.api_url_var.get() if hasattr(self, 'api_url_var') else 'http://localhost:5001/log'
         user = self.user_var.get() if hasattr(self, 'user_var') else 'user'
         details = f"{project_name} afgemeld aan {user}"
-        return self.log_event("AFGEMELD", project_name, details, on_error_recheck)
+        return self.log_event("AFGEMELD", project_name, details, on_error_recheck, base_mo_code=base_mo_code, is_rep_variant=is_rep_variant)
 
     def set_db_recheck_callback(self, callback):
         """Set a callback to be called when a connection recheck is needed (e.g., from log_project_closed)."""

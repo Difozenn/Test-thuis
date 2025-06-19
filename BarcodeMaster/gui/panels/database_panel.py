@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import logging
 from PIL import Image, ImageTk
 import os
 import re
@@ -15,9 +16,8 @@ class DatabasePanel(tk.Frame):
         super().__init__(master, bg=PANEL_BG)
         self.app = app
         self.config = get_config()
-        self.api_status_thread_stop = threading.Event()
         self.build_panel()
-        self.start_api_status_thread()
+        self.start_api_status_check()
 
     def toggle_database_enabled(self, *args):
         save_config({'database_enabled': self.database_enabled_var.get()})
@@ -195,27 +195,34 @@ class DatabasePanel(tk.Frame):
         if self.log_event("test_event", "Dit is een test van REST API logging."):
             messagebox.showinfo("Gelukt", "Test event gelogd naar centrale logging API.")
 
-    def start_api_status_thread(self):
-        threading.Thread(target=self._check_api_status_loop, daemon=True).start()
+    def start_api_status_check(self):
+        """Starts the periodic API status check loop using `self.after`."""
+        self._check_api_status()  # Start the first check
 
-    def _check_api_status_loop(self):
-        while not self.api_status_thread_stop.is_set():
-            if self.database_enabled_var.get() and self.winfo_exists():
-                url = self.api_url_var.get()
-                try:
-                    # Use a GET request for the periodic status check.
-                    resp = requests.get(url, timeout=3)
-                    is_active = resp.status_code == 200 and resp.json().get('success')
-                    self.set_connection_status(is_active)
-                except Exception:
-                    self.set_connection_status(False)
-            else:
-                if self.winfo_exists():
-                    self.set_connection_status(False)
-            # Wait for 5 seconds to reduce server load.
-            self.api_status_thread_stop.wait(5)
+    def _check_api_status(self):
+        """Schedules the network check and the next iteration of itself."""
+        if not self.winfo_exists():
+            return  # Stop the loop if the widget is destroyed
+
+        if self.database_enabled_var.get():
+            url = self.api_url_var.get()
+            threading.Thread(target=self._perform_network_check, args=(url,), daemon=True).start()
+
+        self.after(5000, self._check_api_status)  # Schedule the next check
+
+    def _perform_network_check(self, url):
+        """Performs the blocking network request in a background thread."""
+        try:
+            resp = requests.get(url, timeout=3)
+            is_active = resp.status_code == 200 and resp.json().get('success', False)
+            # Schedule the UI update on the main thread
+            self.after(0, self.set_connection_status, is_active)
+        except Exception:
+            # Schedule the UI update on the main thread
+            self.after(0, self.set_connection_status, False)
 
     def shutdown(self):
         """Graceful shutdown method to be called on application close."""
-        if hasattr(self, 'api_status_thread_stop'):
-            self.api_status_thread_stop.set()
+        # The status check loop now stops automatically when the widget is destroyed,
+        # so no explicit stop signal is needed.
+        logging.info("[DatabasePanel] Shutdown called.")

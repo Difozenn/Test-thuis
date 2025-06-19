@@ -280,7 +280,7 @@ def run_app():
     from gui.splashscreen import SplashScreen
     import os
     logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'Logo.png')
-    splash = SplashScreen(root, logo_path, duration=2000)
+    splash = SplashScreen(root, logo_path, duration=2000) # Set duration to 2 seconds
 
     # Force the splash screen to draw immediately
     splash.update_idletasks()

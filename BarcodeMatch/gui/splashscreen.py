@@ -5,7 +5,7 @@ class SplashScreen(tk.Toplevel):
     def __init__(self, parent, logo_path, duration=2000):
         super().__init__(parent)
         self.overrideredirect(True)
-        self.configure(bg='white')
+        # self.configure(bg='white') # Remove explicit white background for Toplevel
 
         # Center splash
         w, h = 400, 400
@@ -17,9 +17,9 @@ class SplashScreen(tk.Toplevel):
 
         # Load and resize logo
         try:
-            pil_img = Image.open(logo_path).resize((350, 350), Image.LANCZOS)
+            pil_img = Image.open(logo_path).resize((400, 400), Image.LANCZOS) # Resize to fill 400x400 splash window
             self.img = ImageTk.PhotoImage(pil_img)
-            label = tk.Label(self, image=self.img, bg='white')
+            label = tk.Label(self, image=self.img, borderwidth=0, highlightthickness=0)
             label.image = self.img # Keep a reference
             label.pack(expand=True)
         except Exception as e:

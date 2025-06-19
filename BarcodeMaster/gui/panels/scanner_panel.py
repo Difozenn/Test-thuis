@@ -568,10 +568,11 @@ class ScannerPanel(tk.Frame):
         api_url = config.get('api_url', '').rstrip('/')
 
         base_project_code, full_project_code = self._extract_project_code(code)
-        project_code_to_log = full_project_code
+        project_code_to_log = full_project_code # This is the unique identifier (e.g., MO12345 or MO12345_REP_XYZ)
 
-        if event_type == 'OPEN' and '_REP' not in full_project_code and base_project_code and base_project_code in self.open_projects:
-            self.log_message(f"Warning: Project {base_project_code} is al OPEN.")
+        # Check if this specific project (base or REP variant) is already open
+        if event_type == 'OPEN' and project_code_to_log and project_code_to_log in self.open_projects:
+            self.log_message(f"Warning: Project {project_code_to_log} is al OPEN.")
             self.usb_entry.config(bg='yellow')
             self.after(2000, lambda: self.usb_entry.config(bg='white'))
             return
@@ -594,15 +595,17 @@ class ScannerPanel(tk.Frame):
             data_afgemeld = {
                 'event': 'AFGEMELD',
                 'details': code,
-                'project': project_code_to_log,
+                'project': project_code_to_log, # Full unique project identifier
+                'base_mo_code': base_project_code, # MOxxxxx part
+                'is_rep_variant': '_REP_' in project_code_to_log.upper(),
                 'user': current_user
             }
-            self.log_message(f"  [OPEN LOGIC] Payload for current user (AFGEMELD): {data_afgemeld}")
+            self.log_message(f"  [OPEN LOGIC] Sending pre-emptive AFGEMELD to close any existing project: {data_afgemeld}")
             try:
                 resp_afgemeld = requests.post(api_url, json=data_afgemeld, timeout=3)
                 if resp_afgemeld.ok:
-                    if base_project_code:
-                        self.open_projects.discard(base_project_code)
+                    if project_code_to_log: # Use the full project ID for tracking
+                        self.open_projects.discard(project_code_to_log)
                 else:
                     all_ok = False
             except Exception:
@@ -627,13 +630,15 @@ class ScannerPanel(tk.Frame):
                                     item_base_name, _ = os.path.splitext(item_name)
                                     is_rep_scan = bool(re.search(r'_REP_?', full_project_code, re.IGNORECASE))
                                     if is_rep_scan:
-                                        # For REP scans, match the full dynamic code
-                                        if item_base_name.upper() == full_project_code.upper():
+                                        # For REP scans, match if item_base_name ends with the (potentially stripped) full_project_code.
+                                        # full_project_code here is project_code_to_log from the outer scope.
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()):
                                             match_found = True
                                             break
                                     else:
-                                        # For standard scans, match base code but exclude REP items
-                                        if item_base_name.upper() == base_project_code.upper() and '_REP_' not in item_name.upper():
+                                        # For standard scans, match if the item name ends with the full project code (e.g., "0618_MO12345_ABC" ends with "MO12345_ABC")
+                                        # Also ensure we don't accidentally match a REP variant if this isn't a REP scan.
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and '_REP_' not in item_name.upper():
                                             match_found = True
                                             break
                         except OSError as e_os:
@@ -645,14 +650,16 @@ class ScannerPanel(tk.Frame):
                         data_open = {
                             'event': 'OPEN',
                             'details': f"Match found for {project_code_to_log} in {user_dir}",
-                            'project': project_code_to_log,
+                            'project': project_code_to_log, # Full unique project identifier
+                            'base_mo_code': base_project_code, # MOxxxxx part
+                            'is_rep_variant': '_REP_' in project_code_to_log.upper(),
                             'user': user
                         }
                         try:
                             resp_open = requests.post(api_url, json=data_open, timeout=3)
                             if resp_open.ok:
-                                if base_project_code:
-                                    self.open_projects.add(base_project_code)
+                                if project_code_to_log: # Use the full project ID for tracking
+                                    self.open_projects.add(project_code_to_log)
                                 self.background_import_service.trigger_import_for_event(
                                     user_type=user,
                                     project_code=project_code_to_log,
@@ -679,14 +686,16 @@ class ScannerPanel(tk.Frame):
             data = {
                 'event': event_type,
                 'details': code,
-                'project': project_code_to_log,
+                'project': project_code_to_log, # Full unique project identifier
+                'base_mo_code': base_project_code, # MOxxxxx part
+                'is_rep_variant': '_REP_' in project_code_to_log.upper(),
                 'user': current_user
             }
             try:
                 response = requests.post(api_url, json=data, timeout=3)
                 if response.ok:
-                    if event_type == 'AFGEMELD' and base_project_code:
-                        self.open_projects.discard(base_project_code)
+                    if event_type == 'AFGEMELD' and project_code_to_log: # Use the full project ID for tracking
+                        self.open_projects.discard(project_code_to_log)
                     self.usb_entry.config(bg='light green')
                 else:
                     self.usb_entry.config(bg='red')
@@ -696,30 +705,76 @@ class ScannerPanel(tk.Frame):
                 self.usb_entry.config(bg='red')
             self.after(2000, lambda: self.usb_entry.config(bg='white'))
 
-    def _extract_project_code(self, code):
+    def _extract_full_project_name(self, scan_data):
+        """
+        Extracts the full project name from scan data if it's a REP file path.
+        Example: ...;Y:/.../0618_MO07834_Boekenkast_Rep_VL5/... -> 0618_MO07834_Boekenkast_Rep_VL5
+        Returns the full project name string or None if not a REP path.
+        """
+        if '_REP_' in scan_data.upper():
+            try:
+                path_part = scan_data.split(';', 1)[1].strip()
+                directory_path = os.path.dirname(path_part)
+                project_name = os.path.basename(directory_path)
+                if '_REP_' in project_name.upper():
+                    return project_name
+            except (IndexError, TypeError):
+                return None # Failed to parse
+        return None # Not a REP file
+
+    def _extract_project_code(self, code_input):
         import re
+        import os
+
+        # 1. Find base project code (MOxxxxx or xxxxxx)
         base_project_code = ""
-        full_project_code = ""
-        
-        # Find base project code (MOxxxxx or 5-6 digits)
-        mo_match = re.search(r'(MO\d{5})', code)
+        # Corrected regex: use r'...' raw string format with single backslash for \d
+        mo_match = re.search(r'(MO\d{5})', code_input, re.IGNORECASE)
         if mo_match:
-            base_project_code = mo_match.group(1)
+            base_project_code = mo_match.group(0).upper()
         else:
-            accura_match = re.search(r'(\d{5,6})', code)
+            # Corrected regex: use r'...' raw string format with single backslash for \d
+            accura_match = re.search(r'(\d{5,6})', code_input)
             if accura_match:
-                base_project_code = accura_match.group(1)
-
+                base_project_code = accura_match.group(0)
+        
         if not base_project_code:
-            return "", "" # No project code found
+            self.log_message(f"Debug: No base_project_code found in '{code_input}'")
+            return "", ""
 
-        # Now find the full project code including the dynamic _REP_ part
-        rep_match = re.search(f'({re.escape(base_project_code)}_REP(?:_\\S*)?)', code, re.IGNORECASE)
-        if rep_match:
-            full_project_code = rep_match.group(1)
-        else:
-            full_project_code = base_project_code
+        # 2. Find the full project code from the path, defaulting to the base code
+        full_project_code = base_project_code
+        
+        try:
+            # Normalize path and find the component that contains the base_project_code
+            path_components = os.path.normpath(code_input).split(os.sep)
+            project_folder_name = ""
+            for component in path_components:
+                if base_project_code in component.upper():
+                    project_folder_name = component
+                    break # Found the most likely project folder
             
+            if project_folder_name:
+                # 3. Strip leading date-like prefix (e.g., '0618_') if it exists
+                # Corrected regex: use r'...' raw string format with single backslash for \d
+                prefix_match = re.match(r'^(\d{4}_)', project_folder_name)
+                if prefix_match:
+                    prefix = prefix_match.group(1)
+                    # Check if the folder name starts with the prefix and the base code
+                    if project_folder_name.upper().startswith(prefix + base_project_code):
+                        full_project_code = project_folder_name[len(prefix):]
+                        self.log_message(f"Debug: Stripped prefix '{prefix}'. New full_project_code: '{full_project_code}'")
+                    else:
+                        # It's a prefixed folder, but not in the expected format. Use the whole folder name.
+                        full_project_code = project_folder_name
+                else:
+                    # No prefix, use the folder name as is
+                    full_project_code = project_folder_name
+        except Exception as e:
+            self.log_message(f"Debug: Error parsing path '{code_input}': {e}. Falling back to base code.")
+            full_project_code = base_project_code
+
+        self.log_message(f"Debug _extract_project_code: input='{code_input}', base='{base_project_code}', final full='{full_project_code}'")
         return base_project_code, full_project_code
 
     def _set_dbpanel_connection_status(self, connected, error_reason=None):

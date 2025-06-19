@@ -598,3 +598,149 @@
 2025-06-18 20:40:29,715 - INFO - Excel rapport gegenereerd voor MO00001.Mdb.
 2025-06-18 20:40:29,715 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO00001'.
 2025-06-18 20:40:29,715 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 3, Totaal: 3
+2025-06-19 19:27:47,456 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:27:47,456 - INFO - Event ontvangen: User=OPUS, Project=0618_MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:27:47,456 - INFO - HOPS_PROCESSING: Using '0618_MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:27:47,456 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:27:47,456 - INFO - OPUS import gestart voor project context: 0618_MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:27:47,457 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:27:47,457 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:27:48,115 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:27:48,115 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:27:48,115 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:27:49,495 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:27:49,495 - INFO - Event ontvangen: User=KL GANNOMAT, Project=0618_MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:27:49,496 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:27:49,496 - INFO - GANNOMAT import gestart voor project context: 0618_MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:27:49,496 - INFO - Overeenkomend GANNOMAT bestand gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:27:49,674 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:27:49,734 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:27:49,735 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:27:49,735 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:27:49,735 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project '0618_MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:27:49,735 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 19:33:25,579 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:33:25,579 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:33:25,580 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:33:25,580 - INFO - HOPS_PROCESSING (voor OPUS) overgeslagen: geen overeenkomende projectmap gevonden in 'C:/OPUS/KORPUS' voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:33:27,599 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:33:27,599 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:33:27,599 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:33:27,600 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:33:27,600 - INFO - Geen overeenkomend .mdb/.accdb bestand gevonden in 'C:/GANNOMAT' voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:33:27,600 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 1
+2025-06-19 19:41:17,523 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:41:17,523 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:41:17,523 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:17,524 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:41:17,524 - INFO - HOPS_PROCESSING (REP match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:41:17,524 - INFO - OPUS import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:41:17,524 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:41:17,524 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:41:17,657 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:41:17,658 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:41:17,658 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:41:19,546 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:41:19,546 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:41:19,546 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:41:19,547 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,548 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:41:19,548 - INFO - Overeenkomend GANNOMAT bestand (REP match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:41:19,714 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:41:19,771 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:41:19,771 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:41:19,772 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:41:19,772 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:41:19,772 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 19:47:01,764 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:47:01,765 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:47:01,765 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:47:01,765 - INFO - HOPS_PROCESSING (REP match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:47:01,766 - INFO - OPUS import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:47:01,766 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:47:01,766 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:47:01,896 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:47:01,896 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:47:01,897 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:47:03,792 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:47:03,792 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:47:03,793 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:47:03,793 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:03,794 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,794 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:47:03,794 - INFO - Overeenkomend GANNOMAT bestand (REP match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:47:03,965 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:47:04,022 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:47:04,022 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:47:04,022 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:47:04,023 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:47:04,023 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 20:56:16,418 - INFO - Configuratie succesvol geladen.
+2025-06-19 20:56:16,419 - INFO - Event ontvangen: User=OPUS, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 20:56:16,419 - INFO - HOPS_PROCESSING: Using 'MO07834_Boekenkast' for directory matching.
+2025-06-19 20:56:16,419 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 20:56:16,419 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 20:56:16,419 - INFO - HOPS_PROCESSING (EndsWith match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 20:56:16,420 - INFO - OPUS import gestart voor project context: MO07834_Boekenkast in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 20:56:16,420 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast'.
+2025-06-19 20:56:16,420 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast' voor Excel rapportage.
+2025-06-19 20:56:16,552 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 20:56:16,552 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 20:56:16,552 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 20:56:18,444 - INFO - Configuratie succesvol geladen.
+2025-06-19 20:56:18,444 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 20:56:18,444 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 20:56:18,444 - INFO - GANNOMAT import gestart voor project context: MO07834_Boekenkast in map: C:/GANNOMAT
+2025-06-19 20:56:18,445 - INFO - Geen overeenkomend .mdb/.accdb bestand gevonden in 'C:/GANNOMAT' voor project 'MO07834_Boekenkast'.
+2025-06-19 20:56:18,445 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 21:03:52,237 - INFO - Configuratie succesvol geladen.
+2025-06-19 21:03:52,237 - INFO - Event ontvangen: User=OPUS, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 21:03:52,237 - INFO - HOPS_PROCESSING: Using 'MO07834_Boekenkast' for directory matching.
+2025-06-19 21:03:52,237 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:52,237 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 21:03:52,237 - INFO - HOPS_PROCESSING (EndsWith match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 21:03:52,238 - INFO - OPUS import gestart voor project context: MO07834_Boekenkast in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 21:03:52,238 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast'.
+2025-06-19 21:03:52,238 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast' voor Excel rapportage.
+2025-06-19 21:03:52,364 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 21:03:52,364 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 21:03:52,364 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 21:03:54,263 - INFO - Configuratie succesvol geladen.
+2025-06-19 21:03:54,263 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 21:03:54,263 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 21:03:54,263 - INFO - GANNOMAT import gestart voor project context: MO07834_Boekenkast in map: C:/GANNOMAT
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST'? Result: False
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 21:03:54,264 - INFO - Overeenkomend GANNOMAT bestand (EndsWith match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast.Mdb. Verwerken...
+2025-06-19 21:03:54,439 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast.Mdb
+2025-06-19 21:03:54,502 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_GANNOMAT.xlsx
+2025-06-19 21:03:54,502 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_GANNOMAT.xlsx
+2025-06-19 21:03:54,502 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast.Mdb.
+2025-06-19 21:03:54,502 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_Boekenkast'.
+2025-06-19 21:03:54,502 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 21:31:51,339 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:32:34,560 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:35:49,094 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:23,452 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:24,517 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:25,722 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:43:48,228 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 22:19:00,904 - INFO - [DatabasePanel] Shutdown called.

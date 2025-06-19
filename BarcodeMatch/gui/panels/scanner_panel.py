@@ -9,7 +9,10 @@ import serial.tools.list_ports
 import os
 import re
 import re
-from config_utils import load_config as _load_full_config, update_config as _save_full_config
+import requests # Added for API calls
+import os
+import json
+from config_utils import get_config_path, load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
     def __init__(self, parent, main_app, **kwargs):
@@ -380,12 +383,14 @@ class ScannerPanel(ttk.Frame):
         # Use the original barcode from Excel for logging if a lenient match was found
         log_barcode = original_barcode_from_excel
 
-        if current_status == 'OK' or current_status == 'DUPLICAAT': # Behandel DUPLICAAT ook als al OK
-            self._log(f"[DUPLICAAT] Barcode {log_barcode} al gescand als OK.")
-            item['status'] = 'DUPLICAAT' # Zorg ervoor dat de status DUPLICAAT is
-            self._update_treeview(item_id, 'DUPLICATE') # Gebruik de Engelse tag voor consistentie met tag_configure
-        else:
-            self._log(f"[OK] Barcode {log_barcode} komt overeen.")
+        if current_status == 'OK':
+            self._log(f"[WAARSCHUWING] Item '{log_barcode}' is al gescand en gemarkeerd als OK. Dubbele scan genegeerd.")
+            # No change to item['status'], no _update_treeview, item remains OK
+        elif current_status == 'DUPLICAAT':
+            self._log(f"[WAARSCHUWING] Item '{log_barcode}' is al eerder als DUPLICAAT gescand. Verdere scan genegeerd.")
+            # No change to item['status'], no _update_treeview, item remains DUPLICATE
+        else: # This implies current_status is 'NIET OK' or similar (e.g., empty from Excel)
+            self._log(f"[OK] Barcode {log_barcode} komt overeen en is nu gemarkeerd als OK.")
             item['status'] = 'OK'
             self._update_treeview(item_id, 'OK')
             self._save_updated_excel() # Save changes
@@ -407,7 +412,20 @@ class ScannerPanel(ttk.Frame):
             self._perform_completion_actions()
 
             # Now, handle archiving.
-            config = _load_full_config()
+            config = {}
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    try:
+                        config = json.load(f)
+                    except json.JSONDecodeError:
+                        self._log(f"[FOUT] Kon configuratiebestand niet lezen (JSON decode error): {config_file_path}")
+                        messagebox.showerror("Configuratie Fout", f"Fout bij het lezen van het configuratiebestand.\nControleer of {config_file_path} een valide JSON-bestand is.")
+                        return # Stop if config is corrupt
+            else:
+                self._log(f"[WAARSCHUWING] Configuratiebestand niet gevonden: {config_file_path}")
+                # Allow to proceed with defaults if config file is missing, api_url will be empty
+
             archive_enabled = config.get('archive_on_all_ok', False)
 
             if archive_enabled:
@@ -781,39 +799,96 @@ class ScannerPanel(ttk.Frame):
             self._log(f"[FOUT] Opslaan van bijgewerkt Excel-bestand {save_path} mislukt: {e}")
             messagebox.showerror("Opslaan Mislukt", f"Kon status niet opslaan naar {os.path.basename(save_path)}: {e}")
 
+    def _extract_project_codes_from_filename_base(self, filename_base):
+        """
+        Extracts the base MO/Accura code and the full project code from a filename base.
+        Strips leading date-like prefixes (e.g., MMDD_, YYYY_) from the full_project_code
+        if the prefix is followed by the base_mo_code.
+        Example: "MO07834" -> ("MO07834", "MO07834")
+                 "0618_MO07834_Boekenkast_Rep_VL5" -> ("MO07834", "MO07834_Boekenkast_Rep_VL5")
+        Returns (base_mo_code, full_project_code)
+        """
+        # re is imported at the module level
+
+        full_project_code = filename_base
+        base_mo_code = ""
+
+        # Try to find MOxxxxx pattern, case-insensitive, within the full_project_code
+        mo_match = re.search(r'(MO\d{5})', full_project_code, re.IGNORECASE)
+        if mo_match:
+            base_mo_code = mo_match.group(0).upper()
+        else:
+            # Fallback for ACCURA style 5-6 digit codes if MO not found
+            accura_match = re.search(r'(\d{5,6})', full_project_code)
+            if accura_match:
+                base_mo_code = accura_match.group(0)
+
+        # If a base_mo_code was found and the full_project_code is potentially prefixed
+        if base_mo_code and len(full_project_code) > len(base_mo_code):
+            try:
+                # Find the starting position of base_mo_code (case-insensitive) in full_project_code
+                start_index_of_base = full_project_code.upper().find(base_mo_code.upper())
+
+                if start_index_of_base > 0:  # base_mo_code is found and it's not at the very beginning
+                    potential_prefix = full_project_code[:start_index_of_base]
+                    # Check if this potential_prefix is exactly a 4-digit date-like prefix (e.g., "0618_")
+                    if re.fullmatch(r"\d{4}_", potential_prefix):
+                        # If it matches, strip the prefix from full_project_code
+                        full_project_code = full_project_code[len(potential_prefix):]
+            except AttributeError:
+                # This might occur if base_mo_code or full_project_code is not a string, though unlikely here.
+                # Log or handle as appropriate if this case needs specific error recovery.
+                pass
+                
+        return base_mo_code, full_project_code
+
     def _perform_completion_actions(self):
         """Handles all actions after all items are successfully scanned.
         This includes logging, database updates, and email notifications.
         """
         self._log("Alle items zijn succesvol gescand! Acties na voltooiing worden uitgevoerd.")
-        messagebox.showinfo("Voltooid", "Alle items zijn succesvol gescand!")
-
-        excel_path = self.excel_file_path_var.get()
-        if not excel_path:
-            self._log("[WARN] Geen Excel-bestandspad gevonden, kan projectnaam niet bepalen voor logging/email.")
+        
+        excel_full_path = self.excel_file_path_var.get()
+        if not excel_full_path:
+            self._log("[FOUT] Kan project niet afmelden: Excel-bestandspad niet beschikbaar.")
+            messagebox.showerror("Fout bij Afmelden", "Kan project niet afmelden: Excel-bestandspad niet beschikbaar.")
             return
 
-        filename = os.path.basename(excel_path)
-        # First try to extract project code using standard pattern
-        match = re.search(r'_([A-Z]{2}\d+)_', filename)
-        if match:
-            project_name = match.group(1)
-            # Check if filename contains _REP patterns (case insensitive)
-            filename_upper = filename.upper()
-            if "_REP_" in filename_upper or "_REP" in filename_upper:
-                project_name = f"{project_name}_REP"
-            self._log(f"Project-ID '{project_name}' geëxtraheerd uit bestandsnaam '{filename}'.")
-        else:
-            project_name = os.path.splitext(filename)[0]
-            self._log(f"[WAARSCHUWING] Kon project-ID niet uit bestandsnaam '{filename}' extraheren. Gebruik de volledige bestandsnaam als project: {project_name}")
+        filename_with_ext = os.path.basename(excel_full_path)
+        filename_base, _ = os.path.splitext(filename_with_ext)
 
-        # --- 1. Database Logging ---
+        base_mo_code, full_project_code = self._extract_project_codes_from_filename_base(filename_base)
+
+        if not full_project_code:
+            self._log(f"[FOUT] Kan projectcode niet afleiden uit bestandsnaam: {filename_base}")
+            messagebox.showerror("Fout bij Afmelden", f"Kan projectcode niet afleiden uit bestandsnaam: {filename_base}")
+            return
+
+        config = {}
+        config_file_path = get_config_path()
+        if os.path.exists(config_file_path):
+            with open(config_file_path, 'r') as f:
+                try:
+                    config = json.load(f)
+                except json.JSONDecodeError:
+                    self._log(f"[FOUT] Kon configuratiebestand niet lezen (JSON decode error): {config_file_path}")
+                    messagebox.showerror("Configuratie Fout", f"Fout bij het lezen van het configuratiebestand.\nControleer of {config_file_path} een valide JSON-bestand is.")
+                    return # Stop if config is corrupt
+        else:
+            self._log(f"[WAARSCHUWING] Configuratiebestand niet gevonden: {config_file_path}")
+            # Allow to proceed with defaults if config file is missing, api_url will be empty
+
+        # Read API URL and username consistent with DatabasePanel
+        api_url = config.get('api_url', '') # Reads 'api_url' from the root of the config
+        current_user = config.get('user', 'BarcodeMatchUser') # Reads 'user' from the root of the config
+        
         db_panel = self.main_app.get_panel_by_name("Database")
         if db_panel is not None:
             try:
                 if db_panel.database_enabled_var.get():
-                    self._log(f"Database logging ingeschakeld. Project '{project_name}' wordt als gesloten gelogd.")
-                    db_panel.log_project_closed(project_name)
+                    self._log(f"Database logging ingeschakeld. Project '{full_project_code}' wordt als gesloten gelogd.")
+                    is_rep_variant = '_REP_' in full_project_code.upper()
+                    db_panel.log_project_closed(full_project_code, base_mo_code=base_mo_code, is_rep_variant=is_rep_variant)
                 else:
                     self._log("Database logging is niet ingeschakeld.")
             except AttributeError:
@@ -831,17 +906,17 @@ class ScannerPanel(ttk.Frame):
                 email_mode_is_per_scan = email_panel.email_send_mode_var.get() == 'per_scan'
 
                 if email_is_enabled and email_mode_is_per_scan:
-                    self._log(f"Email-notificatie voorbereiden voor project '{project_name}' (emails ingeschakeld, modus 'per_scan').")
-                    email_panel.send_project_complete_email(project_name, excel_path)
+                    self._log(f"Email-notificatie voorbereiden voor project '{full_project_code}' (emails ingeschakeld, modus 'per_scan').")
+                    email_panel.send_project_complete_email(full_project_code, excel_path)
                 elif not email_is_enabled:
-                    self._log(f"Email notificatie overgeslagen voor project '{project_name}': emails zijn niet ingeschakeld in Email paneel.")
+                    self._log(f"Email notificatie overgeslagen voor project '{full_project_code}': emails zijn niet ingeschakeld in Email paneel.")
                 elif not email_mode_is_per_scan:
                     current_mode = email_panel.email_send_mode_var.get()
-                    self._log(f"Email notificatie overgeslagen voor project '{project_name}': email modus is '{current_mode}', niet 'per_scan'.")
+                    self._log(f"Email notificatie overgeslagen voor project '{full_project_code}': email modus is '{current_mode}', niet 'per_scan'.")
             except AttributeError:
                 self._log("[FOUT] Benodigde attributen (bv. 'email_enabled_var', 'email_send_mode_var', 'send_project_complete_email') niet gevonden op Email paneel.")
             except Exception as e:
-                self._log(f"[FOUT] Fout bij verwerken email notificatie voor project '{project_name}': {e}")
+                self._log(f"[FOUT] Fout bij verwerken email notificatie voor project '{full_project_code}': {e}")
         else:
             self._log("[WARN] Email paneel niet gevonden via self.main_app.get_panel_by_name('Email'). Overslaan email notificatie.")
 

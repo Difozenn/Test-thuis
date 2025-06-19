@@ -295,7 +295,7 @@ class ImportPanelDebug(ttk.Frame):
                 df = df[['ProgramNumber']]
                 # Always add an empty 'Status' column for scanner compatibility
                 df['Status'] = ''
-            excel_path = os.path.join(export_dir, f"{folder_name}_GANNOMAT.xlsx")
+            excel_path = os.path.join(export_dir, f"{folder_name}.xlsx")
         else:
             # For OPUS and other modes, always add an empty 'Status' column if missing
             if 'Status' not in df.columns:

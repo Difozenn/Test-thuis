@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Enterprise File Monitor{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        :root {
+            --primary-blue: #0071b4;
+            --secondary-blue: #3498db;
+            --dark-blue: #2c3e50;
+            --light-blue: #f4f7f6;
+            --border-color: #dee2e6;
+            --hover-bg: #f8f9fa;
+        }
+
+        body {
+            background-color: var(--light-blue);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Updated header styling */
+        .main-header {
+            background-image: url('/static/header.png');
+            background-repeat: no-repeat;
+            background-position: left center;
+            background-size: auto 100%;
+            background-color: #0071b4;
+            padding: 40px 20px;
+            margin: 20px;
+            border-radius: 8px;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .main-header .header-content {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            height: 100%;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--dark-blue);
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .user-info .badge {
+            margin-left: 8px;
+        }
+
+        .dropdown .btn-light {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--dark-blue);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dropdown .btn-light:hover {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Page headings with blue underline */
+        .page-header {
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .page-header h1,
+        .page-header h2 {
+            color: var(--dark-blue);
+            border-bottom: 3px solid var(--secondary-blue);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+        
+        /* Main container with proper spacing */
+        .main-container {
+            padding: 0 20px 20px 20px;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            min-height: calc(100vh - 180px);
+            background: white;
+            border-right: 1px solid var(--border-color);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-right: 20px;
+        }
+        
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-blue);
+            border-left-color: var(--secondary-blue);
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: var(--secondary-blue);
+            color: white;
+            border-left-color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .sidebar hr {
+            margin: 15px 20px;
+            border-color: var(--border-color);
+        }
+
+        .sidebar small.text-muted {
+            padding: 0 20px;
+            font-weight: 600;
+            color: var(--dark-blue) !important;
+            letter-spacing: 0.5px;
+        }
+
+        /* Language selector in sidebar */
+        .language-selector-sidebar {
+            padding: 10px 20px;
+            margin: 10px 10px 20px 10px;
+        }
+
+        .language-selector-sidebar select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            color: var(--dark-blue);
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .language-selector-sidebar select:focus {
+            outline: none;
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        /* Main content area */
+        .main-content {
+            padding: 0 20px 40px 0;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+        }
+
+        .card-header h5 {
+            color: var(--dark-blue);
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+        
+        /* Button styling */
+        .btn {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        /* Form styling */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        /* Table styling */
+        .table {
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--dark-blue);
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+        
+        /* Alert styling */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            border-left: 4px solid;
+            padding: 15px 20px;
+            margin: 0 20px 20px 20px;
+        }
+
+        .alert-success {
+            border-left-color: #28a745;
+        }
+
+        .alert-danger {
+            border-left-color: #dc3545;
+        }
+
+        .alert-warning {
+            border-left-color: #ffc107;
+        }
+
+        .alert-info {
+            border-left-color: var(--secondary-blue);
+        }
+        
+        /* Badge styling */
+        .badge {
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-weight: 500;
+        }
+
+        /* Dropdown styling */
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-blue);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-header {
+                margin: 10px;
+                padding: 20px 15px;
+                min-height: 80px;
+            }
+
+            .sidebar {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .main-content {
+                padding: 0 10px 20px 0;
+            }
+            
+            .main-container {
+                padding: 0 10px 10px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Updated Header -->
+    <div class="main-header">
+        <div class="header-content">
+            {% if current_user.is_authenticated %}
+            <div class="user-section">
+                <div class="user-info">
+                    <i class="fas fa-user"></i> {{ current_user.username }}
+                    {% if current_user.role == 'admin' %}
+                        <span class="badge bg-danger">Admin</span>
+                    {% else %}
+                        <span class="badge bg-primary">Operator</span>
+                    {% endif %}
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">
+                            <i class="fas fa-key"></i> {{ t('change_password') }}
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> {{ t('logout') }}
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="row">
+            {% if current_user.is_authenticated %}
+            <!-- Enhanced Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <nav class="nav flex-column p-3">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.dashboard' }}" 
+                           href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> {{ t('dashboard') }}
+                        </a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.events' }}" 
+                           href="{{ url_for('main.events') }}">
+                            <i class="fas fa-list"></i> {{ t('events') }}
+                        </a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.manual_entry' }}" 
+                           href="{{ url_for('main.manual_entry') }}">
+                            <i class="fas fa-plus-circle"></i> {{ t('manual_entry') }}
+                        </a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.reports' }}" 
+                           href="{{ url_for('main.reports') }}">
+                            <i class="fas fa-file-alt"></i> {{ t('reports') }}
+                        </a>
+                        
+                        {% if current_user.role == 'admin' %}
+                        <hr>
+                        <small class="text-muted">{{ t('administration') }}</small>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.users' }}" 
+                           href="{{ url_for('main.users') }}">
+                            <i class="fas fa-users"></i> {{ t('users') }}
+                        </a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.categories' }}" 
+                           href="{{ url_for('main.categories') }}">
+                            <i class="fas fa-tags"></i> {{ t('categories') }}
+                        </a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.database_control' }}" 
+                           href="{{ url_for('main.database_control') }}">
+                            <i class="fas fa-database"></i> {{ t('database_control') }}
+                        </a>
+                        {% endif %}
+                        
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.settings' }}" 
+                           href="{{ url_for('main.settings') }}">
+                            <i class="fas fa-cog"></i> {{ t('settings') }}
+                        </a>
+                        
+                        <hr>
+                        
+                        <!-- Language Selector in Sidebar -->
+                        <div class="language-selector-sidebar">
+                            <form method="POST" action="{{ url_for('auth.change_language') }}">
+                                <select name="language" class="form-select" onchange="this.form.submit()">
+                                    <option value="en" {% if current_user.language == 'en' %}selected{% endif %}>
+                                        English
+                                    </option>
+                                    <option value="nl" {% if current_user.language == 'nl' %}selected{% endif %}>
+                                        Nederlands
+                                    </option>
+                                    <option value="fr" {% if current_user.language == 'fr' %}selected{% endif %}>
+                                        Français
+                                    </option>
+                                    <option value="de" {% if current_user.language == 'de' %}selected{% endif %}>
+                                        Deutsch
+                                    </option>
+                                    <option value="es" {% if current_user.language == 'es' %}selected{% endif %}>
+                                        Español
+                                    </option>
+                                </select>
+                            </form>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Main Content with Enhanced Styling -->
+            <div class="col-md-9 col-lg-10">
+            {% else %}
+            <!-- Full width for login page -->
+            <div class="col-12">
+            {% endif %}
+                <div class="main-content">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,861 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('dashboard') }} - Enterprise File Monitor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stat-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-radius: 15px;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .chart-container {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        height: 100%;
+        position: relative;
+    }
+    
+    .chart-container h5 {
+        color: var(--dark-blue);
+        border-bottom: 2px solid var(--secondary-blue);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .chart-wrapper {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .chart-wrapper-small {
+        position: relative;
+        height: 150px;
+        width: 100%;
+    }
+    
+    .activity-timeline {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .timeline-item {
+        border-left: 3px solid var(--secondary-blue);
+        padding-left: 20px;
+        margin-left: 10px;
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--secondary-blue);
+    }
+    
+    .kpi-metric {
+        text-align: center;
+        padding: 25px;
+    }
+    
+    .kpi-metric h2 {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .kpi-metric p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    /* Fix chart container sizing issues */
+    canvas {
+        max-height: 300px !important;
+    }
+    
+    .chart-wrapper canvas {
+        max-height: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .work-hours-card {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .day-card {
+        transition: all 0.3s ease;
+        cursor: default;
+        border-radius: 10px;
+    }
+    
+    .day-card:hover {
+        transform: scale(1.05);
+    }
+
+    .card-header.bg-light {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid var(--secondary-blue);
+    }
+
+    .card-header h6 {
+        color: var(--dark-blue);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('dashboard') }}</h1>
+    <p></p>{{ datetime.now().strftime('%A, %d %B %Y') }}</p>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <label class="form-label mb-0">{{ t('filter_by_user') }}</label>
+            <select class="form-select" id="user-filter" onchange="filterDashboard()">
+                {% if current_user.role == 'admin' %}
+                    <option value="">{{ t('all_users') }}</option>
+                    {% for user in operators %}
+                        <option value="{{ user.id }}" {% if user_filter == user.id %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="{{ current_user.id }}">{{ current_user.username }}</option>
+                {% endif %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-0">{{ t('date_range') }}</label>
+            <select class="form-select" id="date-filter" onchange="filterDashboard()">
+                <option value="today">{{ t('today') }}</option>
+                <option value="week">{{ t('this_week') }}</option>
+                <option value="month">{{ t('this_month') }}</option>
+            </select>
+        </div>
+        <div class="col-md-6 text-end">
+            {% if work_hours %}
+            <div class="d-inline-block me-3">
+                <small class="text-muted">{{ t('work_hours') }}: </small>
+                <strong>{{ work_hours.get_total_weekly_hours() }}h/week ({{ work_hours.get_working_days() }} days)</strong>
+            </div>
+            {% endif %}
+            <button class="btn btn-sm btn-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt"></i> {{ t('refresh') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Work Hours Overview Card -->
+{% if work_hours %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card work-hours-card">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="mb-0">{{ work_hours.get_total_weekly_hours() }}h</h3>
+                        <small>{{ t('total_weekly_hours') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="mb-0">{{ work_hours.get_working_days() }}</h3>
+                        <small>{{ t('working_days') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="mb-0">{{ "%.1f"|format(work_hours.get_average_daily_hours()) }}h</h3>
+                        <small>{{ t('average_daily_hours') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="mb-0">{{ today_events }}</h3>
+                        <small>{{ t('todays_events') }} ({{ work_hours.get_hours_for_day(datetime.now().weekday()) }}h day)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Daily Work Hours Breakdown -->
+            <div class="mt-3">
+                <h6>{{ t('daily_schedule') }}</h6>
+                <div class="row">
+                    {% set days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
+                    {% set day_hours = [
+                        work_hours.monday_hours, work_hours.tuesday_hours, work_hours.wednesday_hours,
+                        work_hours.thursday_hours, work_hours.friday_hours, work_hours.saturday_hours, work_hours.sunday_hours
+                    ] %}
+                    {% for i in range(7) %}
+                    <div class="col">
+                        <div class="card border-0 {% if i == datetime.now().weekday() %}bg-warning text-dark{% else %}bg-light{% endif %} text-center day-card">
+                            <div class="card-body py-2">
+                                <div class="small">{{ t(days[i]) }}</div>
+                                <div class="h6 mb-0">
+                                    {% if day_hours[i] > 0 %}
+                                        {{ day_hours[i] }}h
+                                    {% else %}
+                                        <i class="fas fa-times text-muted"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- KPI Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body kpi-metric">
+                <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+                <h2 class="text-primary">{{ today_events }}</h2>
+                <p>{{ t('todays_events') }}</p>
+                <small class="text-muted">
+                    {% if yesterday_events > 0 %}
+                        {% set change = ((today_events - yesterday_events) / yesterday_events * 100)|round(1) %}
+                        <i class="fas fa-{{ 'arrow-up text-success' if change > 0 else 'arrow-down text-danger' }}"></i>
+                        {{ change|abs }}% vs {{ t('yesterday') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body kpi-metric">
+                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                <h2 class="text-success">{{ hourly_average|round(1) }}</h2>
+                <p>{{ t('avg_events_per_hour') }}</p>
+                <small class="text-muted">{{ t('during_work_hours') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body kpi-metric">
+                <i class="fas fa-folder-open fa-2x text-warning mb-2"></i>
+                <h2 class="text-warning">{{ active_paths }}</h2>
+                <p>{{ t('active_paths') }}</p>
+                <small class="text-muted">{{ total_files }} {{ t('files') }}, {{ total_dirs }} {{ t('directories') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body kpi-metric">
+                <i class="fas fa-tags fa-2x text-info mb-2"></i>
+                <h2 class="text-info">{{ active_categories }}</h2>
+                <p>{{ t('active_categories') }}</p>
+                <small class="text-muted">{{ total_categories }} {{ t('total') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Activity Normalized by Work Hours -->
+{% if weekly_activity %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-bar"></i> {{ t('weekly_activity_normalized') }}
+                <small class="text-muted">({{ t('events_per_work_hour') }})</small>
+            </h5>
+            <div class="chart-wrapper">
+                <canvas id="weeklyNormalizedChart"></canvas>
+            </div>
+            
+            <!-- Weekly Activity Table -->
+            <div class="mt-3">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless">
+                        <thead>
+                            <tr class="text-muted">
+                                <th>{{ t('day') }}</th>
+                                <th class="text-center">{{ t('work_hours') }}</th>
+                                <th class="text-center">{{ t('events') }}</th>
+                                <th class="text-center">{{ t('events_per_hour') }}</th>
+                                <th class="text-center">{{ t('efficiency') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day_data in weekly_activity %}
+                            <tr {% if loop.index0 == datetime.now().weekday() %}class="table-primary"{% endif %}>
+                                <td>
+                                    <strong>{{ day_data.day }}</strong>
+                                    {% if loop.index0 == datetime.now().weekday() %}
+                                        <span class="badge bg-primary ms-1">{{ t('today') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if day_data.work_hours > 0 %}
+                                        {{ day_data.work_hours }}h
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ day_data.events }}</td>
+                                <td class="text-center">
+                                    {% if day_data.work_hours > 0 %}
+                                        {{ "%.1f"|format(day_data.events / day_data.work_hours) }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if day_data.work_hours > 0 %}
+                                        {% if day_data.efficiency == 'high' %}
+                                            <span class="badge bg-success">{{ t('high') }}</span>
+                                        {% elif day_data.efficiency == 'medium' %}
+                                            <span class="badge bg-warning">{{ t('medium') }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ t('low') }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ t('off') }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Row 1: Recent Activity (Full Width) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-stream"></i> {{ t('recent_activity') }}
+                <small class="text-muted float-end">{{ t('last_50_events') }}</small>
+            </h5>
+            <div class="activity-timeline">
+                {% for event in recent_events %}
+                <div class="timeline-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ event.timestamp.strftime('%H:%M:%S') }}</strong>
+                            <span class="badge" style="background-color: {{ event.category.color if event.category else '#6c757d' }}">
+                                {{ event.category.name if event.category else t('uncategorized') }}
+                            </span>
+                            {% if event.matched_keyword %}
+                                <span class="badge bg-secondary">{{ event.matched_keyword }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> {{ event.user.username if event.user else 'System' }}
+                        </small>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-file"></i> {{ event.file_path|truncate(80) }}
+                    </small>
+                </div>
+                {% else %}
+                <p class="text-center text-muted py-5">{{ t('no_recent_activity') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Category Distribution & Daily Activity -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="fas fa-chart-pie"></i> {{ t('events_per_category') }}</h5>
+            <div class="chart-wrapper">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="fas fa-calendar-day"></i> {{ t('daily_activity') }}</h5>
+            <div class="chart-wrapper">
+                <canvas id="dailyActivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Path Distribution & Hourly Timeline -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="fas fa-folder"></i> {{ t('events_per_monitored_path') }}</h5>
+            <div class="chart-wrapper">
+                <canvas id="pathDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-area"></i> {{ t('hourly_activity_today') }}
+                <button class="btn btn-sm btn-outline-primary float-end" onclick="exportChart('hourlyTimelineChart')">
+                    <i class="fas fa-download"></i> {{ t('export') }}
+                </button>
+            </h5>
+            <div class="chart-wrapper">
+                <canvas id="hourlyTimelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-trophy"></i> {{ t('top_categories_today') }}</h6>
+            </div>
+            <div class="card-body">
+                {% for cat in top_categories[:5] %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>
+                        <span class="badge" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                    </span>
+                    <strong>{{ cat.count }}</strong>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">{{ t('no_data') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-fire"></i> {{ t('most_active_files') }}</h6>
+            </div>
+            <div class="card-body">
+                {% for file in top_changed_files[:5] %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-truncate" style="max-width: 200px;">
+                        <i class="fas fa-file"></i> {{ file.description or (file.path|basename) }}
+                    </span>
+                    <span class="badge bg-primary">{{ file.change_count }}</span>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">{{ t('no_data') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-users"></i> {{ t('user_activity_today') }}</h6>
+            </div>
+            <div class="card-body">
+                {% for user in user_activity[:5] %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="fas fa-user"></i> {{ user.username }}</span>
+                    <strong>{{ user.event_count }}</strong>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">{{ t('no_data') }}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dashboard data passed from backend
+const dashboardData = {
+    categoryData: {{ category_chart_data|safe if category_chart_data else 'null' }},
+    dailyActivity: {{ daily_activity_data|safe if daily_activity_data else 'null' }},
+    pathDistribution: {{ path_distribution_data|safe if path_distribution_data else 'null' }},
+    hourlyTimeline: {{ hourly_timeline_data|safe if hourly_timeline_data else 'null' }}
+};
+
+// Chart instances
+let charts = {};
+
+// Initialize all charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(refreshDashboard, 30000);
+});
+
+function initializeCharts() {
+    // Category Distribution Chart
+    if (dashboardData.categoryData && dashboardData.categoryData.labels && dashboardData.categoryData.labels.length > 0) {
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        charts.categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: dashboardData.categoryData.labels,
+                datasets: [{
+                    data: dashboardData.categoryData.values,
+                    backgroundColor: dashboardData.categoryData.colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('categoryChart').style.display = 'none';
+        document.getElementById('categoryChart').parentElement.innerHTML = '<p class="text-center text-muted">No category data available</p>';
+    }
+    
+    // Daily Activity Chart
+    if (dashboardData.dailyActivity && dashboardData.dailyActivity.labels && dashboardData.dailyActivity.labels.length > 0) {
+        const dailyCtx = document.getElementById('dailyActivityChart').getContext('2d');
+        charts.dailyChart = new Chart(dailyCtx, {
+            type: 'bar',
+            data: {
+                labels: dashboardData.dailyActivity.labels,
+                datasets: [{
+                    label: '{{ t("events") }}',
+                    data: dashboardData.dailyActivity.values,
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('dailyActivityChart').style.display = 'none';
+        document.getElementById('dailyActivityChart').parentElement.innerHTML = '<p class="text-center text-muted">No daily activity data available</p>';
+    }
+    
+    // Path Distribution Chart
+    if (dashboardData.pathDistribution && dashboardData.pathDistribution.labels && dashboardData.pathDistribution.labels.length > 0) {
+        const pathCtx = document.getElementById('pathDistributionChart').getContext('2d');
+        charts.pathChart = new Chart(pathCtx, {
+            type: 'pie',
+            data: {
+                labels: dashboardData.pathDistribution.labels,
+                datasets: [{
+                    data: dashboardData.pathDistribution.values,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12 },
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('pathDistributionChart').style.display = 'none';
+        document.getElementById('pathDistributionChart').parentElement.innerHTML = '<p class="text-center text-muted">No path data available</p>';
+    }
+    
+    // Hourly Timeline Chart
+    if (dashboardData.hourlyTimeline && dashboardData.hourlyTimeline.labels && dashboardData.hourlyTimeline.labels.length > 0) {
+        const hourlyCtx = document.getElementById('hourlyTimelineChart').getContext('2d');
+        charts.hourlyChart = new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: dashboardData.hourlyTimeline.labels,
+                datasets: [{
+                    label: '{{ t("events") }}',
+                    data: dashboardData.hourlyTimeline.values,
+                    fill: true,
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('hourlyTimelineChart').style.display = 'none';
+        document.getElementById('hourlyTimelineChart').parentElement.innerHTML = '<p class="text-center text-muted">No hourly timeline data available</p>';
+    }
+
+    // Weekly Normalized Activity Chart
+    {% if weekly_activity %}
+    const weeklyCtx = document.getElementById('weeklyNormalizedChart');
+    if (weeklyCtx) {
+        const weeklyData = {{ weekly_activity|tojson }};
+        
+        charts.weeklyChart = new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: weeklyData.map(d => d.day),
+                datasets: [
+                    {
+                        label: '{{ t("events") }}',
+                        data: weeklyData.map(d => d.events),
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '{{ t("work_hours") }}',
+                        data: weeklyData.map(d => d.work_hours),
+                        type: 'line',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '{{ t("events_per_hour") }}',
+                        data: weeklyData.map(d => d.work_hours > 0 ? (d.events / d.work_hours).toFixed(1) : 0),
+                        type: 'line',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '{{ t("day_of_week") }}'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '{{ t("events") }}'
+                        },
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '{{ t("work_hours") }}'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: false,
+                        position: 'right',
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const dayData = weeklyData[context.dataIndex];
+                                if (context.datasetIndex === 0) { // Events dataset
+                                    return `Work Hours: ${dayData.work_hours}h\nEvents/Hour: ${dayData.work_hours > 0 ? (dayData.events / dayData.work_hours).toFixed(1) : '0'}\nEfficiency: ${dayData.efficiency}`;
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+}
+
+function filterDashboard() {
+    const userId = document.getElementById('user-filter').value;
+    const dateRange = document.getElementById('date-filter').value;
+    
+    let url = '{{ url_for("main.dashboard") }}';
+    const params = new URLSearchParams();
+    
+    if (userId) params.append('user_id', userId);
+    if (dateRange) params.append('range', dateRange);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function exportChart(chartId) {
+    const chartKey = chartId.replace('Chart', '').replace('Timeline', '');
+    const chart = charts[chartKey + 'Chart'] || charts[chartKey];
+    if (chart) {
+        const url = chart.toBase64Image();
+        const link = document.createElement('a');
+        link.download = `${chartId}_${new Date().toISOString().split('T')[0]}.png`;
+        link.href = url;
+        link.click();
+    }
+}
+</script>
+{% endblock %}

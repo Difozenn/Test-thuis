@@ -1,0 +1,694 @@
+<!-- templates/settings.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('settings') }} - Enterprise File Monitor{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('settings') }}</h1>
+    <p class="text-muted">Configure monitoring paths and system settings</p>
+
+</div>
+
+<!-- Monitor Status Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('monitor_status') }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div id="monitor-status" class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">{{ t('loading') }}</span>
+                    </div>
+                    <span>{{ t('loading') }}...</span>
+                </div>
+            </div>
+            {% if current_user.role == 'admin' %}
+            <div class="col-md-6 text-end">
+                <button class="btn btn-success" onclick="startMonitor()">
+                    <i class="fas fa-play"></i> Start Monitor
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Work Hours Configuration (All users can set their own work hours) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('work_hours_configuration') }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('main.update_work_hours') }}">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        {{ t('work_hours_description') }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Days of the week configuration -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3">{{ t('hours_per_day') }}</h6>
+                    
+                    <!-- Monday -->
+                    <div class="mb-3">
+                        <label for="monday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-primary"></i> {{ t('monday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="monday_hours" name="monday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.monday_hours if work_hours else 8.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tuesday -->
+                    <div class="mb-3">
+                        <label for="tuesday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-primary"></i> {{ t('tuesday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="tuesday_hours" name="tuesday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.tuesday_hours if work_hours else 8.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Wednesday -->
+                    <div class="mb-3">
+                        <label for="wednesday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-primary"></i> {{ t('wednesday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="wednesday_hours" name="wednesday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.wednesday_hours if work_hours else 8.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Thursday -->
+                    <div class="mb-3">
+                        <label for="thursday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-primary"></i> {{ t('thursday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="thursday_hours" name="thursday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.thursday_hours if work_hours else 8.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="mb-3">&nbsp;</h6> <!-- Spacer for alignment -->
+                    
+                    <!-- Friday -->
+                    <div class="mb-3">
+                        <label for="friday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-success"></i> {{ t('friday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="friday_hours" name="friday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.friday_hours if work_hours else 8.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Saturday -->
+                    <div class="mb-3">
+                        <label for="saturday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-warning"></i> {{ t('saturday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="saturday_hours" name="saturday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.saturday_hours if work_hours else 0.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Sunday -->
+                    <div class="mb-3">
+                        <label for="sunday_hours" class="form-label">
+                            <i class="fas fa-calendar-day text-danger"></i> {{ t('sunday') }}
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="sunday_hours" name="sunday_hours" 
+                                   min="0" max="24" step="0.5" 
+                                   value="{{ work_hours.sunday_hours if work_hours else 0.0 }}"
+                                   onchange="updateSummary()">
+                            <span class="input-group-text">hours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Show current efficiency thresholds for operators (read-only) -->
+            {% if current_user.role == 'operator' and work_hours %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-chart-line"></i> Your {{ t('efficiency') }} Thresholds (Set by Administrator):
+                        </h6>
+                        <ul class="mb-0">
+                            <li><span class="badge bg-success">{{ t('high') }}</span> ≥ {{ work_hours.efficiency_high_threshold if work_hours else 5.0 }} items/hour</li>
+                            <li><span class="badge bg-warning">{{ t('medium') }}</span> ≥ {{ work_hours.efficiency_medium_threshold if work_hours else 2.0 }} items/hour</li>
+                            <li><span class="badge bg-secondary">{{ t('low') }}</span> < {{ work_hours.efficiency_medium_threshold if work_hours else 2.0 }} items/hour</li>
+                            <li><span class="badge bg-light text-dark">{{ t('off') }}</span> Non-working days (0 hours configured)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Summary Statistics -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ t('work_hours') }} Summary</h6>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="h4 text-primary" id="total-hours">
+                                        {{ work_hours.get_total_weekly_hours() if work_hours else 40.0 }}
+                                    </div>
+                                    <small class="text-muted">{{ t('total_weekly_hours') }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="h4 text-success" id="working-days">
+                                        {{ work_hours.get_working_days() if work_hours else 5 }}
+                                    </div>
+                                    <small class="text-muted">{{ t('working_days') }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="h4 text-info" id="average-hours">
+                                        {{ "%.1f"|format(work_hours.get_average_daily_hours()) if work_hours else "8.0" }}
+                                    </div>
+                                    <small class="text-muted">{{ t('average_daily_hours') }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="h4 text-warning" id="non-working-days">
+                                        {{ 7 - work_hours.get_working_days() if work_hours else 2 }}
+                                    </div>
+                                    <small class="text-muted">{{ t('non_working_days') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Presets -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>Quick Presets:</h6>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('standard')">
+                            Standard (Mon-Fri 8h)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('reduced_friday')">
+                            Reduced Friday (Mon-Thu 8h, Fri 6h)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('four_day')">
+                            4-Day Week (Mon-Thu 10h)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('flexible')">
+                            Flexible (Mon-Fri 7.5h)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('weekend_work')">
+                            Weekend Work (Mon-Sat 6.5h)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ t('save_work_hours') }}
+                    </button>
+                    <button type="button" class="btn btn-secondary ms-2" onclick="resetToDefault()">
+                        <i class="fas fa-undo"></i> Reset to Default
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Operator Efficiency Configuration (Admin Only) -->
+{% if current_user.role == 'admin' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('operator_efficiency_configuration') }}</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            <i class="fas fa-user-cog"></i> Configure efficiency thresholds for each operator
+        </p>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ t('operator') }}</th>
+                        <th>{{ t('high_threshold') }}</th>
+                        <th>{{ t('medium_threshold') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for operator in operators %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-user"></i> {{ operator.username }}
+                        </td>
+                        <td>
+                            <span class="badge bg-success">≥ {{ operator.work_hours.efficiency_high_threshold if operator.work_hours else 5.0 }}</span> items/hour
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">≥ {{ operator.work_hours.efficiency_medium_threshold if operator.work_hours else 2.0 }}</span> items/hour
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editOperatorEfficiency({{ operator.id }}, '{{ operator.username }}', {{ operator.work_hours.efficiency_high_threshold if operator.work_hours else 5.0 }}, {{ operator.work_hours.efficiency_medium_threshold if operator.work_hours else 2.0 }})">
+                                <i class="fas fa-edit"></i> {{ t('edit') }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Efficiency Edit Modal -->
+<div class="modal fade" id="efficiencyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.update_operator_efficiency') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ t('edit_efficiency_thresholds') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="operator_id" name="operator_id">
+                    <p>{{ t('operator') }}: <strong id="operator_name"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="efficiency_high_threshold" class="form-label">
+                            <i class="fas fa-arrow-up text-success"></i> {{ t('high') }} {{ t('efficiency') }} Threshold
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="modal_efficiency_high" name="efficiency_high_threshold" 
+                                   min="0" max="50" step="0.5" required>
+                            <span class="input-group-text">items/hour</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="efficiency_medium_threshold" class="form-label">
+                            <i class="fas fa-minus text-warning"></i> {{ t('medium') }} {{ t('efficiency') }} Threshold
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="modal_efficiency_medium" name="efficiency_medium_threshold" 
+                                   min="0" max="50" step="0.5" required>
+                            <span class="input-group-text">items/hour</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <small>{{ t('efficiency_threshold_help') }}</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ t('save_changes') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Monitored Paths -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('monitored_paths') }}</h5>
+    </div>
+    <div class="card-body">
+        <!-- Add Path Form -->
+        <form method="POST" action="{{ url_for('main.add_monitored_path') }}" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="path" class="form-label">{{ t('file_or_directory_path') }}</label>
+                    <input type="text" class="form-control" id="path" name="path" required 
+                           placeholder="C:\path\to\file.txt">
+                </div>
+                <div class="col-md-2">
+                    <label for="path_type" class="form-label">{{ t('type') }}</label>
+                    <select class="form-select" id="path_type" name="path_type">
+                        <option value="file">{{ t('file') }}</option>
+                        <option value="directory">{{ t('directory') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="description" class="form-label">{{ t('description') }}</label>
+                    <input type="text" class="form-control" id="description" name="description" 
+                           placeholder="Optional description">
+                </div>
+                {% if current_user.role == 'admin' and users %}
+                <div class="col-md-2">
+                    <label for="user_id" class="form-label">{{ t('user') }}</label>
+                    <select class="form-select" id="user_id" name="user_id">
+                        <option value="{{ current_user.id }}">{{ t('me') }}</option>
+                        {% for user in users %}
+                            {% if user.id != current_user.id %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="recursive" name="recursive" checked>
+                        <label class="form-check-label" for="recursive">
+                            {{ t('recursive') }} ({{ t('directories') }} only)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Paths Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ t('path') }}</th>
+                        <th>{{ t('description') }}</th>
+                        <th>{{ t('type') }}</th>
+                        <th>{{ t('user') }}</th>
+                        <th>{{ t('status') }}</th>
+                        <th>{{ t('last_modified') }}</th>
+                        <th>{{ t('size') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for path in paths %}
+                    <tr>
+                        <td>
+                            <small class="text-monospace">{{ path.path }}</small>
+                        </td>
+                        <td>{{ path.description or '-' }}</td>
+                        <td>
+                            {% if path.is_directory %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-folder"></i> {{ t('directory') }}
+                                    {% if path.recursive %} ({{ t('recursive') }}){% endif %}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-file"></i> {{ t('file') }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ path.user.username }}</td>
+                        <td>
+                            {% if path.is_active %}
+                                <span class="badge bg-success">{{ t('active') }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ t('inactive') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if path.last_modified %}
+                                {{ path.last_modified.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <small class="text-muted">{{ t('not_checked_yet') }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if path.file_size %}
+                                {% if path.file_size > 1024*1024 %}
+                                    {{ "%.1f MB"|format(path.file_size / (1024*1024)) }}
+                                {% elif path.file_size > 1024 %}
+                                    {{ "%.1f KB"|format(path.file_size / 1024) }}
+                                {% else %}
+                                    {{ path.file_size }} bytes
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if current_user.role == 'admin' or path.user_id == current_user.id %}
+                                <a href="{{ url_for('main.toggle_monitored_path', id=path.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    {% if path.is_active %}{{ t('disable') }}{% else %}{{ t('enable') }}{% endif %}
+                                </a>
+                                <a href="{{ url_for('main.delete_monitored_path', id=path.id) }}" 
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('{{ t('confirm_delete') }}');">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">{{ t('no_paths_configured') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Path Validation -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('path_validation') }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="input-group">
+            <input type="text" class="form-control" id="validate-path" 
+                   placeholder="Enter path to validate...">
+            <button class="btn btn-outline-secondary" onclick="validatePath()">
+                {{ t('validate') }}
+            </button>
+        </div>
+        <div id="validation-result" class="mt-3" style="display: none;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Work hours management functions
+function updateSummary() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    let totalHours = 0;
+    let workingDays = 0;
+    
+    days.forEach(day => {
+        const hours = parseFloat(document.getElementById(day + '_hours').value) || 0;
+        totalHours += hours;
+        if (hours > 0) workingDays++;
+    });
+    
+    const averageHours = workingDays > 0 ? totalHours / workingDays : 0;
+    const nonWorkingDays = 7 - workingDays;
+    
+    document.getElementById('total-hours').textContent = totalHours.toFixed(1);
+    document.getElementById('working-days').textContent = workingDays;
+    document.getElementById('average-hours').textContent = averageHours.toFixed(1);
+    document.getElementById('non-working-days').textContent = nonWorkingDays;
+}
+
+function setPreset(preset) {
+    const presets = {
+        'standard': [8, 8, 8, 8, 8, 0, 0],           // Mon-Fri 8h
+        'reduced_friday': [8, 8, 8, 8, 6, 0, 0],      // Mon-Thu 8h, Fri 6h
+        'four_day': [10, 10, 10, 10, 0, 0, 0],        // Mon-Thu 10h
+        'flexible': [7.5, 7.5, 7.5, 7.5, 7.5, 0, 0], // Mon-Fri 7.5h
+        'weekend_work': [6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 0] // Mon-Sat 6.5h
+    };
+    
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const values = presets[preset];
+    
+    if (values) {
+        days.forEach((day, index) => {
+            document.getElementById(day + '_hours').value = values[index];
+        });
+        updateSummary();
+    }
+}
+
+function resetToDefault() {
+    setPreset('standard');
+}
+
+{% if current_user.role == 'admin' %}
+// Admin functions for editing operator efficiency
+function editOperatorEfficiency(operatorId, operatorName, highThreshold, mediumThreshold) {
+    document.getElementById('operator_id').value = operatorId;
+    document.getElementById('operator_name').textContent = operatorName;
+    document.getElementById('modal_efficiency_high').value = highThreshold;
+    document.getElementById('modal_efficiency_medium').value = mediumThreshold;
+    
+    const modal = new bootstrap.Modal(document.getElementById('efficiencyModal'));
+    modal.show();
+}
+{% endif %}
+
+// Monitor status
+function checkMonitorStatus() {
+    fetch('/api/monitor/status')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('monitor-status');
+            const isRunning = data.running;
+            
+            statusDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="status-indicator me-2">
+                        <i class="fas fa-circle text-${isRunning ? 'success' : 'danger'}"></i>
+                    </div>
+                    <div>
+                        <strong>${isRunning ? '{{ t("running") }}' : '{{ t("stopped") }}'}</strong><br>
+                        <small class="text-muted">
+                            ${data.paths} paths (${data.files} files, ${data.directories} directories)
+                        </small>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching monitor status:', error);
+            document.getElementById('monitor-status').innerHTML = 
+                '<span class="text-danger">Error loading status</span>';
+        });
+}
+
+function startMonitor() {
+    fetch('/api/monitor/start', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            setTimeout(checkMonitorStatus, 1000);
+        });
+}
+
+function validatePath() {
+    const path = document.getElementById('validate-path').value;
+    const resultDiv = document.getElementById('validation-result');
+    
+    if (!path) {
+        resultDiv.style.display = 'none';
+        return;
+    }
+    
+    fetch('/api/validate_path', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ path: path })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let resultHtml = '<div class="row">';
+        
+        resultHtml += `
+            <div class="col-md-3">
+                <div class="text-center">
+                    <i class="fas fa-${data.exists ? 'check-circle text-success' : 'times-circle text-danger'} fa-2x"></i>
+                    <p class="mt-2">${data.exists ? '{{ t("path_exists") }}' : 'Path does not exist'}</p>
+                </div>
+            </div>
+        `;
+        
+        if (data.exists) {
+            resultHtml += `
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <i class="fas fa-${data.is_directory ? 'folder' : 'file'} fa-2x text-info"></i>
+                        <p class="mt-2">${data.is_directory ? '{{ t("path_is_directory") }}' : '{{ t("path_is_file") }}'}</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <i class="fas fa-${data.readable ? 'eye text-success' : 'eye-slash text-danger'} fa-2x"></i>
+                        <p class="mt-2">${data.readable ? '{{ t("path_readable") }}' : 'Not readable'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        resultHtml += '</div>';
+        resultDiv.innerHTML = resultHtml;
+        resultDiv.style.display = 'block';
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Error validating path</div>';
+        resultDiv.style.display = 'block';
+    });
+}
+
+// Auto-fill directory type when path contains typical directory indicators
+document.getElementById('path').addEventListener('input', function() {
+    const path = this.value;
+    const pathType = document.getElementById('path_type');
+    
+    // Auto-detect if it looks like a directory
+    if (path.endsWith('\\') || path.endsWith('/') || 
+        (!path.includes('.') && path.length > 3)) {
+        pathType.value = 'directory';
+    } else if (path.includes('.')) {
+        pathType.value = 'file';
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    checkMonitorStatus();
+    setInterval(checkMonitorStatus, 10000); // Update every 10 seconds
+    
+    // Initialize summary if work hours form exists
+    if (document.getElementById('monday_hours')) {
+        updateSummary();
+    }
+});
+</script>
+{% endblock %}

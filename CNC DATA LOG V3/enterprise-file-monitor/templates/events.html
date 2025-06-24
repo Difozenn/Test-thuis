@@ -1,0 +1,129 @@
+<!-- templates/events.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('events') }} - Enterprise File Monitor{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('events') }}</h1>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            {% if current_user.role == 'admin' and users %}
+            <div class="col-md-3">
+                <label for="user_id" class="form-label">{{ t('user') }}</label>
+                <select class="form-select" id="user_id" name="user_id">
+                    <option value="">{{ t('all_users') }}</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if request.args.get('user_id')|int == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-3">
+                <label for="category" class="form-label">{{ t('category') }}</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">{{ t('all_categories') }}</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.args.get('category')|int == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">{{ t('from_date') }}</label>
+                <input type="datetime-local" class="form-control" id="date_from" name="date_from" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">{{ t('to_date') }}</label>
+                <input type="datetime-local" class="form-control" id="date_to" name="date_to" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">{{ t('filter') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Events Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ t('timestamp') }}</th>
+                        <th>{{ t('category') }}</th>
+                        <th>{{ t('file_path') }}</th>
+                        <th>{{ t('computer') }}</th>
+                        <th>{{ t('user') }}</th>
+                        <th>{{ t('type') }}</th>
+                        <th>{{ t('keyword') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events.items %}
+                    <tr>
+                        <td>{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if event.category %}
+                                <span class="badge" style="background-color: {{ event.category.color }}">
+                                    {{ event.category.name }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ t('uncategorized') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ event.file_path }}</small>
+                        </td>
+                        <td>{{ event.computer_name }}</td>
+                        <td>{{ event.user.username if event.user else 'System' }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ event.event_type }}</span>
+                        </td>
+                        <td>{{ event.matched_keyword or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">{{ t('no_events_found') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if events.pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not events.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.events', page=events.prev_num, **request.args) }}">{{ t('previous') }}</a>
+                </li>
+                {% for page_num in events.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == events.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('main.events', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not events.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.events', page=events.next_num, **request.args) }}">{{ t('next') }}</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

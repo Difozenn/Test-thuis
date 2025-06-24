@@ -1,0 +1,463 @@
+<!-- templates/reports.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('reports') }} - Enterprise File Monitor{% endblock %}
+
+{% block head %}
+<style>
+    .report-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-section {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('reports') }}</h1>
+</div>
+
+<!-- Report Types -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card report-card" onclick="selectReport('dashboard')">
+            <div class="card-body text-center">
+                <div class="report-icon text-primary">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h5>{{ t('dashboard_report') }}</h5>
+                <p class="text-muted small">{{ t('export_dashboard_charts') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card report-card" onclick="selectReport('detailed')">
+            <div class="card-body text-center">
+                <div class="report-icon text-success">
+                    <i class="fas fa-file-excel"></i>
+                </div>
+                <h5>{{ t('detailed_excel_report') }}</h5>
+                <p class="text-muted small">{{ t('comprehensive_data_export') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card report-card" onclick="selectReport('summary')">
+            <div class="card-body text-center">
+                <div class="report-icon text-warning">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h5>{{ t('summary_report') }}</h5>
+                <p class="text-muted small">{{ t('high_level_overview') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card report-card" onclick="selectReport('audit')">
+            <div class="card-body text-center">
+                <div class="report-icon text-danger">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h5>{{ t('audit_report') }}</h5>
+                <p class="text-muted small">{{ t('compliance_security_report') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Configuration -->
+<div class="card" id="report-config" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span id="report-title">{{ t('configure_report') }}</span>
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="resetForm()">
+                <i class="fas fa-times"></i> {{ t('cancel') }}
+            </button>
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('main.generate_report') }}" id="report-form">
+            <input type="hidden" name="report_type" id="report_type">
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="date_range" class="form-label">{{ t('date_range') }}</label>
+                        <select class="form-select" id="date_range" name="date_range" onchange="updateDateInputs()">
+                            <option value="today">{{ t('today') }}</option>
+                            <option value="yesterday">{{ t('yesterday') }}</option>
+                            <option value="week">{{ t('this_week') }}</option>
+                            <option value="last_week">{{ t('last_week') }}</option>
+                            <option value="month">{{ t('this_month') }}</option>
+                            <option value="last_month">{{ t('last_month') }}</option>
+                            <option value="quarter">{{ t('this_quarter') }}</option>
+                            <option value="year">{{ t('this_year') }}</option>
+                            <option value="custom">{{ t('custom_range') }}</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="col-md-3" id="date-from-group" style="display: none;">
+                    <div class="mb-3">
+                        <label for="date_from" class="form-label">{{ t('from_date') }}</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from">
+                    </div>
+                </div>
+                
+                <div class="col-md-3" id="date-to-group" style="display: none;">
+                    <div class="mb-3">
+                        <label for="date_to" class="form-label">{{ t('to_date') }}</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to">
+                    </div>
+                </div>
+                
+                {% if current_user.role == 'admin' %}
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="user_filter" class="form-label">{{ t('user_filter') }}</label>
+                        <select class="form-select" id="user_filter" name="user_filter">
+                            <option value="">{{ t('all_users') }}</option>
+                            <option value="operators">{{ t('operators_only') }}</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Report-specific options -->
+            <div id="dashboard-options" class="report-options" style="display: none;">
+                <h6 class="mb-3">{{ t('dashboard_charts_to_include') }}</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_category_dist" id="include_category_dist" checked>
+                            <label class="form-check-label" for="include_category_dist">
+                                {{ t('category_distribution') }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_daily_activity" id="include_daily_activity" checked>
+                            <label class="form-check-label" for="include_daily_activity">
+                                {{ t('daily_activity') }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_hourly_timeline" id="include_hourly_timeline" checked>
+                            <label class="form-check-label" for="include_hourly_timeline">
+                                {{ t('hourly_timeline') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_path_dist" id="include_path_dist" checked>
+                            <label class="form-check-label" for="include_path_dist">
+                                {{ t('path_distribution') }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_work_hours" id="include_work_hours" checked>
+                            <label class="form-check-label" for="include_work_hours">
+                                {{ t('work_hour_analysis') }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_kpis" id="include_kpis" checked>
+                            <label class="form-check-label" for="include_kpis">
+                                {{ t('kpi_summary') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="detailed-options" class="report-options" style="display: none;">
+                <h6 class="mb-3">{{ t('data_to_include') }}</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_events" id="include_events" checked>
+                    <label class="form-check-label" for="include_events">
+                        {{ t('event_details') }}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_statistics" id="include_statistics" checked>
+                    <label class="form-check-label" for="include_statistics">
+                        {{ t('statistical_summary') }}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_file_changes" id="include_file_changes" checked>
+                    <label class="form-check-label" for="include_file_changes">
+                        {{ t('file_change_history') }}
+                    </label>
+                </div>
+            </div>
+            
+            <div id="audit-options" class="report-options" style="display: none;">
+                <h6 class="mb-3">{{ t('audit_sections') }}</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_user_activity" id="include_user_activity" checked>
+                    <label class="form-check-label" for="include_user_activity">
+                        {{ t('user_activity_log') }}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_access_patterns" id="include_access_patterns" checked>
+                    <label class="form-check-label" for="include_access_patterns">
+                        {{ t('access_patterns') }}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="include_anomalies" id="include_anomalies" checked>
+                    <label class="form-check-label" for="include_anomalies">
+                        {{ t('anomaly_detection') }}
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Export Format -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h6>{{ t('export_format') }}</h6>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="export_format" id="format_excel" value="excel" checked>
+                        <label class="form-check-label" for="format_excel">
+                            <i class="fas fa-file-excel text-success"></i> Excel (.xlsx)
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="export_format" id="format_pdf" value="pdf">
+                        <label class="form-check-label" for="format_pdf">
+                            <i class="fas fa-file-pdf text-danger"></i> PDF
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button type="button" class="btn btn-outline-primary" onclick="previewReport()">
+                        <i class="fas fa-eye"></i> {{ t('preview') }}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i> {{ t('generate_report') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Preview -->
+<div class="preview-section" id="report-preview" style="display: none;">
+    <h5 class="mb-3">{{ t('report_preview') }}</h5>
+    <div id="preview-content">
+        <!-- Preview content will be loaded here -->
+    </div>
+</div>
+
+<!-- Recent Reports -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ t('recent_reports') }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ t('report_name') }}</th>
+                        <th>{{ t('type') }}</th>
+                        <th>{{ t('generated_by') }}</th>
+                        <th>{{ t('date') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in recent_reports %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-file-{{ 'excel' if report.format == 'excel' else 'pdf' }} 
+                               text-{{ 'success' if report.format == 'excel' else 'danger' }}"></i>
+                            {{ report.filename }}
+                        </td>
+                        <td><span class="badge bg-secondary">{{ report.type }}</span></td>
+                        <td>{{ report.user.username }}</td>
+                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('main.download_report', id=report.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% if current_user.role == 'admin' or report.user_id == current_user.id %}
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteReport({{ report.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">{{ t('no_recent_reports') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectReport(type) {
+    // Reset all cards
+    document.querySelectorAll('.report-card').forEach(card => {
+        card.classList.remove('border-primary', 'shadow');
+    });
+    
+    // Highlight selected card
+    event.currentTarget.classList.add('border-primary', 'shadow');
+    
+    // Show config section
+    document.getElementById('report-config').style.display = 'block';
+    document.getElementById('report_type').value = type;
+    
+    // Update title
+    const titles = {
+        'dashboard': '{{ t("configure_dashboard_report") }}',
+        'detailed': '{{ t("configure_detailed_report") }}',
+        'summary': '{{ t("configure_summary_report") }}',
+        'audit': '{{ t("configure_audit_report") }}'
+    };
+    document.getElementById('report-title').textContent = titles[type];
+    
+    // Show appropriate options
+    document.querySelectorAll('.report-options').forEach(opt => {
+        opt.style.display = 'none';
+    });
+    
+    const optionsId = type + '-options';
+    const options = document.getElementById(optionsId);
+    if (options) {
+        options.style.display = 'block';
+    }
+    
+    // Scroll to config
+    document.getElementById('report-config').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetForm() {
+    document.getElementById('report-config').style.display = 'none';
+    document.getElementById('report-preview').style.display = 'none';
+    document.querySelectorAll('.report-card').forEach(card => {
+        card.classList.remove('border-primary', 'shadow');
+    });
+}
+
+function updateDateInputs() {
+    const range = document.getElementById('date_range').value;
+    const fromGroup = document.getElementById('date-from-group');
+    const toGroup = document.getElementById('date-to-group');
+    
+    if (range === 'custom') {
+        fromGroup.style.display = 'block';
+        toGroup.style.display = 'block';
+    } else {
+        fromGroup.style.display = 'none';
+        toGroup.style.display = 'none';
+        
+        // Auto-set dates based on selection
+        const today = new Date();
+        let fromDate, toDate;
+        
+        switch(range) {
+            case 'today':
+                fromDate = toDate = today;
+                break;
+            case 'yesterday':
+                fromDate = toDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case 'week':
+                fromDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                toDate = today;
+                break;
+            case 'last_week':
+                const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                fromDate = new Date(lastWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+                toDate = lastWeek;
+                break;
+            case 'month':
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = today;
+                break;
+            case 'last_month':
+                fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+            case 'quarter':
+                const quarter = Math.floor(today.getMonth() / 3);
+                fromDate = new Date(today.getFullYear(), quarter * 3, 1);
+                toDate = today;
+                break;
+            case 'year':
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                toDate = today;
+                break;
+        }
+        
+        if (fromDate) {
+            document.getElementById('date_from').value = fromDate.toISOString().split('T')[0];
+            document.getElementById('date_to').value = toDate.toISOString().split('T')[0];
+        }
+    }
+}
+
+function previewReport() {
+    const formData = new FormData(document.getElementById('report-form'));
+    formData.append('preview', 'true');
+    
+    fetch('/api/report/preview', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('preview-content').innerHTML = data.html;
+        document.getElementById('report-preview').style.display = 'block';
+        document.getElementById('report-preview').scrollIntoView({ behavior: 'smooth' });
+    })
+    .catch(error => {
+        alert('Error generating preview: ' + error);
+    });
+}
+
+function deleteReport(reportId) {
+    if (confirm('{{ t("confirm_delete_report") }}')) {
+        fetch(`/api/report/${reportId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting report');
+            }
+        });
+    }
+}
+
+// Initialize
+updateDateInputs();
+</script>
+{% endblock %}

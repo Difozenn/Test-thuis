@@ -1,0 +1,66 @@
+<!-- templates/categories.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('categories') }} - Enterprise File Monitor{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('categories') }}</h1>
+</div>
+
+<!-- Action Button -->
+<div class="mb-4">
+    <a href="{{ url_for('main.add_category') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ t('add_category') }}
+    </a>
+</div>
+
+<div class="row">
+    {% for category in categories %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header" style="background-color: {{ category.color }}; color: white;">
+                <h5 class="mb-0">{{ category.name }}</h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ t('keywords') }}:</h6>
+                <div class="mb-2">
+                    {% for keyword in category.get_keywords() %}
+                        <span class="badge bg-secondary me-1">{{ keyword }}</span>
+                    {% else %}
+                        <span class="text-muted">{{ t('no_keywords') }}</span>
+                    {% endfor %}
+                </div>
+                
+                <h6>{{ t('file_patterns') }}:</h6>
+                <div class="mb-3">
+                    {% for pattern in category.get_patterns() %}
+                        <span class="badge bg-info me-1">{{ pattern }}</span>
+                    {% else %}
+                        <span class="text-muted">{{ t('no_patterns') }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.edit_category', id=category.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> {{ t('edit') }}
+                    </a>
+                    <a href="{{ url_for('main.delete_category', id=category.id) }}" 
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('{{ t('confirm_delete') }}');">
+                        <i class="fas fa-trash"></i> {{ t('delete') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            {{ t('no_categories_defined') }} <a href="{{ url_for('main.add_category') }}">{{ t('create_one_now') }}</a>.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

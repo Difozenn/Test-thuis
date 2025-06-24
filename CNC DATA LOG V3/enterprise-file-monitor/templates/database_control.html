@@ -1,0 +1,620 @@
+<!-- templates/database_control.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('database_control') }} - Enterprise File Monitor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .db-control-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 200px;
+    }
+    
+    .db-control-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .db-control-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .db-stats {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .progress-section {
+        display: none;
+        margin-top: 2rem;
+    }
+    
+    .backup-item {
+        border-left: 3px solid var(--secondary-blue);
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .danger-zone {
+        border: 2px dashed #dc3545;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+        background-color: #fef5f5;
+    }
+    
+    .backup-list-item {
+        transition: all 0.3s ease;
+    }
+    
+    .backup-list-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('database_control') }}</h1>
+    <p class="text-muted">Manage database backups, maintenance, and data cleanup</p>
+</div>
+
+<!-- Database Statistics -->
+<div class="db-stats">
+    <div class="row text-center">
+        <div class="col-md-2">
+            <h3 class="text-primary">{{ stats.total_events }}</h3>
+            <p class="mb-0">{{ t('total_events') }}</p>
+        </div>
+        <div class="col-md-2">
+            <h3 class="text-success">{{ stats.total_users }}</h3>
+            <p class="mb-0">{{ t('total_users') }}</p>
+        </div>
+        <div class="col-md-2">
+            <h3 class="text-warning">{{ stats.total_categories }}</h3>
+            <p class="mb-0">{{ t('categories') }}</p>
+        </div>
+        <div class="col-md-2">
+            <h3 class="text-info">{{ stats.total_paths }}</h3>
+            <p class="mb-0">{{ t('monitored_paths') }}</p>
+        </div>
+        <div class="col-md-2">
+            <h3 class="text-secondary">{{ stats.db_size }}</h3>
+            <p class="mb-0">{{ t('database_size') }}</p>
+        </div>
+        <div class="col-md-2">
+            <h3 class="text-dark">{{ stats.oldest_event_days }}d</h3>
+            <p class="mb-0">{{ t('oldest_event') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Control Actions -->
+<div class="row mb-4">
+    <!-- Backup Database -->
+    <div class="col-md-4 mb-3">
+        <div class="card db-control-card" onclick="showBackupOptions()">
+            <div class="card-body text-center">
+                <div class="db-control-icon text-primary">
+                    <i class="fas fa-save"></i>
+                </div>
+                <h5>{{ t('backup_database') }}</h5>
+                <p class="text-muted">{{ t('create_database_backup') }}</p>
+                <button class="btn btn-primary">
+                    <i class="fas fa-download"></i> {{ t('backup_now') }}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Restore Database -->
+    <div class="col-md-4 mb-3">
+        <div class="card db-control-card" onclick="showRestoreOptions()">
+            <div class="card-body text-center">
+                <div class="db-control-icon text-success">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <h5>{{ t('restore_database') }}</h5>
+                <p class="text-muted">{{ t('restore_from_backup') }}</p>
+                <button class="btn btn-success">
+                    <i class="fas fa-undo"></i> {{ t('restore') }}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Data -->
+    <div class="col-md-4 mb-3">
+        <div class="card db-control-card" onclick="showExportOptions()">
+            <div class="card-body text-center">
+                <div class="db-control-icon text-info">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <h5>{{ t('export_data') }}</h5>
+                <p class="text-muted">{{ t('export_to_various_formats') }}</p>
+                <button class="btn btn-info">
+                    <i class="fas fa-file-download"></i> {{ t('export') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backup Options (Hidden by default) -->
+<div id="backup-options" class="card" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-save"></i> {{ t('backup_options') }}
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideAllOptions()">
+                <i class="fas fa-times"></i>
+            </button>
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="backup-form" method="POST" action="{{ url_for('main.backup_database') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('backup_type') }}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="backup_type" id="full_backup" value="full" checked>
+                            <label class="form-check-label" for="full_backup">
+                                {{ t('full_backup') }}
+                                <small class="text-muted d-block">{{ t('includes_all_data') }}</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="backup_type" id="data_only" value="data_only">
+                            <label class="form-check-label" for="data_only">
+                                {{ t('data_only') }}
+                                <small class="text-muted d-block">{{ t('excludes_system_settings') }}</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="backup_type" id="structure_only" value="structure_only">
+                            <label class="form-check-label" for="structure_only">
+                                {{ t('structure_only') }}
+                                <small class="text-muted d-block">{{ t('database_schema_only') }}</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('compression') }}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="compress" id="compress" checked>
+                            <label class="form-check-label" for="compress">
+                                {{ t('compress_backup') }} (ZIP)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="backup_note" class="form-label">{{ t('backup_note') }}</label>
+                        <input type="text" class="form-control" id="backup_note" name="backup_note" 
+                               placeholder="{{ t('optional_description') }}">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-download"></i> {{ t('create_backup') }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Restore Options (Hidden by default) -->
+<div id="restore-options" class="card" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-upload"></i> {{ t('restore_options') }}
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideAllOptions()">
+                <i class="fas fa-times"></i>
+            </button>
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Recent Backups -->
+        <h6>{{ t('recent_backups') }}</h6>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{{ t('backup_date') }}</th>
+                        <th>{{ t('size') }}</th>
+                        <th>{{ t('type') }}</th>
+                        <th>{{ t('note') }}</th>
+                        <th>{{ t('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in recent_backups %}
+                    <tr>
+                        <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ backup.size_mb }}MB</td>
+                        <td><span class="badge bg-secondary">{{ backup.type }}</span></td>
+                        <td>{{ backup.note or '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success" 
+                                    onclick="confirmRestore('{{ backup.filename }}')">
+                                <i class="fas fa-undo"></i> {{ t('restore') }}
+                            </button>
+                            <button class="btn btn-sm btn-danger" 
+                                    onclick="deleteBackup('{{ backup.id }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">{{ t('no_backups_found') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Upload Backup -->
+        <h6>{{ t('upload_backup_file') }}</h6>
+        <form id="restore-form" method="POST" action="{{ url_for('main.restore_database') }}" 
+              enctype="multipart/form-data">
+            <div class="mb-3">
+                <input type="file" class="form-control" name="backup_file" accept=".db,.zip,.sql" required>
+                <small class="text-muted">{{ t('accepted_formats') }}: .db, .zip, .sql</small>
+            </div>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                {{ t('restore_warning') }}
+            </div>
+            <button type="submit" class="btn btn-warning" onclick="return confirmRestoreUpload()">
+                <i class="fas fa-upload"></i> {{ t('upload_and_restore') }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Export Options (Hidden by default) -->
+<div id="export-options" class="card" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-file-export"></i> {{ t('export_options') }}
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideAllOptions()">
+                <i class="fas fa-times"></i>
+            </button>
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="export-form" method="POST" action="{{ url_for('main.export_database') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>{{ t('export_format') }}</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="export_format" value="csv" id="export_csv" checked>
+                        <label class="form-check-label" for="export_csv">
+                            <i class="fas fa-file-csv text-success"></i> CSV
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="export_format" value="json" id="export_json">
+                        <label class="form-check-label" for="export_json">
+                            <i class="fas fa-file-code text-warning"></i> JSON
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="export_format" value="sql" id="export_sql">
+                        <label class="form-check-label" for="export_sql">
+                            <i class="fas fa-database text-info"></i> SQL
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>{{ t('data_to_export') }}</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="export_events" id="export_events" checked>
+                        <label class="form-check-label" for="export_events">
+                            {{ t('events') }}
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="export_users" id="export_users">
+                        <label class="form-check-label" for="export_users">
+                            {{ t('users') }}
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="export_categories" id="export_categories" checked>
+                        <label class="form-check-label" for="export_categories">
+                            {{ t('categories') }}
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="export_paths" id="export_paths">
+                        <label class="form-check-label" for="export_paths">
+                            {{ t('monitored_paths') }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-download"></i> {{ t('export_data') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Data Cleanup Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-broom"></i> {{ t('data_cleanup') }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>{{ t('remove_old_events') }}</h6>
+                <form method="POST" action="{{ url_for('main.cleanup_events') }}" class="d-flex gap-2">
+                    <select name="cleanup_period" class="form-select">
+                        <option value="30">{{ t('older_than_30_days') }}</option>
+                        <option value="60">{{ t('older_than_60_days') }}</option>
+                        <option value="90">{{ t('older_than_90_days') }}</option>
+                        <option value="180">{{ t('older_than_180_days') }}</option>
+                        <option value="365">{{ t('older_than_1_year') }}</option>
+                    </select>
+                    <button type="submit" class="btn btn-warning" onclick="return confirmCleanup()">
+                        <i class="fas fa-trash"></i> {{ t('cleanup') }}
+                    </button>
+                </form>
+                <small class="text-muted">{{ t('events_to_delete') }}: <span id="events-count">-</span></small>
+            </div>
+            <div class="col-md-6">
+                <h6>{{ t('optimize_database') }}</h6>
+                <p class="text-muted">{{ t('optimize_description') }}</p>
+                <form method="POST" action="{{ url_for('main.optimize_database') }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt"></i> {{ t('optimize_now') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scheduled Backups -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-clock"></i> {{ t('scheduled_backups') }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('main.update_backup_schedule') }}">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="enable_scheduled" 
+                               id="enable_scheduled" {% if scheduled_backup.enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="enable_scheduled">
+                            {{ t('enable_automatic_backups') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="backup_frequency" class="form-select">
+                        <option value="daily" {% if scheduled_backup.frequency == 'daily' %}selected{% endif %}>
+                            {{ t('daily') }}
+                        </option>
+                        <option value="weekly" {% if scheduled_backup.frequency == 'weekly' %}selected{% endif %}>
+                            {{ t('weekly') }}
+                        </option>
+                        <option value="monthly" {% if scheduled_backup.frequency == 'monthly' %}selected{% endif %}>
+                            {{ t('monthly') }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="time" name="backup_time" class="form-control" 
+                           value="{{ scheduled_backup.time or '02:00' }}">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ t('retention_policy') }}</label>
+                    <select name="retention_days" class="form-select">
+                        <option value="7">{{ t('keep_for_7_days') }}</option>
+                        <option value="30" selected>{{ t('keep_for_30_days') }}</option>
+                        <option value="90">{{ t('keep_for_90_days') }}</option>
+                        <option value="365">{{ t('keep_for_1_year') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ t('save_schedule') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        {% if scheduled_backup.last_run %}
+        <div class="mt-3">
+            <small class="text-muted">
+                {{ t('last_backup') }}: {{ scheduled_backup.last_run.strftime('%Y-%m-%d %H:%M') }}
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="danger-zone">
+    <h5 class="text-danger mb-3">
+        <i class="fas fa-exclamation-triangle"></i> {{ t('danger_zone') }}
+    </h5>
+    <p class="text-muted">{{ t('danger_zone_warning') }}</p>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <button class="btn btn-danger" onclick="confirmResetDatabase()">
+                <i class="fas fa-bomb"></i> {{ t('reset_database') }}
+            </button>
+            <small class="d-block text-muted mt-1">{{ t('delete_all_events') }}</small>
+        </div>
+        <div class="col-md-6">
+            <button class="btn btn-danger" onclick="confirmDeleteAllData()">
+                <i class="fas fa-trash-alt"></i> {{ t('delete_all_data') }}
+            </button>
+            <small class="d-block text-muted mt-1">{{ t('complete_database_wipe') }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ t('processing') }}</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 100%"></div>
+                </div>
+                <p class="text-center mt-3" id="progress-message">{{ t('please_wait') }}...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showBackupOptions() {
+    hideAllOptions();
+    document.getElementById('backup-options').style.display = 'block';
+    document.getElementById('backup-options').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showRestoreOptions() {
+    hideAllOptions();
+    document.getElementById('restore-options').style.display = 'block';
+    document.getElementById('restore-options').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showExportOptions() {
+    hideAllOptions();
+    document.getElementById('export-options').style.display = 'block';
+    document.getElementById('export-options').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideAllOptions() {
+    document.getElementById('backup-options').style.display = 'none';
+    document.getElementById('restore-options').style.display = 'none';
+    document.getElementById('export-options').style.display = 'none';
+}
+
+function confirmRestore(filename) {
+    if (confirm('{{ t("confirm_restore_warning") }}')) {
+        showProgress('{{ t("restoring_database") }}');
+        fetch(`/api/database/restore/${filename}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    alert('{{ t("restore_successful") }}');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+    }
+}
+
+function confirmRestoreUpload() {
+    return confirm('{{ t("confirm_restore_upload_warning") }}');
+}
+
+function confirmCleanup() {
+    return confirm('{{ t("confirm_cleanup_warning") }}');
+}
+
+function confirmResetDatabase() {
+    if (confirm('{{ t("confirm_reset_database") }}')) {
+        if (confirm('{{ t("confirm_reset_database_final") }}')) {
+            showProgress('{{ t("resetting_database") }}');
+            fetch('/api/database/reset', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    hideProgress();
+                    if (data.success) {
+                        alert('{{ t("database_reset_successful") }}');
+                        window.location.reload();
+                    }
+                });
+        }
+    }
+}
+
+function confirmDeleteAllData() {
+    const confirmText = prompt('{{ t("type_delete_to_confirm") }}');
+    if (confirmText && confirmText.toLowerCase() === 'delete') {
+        showProgress('{{ t("deleting_all_data") }}');
+        fetch('/api/database/delete_all', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    alert('{{ t("all_data_deleted") }}');
+                    window.location.href = '/logout';
+                }
+            });
+    }
+}
+
+function deleteBackup(backupId) {
+    if (confirm('{{ t("confirm_delete_backup") }}')) {
+        fetch(`/api/database/backup/${backupId}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            });
+    }
+}
+
+function showProgress(message) {
+    document.getElementById('progress-message').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('progressModal'));
+    modal.show();
+}
+
+function hideProgress() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('progressModal'));
+    if (modal) modal.hide();
+}
+
+// Update cleanup count on selection change
+document.querySelector('select[name="cleanup_period"]').addEventListener('change', function() {
+    const days = this.value;
+    fetch(`/api/database/cleanup_count?days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('events-count').textContent = data.count;
+        });
+});
+
+// Load initial cleanup count
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('select[name="cleanup_period"]').dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

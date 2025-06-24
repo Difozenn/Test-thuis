@@ -1,0 +1,49 @@
+<!-- templates/manual_entry.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('manual_entry') }} - Enterprise File Monitor{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('manual_entry') }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="description" class="form-label">{{ t('description') }}</label>
+                <input type="text" class="form-control" id="description" name="description" required
+                       placeholder="Enter description for this entry">
+            </div>
+            
+            <div class="mb-3">
+                <label for="category_id" class="form-label">{{ t('category') }}</label>
+                <select class="form-select" id="category_id" name="category_id" required>
+                    <option value="">Select a category...</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="amount" class="form-label">{{ t('amount') }}</label>
+                <input type="number" class="form-control" id="amount" name="amount" min="1" max="100" value="1" required>
+                <div class="form-text">Number of entries to add for this category (1-100)</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="matched_keyword" class="form-label">{{ t('keyword') }} (Optional)</label>
+                <input type="text" class="form-control" id="matched_keyword" name="matched_keyword">
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Add Entries</button>
+                <a href="{{ url_for('main.events') }}" class="btn btn-secondary">{{ t('cancel') }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

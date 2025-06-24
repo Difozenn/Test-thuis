@@ -744,3 +744,157 @@
 2025-06-19 21:41:25,722 - INFO - [DatabasePanel] Shutdown called.
 2025-06-19 21:43:48,228 - INFO - [DatabasePanel] Shutdown called.
 2025-06-19 22:19:00,904 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:44:03,721 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:45:03,955 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:55:53,345 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:07:28,375 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:10:20,924 - INFO - [BG_TASK] Processing OPEN for MO00000_TEST, scanned by NESTING.
+2025-06-20 17:10:20,924 - INFO - Background task started for OPEN event: MO00000_TEST
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO00000_TEST'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] No match for 'MO00000_TEST' in 'C:/OPUS/KORPUS' for user 'OPUS'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO00000_TEST'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] No match for 'MO00000_TEST' in 'C:/GANNOMAT' for user 'KL GANNOMAT'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Finished processing OPEN for MO00000_TEST.
+2025-06-20 17:16:18,846 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:17:33,424 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:17:33,424 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:17:33,424 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:17:33,425 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:17:35,441 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:17:35,441 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:17:35,442 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:17:37,467 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:17:37,467 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:21:24,099 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:31:10,418 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:31:12,443 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:31:12,444 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:31:12,444 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:31:14,450 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:31:14,450 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:42:55,495 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:43:59,820 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:43:59,821 - INFO - [BG_TASK] Waiting for 0.86s before posting OPEN for OPUS.
+2025-06-20 17:44:02,692 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:44:02,692 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:44:02,693 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:44:02,693 - INFO - [BG_TASK] Waiting for 0.65s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:44:05,358 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:44:05,358 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:49:22,933 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:50:12,767 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:50:12,767 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Waiting for 0.65s before posting OPEN for OPUS.
+2025-06-20 17:50:15,433 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Waiting for 1.08s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:50:18,538 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:50:18,538 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:51:43,780 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:57:49,364 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:57:49,365 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Waiting for 0.94s before posting OPEN for OPUS.
+2025-06-20 17:57:52,328 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Waiting for 0.59s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:57:54,938 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:57:54,939 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:12:07,814 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:13:12,205 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:13:12,205 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:13:12,205 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:13:12,206 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:13:12,206 - INFO - [BG_TASK] Waiting for 0.91s before posting OPEN for OPUS.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Waiting for 1.17s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:13:18,332 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:13:18,332 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:16:35,245 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:19:02,883 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:19:36,435 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Waiting for 1.36s before posting OPEN for OPUS.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Waiting for 0.52s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:19:42,348 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:19:42,348 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:31:43,994 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:32:11,925 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:32:11,925 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Waiting for 1.48s before posting OPEN for OPUS.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast for user OPUS.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Waiting for 1.04s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:32:18,478 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast for user KL GANNOMAT.
+2025-06-20 18:32:18,478 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:50:04,385 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:55:54,128 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 19:00:26,996 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 19:54:33,386 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 20:12:14,145 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 23:03:20,841 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 23:04:59,937 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast_Rep_VL5, scanned by NESTING.
+2025-06-20 23:04:59,937 - INFO - Background task started for OPEN event: MO07834_Boekenkast_Rep_VL5
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Waiting for 0.79s before posting OPEN for OPUS.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user OPUS.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 23:05:02,752 - INFO - [BG_TASK] Waiting for 0.92s before posting OPEN for KL GANNOMAT.
+2025-06-20 23:05:05,693 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user KL GANNOMAT.
+2025-06-20 23:05:05,694 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast_Rep_VL5.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast_Rep_VL5, scanned by NESTING.
+2025-06-20 23:24:19,669 - INFO - Background task started for OPEN event: MO07834_Boekenkast_Rep_VL5
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Waiting for 1.18s before posting OPEN for OPUS.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user OPUS.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Waiting for 0.79s before posting OPEN for KL GANNOMAT.
+2025-06-20 23:24:25,673 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user KL GANNOMAT.
+2025-06-20 23:24:25,673 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast_Rep_VL5.
+2025-06-21 07:47:59,368 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 09:37:16,237 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 10:06:31,346 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 19:59:07,773 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 20:18:49,378 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 20:19:38,759 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 21:58:50,692 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 22:18:03,742 - INFO - [DatabasePanel] Shutdown called.

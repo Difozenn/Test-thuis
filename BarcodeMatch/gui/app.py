@@ -49,6 +49,11 @@ class BarcodeMatchApp:
         if not skip_preload:
             self._preload_critical_panels()
 
+        # Assuming create_menu initializes self.notebook
+        # If not, self.notebook needs to be initialized here as ttk.Notebook
+        # and panels added to it in get_panel_by_name or show_panel_by_name
+        self.notebook = None # Placeholder, expecting create_menu to set it up or manage tabs
+
     def _preload_critical_panels(self):
         """Pre-load critical panels in background thread"""
         def preload():
@@ -222,6 +227,80 @@ class BarcodeMatchApp:
                     self.tab_images[name] = None
             else:
                 self.tab_images[name] = None
+
+    def load_app_config(self):
+        """Loads the application config from BarcodeMatch/config.json"""
+        # Ensure we are using the config_utils from the BarcodeMatch directory
+        # This might require adjusting sys.path if run from Test-thuis-main directly
+        # or ensuring BarcodeMatch is a package.
+        # For now, assume direct import works if BarcodeMatch is in PYTHONPATH
+        try:
+            from BarcodeMatch.config_utils import load_config as bm_load_config
+            return bm_load_config()
+        except ImportError:
+            # Fallback if BarcodeMatch is not directly in path (e.g. running script from Test-thuis-main)
+            # This is a bit of a hack for local running; packaging would solve this.
+            import sys
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(current_dir) # Test-thuis-main
+            barcode_match_config_utils_path = os.path.join(parent_dir, 'BarcodeMatch')
+            if barcode_match_config_utils_path not in sys.path:
+                sys.path.insert(0, barcode_match_config_utils_path)
+            try:
+                from config_utils import load_config as bm_load_config
+                return bm_load_config()
+            except ImportError as e:
+                print(f"[ERROR] Could not load BarcodeMatch.config_utils: {e}")
+                return {}
+
+    def switch_to_scanner_and_load(self, excel_file_path):
+        """Switches to the Scanner panel and loads the specified Excel file."""
+        scanner_panel = self.get_panel_by_name("Scanner")
+        if scanner_panel:
+            # Use the new menu-based system to switch to Scanner panel
+            # Find the Scanner panel index in MENU_OPTIONS
+            from gui.menu import MENU_OPTIONS
+            scanner_index = None
+            for idx, opt in enumerate(MENU_OPTIONS):
+                if opt["name"] == "Scanner":
+                    scanner_index = idx
+                    break
+            
+            if scanner_index is not None and hasattr(self.root, 'active_tab'):
+                # Hide current panel
+                if hasattr(self.root, '_active_panel') and self.root._active_panel is not None:
+                    print(f"[SWITCH] Hiding current panel: {type(self.root._active_panel).__name__}")
+                    self.root._active_panel.pack_forget()
+                
+                # Show Scanner panel
+                self.root._active_panel = scanner_panel
+                print(f"[SWITCH] Showing Scanner panel")
+                scanner_panel.pack(fill=tk.BOTH, expand=True)
+                
+                # Update tab state
+                self.root.active_tab.set(scanner_index)
+                
+                # Update button appearances
+                if hasattr(self.root, '_tab_buttons'):
+                    MENU_BG = "#f0f0f0"
+                    for idx, (btn, frame) in enumerate(zip(self.root._tab_buttons, self.root._tab_frames)):
+                        if idx == scanner_index:
+                            frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
+                            btn.config(bg="#d0e0ff", relief=tk.FLAT)
+                        else:
+                            frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
+                            btn.config(bg=MENU_BG, relief=tk.FLAT)
+                
+                # Load the Excel file
+                scanner_panel.load_project_excel(excel_file_path)
+                print(f"[SWITCH] Successfully switched to Scanner and loaded: {excel_file_path}")
+            else:
+                print("[WARN] Could not find Scanner in menu options or menu system not initialized.")
+                # Still attempt to load the file
+                scanner_panel.load_project_excel(excel_file_path)
+        else:
+            from tkinter import messagebox
+            messagebox.showerror("Fout", "Scanner paneel kon niet worden geladen.")
 
     def _set_icon(self):
         script_dir = os.path.dirname(__file__)

@@ -4,18 +4,18 @@ Automatische monitoring en verwerking van OPUS en GANNOMAT bestanden
 """
 
 import os
-import time
-import threading
-import time
-import os
-import pandas as pd
-import pyodbc
-import requests
-import re
-from datetime import datetime
 import sqlite3
 import json
 import logging
+import requests
+import re
+from datetime import datetime
+import traceback
+import threading
+import time
+import random
+import pandas as pd
+import pyodbc
 
 from BarcodeMaster.config_utils import get_config
 
@@ -207,6 +207,110 @@ class BackgroundImportService:
         #     # self.stats['total_imports_triggered'] += 1 
         #     self._log(f"Import succesvol getriggerd voor {user_type}. Totaal: {self.stats['total_imports_triggered']}")
 
+    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+        """Processes the OPEN scan event for other users in a background thread."""
+        thread = threading.Thread(
+            target=self._process_scan_for_open_event_task,
+            args=(
+                project_code_to_log,
+                base_project_code,
+                scanned_code,
+                current_user_scanner,
+                api_url,
+                config_data
+            )
+        )
+        thread.daemon = True # Ensure thread doesn't block program exit
+        thread.start()
+        self._log(f"Background task started for OPEN event: {project_code_to_log}")
+
+    def _process_scan_for_open_event_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+        """Task run in a separate thread to handle OPEN event logic for other users."""
+        try:
+            self._log(f"[BG_TASK] Processing OPEN for {project_code_to_log}, scanned by {current_user_scanner}.")
+            open_users = config_data.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
+            user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
+
+            for user in open_users:
+                if user == current_user_scanner:
+                    continue # Skip the user who initiated the scan
+
+                if user_logic_active_states.get(user, True): # Default to True if not specified
+                    user_dir = user_paths_map.get(user)
+                    match_found_for_this_user = False
+                    
+                    if user_dir and os.path.isdir(user_dir):
+                        self._log(f"[BG_TASK] Checking dir '{user_dir}' for user '{user}' for project '{project_code_to_log}'.")
+                        try:
+                            # Logic adapted from scanner_panel.py lines 628-643
+                            if base_project_code and base_project_code.strip():
+                                for item_name in os.listdir(user_dir):
+                                    item_base_name, _ = os.path.splitext(item_name)
+                                    is_rep_scan_for_item = bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE))
+                                    
+                                    if is_rep_scan_for_item:
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()):
+                                            match_found_for_this_user = True
+                                            break
+                                    else:
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and '_REP_' not in item_name.upper():
+                                            match_found_for_this_user = True
+                                            break
+                        except OSError as e_os:
+                            self._log(f"[BG_TASK_ERR] Error accessing dir {user_dir} for {user}: {e_os}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_IO_ERROR:{project_code_to_log}:{user}:Error accessing dir {user_dir}: {e_os}")
+                            continue # Skip to next user
+                    if match_found_for_this_user:
+                        self._log(f"[BG_TASK] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'. Posting OPEN.")
+
+                        # Introduce a random delay to prevent database write collisions.
+                        delay = random.uniform(0.2, 1.5)
+                        self._log(f"[BG_TASK] Waiting for {delay:.2f}s before posting OPEN for {user}.")
+                        time.sleep(delay)
+
+                        data_open = {
+                            'event': 'OPEN',
+                            'details': f"Auto-detected from {current_user_scanner}'s scan of {scanned_code}",
+                            'project': project_code_to_log,
+                            'base_mo_code': base_project_code,
+                            'is_rep_variant': '_REP_' in project_code_to_log.upper(),
+                            'user': user
+                        }
+                        try:
+                            resp_open = requests.post(api_url, json=data_open, timeout=10)
+                            if resp_open.ok:
+                                self._log(f"[BG_TASK] Successfully posted OPEN for {project_code_to_log} for user {user}.")
+                                if self.log_callback:
+                                    self.log_callback(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{user}")
+                            else:
+                                error_msg = resp_open.text
+                                self._log(f"[BG_TASK_ERR] API Error opening project {project_code_to_log} for {user}: {resp_open.status_code} - {error_msg}")
+                                if self.log_callback:
+                                    self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:{resp_open.status_code} - {error_msg}")
+                        except requests.exceptions.RequestException as e_req:
+                            self._log(f"[BG_TASK_ERR] Network Error opening project {project_code_to_log} for {user}: {e_req}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:Network Error - {e_req}")
+                        except Exception as e_gen_api:
+                            self._log(f"[BG_TASK_ERR] Generic API Error for {project_code_to_log}, user {user}: {e_gen_api}\n{traceback.format_exc()}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:Generic API Error - {e_gen_api}")
+                    else:
+                        self._log(f"[BG_TASK] No match for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
+                else:
+                    self._log(f"[BG_TASK] Logic inactive for user '{user}'. Skipping OPEN event processing.")
+            
+            self._log(f"[BG_TASK] Finished processing OPEN for {project_code_to_log}.")
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_PROCESSING_COMPLETE:{project_code_to_log}")
+
+        except Exception as e_task:
+            self._log(f"[BG_TASK_FATAL_ERR] Unhandled exception in _process_scan_for_open_event_task for {project_code_to_log}: {e_task}\n{traceback.format_exc()}")
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_FATAL_ERROR:{project_code_to_log}:Error - {e_task}")
+
     # start() method removed as it was tied to the global master switch.
     # The service is now always 'running' in the sense that it's ready to process events based on user-specific configs.
 
@@ -352,6 +456,7 @@ class BackgroundImportService:
             df.to_excel(excel_path, index=False)
             self._log(f"OPUS Excel rapport succesvol opgeslagen: {excel_path}")
             self.logger.info(f"OPUS Excel report successfully saved: {excel_path}")
+            self._log_excel_creation_event('OPUS', folder_name, f"Excel report generated for {folder_name}", excel_path)
 
         except Exception as e:
             self._log(f"Fout bij opslaan van OPUS Excel rapport voor map '{opus_scan_path}': {e}")
@@ -518,6 +623,7 @@ class BackgroundImportService:
             df_export.to_excel(excel_path, index=False)
             self._log(f"GANNOMAT Excel rapport succesvol opgeslagen: {excel_path}")
             self.logger.info(f"GANNOMAT Excel report successfully saved: {excel_path}")
+            self._log_excel_creation_event('GANNOMAT', base_name, f"Excel report generated for {mdb_basename}", excel_path)
 
         except Exception as e:
             self._log(f"Fout bij opslaan van GANNOMAT Excel rapport voor {mdb_basename}: {e}")
@@ -653,6 +759,39 @@ class BackgroundImportService:
             self.logger.error(f"Fout bij loggen import event: {e}")
             self._log(f"Fout bij API logging: {str(e)}")
             
+    def _log_excel_creation_event(self, user_type, project, details, file_path):
+        """Log the event of an Excel file creation to the API, including the file path."""
+        try:
+            config = get_config()
+            # Ensure api_url is correctly retrieved and has /log appended if not present
+            api_url = config.get('api_url', '').rstrip('/')
+            if not api_url.endswith('/log'):
+                 api_url += '/log'
+
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor event logging")
+                return
+
+            data = {
+                'event': 'EXCEL_GENERATED',
+                'details': details,
+                'project': project,
+                'user': user_type,
+                'file_path': file_path, # The new dedicated field
+                'timestamp': datetime.now().isoformat()
+            }
+
+            response = requests.post(api_url, json=data, timeout=5)
+
+            if response.ok:
+                self._log(f"Excel creation event gelogd naar API: {user_type} - {project} at {file_path}")
+            else:
+                self._log(f"Fout bij loggen Excel creation event: HTTP {response.status_code} - {response.text}")
+
+        except Exception as e:
+            self.logger.error(f"Fout bij loggen Excel creation event: {e}")
+            self._log(f"Fout bij API logging (Excel creation): {str(e)}")
+
     def _log(self, message):
         """Log bericht naar file en callback."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

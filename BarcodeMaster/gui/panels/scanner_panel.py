@@ -613,74 +613,26 @@ class ScannerPanel(tk.Frame):
                 self.log_message(traceback.format_exc())
                 all_ok = False
 
-            open_users = config.get('scanner_panel_open_event_users', [])
-            user_logic_active_states = config.get('scanner_panel_open_event_user_logic_active', {})
+            # Synchronous loop for OPEN event processing for other users is now replaced by an asynchronous call.
+            self.log_message(f"  [OPEN LOGIC] Initiating background processing for other users for project '{project_code_to_log}'.")
+            self.background_import_service.process_scan_for_open_event_async(
+                project_code_to_log=project_code_to_log,
+                base_project_code=base_project_code,
+                scanned_code=code, # Original scanned code for context
+                current_user_scanner=current_user, # The user who performed the scan
+                api_url=api_url,
+                config_data=config # Pass the current config snapshot
+            )
+            # UI feedback for initiating background task. Detailed status will come via log_message_from_service.
+            self.usb_entry.config(bg='khaki') # Indicate processing started
+            all_ok = True # Assume OK for now, background will report errors.
 
-            for user in open_users:
-                if user == current_user:
-                    continue
-
-                if user_logic_active_states.get(user, True):
-                    user_dir = self.scanner_panel_open_event_user_paths.get(user)
-                    match_found = False
-                    if user_dir and os.path.isdir(user_dir):
-                        try:
-                            if base_project_code and base_project_code.strip():
-                                for item_name in os.listdir(user_dir):
-                                    item_base_name, _ = os.path.splitext(item_name)
-                                    is_rep_scan = bool(re.search(r'_REP_?', full_project_code, re.IGNORECASE))
-                                    if is_rep_scan:
-                                        # For REP scans, match if item_base_name ends with the (potentially stripped) full_project_code.
-                                        # full_project_code here is project_code_to_log from the outer scope.
-                                        if item_base_name.upper().endswith(project_code_to_log.upper()):
-                                            match_found = True
-                                            break
-                                    else:
-                                        # For standard scans, match if the item name ends with the full project code (e.g., "0618_MO12345_ABC" ends with "MO12345_ABC")
-                                        # Also ensure we don't accidentally match a REP variant if this isn't a REP scan.
-                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and '_REP_' not in item_name.upper():
-                                            match_found = True
-                                            break
-                        except OSError as e_os:
-                            self.log_message(f"  [OPEN LOGIC] Error accessing dir {user_dir} for {user}: {e_os}")
-                            continue
-
-                    if match_found:
-                        self.log_message(f"  [OPEN LOGIC] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
-                        data_open = {
-                            'event': 'OPEN',
-                            'details': f"Match found for {project_code_to_log} in {user_dir}",
-                            'project': project_code_to_log, # Full unique project identifier
-                            'base_mo_code': base_project_code, # MOxxxxx part
-                            'is_rep_variant': '_REP_' in project_code_to_log.upper(),
-                            'user': user
-                        }
-                        try:
-                            resp_open = requests.post(api_url, json=data_open, timeout=3)
-                            if resp_open.ok:
-                                if project_code_to_log: # Use the full project ID for tracking
-                                    self.open_projects.add(project_code_to_log)
-                                self.background_import_service.trigger_import_for_event(
-                                    user_type=user,
-                                    project_code=project_code_to_log,
-                                    event_details=f"Scan event: {code}",
-                                    timestamp=datetime.now().isoformat()
-                                )
-                            else:
-                                all_ok = False
-                        except Exception:
-                            self.log_message(f"    [EXCEPTION] OPEN request failed for user {user}!")
-                            self.log_message(traceback.format_exc())
-                            all_ok = False
-                    else:
-                        self.log_message(f"  [OPEN LOGIC] No match for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
-                else:
-                    self.log_message(f"  [OPEN LOGIC] Logic inactive for user '{user}'. Skipping OPEN event.")
-
-            if all_ok:
-                self.usb_entry.config(bg='light green')
+            if all_ok: # This 'all_ok' now just means the initial steps were fine.
+                # The usb_entry color is now mainly for the initial AFGEMELD and starting the BG task.
+                # We don't set it to light green here anymore based on the background tasks.
+                pass # Color is 'khaki', will be reset by self.after()
             else:
-                self.usb_entry.config(bg='red')
+                self.usb_entry.config(bg='red') # If pre-emptive AFGEMELD failed, show red.
             self.after(2000, lambda: self.usb_entry.config(bg='white'))
         else:
             data = {

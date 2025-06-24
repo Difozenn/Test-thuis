@@ -241,6 +241,18 @@ class ScannerPanel(ttk.Frame):
             self.com_frame.grid_remove()
             self.usb_frame.grid_remove()
 
+    def load_project_excel(self, excel_file_path):
+        """Public method to load a project's Excel file into the scanner panel."""
+        self._log(f"Laden van project Excel via externe aanroep: {excel_file_path}")
+        if excel_file_path and os.path.exists(excel_file_path):
+            self._load_excel_data(excel_file_path, update_config_path=True)
+        elif excel_file_path:
+            messagebox.showerror("Bestand niet gevonden", f"Het opgegeven Excel-bestand kon niet worden gevonden:\n{excel_file_path}")
+            self._log(f"[FOUT] Extern opgegeven Excel-bestand niet gevonden: {excel_file_path}")
+        else:
+            messagebox.showerror("Geen bestand opgegeven", "Geen Excel-bestandspad opgegeven om te laden.")
+            self._log("[FOUT] Geen Excel-bestandspad opgegeven voor externe lading.")
+
     def _browse_excel_file(self):
         """Opent een dialoogvenster om een Excel-bestand te selecteren."""
         file_path = filedialog.askopenfilename(

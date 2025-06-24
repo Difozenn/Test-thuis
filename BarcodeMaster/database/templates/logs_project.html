@@ -52,75 +52,41 @@
         header a:hover { text-decoration: underline; }
         .user-status-container {
             padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: #fdfdff;
-        }
-        .user-status-container h2 {
             margin-top: 0;
-            font-size: 20px;
-            color: var(--header-color);
         }
-        .user-status-container table {
-            width: auto;
-            min-width: 400px;
-            border: 1px solid var(--border-color);
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
         }
-        .user-status-container th, .user-status-container td {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border-color);
+        a:hover {
+            text-decoration: underline;
         }
-        .user-status-container thead th {
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .card {
             background-color: var(--bg-color);
-        }
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: #fdfdff;
-        }
-        .controls input[type="text"] {
-            flex-grow: 1;
-            padding: 10px;
             border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        .controls label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-        #adminToggle {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        #adminToggle.active {
-            background-color: var(--admin-button-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 15px;
         }
         th, td {
-            padding: 12px 15px;
+            border: 1px solid #ddd;
+            padding: 12px;
             text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            white-space: nowrap;
         }
-        td:nth-child(4) { /* Details column */
-            white-space: normal;
-            word-break: break-word;
-        }
-        thead th {
-            background-color: var(--bg-color);
+        th {
+            background-color: #f2f2f2;
             font-weight: 600;
             cursor: pointer;
             position: relative;
@@ -138,10 +104,35 @@
         tbody tr:hover {
             background-color: var(--hover-bg);
         }
-        .event-SCAN { background-color: var(--event-scan-bg); }
-        .event-AFGEMELD { background-color: var(--event-afgemeld-bg); }
-        .event-ERROR { background-color: var(--event-error-bg); color: #c00; }
-        .event-INFO { background-color: var(--event-info-bg); }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .controls input[type="text"] {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #adminToggle {
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+        }
+        #adminToggle.active {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+        }
         .action-button {
             background: none;
             border: 1px solid #ccc;
@@ -151,45 +142,110 @@
             display: none; /* Hidden by default */
         }
         .action-button:hover { background-color: #e9ecef; }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .status-open { color: #27ae60; font-weight: bold; }
+        .status-afgemeld { color: #e74c3c; font-weight: bold; }
+
+        .main-header {
+            background-image: url('/static/header.png');
+            background-repeat: no-repeat;
+            background-position: left center;
+            background-size: auto 100%;
+            background-color: #0071b4;
+            padding: 40px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            text-align: right;
+        }
+        .search-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-form label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .search-form input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 250px;
+        }
+        .search-form button {
+            padding: 8px 15px;
+            border: none;
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .search-form button:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
+    <div class="main-header">
+        <form action="/logs_project" method="GET" class="search-form">
+            <label for="project_search">Zoek project:</label>
+            <input type="text" id="project_search" name="project" placeholder="Typ om project te zoeken..." required list="project-list">
+            <datalist id="project-list">
+                {% for proj in all_projects %}
+                <option value="{{ proj }}">
+                {% endfor %}
+            </datalist>
+            <button type="submit">Zoek</button>
+        </form>
+    </div>
     <div class="container">
-        <header>
-            <h1>Logs for Project: {{ project }}</h1>
-            <a href="/logs_html">&larr; Back to all logs</a>
-        </header>
+        <div class="header">
+            <h1>Logs voor Project: <strong>{{ project }}</strong></h1>
+            <a href="/logs_html">&larr; Terug naar alle logs</a>
+        </div>
 
-        <div class="user-status-container">
-            <h2>User Status</h2>
+        <div class="card">
+            <h2>Gebruikersstatus</h2>
             {{ user_status_html | safe }}
         </div>
 
-        <div class="controls">
-            <input type="text" id="filterInput" placeholder="Filter logs...">
-            <label>
-                <input type="checkbox" id="autoRefresh">
-                Auto-refresh (5s)
-            </label>
-            <button id="adminToggle" onclick="toggleAdmin()">ADMIN</button>
+        <div class="card">
+            <h2>Event Log</h2>
+            <div class="controls">
+                <input type="text" id="filterInput" placeholder="Filter logs op event, gebruiker, details, etc...">
+                <label>
+                    <input type="checkbox" id="autoRefresh">
+                    Auto-refresh (5s)
+                </label>
+                <button id="adminToggle">ADMIN</button>
+            </div>
+            <table>
+                <thead id="log-table-head">
+                    <tr>
+                        <th data-column="id">ID <span class="sort-icon">&#9660;</span></th>
+                        <th data-column="timestamp">Tijdstip <span class="sort-icon">&#9660;</span></th>
+                        <th data-column="event">Event <span class="sort-icon">&#9660;</span></th>
+                        <th data-column="user">Gebruiker <span class="sort-icon">&#9660;</span></th>
+                        <th data-column="details">Details <span class="sort-icon">&#9660;</span></th>
+                        <th data-column="status">Status <span class="sort-icon">&#9660;</span></th>
+                        <th>Acties</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body">
+                    <!-- Log rows will be injected here by JavaScript -->
+                </tbody>
+            </table>
         </div>
-        <table>
-            <thead id="log-table-head">
-                <tr>
-                    <th data-column="id">ID <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="timestamp">Timestamp <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="event">Event <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="details">Details <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="user">User <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="base_mo_code">Base MO <span class="sort-icon">&#9660;</span></th>
-                    <th data-column="is_rep_variant">REP <span class="sort-icon">&#9660;</span></th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="log-table-body">
-                <!-- Log rows will be injected here by JavaScript -->
-            </tbody>
-        </table>
     </div>
 
     <script>
@@ -238,8 +294,15 @@
                 let valA = a[currentSort.column];
                 let valB = b[currentSort.column];
                 
-                if (typeof valA === 'string') valA = valA.toLowerCase();
-                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (currentSort.column === 'id') {
+                    valA = parseInt(valA, 10);
+                    valB = parseInt(valB, 10);
+                } else if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                }
+                if (typeof valB === 'string') {
+                    valB = valB.toLowerCase();
+                }
 
                 if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
                 if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
@@ -248,24 +311,27 @@
 
             let tableContent = '';
             for (const log of sortedLogs) {
-                const logString = Object.values(log).join(' ').toLowerCase();
+                const logString = Object.values(log).filter(Boolean).join(' ').toLowerCase();
                 if (filter && !logString.includes(filter)) {
                     continue;
                 }
 
-                const timestamp = new Date(log.timestamp).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'medium' });
-                const eventClass = `event-${log.event.replace('_', '-')}`;
-                const repText = log.is_rep_variant ? 'Ja' : 'Nee';
+                let timestamp = log.timestamp;
+                try {
+                    timestamp = new Date(log.timestamp).toLocaleString('nl-NL', {
+                        year: '2-digit', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    }).replace(',', '');
+                } catch (e) { /* keep original if format fails */ }
 
                 tableContent += `
-                    <tr class="${eventClass}">
+                    <tr>
                         <td>${log.id}</td>
                         <td>${timestamp}</td>
-                        <td>${log.event}</td>
-                        <td>${log.details || ''}</td>
+                        <td>${log.event || ''}</td>
                         <td>${log.user || ''}</td>
-                        <td>${log.base_mo_code || ''}</td>
-                        <td>${repText}</td>
+                        <td>${log.details || ''}</td>
+                        <td class="status-${(log.status || '').toLowerCase()}">${log.status || ''}</td>
                         <td><button class="action-button" onclick="deleteLog(${log.id})">Delete</button></td>
                     </tr>
                 `;
@@ -300,7 +366,8 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            location.reload();
+                            logData = logData.filter(log => log.id !== id);
+                            renderTable(logData);
                         } else {
                             alert('Verwijderen mislukt: ' + data.error);
                         }

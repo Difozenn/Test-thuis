@@ -201,15 +201,11 @@ class ImportPanel(ttk.Frame):
                             if filename.lower().endswith(('.hop', '.hops')):
                                 total_files += 1
                     return total_files
-                base_dir = self.base_dir_var.get()
-                if base_dir:
-                    path_drive = os.path.splitdrive(os.path.abspath(path))[0]
-                    base_drive = os.path.splitdrive(os.path.abspath(base_dir))[0]
-                    if path_drive.lower() != base_drive.lower():
-                        base_dir = path  # Fallback to scan path if drives are different
-                else:
-                    base_dir = path
-                print(f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}, using base_dir: {base_dir}")
+                # Get the user's input for "Basis map" once
+                user_basis_map_setting = self.base_dir_var.get().strip()
+
+                print(f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}. User 'Basis map' setting: '{user_basis_map_setting}'.")
+
                 self.total_files = count_files()
                 print(f"[DEBUG] [SCAN THREAD] Total .hop/.hops files found: {self.total_files}")
                 if self.total_files == 0:
@@ -217,11 +213,18 @@ class ImportPanel(ttk.Frame):
                     self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
                     return
                 found_files = []
-                for root, _, filenames in os.walk(path):
-                    for filename in filenames:
-                        if filename.lower().endswith(('.hop', '.hops')):
-                            rel_path = os.path.relpath(os.path.join(root, filename), base_dir)
-                            found_files.append({'Item': rel_path}) # Standardized to dict with 'Item' key
+                for root, _, filenames_in_loop in os.walk(path):
+                    for filename_item in filenames_in_loop:
+                        if filename_item.lower().endswith(('.hop', '.hops')):
+                            full_hop_path = os.path.join(root, filename_item)
+                            item_to_display = ""
+
+                            if not user_basis_map_setting: # "Basis map" is empty
+                                item_to_display = full_hop_path
+                            else: # "Basis map" is NOT empty
+                                item_to_display = filename_item
+                            
+                            found_files.append({'Item': item_to_display})
                             self.processed_files += 1
                             if self.processed_files % 10 == 0 or self.processed_files == self.total_files:
                                 self.after(0, lambda: self._update_progress(self.processed_files, self.total_files))

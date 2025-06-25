@@ -14,7 +14,7 @@
         <form method="POST">
             <div class="mb-3">
                 <label for="description" class="form-label">{{ t('description') }}</label>
-                <input type="text" class="form-control" id="description" name="description" required
+                <input type="text" class="form-control" id="description" name="description"
                        placeholder="Enter description for this entry">
             </div>
             
@@ -32,11 +32,6 @@
                 <label for="amount" class="form-label">{{ t('amount') }}</label>
                 <input type="number" class="form-control" id="amount" name="amount" min="1" max="100" value="1" required>
                 <div class="form-text">Number of entries to add for this category (1-100)</div>
-            </div>
-            
-            <div class="mb-3">
-                <label for="matched_keyword" class="form-label">{{ t('keyword') }} (Optional)</label>
-                <input type="text" class="form-control" id="matched_keyword" name="matched_keyword">
             </div>
             
             <div class="d-flex gap-2">

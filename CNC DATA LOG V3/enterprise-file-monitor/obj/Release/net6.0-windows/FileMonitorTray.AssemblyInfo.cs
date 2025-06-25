@@ -10,13 +10,13 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("FileMonitorTray")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("CNC DATALOG")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2025")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
-[assembly: System.Reflection.AssemblyProductAttribute("FileMonitorTray")]
-[assembly: System.Reflection.AssemblyTitleAttribute("Enterprise File Monitor")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a044b48a9f56cd04b78d3450c2b02b7f805bfa8")]
+[assembly: System.Reflection.AssemblyProductAttribute("CNC DATALOG")]
+[assembly: System.Reflection.AssemblyTitleAttribute("CNC DATALOG")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]

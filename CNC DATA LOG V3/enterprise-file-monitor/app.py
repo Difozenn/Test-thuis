@@ -468,7 +468,14 @@ class EnhancedFileMonitorHandler(FileSystemEventHandler):
                     content = ""
                 
                 categories = Category.query.all()
+                matched_category = None
+                matched_keyword = None
+                
+                # First, try to match with specific categories (excluding Allerlei)
                 for category in categories:
+                    if category.name == 'Allerlei':
+                        continue  # Skip the catch-all category in first pass
+                        
                     keywords = category.get_keywords()
                     patterns = category.get_patterns()
                     
@@ -482,27 +489,39 @@ class EnhancedFileMonitorHandler(FileSystemEventHandler):
                             break
                     
                     if pattern_match or keyword_match:
-                        file_description = None
-                        if file_path in self.monitored_files:
-                            file_description = self.monitored_files[file_path].description
-                        
-                        event_path = file_path
-                        if file_description:
-                            event_path = f"{file_description} ({os.path.basename(file_path)})"
-                        
-                        event = Event(
-                            file_path=event_path,
-                            category_id=category.id,
-                            matched_keyword=keyword_match,
-                            computer_name=socket.gethostname(),
-                            user_id=self.user_id,
-                            event_type=event_type,
-                            file_size=os.path.getsize(file_path) if os.path.exists(file_path) else 0
-                        )
-                        db.session.add(event)
-                        db.session.commit()
+                        matched_category = category
+                        matched_keyword = keyword_match
                         break
-                        
+                
+                # If no specific category matched, use "Allerlei" as fallback
+                if not matched_category:
+                    allerlei_category = Category.query.filter_by(name='Allerlei').first()
+                    if allerlei_category:
+                        matched_category = allerlei_category
+                        matched_keyword = None  # No specific keyword for catch-all
+                
+                # Create event if we have a category (should always be true now)
+                if matched_category:
+                    file_description = None
+                    if file_path in self.monitored_files:
+                        file_description = self.monitored_files[file_path].description
+                    
+                    event_path = file_path
+                    if file_description:
+                        event_path = f"{file_description} ({os.path.basename(file_path)})"
+                    
+                    event = Event(
+                        file_path=event_path,
+                        category_id=matched_category.id,
+                        matched_keyword=matched_keyword,
+                        computer_name=socket.gethostname(),
+                        user_id=self.user_id,
+                        event_type=event_type,
+                        file_size=os.path.getsize(file_path) if os.path.exists(file_path) else 0
+                    )
+                    db.session.add(event)
+                    db.session.commit()
+                    
             except Exception as e:
                 print(f"Error processing file {file_path}: {str(e)}")
     
@@ -835,7 +854,19 @@ def dashboard():
         func.count(Event.id).label('count')
     ).join(
         Event,
-        Event.user_id == MonitoredPath.user_id  # Match by user instead
+        # Proper join: events must match the monitored path
+        # For files: exact path match
+        # For directories: event path must start with directory path
+        db.or_(
+            db.and_(
+                MonitoredPath.is_directory == False,
+                Event.file_path == MonitoredPath.path
+            ),
+            db.and_(
+                MonitoredPath.is_directory == True,
+                Event.file_path.like(func.concat(MonitoredPath.path, '%'))
+            )
+        )
     ).filter(
         Event.timestamp >= start_date,
         Event.timestamp <= end_date,
@@ -2699,6 +2730,12 @@ def create_default_categories():
                     'keywords': ['log', 'error', 'debug', 'trace'],
                     'file_patterns': ['.*\\.log', '.*\\.trace'],
                     'color': '#dc3545'
+                },
+                {
+                    'name': 'Allerlei',
+                    'keywords': [],  # No specific keywords - this is the catch-all
+                    'file_patterns': [],  # No specific patterns - this is the catch-all
+                    'color': '#6c757d'  # Gray color for miscellaneous items
                 }
             ]
             

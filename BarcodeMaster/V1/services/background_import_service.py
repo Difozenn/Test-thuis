@@ -1,0 +1,806 @@
+"""
+Background Import Service voor BarcodeMaster
+Automatische monitoring en verwerking van OPUS en GANNOMAT bestanden
+"""
+
+import os
+import sqlite3
+import json
+import logging
+import requests
+import re
+from datetime import datetime
+import traceback
+import threading
+import time
+import random
+import pandas as pd
+import pyodbc
+
+from config_utils import get_config
+
+class BackgroundImportService:
+    _stats_lock = threading.Lock() # Class level lock for stats
+    """Service voor automatische import getriggerd door OPEN events."""
+    
+    def __init__(self, log_callback=None):
+        self.log_callback = log_callback
+        self.logger = None # Initialized in _setup_logging
+        
+        # Configuration holders
+        # self.master_service_globally_active = False # Removed master switch
+        self.scanner_users = []
+        self.scanner_user_paths = {}
+        self.scanner_user_logic_active = {}
+        self.scanner_user_to_processing_type_map = {} # New map
+
+        # Statistics tracking
+        self.stats = {
+            'opus_imports_triggered': 0,
+            'gannomat_imports_triggered': 0,
+            'total_imports_triggered': 0 # Added for convenience
+        }
+        
+        self.load_config() # Load initial configuration
+        self._setup_logging() # Setup logger
+        
+    def _setup_logging(self):
+        """Setup logging voor de service."""
+        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        
+        log_file = os.path.join(log_dir, 'background_import_service.log')
+        
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_file, encoding='utf-8'),
+                logging.StreamHandler()
+            ]
+        )
+        
+        self.logger = logging.getLogger(__name__)
+        
+    def load_config(self):
+        """Laad configuratie van config file."""
+        try:
+            config = get_config()
+            
+            # Load ScannerPanel specific configurations for user monitoring
+            self.scanner_users = config.get('scanner_panel_open_event_users', ['GANNOMAT', 'OPUS']) # Default if not set
+            self.scanner_user_paths = config.get('scanner_panel_open_event_user_paths', {})
+            self.scanner_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
+            self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {}) # Load the new map
+            
+            if self.logger: # Logger might not be set up on first call from __init__
+                self.logger.info("Configuratie succesvol geladen.")
+                # self.logger.info(f"Master service globally active: {self.master_service_globally_active}") # Removed
+                self.logger.debug(f"Scanner users: {self.scanner_users}")
+                self.logger.debug(f"Scanner user paths: {self.scanner_user_paths}")
+                self.logger.debug(f"Scanner user logic active: {self.scanner_user_logic_active}")
+                self.logger.debug(f"Scanner user to processing type map: {self.scanner_user_to_processing_type_map}")
+                
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Fout bij laden configuratie: {e}")
+            else:
+                print(f"ERROR during initial config load: {e}")
+            # Reset to safe defaults
+            # self.master_service_globally_active = False # Removed
+            self.scanner_users = []
+            self.scanner_user_paths = {}
+            self.scanner_user_logic_active = {}
+            self.scanner_user_to_processing_type_map = {}
+            
+    def is_enabled(self):
+        """Controleer of de automatische import functionaliteit is ingeschakeld.
+        Nu de master switch is verwijderd, is de service altijd 'enabled' om user-specific logic te checken."""
+        return True # Service is always ready to check user-specific logic
+
+    # is_service_explicitly_enabled removed as it's redundant without master_service_globally_active
+        
+    def get_status(self):
+        """Krijg huidige status van de import functionaliteit."""
+        # Config is loaded on init and when settings are saved.
+        # No need to reload on every status check.
+
+        opus_monitored = (
+            'OPUS' in self.scanner_users and 
+            self.scanner_user_logic_active.get('OPUS', False) and 
+            bool(self.scanner_user_paths.get('OPUS'))
+        )
+        gannomat_monitored = (
+            'GANNOMAT' in self.scanner_users and 
+            self.scanner_user_logic_active.get('GANNOMAT', False) and 
+            bool(self.scanner_user_paths.get('GANNOMAT'))
+        )
+
+        return {
+            'service_enabled': True, # Service is always considered enabled now
+            'opus_monitoring': opus_monitored,
+            'gannomat_monitoring': gannomat_monitored,
+            'opus_imports_triggered': self.stats['opus_imports_triggered'],
+            'gannomat_imports_triggered': self.stats['gannomat_imports_triggered'],
+            'total_imports_triggered': self.stats['total_imports_triggered']
+        }
+        
+
+        
+    def trigger_import_for_event(self, user_type, project_code, event_details, timestamp):
+        """Verwerk een OPEN event en trigger automatische import indien nodig."""
+        self.load_config() # Ensure config is up-to-date
+
+        self._log(f"Event ontvangen: User={user_type}, Project={project_code}. Controleren voor import...")
+        
+        processing_type = self.scanner_user_to_processing_type_map.get(user_type)
+
+        if not self.scanner_user_logic_active.get(user_type, False):
+            self._log(f"{user_type} import overgeslagen: logica niet actief voor deze gebruiker.")
+            return
+
+        if processing_type == 'GEEN_PROCESSING':
+            self._log(f"'{user_type}' is geconfigureerd voor 'GEEN_PROCESSING'. Import overgeslagen.")
+            return
+
+        user_specific_path = self.scanner_user_paths.get(user_type)
+        if not user_specific_path or not os.path.isdir(user_specific_path):
+            self._log(f"{user_type} import overgeslagen: pad niet ingesteld of ongeldig ('{user_specific_path}').")
+            return
+
+        if processing_type == 'HOPS_PROCESSING':
+            # The project_code passed in is now the one to use for matching,
+            # whether it's a base code or a full REP project name.
+            code_to_match = project_code
+            self._log(f"HOPS_PROCESSING: Using '{code_to_match}' for directory matching.")
+
+            if not code_to_match:
+                self._log("Could not determine a project code to match against. Aborting HOPS_PROCESSING.")
+                return
+
+            match_found = False
+            try:
+                is_rep_project_code = '_REP_' in code_to_match.upper()
+                for item_name in os.listdir(user_specific_path):
+                    item_path = os.path.join(user_specific_path, item_name)
+                    if os.path.isdir(item_path):
+                        match_condition_met = False
+                        if is_rep_project_code:
+                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
+                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
+                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
+                            if ends_with_result:
+                                match_condition_met = True
+                                self._log(f"HOPS_PROCESSING (REP match) (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                        else: # Not a REP variant, use endswith for robustness with prefixes
+                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
+                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
+                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
+                            if ends_with_result:
+                                match_condition_met = True
+                                self._log(f"HOPS_PROCESSING (EndsWith match) (voor {user_type}) wordt gestart voor gevonden map: {item_path}")
+                        
+                        if match_condition_met:
+                            thread = threading.Thread(target=self._execute_opus_import_with_stats, args=(project_code, event_details, timestamp, item_path))
+                            thread.start()
+                            match_found = True
+                            break  # Stop after finding the first match
+            except Exception as e:
+                self._log(f"Fout bij het zoeken naar HOPS map: {e}")
+
+            if not match_found:
+                self._log(f"HOPS_PROCESSING (voor {user_type}) overgeslagen: geen overeenkomende projectmap gevonden in '{user_specific_path}' voor project '{code_to_match}'.")
+                
+        elif processing_type == 'MDB_PROCESSING':
+            self._log(f"MDB_PROCESSING (voor {user_type}) wordt gestart (in achtergrond thread). Pad: {user_specific_path}")
+            thread = threading.Thread(target=self._execute_gannomat_import_with_stats, args=(project_code, event_details, timestamp, user_specific_path))
+            thread.start()
+        
+        elif processing_type:
+            self._log(f"Onbekend processing_type '{processing_type}' voor gebruiker '{user_type}'.")
+        else:
+            self._log(f"Geen processing_type geconfigureerd voor gebruiker '{user_type}'.")
+
+        # The detailed success log and total_imports_triggered stat update will now happen within the thread
+        # if import_triggered_for_user:
+        #     # This part is moved to the wrapper methods for threaded execution
+        #     # self.stats['total_imports_triggered'] += 1 
+        #     self._log(f"Import succesvol getriggerd voor {user_type}. Totaal: {self.stats['total_imports_triggered']}")
+
+    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+        """Processes the OPEN scan event for other users in a background thread."""
+        thread = threading.Thread(
+            target=self._process_scan_for_open_event_task,
+            args=(
+                project_code_to_log,
+                base_project_code,
+                scanned_code,
+                current_user_scanner,
+                api_url,
+                config_data
+            )
+        )
+        thread.daemon = True # Ensure thread doesn't block program exit
+        thread.start()
+        self._log(f"Background task started for OPEN event: {project_code_to_log}")
+
+    def _process_scan_for_open_event_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+        """Task run in a separate thread to handle OPEN event logic for other users."""
+        try:
+            self._log(f"[BG_TASK] Processing OPEN for {project_code_to_log}, scanned by {current_user_scanner}.")
+            open_users = config_data.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
+            user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
+
+            for user in open_users:
+                if user == current_user_scanner:
+                    continue # Skip the user who initiated the scan
+
+                if user_logic_active_states.get(user, True): # Default to True if not specified
+                    user_dir = user_paths_map.get(user)
+                    match_found_for_this_user = False
+                    
+                    if user_dir and os.path.isdir(user_dir):
+                        self._log(f"[BG_TASK] Checking dir '{user_dir}' for user '{user}' for project '{project_code_to_log}'.")
+                        try:
+                            # Logic adapted from scanner_panel.py lines 628-643
+                            if base_project_code and base_project_code.strip():
+                                for item_name in os.listdir(user_dir):
+                                    item_base_name, _ = os.path.splitext(item_name)
+                                    is_rep_scan_for_item = bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE))
+                                    
+                                    if is_rep_scan_for_item:
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()):
+                                            match_found_for_this_user = True
+                                            break
+                                    else:
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and '_REP_' not in item_name.upper():
+                                            match_found_for_this_user = True
+                                            break
+                        except OSError as e_os:
+                            self._log(f"[BG_TASK_ERR] Error accessing dir {user_dir} for {user}: {e_os}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_IO_ERROR:{project_code_to_log}:{user}:Error accessing dir {user_dir}: {e_os}")
+                            continue # Skip to next user
+                    if match_found_for_this_user:
+                        self._log(f"[BG_TASK] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'. Posting OPEN.")
+
+                        # Introduce a random delay to prevent database write collisions.
+                        delay = random.uniform(0.2, 1.5)
+                        self._log(f"[BG_TASK] Waiting for {delay:.2f}s before posting OPEN for {user}.")
+                        time.sleep(delay)
+
+                        data_open = {
+                            'event': 'OPEN',
+                            'details': f"Auto-detected from {current_user_scanner}'s scan of {scanned_code}",
+                            'project': project_code_to_log,
+                            'base_mo_code': base_project_code,
+                            'is_rep_variant': '_REP_' in project_code_to_log.upper(),
+                            'user': user
+                        }
+                        try:
+                            resp_open = requests.post(api_url, json=data_open, timeout=10)
+                            if resp_open.ok:
+                                self._log(f"[BG_TASK] Successfully posted OPEN for {project_code_to_log} for user {user}.")
+                                if self.log_callback:
+                                    self.log_callback(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{user}")
+                            else:
+                                error_msg = resp_open.text
+                                self._log(f"[BG_TASK_ERR] API Error opening project {project_code_to_log} for {user}: {resp_open.status_code} - {error_msg}")
+                                if self.log_callback:
+                                    self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:{resp_open.status_code} - {error_msg}")
+                        except requests.exceptions.RequestException as e_req:
+                            self._log(f"[BG_TASK_ERR] Network Error opening project {project_code_to_log} for {user}: {e_req}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:Network Error - {e_req}")
+                        except Exception as e_gen_api:
+                            self._log(f"[BG_TASK_ERR] Generic API Error for {project_code_to_log}, user {user}: {e_gen_api}\n{traceback.format_exc()}")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_PROJECT_OPEN_FAILED:{project_code_to_log}:{user}:Generic API Error - {e_gen_api}")
+                    else:
+                        self._log(f"[BG_TASK] No match for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
+                else:
+                    self._log(f"[BG_TASK] Logic inactive for user '{user}'. Skipping OPEN event processing.")
+            
+            self._log(f"[BG_TASK] Finished processing OPEN for {project_code_to_log}.")
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_PROCESSING_COMPLETE:{project_code_to_log}")
+
+        except Exception as e_task:
+            self._log(f"[BG_TASK_FATAL_ERR] Unhandled exception in _process_scan_for_open_event_task for {project_code_to_log}: {e_task}\n{traceback.format_exc()}")
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_FATAL_ERROR:{project_code_to_log}:Error - {e_task}")
+
+    # start() method removed as it was tied to the global master switch.
+    # The service is now always 'running' in the sense that it's ready to process events based on user-specific configs.
+
+    def _execute_opus_import_with_stats(self, project_code, event_details, timestamp, specific_opus_subfolder_path):
+        try:
+            self._trigger_opus_import(project_code, event_details, timestamp, specific_opus_subfolder_path)
+            with BackgroundImportService._stats_lock:
+                self.stats['opus_imports_triggered'] += 1
+                self.stats['total_imports_triggered'] += 1
+            self._log(f"OPUS import thread voltooid. Totaal OPUS: {self.stats['opus_imports_triggered']}, Totaal: {self.stats['total_imports_triggered']}")
+        except Exception as e:
+            self.logger.error(f"Fout in OPUS import thread: {e}")
+            self._log(f"Fout in OPUS import thread: {e}")
+
+    def _execute_gannomat_import_with_stats(self, project_code, event_details, timestamp, gannomat_path):
+        try:
+            self._trigger_gannomat_import(project_code, event_details, timestamp, gannomat_path)
+            with BackgroundImportService._stats_lock:
+                self.stats['gannomat_imports_triggered'] += 1
+                self.stats['total_imports_triggered'] += 1
+            self._log(f"GANNOMAT import thread voltooid. Totaal GANNOMAT: {self.stats['gannomat_imports_triggered']}, Totaal: {self.stats['total_imports_triggered']}")
+        except Exception as e:
+            self.logger.error(f"Fout in GANNOMAT import thread: {e}")
+            self._log(f"Fout in GANNOMAT import thread: {e}")
+
+    # stop() method removed as it was tied to the global master switch.
+
+    def _get_base_code(self, project_code):
+        """Extracts the base project code (e.g., MO12345 or 123456) from a full project code string."""
+        import re
+        # Prioritize MOxxxxx pattern
+        mo_match = re.search(r'(MO\d{5})', project_code)
+        if mo_match:
+            return mo_match.group(0)
+        # Fallback for ACCURA style 5-6 digit codes
+        accura_match = re.search(r'(\d{5,6})', project_code)
+        if accura_match:
+            return accura_match.group(0)
+        return ""
+
+    def _trigger_opus_import(self, project_event_code, details, timestamp, opus_scan_path):
+        """Trigger automatische OPUS import en Excel generatie voor .hop/.hops bestanden in de gespecificeerde map."""
+        self._log(f"OPUS import gestart voor project context: {project_event_code} in map: {opus_scan_path}")
+
+        if not opus_scan_path or not os.path.isdir(opus_scan_path):
+            self._log(f"OPUS directory niet gevonden of ongeldig: {opus_scan_path}")
+            self.logger.warning(f"OPUS directory niet gevonden of ongeldig: {opus_scan_path}")
+            # self._log_import_event('OPUS', project_event_code, f"Configuratiefout: OPUS map '{opus_scan_path}' ongeldig.")
+            return # Crucial return if path is invalid
+
+        try:
+            collected_files = self._collect_opus_files_for_report(opus_scan_path)
+
+            if collected_files:
+                self._log(f"{len(collected_files)} OPUS (.hop/.hops) bestanden gevonden in '{opus_scan_path}' voor Excel rapportage.")
+                self._create_opus_excel_report(collected_files, opus_scan_path)
+                # self._log_import_event('OPUS', project_event_code, f"Excel rapport succesvol gegenereerd met {len(collected_files)} bestanden uit {opus_scan_path}.")
+            else:
+                self._log(f"Geen .hop/.hops bestanden gevonden in OPUS map '{opus_scan_path}' voor Excel rapportage.")
+                # self._log_import_event('OPUS', project_event_code, f"Geen .hop/.hops bestanden gevonden in {opus_scan_path} voor Excel.")
+
+        except Exception as e:
+            self.logger.error(f"Algemene fout tijdens OPUS import/Excel generatie voor pad {opus_scan_path} (project context: {project_event_code}): {e}")
+            self._log(f"Algemene fout OPUS import: {str(e)}")
+            # self._log_import_event('OPUS', project_event_code, f"Fout tijdens OPUS verwerking: {str(e)}")
+            
+    def _find_opus_project_files(self, directory, project):
+        """Zoek OPUS bestanden voor een specifiek project."""
+        project_files = []
+        
+        try:
+            for root, dirs, files in os.walk(directory):
+                for file in files:
+                    if file.lower().endswith(('.hop', '.hops')):
+                        # Check if project code is in filename
+                        if project.upper() in file.upper():
+                            file_path = os.path.join(root, file)
+                            project_files.append(file_path)
+                            
+        except Exception as e:
+            self.logger.error(f"Fout bij zoeken OPUS bestanden: {e}")
+            
+        return project_files
+
+    def _collect_opus_files_for_report(self, opus_scan_path):
+        """
+        Collects all .hop/.hops files from the given path and its subdirectories,
+        returning a list of dicts with 'Item' key holding the relative path.
+        """
+        found_files_data = []
+        try:
+            for root, _, filenames in os.walk(opus_scan_path):
+                for filename in filenames:
+                    if filename.lower().endswith(('.hop', '.hops')):
+                        full_path = os.path.join(root, filename)
+                        # Store the full absolute path instead of relative path
+                        found_files_data.append({'Item': full_path})
+            if found_files_data:
+                self._log(f"{len(found_files_data)} .hop/.hops bestanden verzameld uit '{opus_scan_path}'.")
+            else:
+                self._log(f"Geen .hop/.hops bestanden gevonden in '{opus_scan_path}'.")
+        except Exception as e:
+            self._log(f"Fout bij verzamelen OPUS bestanden uit '{opus_scan_path}': {e}")
+            self.logger.error(f"Error collecting OPUS files from '{opus_scan_path}': {e}")
+        return found_files_data
+
+    def _create_opus_excel_report(self, report_data, opus_scan_path):
+        """
+        Creates an Excel file from the OPUS file data.
+        report_data is a list of dicts, each with an 'Item' key (relative path).
+        opus_scan_path is the full path to the scanned OPUS directory.
+        """
+        try:
+            # pandas should be imported at the top of the file
+            pass
+        except ImportError:
+            self._log("Pandas is niet geïnstalleerd. Kan geen OPUS Excel rapport genereren.")
+            self.logger.error("Pandas is niet geïnstalleerd. Kan geen OPUS Excel rapport genereren.")
+            return
+
+        if not report_data:
+            self._log(f"Geen data om op te slaan in Excel voor OPUS map '{opus_scan_path}'.")
+            return
+
+        try:
+            df = pd.DataFrame(report_data)
+            
+            # Ensure 'Item' and 'Status' columns, similar to BarcodeMatch
+            if 'Item' not in df.columns:
+                 # This case should ideally not happen if _collect_opus_files_for_report works correctly
+                self._log(f"Waarschuwing: 'Item' kolom ontbreekt in OPUS data voor Excel. Exporteren wat beschikbaar is.")
+                df['Item'] = "Unknown"
+
+            if 'Status' not in df.columns:
+                df['Status'] = ''
+            
+            # Ensure correct column order if necessary, though to_excel usually handles it.
+            # df = df[['Item', 'Status']] # Uncomment if specific order is strictly needed
+
+            folder_name = os.path.basename(os.path.normpath(opus_scan_path))
+            excel_path = os.path.join(opus_scan_path, f"{folder_name}.xlsx")
+
+            df.to_excel(excel_path, index=False)
+            self._log(f"OPUS Excel rapport succesvol opgeslagen: {excel_path}")
+            self.logger.info(f"OPUS Excel report successfully saved: {excel_path}")
+            self._log_excel_creation_event('OPUS', folder_name, f"Excel report generated for {folder_name}", excel_path)
+
+        except Exception as e:
+            self._log(f"Fout bij opslaan van OPUS Excel rapport voor map '{opus_scan_path}': {e}")
+            self.logger.error(f"Error saving OPUS Excel report for directory '{opus_scan_path}': {e}")
+
+    def _trigger_gannomat_import(self, project_event_code, details, timestamp, gannomat_scan_path):
+        """Trigger automatische GANNOMAT import en Excel generatie voor .mdb/.accdb bestanden die overeenkomen met de projectcode."""
+        self._log(f"GANNOMAT import gestart voor project context: {project_event_code} in map: {gannomat_scan_path}")
+
+        if not gannomat_scan_path or not os.path.isdir(gannomat_scan_path):
+            self._log(f"GANNOMAT directory niet gevonden of ongeldig: {gannomat_scan_path}")
+            self.logger.warning(f"GANNOMAT directory niet gevonden of ongeldig: {gannomat_scan_path}")
+            return
+
+        processed_files_count = 0
+        excel_reports_generated = 0
+        match_found = False
+        try:
+            is_rep_project_code = '_REP_' in project_event_code.upper()
+            for filename in os.listdir(gannomat_scan_path):
+                file_basename, file_ext = os.path.splitext(filename)
+                if file_ext.lower() in ('.mdb', '.accdb'):
+                    match_condition_met = False
+                    db_file_path = "" # Define here to be accessible after condition
+
+                    if is_rep_project_code:
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        if ends_with_result:
+                            match_condition_met = True
+                            db_file_path = os.path.join(gannomat_scan_path, filename)
+                            self._log(f"Overeenkomend GANNOMAT bestand (REP match) gevonden: {db_file_path}. Verwerken...")
+                    else: # Not a REP variant, use endswith for robustness with prefixes
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        if ends_with_result:
+                            match_condition_met = True
+                            db_file_path = os.path.join(gannomat_scan_path, filename)
+                            self._log(f"Overeenkomend GANNOMAT bestand (EndsWith match) gevonden: {db_file_path}. Verwerken...")
+                    
+                    if match_condition_met:
+                        match_found = True
+                        extracted_data = self._extract_raw_gannomat_data_from_db(db_file_path)
+                        
+                        if extracted_data:
+                            self._create_gannomat_excel_report(extracted_data, db_file_path)
+                            excel_reports_generated += 1
+                            self._log(f"Excel rapport gegenereerd voor {filename}.")
+                        else:
+                            self._log(f"Geen data geëxtraheerd uit {filename} voor Excel rapportage.")
+                        processed_files_count += 1
+                        break # Process only the first matched file
+            
+            if match_found and processed_files_count > 0:
+                self._log(f"{processed_files_count} GANNOMAT bestand(en) verwerkt. {excel_reports_generated} Excel rapporten gegenereerd voor project '{project_event_code}'.")
+            elif not match_found:
+                self._log(f"Geen overeenkomend .mdb/.accdb bestand gevonden in '{gannomat_scan_path}' voor project '{project_event_code}'.")
+
+        except Exception as e:
+            self.logger.error(f"Algemene fout tijdens GANNOMAT import voor pad {gannomat_scan_path} (project: {project_event_code}): {e}")
+            self._log(f"Algemene fout GANNOMAT import (project: {project_event_code}): {str(e)}")
+        
+    def _extract_raw_gannomat_data_from_db(self, db_path):
+        """
+        Extracts all ProgramNumbers from a GANNOMAT MDB/ACCDB file,
+        formatted for Excel generation, similar to BarcodeMatch.
+        Returns a list of dicts: [{'MDB File': 'name.mdb', 'Item': 'name:PN123'}, ...]
+        """
+        results = []
+        mdb_basename = os.path.basename(db_path)
+        mdb_filename_without_extension = os.path.splitext(mdb_basename)[0]
+        
+        try:
+            # pyodbc should be imported at the top of the file
+            pass 
+        except ImportError:
+            self._log("pyodbc is niet geïnstalleerd. Kan MDB-bestanden niet verwerken voor Excel.")
+            self.logger.warning("pyodbc is niet geïnstalleerd. Kan MDB-bestanden niet verwerken voor Excel.")
+            return results
+
+        try:
+            conn_str = (
+                r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
+                f'DBQ={db_path};'
+            )
+            with pyodbc.connect(conn_str, autocommit=True) as conn:
+                cursor = conn.cursor()
+                tables_info = cursor.tables(tableType='TABLE')
+                db_tables = [tbl_info.table_name for tbl_info in tables_info]
+                
+                program_table = None
+                fallback_table = None
+
+                for table_name in db_tables:
+                    columns = [column.column_name for column in cursor.columns(table=table_name)]
+                    if table_name.lower() == 'program' and 'ProgramNumber' in columns:
+                        program_table = table_name
+                        break
+                    elif not fallback_table and 'ProgramNumber' in columns:
+                        fallback_table = table_name
+                
+                target_table = program_table if program_table else fallback_table
+
+                if target_table:
+                    self._log(f"Querying 'ProgramNumber' from table '{target_table}' in {mdb_basename}")
+                    cursor.execute(f'SELECT ProgramNumber FROM [{target_table}]')
+                    for row in cursor.fetchall():
+                        program_number_str = str(row.ProgramNumber) if row.ProgramNumber is not None else "PN_NULL"
+                        item_name = f"{mdb_filename_without_extension}:{program_number_str}"
+                        results.append({'MDB File': mdb_basename, 'Item': item_name})
+                else:
+                    self._log(f"Geen geschikte tabel (zoals 'Program' met 'ProgramNumber') gevonden in {mdb_basename}.")
+                    self.logger.info(f"No suitable table (e.g., 'Program' with 'ProgramNumber') found in {mdb_basename}.")
+                    
+        except pyodbc.Error as ex:
+            sqlstate = ex.args[0]
+            self._log(f"PyODBC fout bij verwerken van {mdb_basename}: {sqlstate} - {str(ex)}")
+            self.logger.error(f"PyODBC error processing {mdb_basename}: {sqlstate} - {str(ex)}")
+        except Exception as e:
+            self._log(f"Algemene fout bij verwerken van {mdb_basename}: {str(e)}")
+            self.logger.error(f"General error processing {mdb_basename}: {str(e)}")
+            
+        return results
+
+    def _create_gannomat_excel_report(self, report_data, db_path):
+        """
+        Creates an Excel file from the GANNOMAT data, similar to BarcodeMatch.
+        report_data is a list of dicts, each with 'Item' and 'MDB File' keys.
+        db_path is the full path to the source MDB/ACCDB file.
+        """
+        mdb_basename = os.path.basename(db_path)
+        try:
+            # pandas should be imported at the top of the file
+            pass
+        except ImportError:
+            self._log("Pandas is niet geïnstalleerd. Kan geen Excel rapport genereren.")
+            self.logger.error("Pandas is niet geïnstalleerd. Kan geen Excel rapport genereren.")
+            return
+
+        if not report_data:
+            self._log(f"Geen data om op te slaan in Excel voor {mdb_basename}.")
+            # self.logger.info(f"No data to save to Excel for {mdb_basename}.") # Potentially too verbose for file log
+            return
+
+        try:
+            df = pd.DataFrame(report_data)
+            
+            if 'Item' in df.columns:
+                df_export = df[['Item']].copy()
+                df_export['Status'] = ''
+            else:
+                self._log(f"Kolom 'Item' niet gevonden in data voor Excel export voor {mdb_basename}. Exporteren ruwe data.")
+                self.logger.warning(f"Column 'Item' not found in data for Excel export for {mdb_basename}. Exporting raw data.")
+                df_export = df.copy()
+                if 'Status' not in df_export.columns:
+                    df_export['Status'] = ''
+
+            export_dir = os.path.dirname(db_path)
+            base_name = os.path.splitext(mdb_basename)[0]
+            excel_path = os.path.join(export_dir, f"{base_name}.xlsx")
+
+            df_export.to_excel(excel_path, index=False)
+            self._log(f"GANNOMAT Excel rapport succesvol opgeslagen: {excel_path}")
+            self.logger.info(f"GANNOMAT Excel report successfully saved: {excel_path}")
+            self._log_excel_creation_event('GANNOMAT', base_name, f"Excel report generated for {mdb_basename}", excel_path)
+
+        except Exception as e:
+            self._log(f"Fout bij opslaan van GANNOMAT Excel rapport voor {mdb_basename}: {e}")
+            self.logger.error(f"Error saving GANNOMAT Excel report for {mdb_basename}: {e}")
+
+    def _find_gannomat_project_data(self, directory, project):
+        """Zoek GANNOMAT data voor een specifiek project."""
+        project_data = []
+        
+        try:
+            # Look for .mdb/.accdb files
+            for file in os.listdir(directory):
+                if file.lower().endswith(('.mdb', '.accdb')):
+                    db_path = os.path.join(directory, file)
+                    
+                    # Try to query database for project data
+                    try:
+                        import pyodbc
+                        
+                        # Connection string for Access database
+                        conn_str = f'DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={db_path};'
+                        
+                        with pyodbc.connect(conn_str) as conn:
+                            cursor = conn.cursor()
+                            
+                            # Try common table names and search for project
+                            tables = ['Projects', 'Orders', 'Jobs', 'Data']
+                            
+                            for table in tables:
+                                try:
+                                    query = f"SELECT * FROM {table} WHERE * LIKE '%{project}%'"
+                                    cursor.execute(query)
+                                    rows = cursor.fetchall()
+                                    
+                                    if rows:
+                                        project_data.extend(rows)
+                                        
+                                except:
+                                    continue  # Table might not exist
+                                    
+                    except ImportError:
+                        self._log("pyodbc niet beschikbaar voor GANNOMAT database toegang")
+                    except Exception as e:
+                        self.logger.error(f"Fout bij lezen GANNOMAT database {db_path}: {e}")
+                        
+        except Exception as e:
+            self.logger.error(f"Fout bij zoeken GANNOMAT data: {e}")
+            
+        return project_data
+        
+    def _process_opus_files(self, files, project):
+        """Verwerk gevonden OPUS bestanden."""
+        self._log(f"Verwerking van {len(files)} OPUS bestanden voor project {project}")
+        
+        try:
+            # Extract project code with _REP_ handling (consistent with scanner panel)
+            project_code = self._extract_project_code(project)
+            
+            # Process each file
+            for file_path in files:
+                self._log(f"Verwerking OPUS bestand: {os.path.basename(file_path)}")
+                
+                # Here you would implement the actual matching logic
+                # For now, just log the action
+                self._log_import_event('OPUS', project_code, f"Automatische import van {os.path.basename(file_path)}")
+                
+        except Exception as e:
+            self.logger.error(f"Fout bij verwerken OPUS bestanden: {e}")
+            self._log(f"Fout bij verwerken OPUS bestanden: {str(e)}")
+            
+    def _process_gannomat_data(self, data, project):
+        """Verwerk gevonden GANNOMAT data."""
+        self._log(f"Verwerking van GANNOMAT data voor project {project}")
+        
+        try:
+            # Extract project code with _REP_ handling (consistent with scanner panel)
+            project_code = self._extract_project_code(project)
+            
+            # Process the data
+            self._log(f"Verwerking {len(data)} GANNOMAT records")
+            
+            # Here you would implement the actual matching logic
+            # For now, just log the action
+            self._log_import_event('GANNOMAT', project_code, f"Automatische import van {len(data)} database records")
+            
+        except Exception as e:
+            self.logger.error(f"Fout bij verwerken GANNOMAT data: {e}")
+            self._log(f"Fout bij verwerken GANNOMAT data: {str(e)}")
+            
+    def _extract_project_code(self, code):
+        """Extract project code met _REP_ handling (consistent met scanner panel)."""
+        project_code = code  # Default to full code
+        
+        # Try to extract project code using standard pattern
+        match = re.search(r'_([A-Z]{2}\d+)_', code)
+        if match:
+            project_code = match.group(1)
+        
+        # Dynamic logic for handling _REP_ project codes (case insensitive)
+        code_upper = code.upper()
+        if "_REP_" in code_upper or "_REP" in code_upper:
+            if not project_code.upper().endswith("_REP"):
+                project_code = f"{project_code}_REP"
+                
+        return project_code
+        
+    def _log_import_event(self, user_type, project, details):
+        """Log automatische import event naar API."""
+        try:
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor event logging")
+                return
+                
+            data = {
+                'event': 'AUTO_IMPORT',
+                'details': details,
+                'project': project,
+                'user': user_type,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = requests.post(api_url, json=data, timeout=5)
+            
+            if response.ok:
+                self._log(f"Import event gelogd naar API: {user_type} - {project}")
+            else:
+                self._log(f"Fout bij loggen import event: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.logger.error(f"Fout bij loggen import event: {e}")
+            self._log(f"Fout bij API logging: {str(e)}")
+            
+    def _log_excel_creation_event(self, user_type, project, details, file_path):
+        """Log the event of an Excel file creation to the API, including the file path."""
+        try:
+            config = get_config()
+            # Ensure api_url is correctly retrieved and has /log appended if not present
+            api_url = config.get('api_url', '').rstrip('/')
+            if not api_url.endswith('/log'):
+                 api_url += '/log'
+
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor event logging")
+                return
+
+            data = {
+                'event': 'EXCEL_GENERATED',
+                'details': details,
+                'project': project,
+                'user': user_type,
+                'file_path': file_path, # The new dedicated field
+                'timestamp': datetime.now().isoformat()
+            }
+
+            response = requests.post(api_url, json=data, timeout=5)
+
+            if response.ok:
+                self._log(f"Excel creation event gelogd naar API: {user_type} - {project} at {file_path}")
+            else:
+                self._log(f"Fout bij loggen Excel creation event: HTTP {response.status_code} - {response.text}")
+
+        except Exception as e:
+            self.logger.error(f"Fout bij loggen Excel creation event: {e}")
+            self._log(f"Fout bij API logging (Excel creation): {str(e)}")
+
+    def _log(self, message):
+        """Log bericht naar file en callback."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_message = f"[{timestamp}] {message}"
+        
+        self.logger.info(message)
+        
+        if self.log_callback:
+            try:
+                self.log_callback(message)
+            except Exception as e:
+                self.logger.error(f"Fout bij callback logging: {e}")

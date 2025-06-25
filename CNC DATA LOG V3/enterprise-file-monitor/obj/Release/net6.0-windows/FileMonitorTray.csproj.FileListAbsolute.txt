@@ -17,3 +17,22 @@ C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\ob
 C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.pdb
 C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.genruntimeconfig.cache
 C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\ref\FileMonitorTray.dll
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\icon.ico
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\tray_config.json
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\CNC DATALOG.exe
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\CNC DATALOG.deps.json
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\CNC DATALOG.runtimeconfig.json
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\CNC DATALOG.dll
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\CNC DATALOG.pdb
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\bin\Release\net6.0-windows\System.Text.Json.dll
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.AssemblyInfoInputs.cache
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.AssemblyInfo.cs
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.csproj.CoreCompileInputs.cache
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.sourcelink.json
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMoni.A33B449A.Up2Date
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\CNC DATALOG.dll
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\refint\CNC DATALOG.dll
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\CNC DATALOG.pdb
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\FileMonitorTray.genruntimeconfig.cache
+C:\Users\Rob_v\Desktop\Test-thuis\CNC DATA LOG V3\enterprise-file-monitor\obj\Release\net6.0-windows\ref\CNC DATALOG.dll

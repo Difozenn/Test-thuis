@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 import psutil
 import requests
-from services.background_import_service import BackgroundImportService
+from BarcodeMaster.services.background_import_service import BackgroundImportService
 from BarcodeMaster.gui.panels.scanner_panel import ScannerPanel
 from BarcodeMaster.gui.panels.database_panel import DatabasePanel
 from BarcodeMaster.gui.panels.help_panel import HelpPanel

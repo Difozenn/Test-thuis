@@ -24,8 +24,6 @@ namespace FileMonitorTray
         private bool authenticated = false;
         private string currentUser = "";
         private bool monitoringActive = false;
-        private Process webProcess;
-        private bool isLocal;
         private Timer statusTimer;
         private const string APP_NAME = "CNC DATALOG";
         private const string CONFIG_FILE = "tray_config.json";
@@ -78,23 +76,34 @@ namespace FileMonitorTray
                 try
                 {
                     string json = File.ReadAllText(CONFIG_FILE);
+                    Console.WriteLine($"Loading config from: {Path.GetFullPath(CONFIG_FILE)}");
+                    Console.WriteLine($"Config content: {json}");
+                    
                     config = JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                    Console.WriteLine($"Loaded URL: {config.WebAppUrl}");
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"Error loading config: {ex.Message}");
                     config = new AppConfig();
                 }
+            }
+            else
+            {
+                Console.WriteLine($"Config file not found at: {Path.GetFullPath(CONFIG_FILE)}");
             }
             
             // Check environment variable for URL
             string envUrl = Environment.GetEnvironmentVariable("FILE_MONITOR_URL");
             if (!string.IsNullOrEmpty(envUrl))
             {
+                Console.WriteLine($"Overriding URL with environment variable: {envUrl}");
                 config.WebAppUrl = envUrl;
             }
             
             webAppUrl = config.WebAppUrl;
-            isLocal = webAppUrl.Contains("localhost") || webAppUrl.Contains("127.0.0.1");
+            
+            Console.WriteLine($"Final URL: {webAppUrl}");
         }
 
         private void SaveConfiguration()
@@ -156,16 +165,9 @@ namespace FileMonitorTray
 
         private async void StartApplication()
         {
-            if (isLocal)
-            {
-                await StartWebApp();
-                await Task.Delay(3000); // Wait for web app to start
-            }
-            else
-            {
-                // Just continue silently if server connection fails
-                await CheckServerConnection();
-            }
+            // DO NOT start the web app - it should be running on a separate server
+            // Just check if we can connect to it
+            await CheckServerConnection();
 
             // Try auto-login
             if (await AutoLogin())
@@ -180,7 +182,11 @@ namespace FileMonitorTray
             // Start status checking timer
             statusTimer = new Timer();
             statusTimer.Interval = 30000; // Check every 30 seconds
-            statusTimer.Tick += async (s, e) => await UpdateTrayIcon();
+            statusTimer.Tick += async (s, e) => 
+            {
+                // Verify connection on each timer tick
+                await UpdateTrayIcon();
+            };
             statusTimer.Start();
         }
 
@@ -197,39 +203,7 @@ namespace FileMonitorTray
             }
         }
 
-        private async Task StartWebApp()
-        {
-            try
-            {
-                string pythonPath = "python";
-                string appPath = Path.Combine(Application.StartupPath, "app.py");
-                
-                if (!File.Exists(appPath))
-                {
-                    appPath = "app.py"; // Try current directory
-                }
-
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = pythonPath,
-                    Arguments = $"\"{appPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                webProcess = Process.Start(startInfo);
-                
-                // Wait a bit and check if process is still running
-                await Task.Delay(1000);
-                // Continue silently if process exits
-            }
-            catch (Exception)
-            {
-                // Silently handle startup errors
-            }
-        }
+        // REMOVED - The web app should run on a separate server, not started by the tray app
 
         private async Task<bool> AutoLogin()
         {
@@ -284,7 +258,7 @@ namespace FileMonitorTray
             }
             catch (Exception ex)
             {
-                // Silently handle login errors
+                Console.WriteLine($"Login error: {ex.Message}");
             }
             
             return false;
@@ -327,7 +301,7 @@ namespace FileMonitorTray
             }
             catch (Exception ex)
             {
-                // Silently handle monitoring start errors
+                Console.WriteLine($"Error starting monitoring: {ex.Message}");
             }
         }
 
@@ -368,6 +342,14 @@ namespace FileMonitorTray
                 // Show the context menu manually at cursor position
                 trayMenu.Show(Cursor.Position);
             }
+            else if (e.Button == MouseButtons.Left)
+            {
+                // Hide any open context menu when clicking elsewhere
+                if (trayMenu != null && trayMenu.Visible)
+                {
+                    trayMenu.Hide();
+                }
+            }
         }
 
         private void CreateTrayMenu()
@@ -378,6 +360,22 @@ namespace FileMonitorTray
             }
             
             trayMenu = new ContextMenuStrip();
+            
+            // Add event handlers for better menu management
+            trayMenu.Opening += (s, e) =>
+            {
+                // Refresh authentication status when menu opens
+                Task.Run(async () => await UpdateTrayIcon());
+            };
+            
+            trayMenu.Closed += (s, e) =>
+            {
+                // Ensure menu is properly disposed when closed
+                if (trayMenu != null && trayMenu.IsDisposed == false)
+                {
+                    trayMenu.Hide();
+                }
+            };
             
             if (authenticated)
             {
@@ -438,9 +436,48 @@ namespace FileMonitorTray
             }
         }
 
+        // Add this method to verify authentication is still valid
+        private async Task<bool> VerifyAuthentication()
+        {
+            if (!authenticated)
+                return false;
+                
+            try
+            {
+                var response = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized || 
+                         response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    // Server says we're not authenticated
+                    authenticated = false;
+                    currentUser = "";
+                    return false;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // Can't connect to server - show as disconnected
+                return false;
+            }
+            catch (TaskCanceledException)
+            {
+                // Timeout - server not responding
+                return false;
+            }
+            
+            return authenticated;
+        }
+
+        // Updated UpdateTrayIcon method
         private async Task UpdateTrayIcon()
         {
-            if (authenticated)
+            bool isConnected = await VerifyAuthentication();
+            
+            if (isConnected)
             {
                 string status = monitoringActive ? localization.T("active") : localization.T("inactive");
                 trayIcon.Text = string.Format(localization.T("tooltip_logged_in"), currentUser, status);
@@ -458,12 +495,19 @@ namespace FileMonitorTray
                 }
                 catch
                 {
-                    // Ignore errors during status check
+                    monitoringActive = false;
                 }
             }
             else
             {
-                trayIcon.Text = localization.T("tooltip_not_logged_in");
+                // Not connected or not authenticated
+                authenticated = false;
+                currentUser = "";
+                monitoringActive = false;
+                trayIcon.Text = localization.T("tooltip_not_logged_in") + $" ({webAppUrl})";
+                
+                // Refresh menu to show login option
+                CreateTrayMenu();
             }
         }
 
@@ -516,19 +560,57 @@ namespace FileMonitorTray
                 ShowLoginDialog();
                 return;
             }
-            
-            using (var entryForm = new ManualEntryForm(httpClient, webAppUrl, currentUser, localization))
+
+            try
             {
-                entryForm.ShowDialog();
+                using (var manualEntryForm = new ManualEntryForm(httpClient, webAppUrl, currentUser, localization))
+                {
+                    manualEntryForm.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Error opening manual entry form: {ex.Message}");
             }
         }
 
-        private async Task ShowStatus()
+        private void ShowFileSelector()
         {
             if (!authenticated)
             {
-                MessageBox.Show(localization.T("status_not_logged_in"),
-                    localization.T("status_title"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ShowLoginDialog();
+                return;
+            }
+
+            try
+            {
+                using (var fileSelectorForm = new FileSelectorForm(httpClient, webAppUrl, currentUser, localization))
+                {
+                    fileSelectorForm.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Error opening file selector form: {ex.Message}");
+            }
+        }
+
+        // Updated ShowStatus method with connection check
+        private async Task ShowStatus()
+        {
+            // First verify we're actually connected
+            bool isConnected = await VerifyAuthentication();
+            
+            if (!isConnected)
+            {
+                MessageBox.Show($"Not connected to server at {webAppUrl}\n\nThe server appears to be offline or you are not authenticated.",
+                    localization.T("status_title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
+                // Update UI to reflect disconnected state
+                authenticated = false;
+                CreateTrayMenu();
                 return;
             }
 
@@ -559,45 +641,30 @@ namespace FileMonitorTray
                 }
                 else
                 {
-                    MessageBox.Show(localization.T("unable_to_get_status"), localization.T("error"), 
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Server responded with error: {response.StatusCode}\nURL: {webAppUrl}", 
+                        localization.T("error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MessageBox.Show(localization.T("connection_error"),
+                MessageBox.Show($"Cannot connect to server at {webAppUrl}\n\nError: {ex.Message}",
                     localization.T("connection_error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    
+                // Clear authentication state
+                authenticated = false;
+                CreateTrayMenu();
             }
         }
 
-        private void ShowFileSelector()
+        private void ShowError(string message)
         {
-            if (!authenticated)
-            {
-                MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                ShowLoginDialog();
-                return;
-            }
-            
-            using (var selectorForm = new FileSelectorForm(httpClient, webAppUrl, currentUser, localization))
-            {
-                if (selectorForm.ShowDialog() == DialogResult.OK)
-                {
-                    // Refresh monitoring after adding new paths
-                    Task.Run(async () =>
-                    {
-                        await ToggleMonitoring(); // Stop
-                        await Task.Delay(1000);
-                        await ToggleMonitoring(); // Start
-                    });
-                }
-            }
+            // Silent error handling - log to console instead
+            Console.WriteLine($"Error: {message}");
         }
 
         private async Task ToggleMonitoring()
         {
-            if (!authenticated)
+            if (!await VerifyAuthentication())
             {
                 MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -689,15 +756,6 @@ namespace FileMonitorTray
             // No confirmation, just exit
             statusTimer?.Stop();
             
-            if (webProcess != null && !webProcess.HasExited)
-            {
-                try
-                {
-                    webProcess.Kill();
-                }
-                catch { }
-            }
-            
             trayIcon.Visible = false;
             Application.Exit();
         }
@@ -753,12 +811,6 @@ namespace FileMonitorTray
             }
         }
 
-        private void ShowError(string message)
-        {
-            // Silent error handling - log to console instead
-            Console.WriteLine($"Error: {message}");
-        }
-
         protected override void SetVisibleCore(bool value)
         {
             base.SetVisibleCore(false); // Always keep form hidden
@@ -779,15 +831,6 @@ namespace FileMonitorTray
                 trayIcon?.Dispose();
                 trayMenu?.Dispose();
                 httpClient?.Dispose();
-                
-                if (webProcess != null && !webProcess.HasExited)
-                {
-                    try
-                    {
-                        webProcess.Kill();
-                    }
-                    catch { }
-                }
             }
             base.Dispose(disposing);
         }

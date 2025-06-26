@@ -2,6 +2,6 @@ pandas==2.2.2
 pyserial
 keyboard
 pyinstaller
-requests
 Pillow
 pyodbc
+requests

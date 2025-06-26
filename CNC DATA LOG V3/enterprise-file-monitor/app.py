@@ -407,13 +407,20 @@ def get_user_work_hours(user_id=None):
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    # Check if this is an API request
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Authentication required'}), 401
+    # For regular web requests, redirect to login
+    return redirect(url_for('auth.login'))
+
 # Role-based access decorator
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'admin':
-            flash(get_translation('admin_required'), 'danger')
-            return redirect(url_for('main.dashboard'))
+            return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated_function
 
@@ -1261,6 +1268,26 @@ def reset_user_password(id):
     
     return redirect(url_for('main.users'))
 
+@main_bp.route('/user/delete/<int:id>')
+@login_required
+@admin_required
+def delete_user(id):
+    user = User.query.get_or_404(id)
+    
+    # Prevent deleting yourself
+    if user.id == current_user.id:
+        flash(get_translation('cannot_delete_self'), 'danger')
+        return redirect(url_for('main.users'))
+    
+    username = user.username
+    
+    # Delete the user
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f"{get_translation('user_deleted')} {username}", 'success')
+    return redirect(url_for('main.users'))
+
 @main_bp.route('/settings')
 @login_required
 def settings():
@@ -1368,64 +1395,102 @@ def update_operator_efficiency():
 @main_bp.route('/path/add', methods=['POST'])
 @login_required
 def add_monitored_path():
-    path = request.form.get('path')
-    path_type = request.form.get('path_type', 'file')
-    description = request.form.get('description', '').strip()
-    recursive = request.form.get('recursive') == 'on'
-    
-    if current_user.role == 'admin':
-        user_id = request.form.get('user_id', type=int) or current_user.id
-    else:
-        user_id = current_user.id
-    
-    if os.path.exists(path):
+    try:
+        path = request.form.get('path')
+        path_type = request.form.get('path_type', 'file')
+        description = request.form.get('description', '').strip()
+        recursive = request.form.get('recursive') == 'on'
+        
+        if not path:
+            error_msg = 'Path is required'
+            if request.content_type and 'application/json' in request.content_type:
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'danger')
+            return redirect(url_for('main.settings'))
+        
+        if current_user.role == 'admin':
+            user_id = request.form.get('user_id', type=int) or current_user.id
+        else:
+            user_id = current_user.id
+        
+        # Skip path existence check if the request comes from the C# client (identified by header or content type)
+        is_client_request = request.headers.get('X-Client-Type') == 'FileMonitorTray' or \
+                         (request.content_type and 'application/json' in request.content_type)
+        
+        if not is_client_request and not os.path.exists(path):
+            error_msg = 'Path does not exist'
+            if request.content_type and 'application/json' in request.content_type:
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'danger')
+            return redirect(url_for('main.settings'))
+        
         existing = MonitoredPath.query.filter_by(path=path, user_id=user_id).first()
         if existing:
-            flash('This path is already being monitored by this user', 'warning')
-        else:
-            is_directory = path_type == 'directory'
-            
-            # Verify path type matches actual filesystem
-            actual_is_dir = os.path.isdir(path)
-            if is_directory != actual_is_dir:
-                flash(f'Path type mismatch: {path} is {"a directory" if actual_is_dir else "a file"}', 'danger')
-                return redirect(url_for('main.settings'))
-            
-            last_modified = None
-            file_size = None
-            if not is_directory:
-                try:
-                    stat = os.stat(path)
-                    last_modified = datetime.fromtimestamp(stat.st_mtime)
-                    file_size = stat.st_size
-                except:
-                    pass
-            
-            if not description and not is_directory:
-                description = os.path.splitext(os.path.basename(path))[0].replace('_', ' ').replace('-', ' ').title()
-            
-            monitored_path = MonitoredPath(
-                path=path, 
-                user_id=user_id, 
-                is_directory=is_directory,
-                recursive=recursive if is_directory else False,
-                description=description if description else None,
-                last_modified=last_modified,
-                file_size=file_size,
-                change_count=0
-            )
-            db.session.add(monitored_path)
-            db.session.commit()
-            
-            stop_file_monitor()
-            start_file_monitor()
-            
-            path_type = "directory" if is_directory else "file"
-            flash(f'{path_type.capitalize()} added successfully', 'success')
-    else:
-        flash('Path does not exist', 'danger')
-    
-    return redirect(url_for('main.settings'))
+            error_msg = 'This path is already being monitored by this user'
+            if request.content_type and 'application/json' in request.content_type:
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'warning')
+            return redirect(url_for('main.settings'))
+        
+        is_directory = path_type == 'directory'
+        
+        # Verify path type matches actual filesystem
+        actual_is_dir = os.path.isdir(path)
+        if is_directory != actual_is_dir:
+            error_msg = f'Path type mismatch: {path} is {"a directory" if actual_is_dir else "a file"}'
+            if request.content_type and 'application/json' in request.content_type:
+                return jsonify({'error': error_msg}), 400
+            flash(error_msg, 'danger')
+            return redirect(url_for('main.settings'))
+        
+        last_modified = None
+        file_size = None
+        if not is_directory:
+            try:
+                stat = os.stat(path)
+                last_modified = datetime.fromtimestamp(stat.st_mtime)
+                file_size = stat.st_size
+            except:
+                pass
+        
+        if not description and not is_directory:
+            description = os.path.splitext(os.path.basename(path))[0].replace('_', ' ').replace('-', ' ').title()
+        
+        monitored_path = MonitoredPath(
+            path=path, 
+            user_id=user_id, 
+            is_directory=is_directory,
+            recursive=recursive if is_directory else False,
+            description=description if description else None,
+            last_modified=last_modified,
+            file_size=file_size,
+            change_count=0
+        )
+        db.session.add(monitored_path)
+        db.session.commit()
+        
+        stop_file_monitor()
+        start_file_monitor()
+        
+        path_type = "directory" if is_directory else "file"
+        success_msg = f'{path_type.capitalize()} added successfully'
+        
+        # Return JSON for API requests, redirect for web requests
+        if request.content_type and 'application/json' in request.content_type:
+            return jsonify({'status': 'success', 'message': success_msg}), 200
+        
+        flash(success_msg, 'success')
+        return redirect(url_for('main.settings'))
+        
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f'Error adding monitored path: {str(e)}'
+        
+        if request.content_type and 'application/json' in request.content_type:
+            return jsonify({'error': error_msg}), 500
+        
+        flash(error_msg, 'danger')
+        return redirect(url_for('main.settings'))
 
 @main_bp.route('/path/toggle/<int:id>')
 @login_required
@@ -1956,12 +2021,15 @@ def start_monitor():
 @api_bp.route('/categories')
 @login_required
 def api_categories():
-    categories = Category.query.all()
-    return jsonify([{
-        'id': cat.id,
-        'name': cat.name,
-        'color': cat.color
-    } for cat in categories])
+    try:
+        categories = Category.query.all()
+        return jsonify([{
+            'id': cat.id,
+            'name': cat.name,
+            'color': cat.color
+        } for cat in categories])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/validate_path', methods=['POST'])
 @login_required

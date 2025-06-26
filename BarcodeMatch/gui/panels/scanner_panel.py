@@ -371,13 +371,13 @@ class ScannerPanel(ttk.Frame):
         item = self.barcode_data.get(barcode)
         original_barcode_from_excel = barcode if item else None
 
-        # If no exact match, try a more lenient match by ignoring all whitespace
+        # If no exact match, try a more lenient match by ignoring all whitespace and normalizing path separators
         if not item:
             self._log(f"Exacte match niet gevonden. Poging tot een meer flexibele match...")
-            # Normalize by removing all whitespace characters
-            normalized_scanned = re.sub(r'\s', '', barcode)
+            # Normalize by removing all whitespace characters and standardizing path separators
+            normalized_scanned = re.sub(r'\s', '', os.path.normpath(barcode))
             for key, value in self.barcode_data.items():
-                normalized_key = re.sub(r'\s', '', key)
+                normalized_key = re.sub(r'\s', '', os.path.normpath(key))
                 if normalized_key == normalized_scanned:
                     item = value
                     original_barcode_from_excel = key
@@ -706,9 +706,9 @@ class ScannerPanel(ttk.Frame):
         # Find the item in barcode_data using the tree item_id
         item_to_update = None
         barcode_key_of_item = None
-        for key, data_dict in self.barcode_data.items():
-            if data_dict.get('id') == self.selected_item_id:
-                item_to_update = data_dict
+        for key, value in self.barcode_data.items():
+            if value.get('id') == self.selected_item_id:
+                item_to_update = value
                 barcode_key_of_item = key
                 break
 
@@ -929,9 +929,6 @@ class ScannerPanel(ttk.Frame):
                 self._log("[FOUT] Benodigde attributen (bv. 'email_enabled_var', 'email_send_mode_var', 'send_project_complete_email') niet gevonden op Email paneel.")
             except Exception as e:
                 self._log(f"[FOUT] Fout bij verwerken email notificatie voor project '{full_project_code}': {e}")
-        else:
-            self._log("[WARN] Email paneel niet gevonden via self.main_app.get_panel_by_name('Email'). Overslaan email notificatie.")
-
 
     def on_close(self):
         """Verwerkt opschoning wanneer het paneel wordt gesloten."""

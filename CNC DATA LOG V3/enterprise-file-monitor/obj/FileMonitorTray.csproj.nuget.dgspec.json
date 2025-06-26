@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {}
+    "C:\\Users\\Rob_v\\Desktop\\test-werk-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {
+    "C:\\Users\\Rob_v\\Desktop\\test-werk-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
+        "projectUniqueName": "C:\\Users\\Rob_v\\Desktop\\test-werk-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
         "projectName": "CNC DATALOG",
-        "projectPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
+        "projectPath": "C:\\Users\\Rob_v\\Desktop\\test-werk-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
         "packagesPath": "C:\\Users\\Rob_v\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\obj\\",
+        "outputPath": "C:\\Users\\Rob_v\\Desktop\\test-werk-main\\CNC DATA LOG V3\\enterprise-file-monitor\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

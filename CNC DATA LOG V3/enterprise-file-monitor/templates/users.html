@@ -68,6 +68,13 @@
                                         data-username="{{ user.username }}">
                                     Reset Password
                                 </button>
+                                <a href="#" class="btn btn-sm btn-outline-danger"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#deleteUserModal"
+                                   data-user-id="{{ user.id }}"
+                                   data-username="{{ user.username }}">
+                                    Delete
+                                </a>
                             {% endif %}
                         </td>
                     </tr>
@@ -103,6 +110,26 @@
     </div>
 </div>
 
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete user: <strong id="delete-username"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. All data associated with this user will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete User</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const resetPasswordModal = document.getElementById('resetPasswordModal');
     resetPasswordModal.addEventListener('show.bs.modal', function (event) {
@@ -112,6 +139,16 @@
         
         document.getElementById('reset-username').textContent = username;
         document.getElementById('resetPasswordForm').action = `/user/reset_password/${userId}`;
+    });
+    
+    const deleteUserModal = document.getElementById('deleteUserModal');
+    deleteUserModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const userId = button.getAttribute('data-user-id');
+        const username = button.getAttribute('data-username');
+        
+        document.getElementById('delete-username').textContent = username;
+        document.getElementById('confirmDeleteBtn').href = `{{ url_for('main.delete_user', id=0) }}`.replace('0', userId);
     });
 </script>
 {% endblock %}

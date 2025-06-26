@@ -212,6 +212,13 @@ namespace FileMonitorTray
                 if (response.IsSuccessStatusCode)
                 {
                     string json = await response.Content.ReadAsStringAsync();
+                    
+                    // Check if response is actually JSON and not HTML error page
+                    if (string.IsNullOrWhiteSpace(json) || json.TrimStart().StartsWith("<"))
+                    {
+                        throw new InvalidOperationException("Server returned HTML instead of JSON. Check if you're logged in and the server is running properly.");
+                    }
+                    
                     var categories = JsonSerializer.Deserialize<JsonElement[]>(json);
 
                     categoryComboBox.Items.Clear();
@@ -225,17 +232,25 @@ namespace FileMonitorTray
                     {
                         categoryComboBox.SelectedIndex = 0;
                     }
+                    else
+                    {
+                        // No categories found, add default
+                        categoryComboBox.Items.Add("Default");
+                        categoryComboBox.SelectedIndex = 0;
+                    }
                 }
                 else
                 {
-                    categoryComboBox.Items.Add("Default");
-                    categoryComboBox.SelectedIndex = 0;
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Server returned {response.StatusCode}: {response.ReasonPhrase}. Content: {errorContent.Substring(0, Math.Min(200, errorContent.Length))}");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading categories: {ex.Message}", "Error", 
+                MessageBox.Show($"Error loading categories: {ex.Message}\n\nUsing default category instead.", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
+                categoryComboBox.Items.Clear();
                 categoryComboBox.Items.Add("Default");
                 categoryComboBox.SelectedIndex = 0;
             }
@@ -284,15 +299,36 @@ namespace FileMonitorTray
                         
                         if (!response.IsSuccessStatusCode)
                         {
-                            // Log error but don't show message box from background thread
-                            Console.WriteLine($"Manual entry failed: {response.StatusCode}");
+                            string errorContent = await response.Content.ReadAsStringAsync();
+                            // Log detailed error information
+                            Console.WriteLine($"Manual entry failed: {response.StatusCode} - {response.ReasonPhrase}");
+                            Console.WriteLine($"Error content: {errorContent}");
+                            
+                            // Show user-friendly message on UI thread
+                            this.Invoke((MethodInvoker)delegate
+                            {
+                                MessageBox.Show($"Failed to submit manual entry.\nStatus: {response.StatusCode}\nPlease check if you're logged in and try again.", 
+                                    "Submission Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            });
+                        }
+                        else
+                        {
+                            // Success - could show a brief success message if needed
+                            Console.WriteLine($"Manual entry submitted successfully: {amount} item(s) for category '{category}'");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Log error but don't show message box from background thread
+                    // Log error and show user-friendly message
                     Console.WriteLine($"Error submitting manual entry: {ex.Message}");
+                    
+                    // Show error message on UI thread
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        MessageBox.Show($"Error submitting manual entry: {ex.Message}\n\nPlease check your connection and try again.", 
+                            "Submission Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    });
                 }
             });
         }

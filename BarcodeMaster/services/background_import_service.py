@@ -46,7 +46,14 @@ class BackgroundImportService:
         
     def _setup_logging(self):
         """Setup logging voor de service."""
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+        # Use current working directory for logs in EXE environment
+        try:
+            # Try to use the directory structure relative to __file__ first
+            log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+        except (NameError, AttributeError):
+            # Fallback for EXE environment where __file__ might not be available
+            log_dir = os.path.join(os.getcwd(), 'logs')
+        
         os.makedirs(log_dir, exist_ok=True)
         
         log_file = os.path.join(log_dir, 'background_import_service.log')
@@ -160,7 +167,7 @@ class BackgroundImportService:
 
             match_found = False
             try:
-                is_rep_project_code = '_REP_' in code_to_match.upper()
+                is_rep_project_code = bool(re.search(r'_REP_?', code_to_match, re.IGNORECASE))
                 for item_name in os.listdir(user_specific_path):
                     item_path = os.path.join(user_specific_path, item_name)
                     if os.path.isdir(item_path):
@@ -254,7 +261,7 @@ class BackgroundImportService:
                                             match_found_for_this_user = True
                                             break
                                     else:
-                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and '_REP_' not in item_name.upper():
+                                        if item_base_name.upper().endswith(project_code_to_log.upper()) and not re.search(r'_REP_?', item_name, re.IGNORECASE):
                                             match_found_for_this_user = True
                                             break
                         except OSError as e_os:
@@ -275,7 +282,7 @@ class BackgroundImportService:
                             'details': f"Auto-detected from {current_user_scanner}'s scan of {scanned_code}",
                             'project': project_code_to_log,
                             'base_mo_code': base_project_code,
-                            'is_rep_variant': '_REP_' in project_code_to_log.upper(),
+                            'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
                             'user': user
                         }
                         try:
@@ -438,22 +445,20 @@ class BackgroundImportService:
         try:
             df = pd.DataFrame(report_data)
             
-            # Ensure 'Item' and 'Status' columns, similar to BarcodeMatch
-            if 'Item' not in df.columns:
-                 # This case should ideally not happen if _collect_opus_files_for_report works correctly
-                self._log(f"Waarschuwing: 'Item' kolom ontbreekt in OPUS data voor Excel. Exporteren wat beschikbaar is.")
-                df['Item'] = "Unknown"
-
-            if 'Status' not in df.columns:
-                df['Status'] = ''
-            
-            # Ensure correct column order if necessary, though to_excel usually handles it.
-            # df = df[['Item', 'Status']] # Uncomment if specific order is strictly needed
+            if 'Item' in df.columns:
+                df_export = df[['Item']].copy()
+                df_export['Status'] = ''
+            else:
+                self._log(f"Kolom 'Item' niet gevonden in data voor Excel export voor {opus_scan_path}. Exporteren ruwe data.")
+                self.logger.warning(f"Column 'Item' not found in data for Excel export for {opus_scan_path}. Exporting raw data.")
+                df_export = df.copy()
+                if 'Status' not in df_export.columns:
+                    df_export['Status'] = ''
 
             folder_name = os.path.basename(os.path.normpath(opus_scan_path))
             excel_path = os.path.join(opus_scan_path, f"{folder_name}.xlsx")
 
-            df.to_excel(excel_path, index=False)
+            df_export.to_excel(excel_path, index=False)
             self._log(f"OPUS Excel rapport succesvol opgeslagen: {excel_path}")
             self.logger.info(f"OPUS Excel report successfully saved: {excel_path}")
             self._log_excel_creation_event('OPUS', folder_name, f"Excel report generated for {folder_name}", excel_path)
@@ -475,7 +480,7 @@ class BackgroundImportService:
         excel_reports_generated = 0
         match_found = False
         try:
-            is_rep_project_code = '_REP_' in project_event_code.upper()
+            is_rep_project_code = bool(re.search(r'_REP_?', project_event_code, re.IGNORECASE))
             for filename in os.listdir(gannomat_scan_path):
                 file_basename, file_ext = os.path.splitext(filename)
                 if file_ext.lower() in ('.mdb', '.accdb'):
@@ -724,7 +729,7 @@ class BackgroundImportService:
         
         # Dynamic logic for handling _REP_ project codes (case insensitive)
         code_upper = code.upper()
-        if "_REP_" in code_upper or "_REP" in code_upper:
+        if re.search(r'_REP_?', code, re.IGNORECASE):
             if not project_code.upper().endswith("_REP"):
                 project_code = f"{project_code}_REP"
                 

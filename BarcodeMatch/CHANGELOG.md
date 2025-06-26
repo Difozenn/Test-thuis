@@ -4,6 +4,15 @@ Alle belangrijke wijzigingen aan dit project worden in dit bestand bijgehouden.
 
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/) (Nederlandse versie als beschikbaar, anders Engelse link behouden).
 
+## [Nog Niet Uitgebracht] - 2025-06-25
+
+### Fixed
+- **Scannerpaneel: Barcode Matching met Pad Separators**
+  - Probleem opgelost waarbij barcodes niet werden herkend vanwege verschillen in pad separators (forward slashes vs backslashes).
+  - De flexibele matching logica gebruikt nu `os.path.normpath()` om paden te normaliseren voordat vergelijking plaatsvindt.
+  - Dit lost het probleem op waarbij gescande barcodes zoals `Y:\OPUS\KORPUS\...\OW_12LF_01LV.HOP` niet matchten met Excel-gegevens die `Y:/OPUS/KORPUS/...\OW_12LF_01LV.HOP` bevatten.
+  - Betreft: `gui/panels/scanner_panel.py`
+
 ## [Nog Niet Uitgebracht] - 2025-06-18
 
 ### Added

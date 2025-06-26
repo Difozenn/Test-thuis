@@ -538,13 +538,26 @@ namespace FileMonitorTray
                 {
                     try
                     {
-                        var response = await httpClient.PostAsync($"{webAppUrl}/path/add", 
-                            new FormUrlEncodedContent(new[]
-                            {
-                                new KeyValuePair<string, string>("path", pathInfo.Path),
-                                new KeyValuePair<string, string>("recursive", pathInfo.Recursive ? "on" : "off"),
-                                new KeyValuePair<string, string>("description", pathInfo.Description ?? "")
-                            }));
+                        // Create the request content
+                        var content = new FormUrlEncodedContent(new[]
+                        {
+                            new KeyValuePair<string, string>("path", pathInfo.Path),
+                            new KeyValuePair<string, string>("path_type", pathInfo.IsDirectory ? "directory" : "file"),
+                            new KeyValuePair<string, string>("recursive", pathInfo.Recursive ? "on" : "off"),
+                            new KeyValuePair<string, string>("description", pathInfo.Description ?? "")
+                        });
+                        
+                        // Create the request message
+                        var request = new HttpRequestMessage(HttpMethod.Post, $"{webAppUrl}/path/add")
+                        {
+                            Content = content
+                        };
+                        
+                        // Add custom header to identify the client
+                        request.Headers.Add("X-Client-Type", "FileMonitorTray");
+                        
+                        // Send the request
+                        var response = await httpClient.SendAsync(request);
 
                         if (response.IsSuccessStatusCode)
                         {
@@ -553,7 +566,8 @@ namespace FileMonitorTray
                         else
                         {
                             errorCount++;
-                            errors.Add($"{pathInfo.Path}: Server error");
+                            string errorContent = await response.Content.ReadAsStringAsync();
+                            errors.Add($"{pathInfo.Path}: {response.StatusCode} - {errorContent.Substring(0, Math.Min(100, errorContent.Length))}");
                         }
                     }
                     catch (Exception ex)

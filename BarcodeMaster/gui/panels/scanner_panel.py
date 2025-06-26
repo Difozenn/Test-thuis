@@ -597,7 +597,7 @@ class ScannerPanel(tk.Frame):
                 'details': code,
                 'project': project_code_to_log, # Full unique project identifier
                 'base_mo_code': base_project_code, # MOxxxxx part
-                'is_rep_variant': '_REP_' in project_code_to_log.upper(),
+                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
                 'user': current_user
             }
             self.log_message(f"  [OPEN LOGIC] Sending pre-emptive AFGEMELD to close any existing project: {data_afgemeld}")
@@ -640,7 +640,7 @@ class ScannerPanel(tk.Frame):
                 'details': code,
                 'project': project_code_to_log, # Full unique project identifier
                 'base_mo_code': base_project_code, # MOxxxxx part
-                'is_rep_variant': '_REP_' in project_code_to_log.upper(),
+                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
                 'user': current_user
             }
             try:
@@ -663,12 +663,12 @@ class ScannerPanel(tk.Frame):
         Example: ...;Y:/.../0618_MO07834_Boekenkast_Rep_VL5/... -> 0618_MO07834_Boekenkast_Rep_VL5
         Returns the full project name string or None if not a REP path.
         """
-        if '_REP_' in scan_data.upper():
+        if re.search(r'_REP_?', scan_data, re.IGNORECASE):
             try:
                 path_part = scan_data.split(';', 1)[1].strip()
                 directory_path = os.path.dirname(path_part)
                 project_name = os.path.basename(directory_path)
-                if '_REP_' in project_name.upper():
+                if re.search(r'_REP_?', project_name, re.IGNORECASE):
                     return project_name
             except (IndexError, TypeError):
                 return None # Failed to parse

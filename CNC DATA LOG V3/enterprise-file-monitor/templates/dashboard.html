@@ -140,7 +140,7 @@
 <!-- Page Header with Blue Underline -->
 <div class="page-header">
     <h1>{{ t('dashboard') }}</h1>
-    <p></p>{{ datetime.now().strftime('%A, %d %B %Y') }}</p>
+    <p>{{ datetime.now().strftime('%A, %d %B %Y') }}</p>
 </div>
 
 <!-- Filter Section -->
@@ -164,9 +164,9 @@
         <div class="col-md-3">
             <label class="form-label mb-0">{{ t('date_range') }}</label>
             <select class="form-select" id="date-filter" onchange="filterDashboard()">
-                <option value="today">{{ t('today') }}</option>
-                <option value="week">{{ t('this_week') }}</option>
-                <option value="month">{{ t('this_month') }}</option>
+                <option value="today" {% if date_range == 'today' %}selected{% endif %}>{{ t('today') }}</option>
+                <option value="week" {% if date_range == 'week' %}selected{% endif %}>{{ t('this_week') }}</option>
+                <option value="month" {% if date_range == 'month' %}selected{% endif %}>{{ t('this_month') }}</option>
             </select>
         </div>
         <div class="col-md-6 text-end">
@@ -833,7 +833,7 @@ function filterDashboard() {
     const params = new URLSearchParams();
     
     if (userId) params.append('user_id', userId);
-    if (dateRange) params.append('range', dateRange);
+    if (dateRange && dateRange !== 'today') params.append('range', dateRange);
     
     if (params.toString()) {
         url += '?' + params.toString();

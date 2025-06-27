@@ -106,8 +106,7 @@ def initialize_database_endpoint():
         logging.error(f"[db_log_api] /init_db failed: {e}", exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# Initialize the database and ensure tables are created when the module is loaded.
-init_db()
+# Database is initialized in run_api_server to avoid running on import.
 
 @app.route('/log', methods=['POST', 'GET'])
 def log_event():
@@ -376,8 +375,7 @@ def logs_project():
         logging.error(f"An unexpected error occurred during database initialization: {e}", exc_info=True)
         raise
 
-# Call init_db to ensure the database and tables are created when the module is loaded.
-init_db()
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -385,9 +383,12 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+# --- Production Server Setup ---
+def run_api_server(host='0.0.0.0', port=5000):
+    init_db()  # Initialize database once when the server starts
+    from waitress import serve
+    print(f"Starting database API server on http://{host}:{port}")
+    serve(app, host=host, port=port)
+
 if __name__ == '__main__':
-    # When running the script directly (e.g., python db_log_api.py),
-    # init_db() will have already been called when the module was loaded.
-    # Start the Flask development server.
-    logging.info("Starting Flask development server (db_log_api.py executed directly)...")
-    app.run(host='0.0.0.0', port=5001, debug=True) # Enable debug for direct execution
+    run_api_server()

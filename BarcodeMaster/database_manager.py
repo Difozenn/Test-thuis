@@ -1,7 +1,8 @@
 import threading
 import requests
 import time
-from BarcodeMaster.config_utils import get_config
+from urllib.parse import urljoin
+from config_utils import get_config
 
 class DatabaseManager:
     _instance = None
@@ -28,16 +29,21 @@ class DatabaseManager:
         while self.running:
             config = get_config()
             if config.get('database_enabled', True):
-                url = config.get('api_url', '').strip().replace('/log', '/logs')
-                try:
-                    resp = requests.get(url, timeout=3)
-                    if resp.status_code == 200:
-                        self.connection_status = 'Verbonden'
-                        self.connection_color = 'green'
-                    else:
+                base_url = config.get('api_url', '').strip()
+                if base_url:
+                    url = urljoin(base_url, 'logs')
+                    try:
+                        resp = requests.get(url, timeout=3)
+                        if resp.status_code == 200:
+                            self.connection_status = 'Verbonden'
+                            self.connection_color = 'green'
+                        else:
+                            self.connection_status = 'Niet verbonden'
+                            self.connection_color = 'red'
+                    except Exception:
                         self.connection_status = 'Niet verbonden'
                         self.connection_color = 'red'
-                except Exception:
+                else:
                     self.connection_status = 'Niet verbonden'
                     self.connection_color = 'red'
             else:
@@ -49,13 +55,17 @@ class DatabaseManager:
         while self.running:
             config = get_config()
             if config.get('database_enabled', True):
-                url = config.get('api_url', '').strip().replace('/log', '/logs')
-                try:
-                    resp = requests.get(url, timeout=5)
-                    if resp.status_code == 200:
-                        self.logs = resp.json()
-                except Exception:
-                    pass
+                base_url = config.get('api_url', '').strip()
+                if base_url:
+                    url = urljoin(base_url, 'logs')
+                    try:
+                        resp = requests.get(url, timeout=5)
+                        if resp.status_code == 200:
+                            self.logs = resp.json()
+                    except Exception:
+                        pass
+                else:
+                    self.logs = []
             else:
                 self.logs = []
             time.sleep(10)

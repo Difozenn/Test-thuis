@@ -1,5 +1,5 @@
 {
   "Username": "OPUS",
-  "WebAppUrl": "http://192.168.0.148:5002",
+  "WebAppUrl": "http://localhost:5002",
   "Language": "nl"
 }

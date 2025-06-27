@@ -681,7 +681,7 @@ class ScannerPanel(tk.Frame):
         # 1. Find base project code (MOxxxxx or xxxxxx)
         base_project_code = ""
         # Corrected regex: use r'...' raw string format with single backslash for \d
-        mo_match = re.search(r'(MO\d{5})', code_input, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,6})', code_input, re.IGNORECASE)
         if mo_match:
             base_project_code = mo_match.group(0).upper()
         else:

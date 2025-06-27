@@ -17,7 +17,8 @@ import random
 import pandas as pd
 import pyodbc
 
-from BarcodeMaster.config_utils import get_config
+from config_utils import get_config
+from path_utils import get_resource_path
 
 class BackgroundImportService:
     _stats_lock = threading.Lock() # Class level lock for stats
@@ -47,12 +48,7 @@ class BackgroundImportService:
     def _setup_logging(self):
         """Setup logging voor de service."""
         # Use current working directory for logs in EXE environment
-        try:
-            # Try to use the directory structure relative to __file__ first
-            log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
-        except (NameError, AttributeError):
-            # Fallback for EXE environment where __file__ might not be available
-            log_dir = os.path.join(os.getcwd(), 'logs')
+        log_dir = get_resource_path('logs')
         
         os.makedirs(log_dir, exist_ok=True)
         
@@ -349,7 +345,7 @@ class BackgroundImportService:
         """Extracts the base project code (e.g., MO12345 or 123456) from a full project code string."""
         import re
         # Prioritize MOxxxxx pattern
-        mo_match = re.search(r'(MO\d{5})', project_code)
+        mo_match = re.search(r'(MO\d{4,6})', project_code)
         if mo_match:
             return mo_match.group(0)
         # Fallback for ACCURA style 5-6 digit codes

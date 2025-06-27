@@ -1,7 +1,8 @@
-import os
 import json
+import os
+from path_utils import get_resource_path
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.json')
+CONFIG_PATH = get_resource_path('config.json')
 
 def get_config():
     if os.path.exists(CONFIG_PATH):

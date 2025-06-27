@@ -13,9 +13,10 @@ import sys
 import shutil
 from datetime import datetime
 from tkinter import filedialog
-from BarcodeMaster.config_utils import get_config, save_config
-from BarcodeMaster import config_manager
-from BarcodeMaster.com_splitter import ComSplitter
+from config_utils import get_config, save_config
+import config_manager
+from com_splitter import ComSplitter
+from path_utils import get_resource_path
 
 PANEL_BG = "#f0f0f0"
 
@@ -29,7 +30,9 @@ class AdminPanel(tk.Frame):
         self.api_status_thread_stop = threading.Event()
 
         # Define db_path here to be accessible by all tab creation methods
-        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'central_logging.sqlite'))
+        self.db_path = get_resource_path('database/central_logging.sqlite')
+        self.db_log_path = get_resource_path('database/db_log_api.log')
+        self.api_script_path = get_resource_path('database/db_log_api.py')
 
         # Backup tab related variables
         self.backup_enabled_var = tk.BooleanVar()
@@ -64,9 +67,6 @@ class AdminPanel(tk.Frame):
         self.process_log_queue()
 
     def _create_db_tab(self, tab):
-        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'central_logging.sqlite'))
-        self.db_log_path = os.path.abspath(os.path.join(os.path.dirname(self.db_path), 'db_log_api.log'))
-        self.api_script_path = os.path.abspath(os.path.join(os.path.dirname(self.db_path), 'db_log_api.py'))
         self.api_url = get_config().get('api_url', 'http://localhost:5001')
         self.lan_ip = 'Detecteren...'
         threading.Thread(target=self._detect_lan_ip, daemon=True).start()
@@ -85,11 +85,13 @@ class AdminPanel(tk.Frame):
         control_frame = ttk.LabelFrame(tab, text="Beheer")
         control_frame.pack(fill='x', padx=5, pady=5)
 
-        self.start_api_btn = ttk.Button(control_frame, text="Start API", command=self._start_db_api)
+        self.start_api_btn = ttk.Button(control_frame, text="Start API", command=self._start_db_api, state='disabled')
         self.start_api_btn.pack(side='left', padx=5, pady=5)
 
-        self.stop_api_btn = ttk.Button(control_frame, text="Stop API", command=self._stop_db_api)
+        self.stop_api_btn = ttk.Button(control_frame, text="Stop API", command=self._stop_db_api, state='disabled')
         self.stop_api_btn.pack(side='left', padx=5, pady=5)
+
+        ttk.Label(control_frame, text="API wordt automatisch beheerd.").pack(side='left', padx=10)
 
         self.view_log_btn = ttk.Button(control_frame, text="Logboek Bekijken", command=self._view_db_log)
         self.view_log_btn.pack(side='left', padx=5, pady=5)
@@ -147,7 +149,7 @@ class AdminPanel(tk.Frame):
         # Diagnostic print
         
         # Update API Status Label
-        api_status_str = self.app.service_status.services.get('db_api', 'INACTIEF').upper()
+        api_status_str = self.app.service_status.db_api_status.upper()
         is_active = "RUNNING" in api_status_str
         status_text = "Actief" if is_active else "Inactief"
         status_color = 'green' if is_active else 'red'
@@ -175,10 +177,28 @@ class AdminPanel(tk.Frame):
             self.log_count_label.config(text=log_count_text)
 
     def _check_api_status_loop(self):
+        """Continuously checks API status and schedules UI updates."""
         while not self.api_status_thread_stop.is_set():
-            self._update_api_status_label()
-            # Wait for 1 second before the next check, but allow interruption
-            self.api_status_thread_stop.wait(1) # Corrected from time.sleep(1)
+            is_active = False
+            try:
+                # Use a lightweight endpoint to check for liveness.
+                base_url = self.api_url.split('/log')[0]
+                test_url = f"{base_url}/logs/count"
+                response = requests.get(test_url, timeout=1)
+                if response.status_code == 200:
+                    is_active = True
+            except requests.exceptions.RequestException:
+                is_active = False
+
+            # Update the central status object
+            if self.app.service_status:
+                self.app.service_status.db_api_status = "Running" if is_active else "Inactive"
+
+            # Schedule the UI update to run on the main thread
+            self.after(0, self._update_api_status_label)
+            
+            # Wait for 5 seconds before the next check
+            self.api_status_thread_stop.wait(5)
 
     def _start_db_api(self):
         try:
@@ -225,7 +245,7 @@ class AdminPanel(tk.Frame):
 
         try:
             # Check if API is running first
-            api_status_str = self.app.service_status.services.get('db_api', 'INACTIEF').upper()
+            api_status_str = self.app.service_status.db_api_status.upper()
             if "RUNNING" not in api_status_str:
                 messagebox.showerror("Fout", "De Database API is niet actief. Kan logboek niet wissen.")
                 return

@@ -1,6 +1,0 @@
-Pillow
-psutil
-requests
-pyserial
-Flask>=2.0.0,<3.0.0
-waitress>=2.0.0,<3.0.0

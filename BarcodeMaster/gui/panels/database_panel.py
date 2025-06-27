@@ -7,7 +7,7 @@ import re
 import json
 import requests
 import threading
-from BarcodeMaster.config_utils import get_config, save_config
+from config_utils import get_config, save_config
 
 PANEL_BG = "#f0f0f0"
 
@@ -142,10 +142,10 @@ class DatabasePanel(tk.Frame):
             self.test_connection()
 
     def test_connection(self):
-        url = self.api_url_var.get()
+        health_check_url = self._get_health_check_url()
         try:
-            resp = requests.get(url, timeout=3)  # Changed to GET, removed JSON payload
-            if resp.status_code == 200 and resp.json().get('success'):
+            resp = requests.get(health_check_url, timeout=3)
+            if resp.status_code == 200:
                 self.set_connection_status(True)
                 messagebox.showinfo("Succes", "Verbinding met API geslaagd!")
             else:
@@ -195,6 +195,11 @@ class DatabasePanel(tk.Frame):
         if self.log_event("test_event", "Dit is een test van REST API logging."):
             messagebox.showinfo("Gelukt", "Test event gelogd naar centrale logging API.")
 
+    def _get_health_check_url(self):
+        """Constructs the health check URL from the base API URL."""
+        base_url = self.api_url_var.get().split('/log')[0]
+        return f"{base_url}/logs/count"
+
     def start_api_status_check(self):
         """Starts the periodic API status check loop using `self.after`."""
         self._check_api_status()  # Start the first check
@@ -205,16 +210,17 @@ class DatabasePanel(tk.Frame):
             return  # Stop the loop if the widget is destroyed
 
         if self.database_enabled_var.get():
-            url = self.api_url_var.get()
-            threading.Thread(target=self._perform_network_check, args=(url,), daemon=True).start()
+            # The url parameter for _perform_network_check is now unused, so we can pass None.
+            threading.Thread(target=self._perform_network_check, args=(None,), daemon=True).start()
 
         self.after(5000, self._check_api_status)  # Schedule the next check
 
     def _perform_network_check(self, url):
         """Performs the blocking network request in a background thread."""
+        health_check_url = self._get_health_check_url()
         try:
-            resp = requests.get(url, timeout=3)
-            is_active = resp.status_code == 200 and resp.json().get('success', False)
+            resp = requests.get(health_check_url, timeout=3)
+            is_active = resp.status_code == 200
             # Schedule the UI update on the main thread
             self.after(0, self.set_connection_status, is_active)
         except Exception:

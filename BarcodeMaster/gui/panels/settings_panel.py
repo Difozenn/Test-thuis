@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
-from BarcodeMaster.config_utils import get_config, save_config
-# from BarcodeMaster.services.background_import_service import BackgroundImportService # For type hinting
+from config_utils import get_config, save_config
+# from services.background_import_service import BackgroundImportService # For type hinting
 
 class Tooltip:
     """ Simple tooltip class for tkinter widgets. """

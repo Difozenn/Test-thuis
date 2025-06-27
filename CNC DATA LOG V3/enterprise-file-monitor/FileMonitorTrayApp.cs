@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Net;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace FileMonitorTray
 {
@@ -25,9 +27,23 @@ namespace FileMonitorTray
         private string currentUser = "";
         private bool monitoringActive = false;
         private Timer statusTimer;
+        private List<FileSystemWatcher> fileWatchers = new List<FileSystemWatcher>();
+        private Dictionary<FileSystemWatcher, MonitoredPathInfo> watcherInfoMap = new Dictionary<FileSystemWatcher, MonitoredPathInfo>();
         private const string APP_NAME = "CNC DATALOG";
         private const string CONFIG_FILE = "tray_config.json";
         private const string STARTUP_KEY_PATH = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        
+        // Cache for categories to avoid frequent API calls
+        private List<CategoryInfo> cachedCategories = new List<CategoryInfo>();
+        private DateTime categoriesCacheTime = DateTime.MinValue;
+        private readonly TimeSpan CACHE_DURATION = TimeSpan.FromMinutes(5);
+
+        // File extensions that should be scanned for content
+        private readonly HashSet<string> SCANNABLE_EXTENSIONS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".txt", ".log", ".csv", ".json", ".xml", ".htm", ".html", ".md", ".ini", ".cfg", ".conf",
+            ".nc", ".gcode", ".tap", ".mpf", ".ptp", ".cls", ".lst", ".prg", ".sub", ".cnc"
+        };
 
         // Configuration class
         public class AppConfig
@@ -35,6 +51,28 @@ namespace FileMonitorTray
             public string Username { get; set; } = "";
             public string WebAppUrl { get; set; } = "http://localhost:5002";
             public string Language { get; set; } = "en";
+            public bool ScanFileContents { get; set; } = true;
+            public int MaxFileSizeMB { get; set; } = 10; // Max file size to scan in MB
+        }
+
+        // Class to hold path info from the server
+        public class MonitoredPathInfo
+        {
+            public int id { get; set; }
+            public string path { get; set; }
+            public bool is_directory { get; set; }
+            public bool recursive { get; set; }
+            public string description { get; set; }
+        }
+
+        // Class to hold category info
+        public class CategoryInfo
+        {
+            public int id { get; set; }
+            public string name { get; set; }
+            public string color { get; set; }
+            public List<string> keywords { get; set; }
+            public List<string> file_patterns { get; set; }
         }
 
         private AppConfig config;
@@ -76,34 +114,22 @@ namespace FileMonitorTray
                 try
                 {
                     string json = File.ReadAllText(CONFIG_FILE);
-                    Console.WriteLine($"Loading config from: {Path.GetFullPath(CONFIG_FILE)}");
-                    Console.WriteLine($"Config content: {json}");
-                    
                     config = JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
-                    Console.WriteLine($"Loaded URL: {config.WebAppUrl}");
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Console.WriteLine($"Error loading config: {ex.Message}");
                     config = new AppConfig();
                 }
-            }
-            else
-            {
-                Console.WriteLine($"Config file not found at: {Path.GetFullPath(CONFIG_FILE)}");
             }
             
             // Check environment variable for URL
             string envUrl = Environment.GetEnvironmentVariable("FILE_MONITOR_URL");
             if (!string.IsNullOrEmpty(envUrl))
             {
-                Console.WriteLine($"Overriding URL with environment variable: {envUrl}");
                 config.WebAppUrl = envUrl;
             }
             
             webAppUrl = config.WebAppUrl;
-            
-            Console.WriteLine($"Final URL: {webAppUrl}");
         }
 
         private void SaveConfiguration()
@@ -134,7 +160,7 @@ namespace FileMonitorTray
             {
                 config.Language = localization.CurrentLanguage;
                 SaveConfiguration();
-                CreateTrayMenu(); // Refresh menu with new language
+                // The menu will be rebuilt on next opening
                 UpdateTrayIcon().Wait();
             };
         }
@@ -145,11 +171,13 @@ namespace FileMonitorTray
             var handler = new HttpClientHandler()
             {
                 CookieContainer = cookieContainer,
-                UseCookies = true
+                UseCookies = true,
+                AllowAutoRedirect = false // Important: handle redirects manually for login
             };
             
             httpClient = new HttpClient(handler);
-            httpClient.Timeout = TimeSpan.FromSeconds(10);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            httpClient.DefaultRequestHeaders.Add("X-Client-Type", "FileMonitorTray");
         }
 
         private void CheckSingleInstance()
@@ -195,15 +223,13 @@ namespace FileMonitorTray
             try
             {
                 var response = await httpClient.GetAsync($"{webAppUrl}/login");
-                return response.IsSuccessStatusCode;
+                return response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.OK;
             }
             catch
             {
                 return false;
             }
         }
-
-        // REMOVED - The web app should run on a separate server, not started by the tray app
 
         private async Task<bool> AutoLogin()
         {
@@ -230,16 +256,33 @@ namespace FileMonitorTray
         {
             try
             {
+                // First, get the login page to obtain any CSRF tokens
+                var getResponse = await httpClient.GetAsync($"{webAppUrl}/login");
+                
+                // Prepare login form data
                 var loginData = new FormUrlEncodedContent(new[]
                 {
                     new KeyValuePair<string, string>("username", username),
                     new KeyValuePair<string, string>("password", password)
                 });
 
+                // Post login credentials
                 var response = await httpClient.PostAsync($"{webAppUrl}/login", loginData);
                 
-                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Redirect)
+                // Check if login was successful (either 200 OK or 302 Redirect)
+                if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Redirect || response.StatusCode == HttpStatusCode.Found)
                 {
+                    // If redirected, follow the redirect
+                    if (response.StatusCode == HttpStatusCode.Redirect || response.StatusCode == HttpStatusCode.Found)
+                    {
+                        var location = response.Headers.Location;
+                        if (location != null)
+                        {
+                            string redirectUrl = location.IsAbsoluteUri ? location.AbsoluteUri : $"{webAppUrl}{location}";
+                            await httpClient.GetAsync(redirectUrl);
+                        }
+                    }
+                    
                     // Test authentication with a protected endpoint
                     var testResponse = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
                     if (testResponse.IsSuccessStatusCode)
@@ -251,14 +294,17 @@ namespace FileMonitorTray
                         StorePassword(username, password);
                         
                         await UpdateTrayIcon();
-                        // No balloon tip for login success
+                        
+                        // Load categories after successful login
+                        await RefreshCategoriesCache();
+                        
                         return true;
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Login error: {ex.Message}");
+                // Silent fail for auto-login attempts
             }
             
             return false;
@@ -268,13 +314,23 @@ namespace FileMonitorTray
         {
             try
             {
-                httpClient.GetAsync($"{webAppUrl}/logout").Wait(5000);
+                // Create a new HttpClient for logout that allows redirects
+                using (var logoutClient = new HttpClient())
+                {
+                    // Copy cookies from main client
+                    logoutClient.DefaultRequestHeaders.Add("Cookie", httpClient.DefaultRequestHeaders.GetValues("Cookie").FirstOrDefault() ?? "");
+                    logoutClient.GetAsync($"{webAppUrl}/logout").Wait(5000);
+                }
             }
             catch { }
-            
+
+            StopMonitoring(); // Stop file watchers on logout
             authenticated = false;
             currentUser = "";
-            monitoringActive = false;
+            
+            // Clear cached categories
+            cachedCategories.Clear();
+            categoriesCacheTime = DateTime.MinValue;
             
             if (!string.IsNullOrEmpty(config.Username))
             {
@@ -283,110 +339,149 @@ namespace FileMonitorTray
                 SaveConfiguration();
             }
             
+            // Clear cookies
+            cookieContainer = new CookieContainer();
+            
+            // Recreate HttpClient with fresh cookie container
+            var handler = new HttpClientHandler()
+            {
+                CookieContainer = cookieContainer,
+                UseCookies = true,
+                AllowAutoRedirect = false
+            };
+            
+            httpClient.Dispose();
+            httpClient = new HttpClient(handler);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            httpClient.DefaultRequestHeaders.Add("X-Client-Type", "FileMonitorTray");
+            
             UpdateTrayIcon().Wait();
         }
 
-        private async Task StartMonitoringOnStartup()
+        private async Task RefreshCategoriesCache()
         {
-            if (!authenticated) return;
-
             try
             {
-                var response = await httpClient.PostAsync($"{webAppUrl}/api/monitor/start", null);
+                var response = await httpClient.GetAsync($"{webAppUrl}/api/categories");
                 if (response.IsSuccessStatusCode)
                 {
-                    monitoringActive = true;
-                    // No balloon tip for monitoring started
+                    string json = await response.Content.ReadAsStringAsync();
+                    var categoriesJson = JsonSerializer.Deserialize<JsonElement[]>(json);
+                    
+                    cachedCategories.Clear();
+                    foreach (var catJson in categoriesJson)
+                    {
+                        var category = new CategoryInfo
+                        {
+                            id = catJson.GetProperty("id").GetInt32(),
+                            name = catJson.GetProperty("name").GetString(),
+                            color = catJson.GetProperty("color").GetString(),
+                            keywords = new List<string>(),
+                            file_patterns = new List<string>()
+                        };
+                        
+                        // Get keywords if available (server might need to be updated to send these)
+                        if (catJson.TryGetProperty("keywords", out var keywordsElement))
+                        {
+                            foreach (var keyword in keywordsElement.EnumerateArray())
+                            {
+                                category.keywords.Add(keyword.GetString());
+                            }
+                        }
+                        
+                        // Get file patterns if available
+                        if (catJson.TryGetProperty("file_patterns", out var patternsElement))
+                        {
+                            foreach (var pattern in patternsElement.EnumerateArray())
+                            {
+                                category.file_patterns.Add(pattern.GetString());
+                            }
+                        }
+                        
+                        cachedCategories.Add(category);
+                    }
+                    
+                    categoriesCacheTime = DateTime.Now;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error starting monitoring: {ex.Message}");
+                // Silent fail - will use empty categories list
             }
+        }
+
+        private async Task<List<CategoryInfo>> GetCategories()
+        {
+            // Refresh cache if expired or empty
+            if (cachedCategories.Count == 0 || DateTime.Now - categoriesCacheTime > CACHE_DURATION)
+            {
+                await RefreshCategoriesCache();
+            }
+            
+            return cachedCategories;
         }
 
         private void CreateTrayIcon()
         {
+            trayMenu = new ContextMenuStrip();
+            // The Opening event is the best place to dynamically update menu items.
+            trayMenu.Opening += (s, e) => 
+            {
+                // Prevent opening if the form is being disposed.
+                if (this.IsDisposed)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                UpdateTrayMenuItems();
+            };
+
             trayIcon = new NotifyIcon();
             
-            // Create default icon
             try
             {
-                // Load the icon from the executable's resources
                 trayIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             }
             catch
             {
-                // Fallback to a default system icon if loading fails
                 trayIcon.Icon = SystemIcons.Application;
             }
+            
             trayIcon.Text = localization.T("tooltip_not_logged_in");
             trayIcon.Visible = true;
-            
-            CreateTrayMenu();
+            trayIcon.ContextMenuStrip = trayMenu; // Let the framework manage showing/hiding.
             
             // Handle double-click to open browser
             trayIcon.DoubleClick += (s, e) => OpenBrowser();
-            
-            // Handle context menu click
-            trayIcon.MouseUp += TrayIcon_MouseUp;
         }
 
-        private void TrayIcon_MouseUp(object sender, MouseEventArgs e)
+        private void UpdateTrayMenuItems()
         {
-            if (e.Button == MouseButtons.Right)
-            {
-                // Refresh menu with current state
-                CreateTrayMenu();
-                
-                // Show the context menu manually at cursor position
-                trayMenu.Show(Cursor.Position);
-            }
-            else if (e.Button == MouseButtons.Left)
-            {
-                // Hide any open context menu when clicking elsewhere
-                if (trayMenu != null && trayMenu.Visible)
-                {
-                    trayMenu.Hide();
-                }
-            }
-        }
+            if (trayMenu.IsDisposed) return;
+            trayMenu.Items.Clear();
 
-        private void CreateTrayMenu()
-        {
-            if (trayMenu != null)
-            {
-                trayMenu.Dispose();
-            }
-            
-            trayMenu = new ContextMenuStrip();
-            
-            // Add event handlers for better menu management
-            trayMenu.Opening += (s, e) =>
-            {
-                // Refresh authentication status when menu opens
-                Task.Run(async () => await UpdateTrayIcon());
-            };
-            
-            trayMenu.Closed += (s, e) =>
-            {
-                // Ensure menu is properly disposed when closed
-                if (trayMenu != null && trayMenu.IsDisposed == false)
-                {
-                    trayMenu.Hide();
-                }
-            };
-            
             if (authenticated)
             {
-                trayMenu.Items.Add($"{localization.T("user")}: {currentUser}").Enabled = false;
+                trayMenu.Items.Add($@"{localization.T("user")}: {currentUser}").Enabled = false;
                 trayMenu.Items.Add(new ToolStripSeparator());
                 trayMenu.Items.Add(localization.T("open_web_interface"), null, (s, e) => OpenBrowser());
                 trayMenu.Items.Add(localization.T("manual_entry"), null, (s, e) => ShowManualEntry());
                 trayMenu.Items.Add("Add Files/Directories...", null, (s, e) => ShowFileSelector());
                 trayMenu.Items.Add(new ToolStripSeparator());
+                
+                // Add content scanning toggle
+                var scanContentItem = new ToolStripMenuItem("Scan File Contents", null, (s, e) => ToggleScanContent())
+                {
+                    Checked = config.ScanFileContents
+                };
+                trayMenu.Items.Add(scanContentItem);
+                
                 trayMenu.Items.Add(localization.T("show_status"), null, async (s, e) => await ShowStatus());
-                trayMenu.Items.Add(localization.T("toggle_monitoring"), null, async (s, e) => await ToggleMonitoring());
+                var monitoringItem = new ToolStripMenuItem(localization.T("toggle_monitoring"), null, async (s, e) => await ToggleMonitoring()) 
+                { 
+                    Checked = monitoringActive 
+                };
+                trayMenu.Items.Add(monitoringItem);
                 trayMenu.Items.Add(new ToolStripSeparator());
                 trayMenu.Items.Add(localization.T("switch_user"), null, (s, e) => SwitchUser());
             }
@@ -396,8 +491,7 @@ namespace FileMonitorTray
                 trayMenu.Items.Add(localization.T("open_web_interface"), null, (s, e) => OpenBrowser());
                 trayMenu.Items.Add(new ToolStripSeparator());
             }
-            
-            // Language submenu
+
             var languageMenu = new ToolStripMenuItem(localization.T("language"));
             foreach (string langCode in localization.AvailableLanguages)
             {
@@ -406,108 +500,62 @@ namespace FileMonitorTray
                     Checked = langCode == localization.CurrentLanguage,
                     Tag = langCode
                 };
-                langItem.Click += (s, e) =>
-                {
-                    var item = s as ToolStripMenuItem;
-                    localization.CurrentLanguage = (string)item.Tag;
-                };
+                langItem.Click += (s, e) => { localization.CurrentLanguage = (string)((ToolStripMenuItem)s).Tag; };
                 languageMenu.DropDownItems.Add(langItem);
             }
             trayMenu.Items.Add(languageMenu);
-            
-            string startupText = IsStartupEnabled() ? 
-                localization.T("remove_from_startup") : localization.T("add_to_startup");
+
+            string startupText = IsStartupEnabled() ? localization.T("remove_from_startup") : localization.T("add_to_startup");
             trayMenu.Items.Add(startupText, null, (s, e) => ToggleStartup());
             trayMenu.Items.Add(new ToolStripSeparator());
             trayMenu.Items.Add(localization.T("quit"), null, (s, e) => QuitApplication());
         }
 
-        private Icon CreateDefaultIcon()
+        private void ToggleScanContent()
         {
+            config.ScanFileContents = !config.ScanFileContents;
+            SaveConfiguration();
+        }
+
+        private async Task UpdateTrayIcon()
+        {
+            if (trayIcon == null) return;
             try
             {
-                // Load the icon from the executable's resources
-                return Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                // A simple check to see if we can reach the server.
+                // This also helps keep the session alive if the server has a short session timeout.
+                var response = await httpClient.GetAsync($@"{webAppUrl}/api/monitor/status");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var status = JsonSerializer.Deserialize<JsonElement>(json);
+                    // Re-confirm authentication state based on a successful API call
+                    authenticated = true;
+                    if (status.TryGetProperty("username", out var usernameProp))
+                    {
+                        currentUser = usernameProp.GetString() ?? currentUser;
+                    }
+                    trayIcon.Text = $@"{APP_NAME} - {currentUser} - {(monitoringActive ? localization.T("monitoring_active") : localization.T("monitoring_inactive"))}";
+                    trayIcon.Icon = monitoringActive ? CreateOverlayIcon("play") : CreateDefaultIcon();
+                }
+                else
+                {
+                    // Server is reachable but returned an error (e.g., 401 Unauthorized after session expired)
+                    authenticated = false;
+                    currentUser = "";
+                    StopMonitoring(); // Stop monitoring if session is lost
+                    trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_not_logged_in")}";
+                    trayIcon.Icon = CreateOverlayIcon("error");
+                }
             }
             catch
             {
-                // Fallback to a default system icon if loading fails
-                return SystemIcons.Application;
-            }
-        }
-
-        // Add this method to verify authentication is still valid
-        private async Task<bool> VerifyAuthentication()
-        {
-            if (!authenticated)
-                return false;
-                
-            try
-            {
-                var response = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else if (response.StatusCode == HttpStatusCode.Unauthorized || 
-                         response.StatusCode == HttpStatusCode.Forbidden)
-                {
-                    // Server says we're not authenticated
-                    authenticated = false;
-                    currentUser = "";
-                    return false;
-                }
-            }
-            catch (HttpRequestException)
-            {
-                // Can't connect to server - show as disconnected
-                return false;
-            }
-            catch (TaskCanceledException)
-            {
-                // Timeout - server not responding
-                return false;
-            }
-            
-            return authenticated;
-        }
-
-        // Updated UpdateTrayIcon method
-        private async Task UpdateTrayIcon()
-        {
-            bool isConnected = await VerifyAuthentication();
-            
-            if (isConnected)
-            {
-                string status = monitoringActive ? localization.T("active") : localization.T("inactive");
-                trayIcon.Text = string.Format(localization.T("tooltip_logged_in"), currentUser, status);
-                
-                // Check monitoring status
-                try
-                {
-                    var response = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string json = await response.Content.ReadAsStringAsync();
-                        var statusData = JsonSerializer.Deserialize<JsonElement>(json);
-                        monitoringActive = statusData.GetProperty("running").GetBoolean();
-                    }
-                }
-                catch
-                {
-                    monitoringActive = false;
-                }
-            }
-            else
-            {
-                // Not connected or not authenticated
+                // Server is unreachable
                 authenticated = false;
                 currentUser = "";
-                monitoringActive = false;
-                trayIcon.Text = localization.T("tooltip_not_logged_in") + $" ({webAppUrl})";
-                
-                // Refresh menu to show login option
-                CreateTrayMenu();
+                StopMonitoring(); // Stop monitoring if server is down
+                trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_server_unreachable")}";
+                trayIcon.Icon = CreateOverlayIcon("error");
             }
         }
 
@@ -537,7 +585,7 @@ namespace FileMonitorTray
                     {
                         if (await Login(loginForm.Username, loginForm.Password))
                         {
-                            this.Invoke(() => CreateTrayMenu());
+                            // The tray menu will update on next opening.
                             await StartMonitoringOnStartup();
                         }
                         else
@@ -555,9 +603,8 @@ namespace FileMonitorTray
         {
             if (!authenticated)
             {
-                MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
+                MessageBox.Show(localization.T("please_login"), localization.T("login_required"), 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                ShowLoginDialog();
                 return;
             }
 
@@ -570,7 +617,8 @@ namespace FileMonitorTray
             }
             catch (Exception ex)
             {
-                ShowError($"Error opening manual entry form: {ex.Message}");
+                MessageBox.Show($"Error opening manual entry form: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -578,9 +626,8 @@ namespace FileMonitorTray
         {
             if (!authenticated)
             {
-                MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
+                MessageBox.Show(localization.T("please_login"), localization.T("login_required"), 
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                ShowLoginDialog();
                 return;
             }
 
@@ -588,251 +635,453 @@ namespace FileMonitorTray
             {
                 using (var fileSelectorForm = new FileSelectorForm(httpClient, webAppUrl, currentUser, localization))
                 {
-                    fileSelectorForm.ShowDialog();
+                    if (fileSelectorForm.ShowDialog() == DialogResult.OK)
+                    {
+                        // Refresh monitoring paths after changes
+                        Task.Run(async () => await StartMonitoringOnStartup());
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ShowError($"Error opening file selector form: {ex.Message}");
+                MessageBox.Show($"Error opening file selector form: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        // Updated ShowStatus method with connection check
         private async Task ShowStatus()
         {
-            // First verify we're actually connected
-            bool isConnected = await VerifyAuthentication();
-            
-            if (!isConnected)
+            if (!authenticated)
             {
-                MessageBox.Show($"Not connected to server at {webAppUrl}\n\nThe server appears to be offline or you are not authenticated.",
-                    localization.T("status_title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                
-                // Update UI to reflect disconnected state
-                authenticated = false;
-                CreateTrayMenu();
+                MessageBox.Show(localization.T("please_login"), "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-
-            try
-            {
-                var response = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    var data = JsonSerializer.Deserialize<JsonElement>(json);
-                    
-                    bool running = data.GetProperty("running").GetBoolean();
-                    int paths = data.GetProperty("paths").GetInt32();
-                    int files = data.TryGetProperty("files", out var f) ? f.GetInt32() : 0;
-                    int directories = data.TryGetProperty("directories", out var d) ? d.GetInt32() : 0;
-                    int monitors = data.TryGetProperty("monitors_count", out var mc) ? mc.GetInt32() : 0;
-                    
-                    string message = $"{localization.T("logged_in_as")}: {currentUser}\n" +
-                                   $"{localization.T("monitor_status")}: {(running ? localization.T("running") : localization.T("stopped"))}\n" +
-                                   $"{localization.T("active_monitors")}: {monitors}\n" +
-                                   $"Total Paths: {paths}\n" +
-                                   $"• Files: {files}\n" +
-                                   $"• Directories: {directories}\n\n" +
-                                   $"{localization.T("web_interface")}: {webAppUrl}";
-                    
-                    MessageBox.Show(message, localization.T("status_title"), 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    MessageBox.Show($"Server responded with error: {response.StatusCode}\nURL: {webAppUrl}", 
-                        localization.T("error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Cannot connect to server at {webAppUrl}\n\nError: {ex.Message}",
-                    localization.T("connection_error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    
-                // Clear authentication state
-                authenticated = false;
-                CreateTrayMenu();
-            }
+            string statusMessage = $@"User: {currentUser}\n" +
+                                 $@"Server: {webAppUrl}\n" +
+                                 $@"Monitoring: {(monitoringActive ? "Active" : "Inactive")}\n" +
+                                 $@"Watching: {fileWatchers.Count} paths\n" +
+                                 $@"Content Scanning: {(config.ScanFileContents ? "Enabled" : "Disabled")}\n" +
+                                 $@"Max Scan Size: {config.MaxFileSizeMB} MB";
+            MessageBox.Show(statusMessage, "Application Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void ShowError(string message)
         {
-            // Silent error handling - log to console instead
             Console.WriteLine($"Error: {message}");
-        }
-
-        private async Task ToggleMonitoring()
-        {
-            if (!await VerifyAuthentication())
-            {
-                MessageBox.Show(localization.T("please_login_first"), localization.T("not_logged_in"), 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                ShowLoginDialog();
-                return;
-            }
-
-            try
-            {
-                // Get current status first
-                var statusResponse = await httpClient.GetAsync($"{webAppUrl}/api/monitor/status");
-                if (statusResponse.IsSuccessStatusCode)
-                {
-                    string json = await statusResponse.Content.ReadAsStringAsync();
-                    var data = JsonSerializer.Deserialize<JsonElement>(json);
-                    bool running = data.GetProperty("running").GetBoolean();
-                    
-                    string endpoint = running ? "/api/monitor/stop" : "/api/monitor/start";
-                    var response = await httpClient.PostAsync($"{webAppUrl}{endpoint}", null);
-                    
-                    if (response.IsSuccessStatusCode)
-                    {
-                        monitoringActive = !running;
-                        // No balloon notifications for monitoring status changes
-                        await UpdateTrayIcon();
-                    }
-                    else
-                    {
-                        ShowError(localization.T("failed_toggle_monitoring"));
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Silently handle monitoring toggle errors
-            }
         }
 
         private void SwitchUser()
         {
-            // No confirmation dialog
             Logout();
-            CreateTrayMenu();
             ShowLoginDialog();
+        }
+
+        private void QuitApplication()
+        {
+            StopMonitoring();
+            if (trayIcon != null) trayIcon.Visible = false;
+            Application.Exit();
+        }
+
+        #region File Monitoring
+        private async Task StartMonitoringOnStartup()
+        {
+            if (authenticated) await StartMonitoring();
+        }
+
+        private async Task ToggleMonitoring()
+        {
+            if (monitoringActive)
+            {
+                StopMonitoring();
+            }
+            else
+            {
+                await StartMonitoring();
+            }
+            await UpdateTrayIcon();
+        }
+
+        private async Task StartMonitoring()
+        {
+            if (!authenticated) return;
+
+            StopMonitoring(); 
+
+            try
+            {
+                var response = await httpClient.GetAsync($@"{webAppUrl}/api/paths");
+                if (!response.IsSuccessStatusCode) return;
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                var pathsToMonitor = JsonSerializer.Deserialize<List<MonitoredPathInfo>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (pathsToMonitor == null) return;
+
+                foreach (var pathInfo in pathsToMonitor)
+                {
+                    try
+                    {
+                        string watchPath = pathInfo.is_directory ? pathInfo.path : Path.GetDirectoryName(pathInfo.path);
+                        if (string.IsNullOrEmpty(watchPath) || !Directory.Exists(watchPath)) continue;
+
+                        var watcher = new FileSystemWatcher(watchPath);
+                        watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+
+                        if (pathInfo.is_directory)
+                        {
+                            watcher.IncludeSubdirectories = pathInfo.recursive;
+                        }
+                        else
+                        {
+                            watcher.Filter = Path.GetFileName(pathInfo.path);
+                            watcher.IncludeSubdirectories = false;
+                        }
+
+                        watcher.Changed += OnFileSystemEvent;
+                        watcher.Created += OnFileSystemEvent;
+                        watcher.Deleted += OnFileSystemEvent;
+                        watcher.Renamed += OnRenamed;
+
+                        watcher.EnableRaisingEvents = true;
+                        fileWatchers.Add(watcher);
+                        watcherInfoMap[watcher] = pathInfo;
+                    }
+                    catch
+                    {
+                        // Silent fail for individual path setup
+                    }
+                }
+                monitoringActive = fileWatchers.Count > 0;
+            }
+            catch
+            {
+                monitoringActive = false;
+            }
+        }
+
+        private void StopMonitoring()
+        {
+            foreach (var watcher in fileWatchers)
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.Dispose();
+            }
+            fileWatchers.Clear();
+            watcherInfoMap.Clear();
+            monitoringActive = false;
+        }
+
+        private void OnFileSystemEvent(object sender, FileSystemEventArgs e)
+        {
+            if (watcherInfoMap.TryGetValue((FileSystemWatcher)sender, out var pathInfo))
+            {
+                LogFileChangeAsync(pathInfo, e.ChangeType.ToString(), e.FullPath);
+            }
+        }
+
+        private void OnRenamed(object sender, RenamedEventArgs e)
+        {
+            if (watcherInfoMap.TryGetValue((FileSystemWatcher)sender, out var pathInfo))
+            {
+                LogFileChangeAsync(pathInfo, "deleted", e.OldFullPath);
+                LogFileChangeAsync(pathInfo, "created", e.FullPath);
+            }
+        }
+
+        private async void LogFileChangeAsync(MonitoredPathInfo pathInfo, string changeType, string fullPath)
+        {
+            long? fileSize = null;
+            CategoryInfo matchedCategory = null;
+            string matchedKeyword = null;
+            
+            try
+            {
+                // Get categories for matching
+                var categories = await GetCategories();
+                
+                if (File.Exists(fullPath))
+                {
+                    var fileInfo = new FileInfo(fullPath);
+                    fileSize = fileInfo.Length;
+                    
+                    // First, check file patterns and filename keywords
+                    string filename = Path.GetFileName(fullPath).ToLower();
+                    string fileExtension = Path.GetExtension(fullPath).ToLower();
+                    
+                    foreach (var category in categories)
+                    {
+                        // Check file patterns
+                        if (category.file_patterns != null)
+                        {
+                            foreach (var pattern in category.file_patterns)
+                            {
+                                try
+                                {
+                                    if (Regex.IsMatch(fullPath, pattern, RegexOptions.IgnoreCase))
+                                    {
+                                        matchedCategory = category;
+                                        matchedKeyword = $"Pattern: {pattern}";
+                                        break;
+                                    }
+                                }
+                                catch { /* Invalid regex pattern */ }
+                            }
+                        }
+                        
+                        if (matchedCategory != null) break;
+                        
+                        // Check keywords in filename
+                        if (category.keywords != null)
+                        {
+                            foreach (var keyword in category.keywords)
+                            {
+                                if (filename.Contains(keyword.ToLower()))
+                                {
+                                    matchedCategory = category;
+                                    matchedKeyword = $"Filename: {keyword}";
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (matchedCategory != null) break;
+                    }
+                    
+                    // If no match yet and content scanning is enabled, scan file contents
+                    if (matchedCategory == null && config.ScanFileContents && 
+                        SCANNABLE_EXTENSIONS.Contains(fileExtension) &&
+                        fileSize < config.MaxFileSizeMB * 1024 * 1024)
+                    {
+                        try
+                        {
+                            // Read file content with appropriate encoding
+                            string content = await ReadFileContentAsync(fullPath);
+                            
+                            if (!string.IsNullOrEmpty(content))
+                            {
+                                string contentLower = content.ToLower();
+                                
+                                foreach (var category in categories)
+                                {
+                                    if (category.keywords != null)
+                                    {
+                                        foreach (var keyword in category.keywords)
+                                        {
+                                            if (contentLower.Contains(keyword.ToLower()))
+                                            {
+                                                matchedCategory = category;
+                                                matchedKeyword = $"Content: {keyword}";
+                                                
+                                                // Find the line containing the keyword for better context
+                                                var lines = content.Split('\n');
+                                                for (int i = 0; i < lines.Length; i++)
+                                                {
+                                                    if (lines[i].ToLower().Contains(keyword.ToLower()))
+                                                    {
+                                                        string contextLine = lines[i].Trim();
+                                                        if (contextLine.Length > 50)
+                                                        {
+                                                            contextLine = contextLine.Substring(0, 47) + "...";
+                                                        }
+                                                        matchedKeyword = $"Content: {keyword} (Line {i + 1}: {contextLine})";
+                                                        break;
+                                                    }
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (matchedCategory != null) break;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error scanning file content for {fullPath}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch { /* Ignore errors if file is gone or inaccessible */ }
+
+            var payload = new
+            {
+                path_id = pathInfo.id,
+                change_type = changeType.ToLower(),
+                file_path = fullPath,
+                timestamp_utc = DateTime.UtcNow.ToString("o"), // ISO 8601 format
+                new_size = fileSize,
+                computer_name = Environment.MachineName,
+                category_id = matchedCategory?.id,
+                matched_keyword = matchedKeyword
+            };
+
+            try
+            {
+                string jsonPayload = JsonSerializer.Serialize(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                
+                await httpClient.PostAsync($@"{webAppUrl}/api/log_event", content);
+            }
+            catch
+            {
+                // Silent fail for event logging
+            }
+        }
+
+        private async Task<string> ReadFileContentAsync(string filePath)
+        {
+            const int MAX_RETRIES = 3;
+            const int RETRY_DELAY_MS = 100;
+            
+            for (int retry = 0; retry < MAX_RETRIES; retry++)
+            {
+                try
+                {
+                    // Try to detect encoding
+                    Encoding encoding = DetectFileEncoding(filePath);
+                    
+                    // Read file with detected encoding
+                    using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var reader = new StreamReader(stream, encoding))
+                    {
+                        return await reader.ReadToEndAsync();
+                    }
+                }
+                catch (IOException) when (retry < MAX_RETRIES - 1)
+                {
+                    // File might be locked, wait and retry
+                    await Task.Delay(RETRY_DELAY_MS);
+                }
+                catch
+                {
+                    // Other errors, return empty
+                    return string.Empty;
+                }
+            }
+            
+            return string.Empty;
+        }
+
+        private Encoding DetectFileEncoding(string filePath)
+        {
+            // Simple encoding detection - check for BOM
+            byte[] buffer = new byte[4];
+            using (var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                file.Read(buffer, 0, 4);
+            }
+            
+            // Check for UTF-8 BOM
+            if (buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
+                return Encoding.UTF8;
+            
+            // Check for UTF-16 LE BOM
+            if (buffer[0] == 0xFF && buffer[1] == 0xFE)
+                return Encoding.Unicode;
+            
+            // Check for UTF-16 BE BOM
+            if (buffer[0] == 0xFE && buffer[1] == 0xFF)
+                return Encoding.BigEndianUnicode;
+            
+            // Default to UTF-8 without BOM (most common for text files)
+            return Encoding.UTF8;
+        }
+        #endregion
+
+        #region Utility Methods
+        private void ToggleStartup()
+        {
+            try
+            {
+                RegistryKey rk = Registry.CurrentUser.OpenSubKey(STARTUP_KEY_PATH, true);
+                if (IsStartupEnabled())
+                {
+                    rk.DeleteValue(APP_NAME, false);
+                }
+                else
+                {
+                    rk.SetValue(APP_NAME, Application.ExecutablePath);
+                }
+            }
+            catch { /* Silently handle registry errors */ }
         }
 
         private bool IsStartupEnabled()
         {
             try
             {
-                using (var key = Registry.CurrentUser.OpenSubKey(STARTUP_KEY_PATH, false))
-                {
-                    return key?.GetValue(APP_NAME) != null;
-                }
+                RegistryKey rk = Registry.CurrentUser.OpenSubKey(STARTUP_KEY_PATH, false);
+                return rk.GetValue(APP_NAME) != null;
             }
-            catch
-            {
-                return false;
-            }
+            catch { return false; }
         }
 
-        private void ToggleStartup()
-        {
-            try
-            {
-                using (var key = Registry.CurrentUser.OpenSubKey(STARTUP_KEY_PATH, true))
-                {
-                    if (IsStartupEnabled())
-                    {
-                        key?.DeleteValue(APP_NAME, false);
-                    }
-                    else
-                    {
-                        string appPath = Application.ExecutablePath;
-                        key?.SetValue(APP_NAME, $"\"{appPath}\"");
-                    }
-                }
-                
-                CreateTrayMenu(); // Refresh menu
-            }
-            catch (Exception)
-            {
-                // Silently handle startup registry errors
-            }
-        }
-
-        private void QuitApplication()
-        {
-            // No confirmation, just exit
-            statusTimer?.Stop();
-            
-            trayIcon.Visible = false;
-            Application.Exit();
-        }
-
-        // Password storage using Windows Data Protection API
         private void StorePassword(string username, string password)
         {
             try
             {
-                byte[] data = Encoding.UTF8.GetBytes(password);
-                byte[] encrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
-                string fileName = $"{username}_pwd.dat";
-                File.WriteAllBytes(fileName, encrypted);
+                byte[] entropy = Encoding.Unicode.GetBytes("FileMonitorSalt");
+                byte[] data = ProtectedData.Protect(Encoding.Unicode.GetBytes(password), entropy, DataProtectionScope.CurrentUser);
+                File.WriteAllBytes($@"{username}.pass", data);
             }
-            catch
-            {
-                // Ignore password storage errors
-            }
+            catch { /* Silently handle password storage errors */ }
         }
 
         private string GetStoredPassword(string username)
         {
             try
             {
-                string fileName = $"{username}_pwd.dat";
-                if (File.Exists(fileName))
-                {
-                    byte[] encrypted = File.ReadAllBytes(fileName);
-                    byte[] data = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
-                    return Encoding.UTF8.GetString(data);
-                }
+                byte[] entropy = Encoding.Unicode.GetBytes("FileMonitorSalt");
+                byte[] data = File.ReadAllBytes($@"{username}.pass");
+                byte[] decrypted = ProtectedData.Unprotect(data, entropy, DataProtectionScope.CurrentUser);
+                return Encoding.Unicode.GetString(decrypted);
             }
-            catch
-            {
-                // Ignore password retrieval errors
-            }
-            return "";
+            catch { return null; }
         }
 
         private void DeleteStoredPassword(string username)
         {
             try
             {
-                string fileName = $"{username}_pwd.dat";
-                if (File.Exists(fileName))
+                if (File.Exists($@"{username}.pass"))
                 {
-                    File.Delete(fileName);
+                    File.Delete($@"{username}.pass");
                 }
             }
-            catch
+            catch { /* Silently handle password deletion errors */ }
+        }
+
+        private Icon CreateDefaultIcon()
+        {
+            try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
+            catch { return SystemIcons.Application; }
+        }
+
+        private Icon CreateOverlayIcon(string overlayType)
+        {
+            Icon baseIcon = CreateDefaultIcon();
+            Bitmap bmp = baseIcon.ToBitmap();
+            using (Graphics g = Graphics.FromImage(bmp))
             {
-                // Ignore deletion errors
+                Brush brush;
+                switch (overlayType)
+                {
+                    case "play":
+                        brush = Brushes.Green;
+                        break;
+                    case "error":
+                        brush = Brushes.Red;
+                        break;
+                    default:
+                        return baseIcon;
+                }
+                g.FillEllipse(brush, new Rectangle(bmp.Width - 10, bmp.Height - 10, 10, 10));
             }
+            return Icon.FromHandle(bmp.GetHicon());
         }
-
-        protected override void SetVisibleCore(bool value)
-        {
-            base.SetVisibleCore(false); // Always keep form hidden
-        }
-
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            e.Cancel = true; // Prevent form from closing, just hide it
-            this.Hide();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                statusTimer?.Stop();
-                statusTimer?.Dispose();
-                trayIcon?.Dispose();
-                trayMenu?.Dispose();
-                httpClient?.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        #endregion
     }
 }

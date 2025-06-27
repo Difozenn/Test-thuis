@@ -1,265 +1,137 @@
 import sys
 import os
+import tkinter as tk
+import importlib
+import threading
+import time
+from urllib.parse import urlparse
+from PIL import Image, ImageTk
 
-# Add the project root to the Python path to allow for absolute imports
-# This makes the script runnable from anywhere.
+# Add the project root to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import importlib # For dependency check
-
-# --- Dependency Check (MUST RUN BEFORE APP IMPORTS) ---
+# --- Dependency Check ---
 REQUIRED_MODULES = {
     "PIL": "Pillow",
     "psutil": "psutil",
     "requests": "requests",
-    "serial.tools.list_ports": "pyserial"  # More specific check for pyserial
+    "serial.tools.list_ports": "pyserial",
+    "pandas": "pandas",
+    "openpyxl": "openpyxl",
+    "pyodbc": "pyodbc"
 }
 
 def check_dependencies():
     missing_for_pip = []
-    missing_module_details = []
-
     for import_name, pip_name in REQUIRED_MODULES.items():
         try:
             importlib.import_module(import_name)
         except ImportError:
             missing_for_pip.append(pip_name)
-            # Adjust message for the specific pyserial check
-            if import_name == "serial.tools.list_ports":
-                missing_module_details.append(f"- {pip_name} (could not import '{import_name}', part of pyserial)")
-            else:
-                missing_module_details.append(f"- {pip_name} (could not import '{import_name}')")
 
     if missing_for_pip:
-        error_message_console = (
-            "Error: Missing required Python packages.\n"
-            "Please install them by running:\n"
-            f"  pip install {' '.join(missing_for_pip)}\n"
-            "Details of missing modules:\n" +
-            "\n".join(missing_module_details)
+        error_message = (
+            "The following required packages are missing:\n\n" +
+            "\n".join(missing_for_pip) +
+            "\n\nPlease install them using pip:\n\n" +
+            f"pip install {' '.join(missing_for_pip)}"
         )
-        print(error_message_console, file=sys.stderr)
-
-        try:
-            # Attempt to show a Tkinter messagebox if Tkinter itself is available
-            # We need to import tkinter here locally for the check, as a top-level import
-            # might fail if tkinter itself is the issue (though less common for this app's deps)
-            import tkinter as tk_dep_check
-            from tkinter import messagebox as messagebox_dep_check
-            root_dep_check = tk_dep_check.Tk()
-            root_dep_check.withdraw() # Hide the main Tk window for the error dialog
-            messagebox_dep_check.showerror(
-                "Dependency Error",
-                "The following required packages are missing or not installed correctly:\n\n" +
-                "\n".join(missing_module_details) +
-                "\n\nPlease install them to run BarcodeMaster.\n"
-                "You can typically install them using pip:\n\n" +
-                f"pip install {' '.join(missing_for_pip)}"
-            )
-            root_dep_check.destroy()
-        except ImportError:
-            # If tkinter import fails (e.g., minimal environment or tkinter not installed),
-            # the console message is the fallback.
-            pass 
+        print("="*60)
+        print("FATAL: MISSING DEPENDENCIES")
+        print(error_message)
+        print("="*60)
         sys.exit(1)
 
-check_dependencies() # Execute the check immediately
-# --- End Dependency Check ---
+# Check dependencies early
+check_dependencies()
 
-# Now proceed with other imports
-import tkinter as tk
-from PIL import Image, ImageTk
-import time
-import psutil # psutil needed for functions below
-import subprocess
-import threading
-# 'sys', 'os', and 'importlib' were already imported for the dependency check
+# --- App Imports (after dependency check) ---
+from gui.app import MainApp, ServiceStatus
+from config_utils import get_config
+from path_utils import get_resource_path
+from database.db_log_api import run_api_server
 
-from BarcodeMaster.gui.app import run as run_main_app, ServiceStatus
-from BarcodeMaster import config_manager
-from BarcodeMaster.config_utils import get_config
-from BarcodeMaster.com_splitter import ComSplitter
-
-# --- Define key paths at module level for robustness ---
-DB_API_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'database', 'db_log_api.py'))
-
-def show_splash(main_tk_root):  # Modified to accept main_tk_root
+def show_splash(main_tk_root):
     splash = tk.Toplevel(main_tk_root)
     splash.overrideredirect(True)
-    # splash.configure(bg='white') # Remove explicit white background for Toplevel
-    # Center splash
     w, h = 400, 400
     ws = splash.winfo_screenwidth()
     hs = splash.winfo_screenheight()
     x = (ws // 2) - (w // 2)
     y = (hs // 2) - (h // 2)
     splash.geometry(f"{w}x{h}+{x}+{y}")
-    # Load logo
-    logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
-    pil_img = Image.open(logo_path).resize((400, 400), Image.LANCZOS) # Resize to fill 400x400 splash window
-    img = ImageTk.PhotoImage(pil_img)
-    # Set borderwidth and highlightthickness to 0 for the label
-    # Also, remove explicit bg='white' from label to let image transparency work if OS supports
-    label = tk.Label(splash, image=img, borderwidth=0, highlightthickness=0)
-    label.image = img
-    label.pack(expand=True)
+    try:
+        logo_path = get_resource_path("assets/Logo.png")
+        pil_img = Image.open(logo_path).resize((w, h), Image.LANCZOS)
+        img = ImageTk.PhotoImage(pil_img)
+        label = tk.Label(splash, image=img, borderwidth=0, highlightthickness=0)
+        label.image = img
+        label.pack(expand=True)
+    except FileNotFoundError:
+        label = tk.Label(splash, text="BarcodeMaster", font=("Arial", 24))
+        label.pack(expand=True, padx=20, pady=20)
+    
+    splash.update()
+    return splash
 
-    splash.update_idletasks()  # Process geometry and other idle tasks
-    splash.update()          # Force redraw of the splash screen
-
-    splash.after(3000, splash.destroy) # Schedule splash destruction (3 seconds)
-    main_tk_root.after(3010, main_tk_root.deiconify) # Schedule main window to appear after splash
-
-def is_db_log_api_running():
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        try:
-            cmdline = proc.info['cmdline']
-            if cmdline and 'db_log_api.py' in ' '.join(cmdline):
-                return True
-        except Exception:
-            continue
-    return False
-
-def start_db_log_api():
-    python_exe = sys.executable
-    log_dir = os.path.join(os.path.dirname(__file__), 'database')
-    log_file_path = os.path.join(log_dir, 'db_log_api.log')
-
-    # Ensure the log directory exists
-    os.makedirs(log_dir, exist_ok=True)
-
-    # Open the log file in append mode
-    log_file = open(log_file_path, 'a')
-
-    # Use the globally defined DB_API_PATH
-    subprocess.Popen([python_exe, DB_API_PATH], cwd=os.path.dirname(DB_API_PATH), stdout=log_file, stderr=log_file)
-
-def manage_services(service_status):
-    """Checks config, starts background services, and updates their status."""
-    print("Starting service management thread...")
-    # Get configs
-    from BarcodeMaster.config_utils import get_config
+def start_db_api_thread():
     config = get_config()
-    start_db, start_splitter = config_manager.get_startup_settings()
+    if not config.get('database_enabled', True):
+        print("Database is disabled in config. API server will not start.")
+        return None
 
-    # --- Manage DB API ---
-    if start_db:
-        if not is_db_log_api_running():
-            print("Service Manager: Starting Database API...")
-            service_status.services['db_api'] = 'STARTING'
-            start_db_log_api()
-            time.sleep(2) # Give it time to initialize
-            if is_db_log_api_running():
-                print("Service Manager: Database API is RUNNING.")
-                service_status.services['db_api'] = 'RUNNING'
-            else:
-                print("Service Manager: Database API FAILED to start.")
-                service_status.services['db_api'] = 'FAILED'
-        else:
-            print("Service Manager: Database API was already running.")
-            service_status.services['db_api'] = 'RUNNING'
-    else:
-        print("Service Manager: Database API is DISABLED.")
-        service_status.services['db_api'] = 'DISABLED'
+    api_url = config.get('api_url', 'http://localhost:5001/log')
+    port = 5001  # Default port
+    try:
+        parsed_url = urlparse(api_url)
+        if parsed_url.port:
+            port = parsed_url.port
+    except Exception as e:
+        print(f"Could not parse port from api_url: {e}. Falling back to default port {port}.")
 
-
-    # --- Manage COM Splitter ---
-    if start_splitter:
-        print("Service Manager: Starting COM Splitter...")
-        cfg = get_config()
-        splitter_config = {
-            'physical_port': cfg.get('splitter_physical_port'),
-            'virtual_port_1': cfg.get('splitter_virtual_port_1'),
-            'virtual_port_2': cfg.get('splitter_virtual_port_2'),
-            'baud_rate': int(cfg.get('splitter_baud_rate', 9600))
-        }
-        # Ensure essential port configs are present
-        if splitter_config['physical_port'] and splitter_config['virtual_port_1'] and splitter_config['virtual_port_2']:
-            splitter = ComSplitter(splitter_config, lambda msg: print(f"[ComSplitter Startup] {msg}"))
-            splitter.start()
-            service_status.services['splitter'] = splitter
-            service_status.services['splitter_status'] = 'RUNNING'
-        else:
-            print("COM Splitter startup skipped: configuration is incomplete.")
-            service_status.services['splitter_status'] = 'CONFIG_INCOMPLETE'
-    else:
-        service_status.services['splitter_status'] = 'DISABLED'
-
+    api_thread = threading.Thread(target=run_api_server, kwargs={'port': port}, daemon=True)
+    api_thread.start()
+    print(f"Database API thread started on port {port}.")
+    return api_thread
 
 def main():
-    # 1. Initialize service status and get config
-    service_status = ServiceStatus()
-    config = get_config()
-    start_db, start_splitter = config_manager.get_startup_settings()
-
-    # 2. Create and hide the main Tkinter window
+    # Create root window but keep it hidden initially
     root = tk.Tk()
     root.withdraw()
+    
+    splash = show_splash(root)
+    
+    # Start DB API in background
+    db_api_thread = start_db_api_thread()
 
-    # 3. Show the splash screen. It's non-blocking.
-    show_splash(root)
-
-    # 4. Start background services in a separate thread if enabled
-    if start_db or start_splitter:
-        service_thread = threading.Thread(target=manage_services, args=(service_status,), daemon=True)
-        service_thread.start()
-        print("Main thread: Service management thread started.")
+    # Prepare service status
+    service_status = ServiceStatus()
+    if db_api_thread:
+        service_status.db_api_status = "Starting..."
     else:
-        print("Main thread: Background services disabled.")
+        service_status.db_api_status = "Disabled"
+    service_status.com_splitter_status = "Managed in-app"
 
-    # 5. Run the main application, which contains the mainloop.
-    #    The main window will be shown by the splash screen logic.
-    run_main_app(service_status, root)
-
-import atexit
-
-def terminate_db_on_exit():
-    from BarcodeMaster.config_utils import get_config
-    import psutil
-    import sys
-    import time
-    config = get_config()
-    print("[main.py] terminate_db_on_exit called")
-    if config.get('admin_terminate_db_on_exit', False):
-        found = False
-        for p in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                if p.info['cmdline'] and any('db_log_api.py' in str(arg) for arg in p.info['cmdline']):
-                    print(f"  Found db_log_api.py process: PID={p.pid} CMD={p.info['cmdline']}")
-                    found = True
-                    p.terminate()
-                    try:
-                        p.wait(timeout=3)
-                        print(f"  Process {p.pid} terminated with terminate().")
-                    except psutil.TimeoutExpired:
-                        print(f"  Process {p.pid} did not terminate, killing...")
-                        p.kill()
-                        print(f"  Process {p.pid} killed.")
-            except Exception as e:
-                print(f"  Exception while terminating process: {e}")
-        if not found:
-            print("  No db_log_api.py process found.")
-    else:
-        print("  admin_terminate_db_on_exit is False; not terminating database.")
-    # Clear the database log file
-    import os, sys
-    try:
-        base_dir = os.path.dirname(__file__)
-    except NameError:
-        base_dir = os.path.dirname(sys.argv[0]) if sys.argv[0] else os.getcwd()
-    log_path = os.path.join(base_dir, 'database', 'db_log_api.log')
-    if os.path.exists(log_path):
-        try:
-            with open(log_path, 'w', encoding='utf-8') as f:
-                f.truncate(0)
-            print(f"[main.py] Cleared database log file: {log_path}")
-        except Exception as e:
-            print(f"[main.py] Failed to clear database log file: {e}")
-    print("[main.py] Exit cleanup complete.")
-
-atexit.register(terminate_db_on_exit)
+    root.update()
+    
+    # Launch main app after splash screen
+    def launch_main_app():
+        if splash:
+            splash.destroy()
+        
+        # Configure the root window
+        root.title("BarcodeMaster")
+        root.geometry("800x600")
+        root.deiconify()  # Show the main window
+        
+        # Create the main app
+        app = MainApp(root, service_status=service_status)
+        app.pack(side="top", fill="both", expand=True)
+    
+    root.after(3000, launch_main_app)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()

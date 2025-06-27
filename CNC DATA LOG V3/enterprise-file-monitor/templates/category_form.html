@@ -59,7 +59,7 @@
                         {% endfor %}
                     {% endif %}
                     <div class="input-group mb-2">
-                        <input type="text" class="form-control" name="patterns[]" placeholder="{{ t('eg_log') }}">
+                        <input type="text" class="form-control" name="patterns[]" placeholder="e.g., .*\.log$ or .*\.txt$">
                         <button type="button" class="btn btn-outline-danger remove-field">{{ t('remove') }}</button>
                     </div>
                 </div>
@@ -88,20 +88,26 @@
             <button type="button" class="btn btn-outline-danger remove-field">{{ t('remove') }}</button>
         `;
         container.appendChild(div);
+        
+        // Add event listener to the new remove button
+        div.querySelector('.remove-field').addEventListener('click', function() {
+            div.remove();
+        });
     }
     
-    document.getElementById('add-keyword').addEventListener('click', () => {
+    document.getElementById('add-keyword').addEventListener('click', function() {
         addField('keywords-container', 'keywords[]', 'Enter keyword');
     });
     
-    document.getElementById('add-pattern').addEventListener('click', () => {
-        addField('patterns-container', 'patterns[]', 'e.g., .*\\.log);
+    document.getElementById('add-pattern').addEventListener('click', function() {
+        addField('patterns-container', 'patterns[]', 'e.g., .*\\.nc$ or .*\\.gcode$');
     });
     
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-field')) {
-            e.target.parentElement.remove();
-        }
+    // Add event listeners to existing remove buttons
+    document.querySelectorAll('.remove-field').forEach(button => {
+        button.addEventListener('click', function() {
+            this.parentElement.remove();
+        });
     });
 </script>
 {% endblock %}

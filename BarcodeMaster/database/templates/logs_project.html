@@ -1,379 +1,1982 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BarcodeMaster - Logs for {{ project }}</title>
-    <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --header-bg: #ffffff;
-            --table-bg: #ffffff;
-            --font-color: #212529;
-            --border-color: #dee2e6;
-            --header-color: #343a40;
-            --link-color: #007bff;
-            --hover-bg: #f1f3f5;
-            --event-scan-bg: #e7f5ff;
-            --event-afgemeld-bg: #fff4e6;
-            --event-error-bg: #ffe3e3;
-            --event-info-bg: #e6f7ff;
-            --admin-button-bg: #dc3545;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--font-color);
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1600px;
-            margin: auto;
-            background-color: var(--header-bg);
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-        header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        header h1 {
-            margin: 0;
-            color: var(--header-color);
-            font-size: 24px;
-        }
-        header a {
-            color: var(--link-color);
-            text-decoration: none;
-            font-size: 16px;
-        }
-        header a:hover { text-decoration: underline; }
-        .user-status-container {
-            padding: 20px;
-            margin-top: 0;
-        }
-        a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .card {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-        }
-        thead th .sort-icon { 
-            display: inline-block; 
-            width: 16px; 
-            height: 16px; 
-            margin-left: 5px; 
-            opacity: 0.4;
-            vertical-align: middle;
-        }
-        thead th.sort-asc .sort-icon { opacity: 1; transform: rotate(180deg); }
-        thead th.sort-desc .sort-icon { opacity: 1; }
-        tbody tr:hover {
-            background-color: var(--hover-bg);
-        }
-        .controls {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .controls input[type="text"] {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .controls label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        #adminToggle {
-            padding: 8px 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-        }
-        #adminToggle.active {
-            background-color: #e74c3c;
-            color: white;
-            border-color: #c0392b;
-        }
-        .action-button {
-            background: none;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            display: none; /* Hidden by default */
-        }
-        .action-button:hover { background-color: #e9ecef; }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        .status-open { color: #27ae60; font-weight: bold; }
-        .status-afgemeld { color: #e74c3c; font-weight: bold; }
+{% extends "base.html" %}
 
-        .main-header {
-            background-image: url('/static/header.png');
-            background-repeat: no-repeat;
-            background-position: left center;
-            background-size: auto 100%;
-            background-color: #0071b4;
-            padding: 40px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            position: relative;
-            text-align: right;
-        }
-        .search-form {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .search-form label {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .search-form input[type="text"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 250px;
-        }
-        .search-form button {
-            padding: 8px 15px;
-            border: none;
-            background-color: #3498db;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .search-form button:hover {
-            background-color: #2980b9;
-        }
-    </style>
-</head>
-<body>
-    <div class="main-header">
-        <form action="/logs_project" method="GET" class="search-form">
-            <label for="project_search">Zoek project:</label>
-            <input type="text" id="project_search" name="project" placeholder="Typ om project te zoeken..." required list="project-list">
-            <datalist id="project-list">
-                {% for proj in all_projects %}
-                <option value="{{ proj }}">
-                {% endfor %}
-            </datalist>
-            <button type="submit">Zoek</button>
-        </form>
+{% block title %}BarcodeMaster - Project {{ project }} Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js Data Labels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+{% endblock %}
+
+{% block extra_styles %}
+/* Project-specific styles */
+.project-header {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.project-code {
+    background-color: var(--secondary-blue);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    display: inline-block;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--secondary-blue);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.metric-card:hover::before {
+    transform: scaleX(1);
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.metric-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--dark-blue);
+    margin-bottom: 5px;
+}
+
+.metric-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.metric-change {
+    font-size: 0.75rem;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.change-positive {
+    color: var(--success-color);
+}
+
+.change-negative {
+    color: var(--danger-color);
+}
+
+/* Enhanced table */
+.table thead th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.table thead th:hover {
+    background-color: #e9ecef;
+}
+
+/* Control panel */
+.control-panel {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.filter-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-input {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.filter-input i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.filter-input input {
+    padding-left: 45px;
+    width: 100%;
+}
+
+/* Unified Workflow Chain Visualization */
+.workflow-chain {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.chain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.chain-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 20px 0;
+}
+
+.chain-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.chain-step-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 2rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.chain-step.completed .chain-step-icon {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.chain-step.active .chain-step-icon {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.chain-step.processing .chain-step-icon {
+    background: var(--info-color);
+    border-color: var(--info-color);
+    color: white;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(249, 171, 0, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(249, 171, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 171, 0, 0); }
+}
+
+.chain-step-label {
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 5px;
+}
+
+.chain-step-user {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.chain-step-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.chain-connection {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border-color);
+    z-index: 1;
+}
+
+.chain-connection::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--success-color);
+    width: var(--progress, 0%);
+    transition: width 0.5s ease;
+}
+
+/* Prediction Box */
+.prediction-box {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #90caf9;
+}
+
+.prediction-time {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--info-color);
+}
+
+.prediction-confidence {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.confidence-high {
+    background-color: rgba(30, 142, 62, 0.1);
+    color: var(--success-color);
+}
+
+.confidence-medium {
+    background-color: rgba(249, 171, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.confidence-low {
+    background-color: rgba(217, 48, 37, 0.1);
+    color: var(--danger-color);
+}
+
+/* User Performance Cards */
+.user-performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.user-perf-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.user-perf-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.user-perf-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--secondary-blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-perf-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.perf-stat {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.perf-stat-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--dark-blue);
+}
+
+.perf-stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Activity Timeline */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--secondary-blue);
+}
+
+.timeline-item.success::before {
+    background: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.timeline-item.warning::before {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+.timeline-item.danger::before {
+    background: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* Status badges */
+.status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge i {
+    font-size: 0.75rem;
+}
+
+/* OPEN - Active project (Yellow/Gold) */
+.status-open {
+    background-color: rgba(241, 196, 15, 0.1);  /* Light yellow background */
+    color: #f39c12;  /* Gold text */
+}
+
+/* AFGEMELD - Completed (Green) */
+.status-afgemeld,
+.status-closed {
+    background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
+    color: #27ae60;  /* Green text */
+}
+
+/* Sort indicators */
+.sort-icon {
+    opacity: 0.3;
+    transition: all 0.3s ease;
+    margin-left: 5px;
+    font-size: 0.8rem;
+}
+
+th.sort-asc .sort-icon,
+th.sort-desc .sort-icon {
+    opacity: 1;
+}
+
+th.sort-asc .sort-icon {
+    transform: rotate(180deg);
+}
+
+/* View containers */
+.view-container {
+    min-height: 300px;
+}
+
+/* Chart container styles */
+.chart-container {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    height: 100%;
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.chart-container h3 {
+    color: var(--dark-blue);
+    border-bottom: 2px solid var(--secondary-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.analytics-section h3 {
+    color: var(--dark-blue);
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .filter-group {
+        flex-direction: column;
+    }
+
+    .filter-input {
+        width: 100%;
+    }
+    
+    .chain-container {
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .chain-connection {
+        display: none;
+    }
+}
+
+/* Hide columns on mobile */
+@media (max-width: 576px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>Project Dashboard - {{ project }}</h1>
+    <p>Real-time monitoring en beheer van project activiteiten</p>
+</div>
+
+<!-- Enhanced Project Header -->
+<div class="project-header">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <span class="project-code">{{ project }}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i> Vernieuwen
+            </button>
+            <button class="btn btn-outline-primary" onclick="printReport()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <button class="btn btn-primary" onclick="exportProjectData()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
     </div>
-    <div class="container">
-        <div class="header">
-            <h1>Logs voor Project: <strong>{{ project }}</strong></h1>
-            <a href="/logs_html">&larr; Terug naar alle logs</a>
-        </div>
+</div>
 
-        <div class="card">
-            <h2>Gebruikersstatus</h2>
-            {{ user_status_html | safe }}
+<!-- Unified Workflow Chain Visualization -->
+<div class="workflow-chain">
+    <div class="chain-header">
+        <h3 class="mb-0"><i class="fas fa-sitemap"></i> Workflow Status</h3>
+        <div id="overall-status">
+            <!-- Will be populated by JavaScript -->
         </div>
-
-        <div class="card">
-            <h2>Event Log</h2>
-            <div class="controls">
-                <input type="text" id="filterInput" placeholder="Filter logs op event, gebruiker, details, etc...">
-                <label>
-                    <input type="checkbox" id="autoRefresh">
-                    Auto-refresh (5s)
-                </label>
-                <button id="adminToggle">ADMIN</button>
+    </div>
+    <div class="chain-container" id="workflowChain">
+        <div class="chain-connection" style="--progress: 0%;"></div>
+        
+        <div class="chain-step" id="step-started" data-step="start">
+            <div class="chain-step-icon">
+                <i class="fas fa-play"></i>
             </div>
-            <table>
-                <thead id="log-table-head">
-                    <tr>
-                        <th data-column="id">ID <span class="sort-icon">&#9660;</span></th>
-                        <th data-column="timestamp">Tijdstip <span class="sort-icon">&#9660;</span></th>
-                        <th data-column="event">Event <span class="sort-icon">&#9660;</span></th>
-                        <th data-column="user">Gebruiker <span class="sort-icon">&#9660;</span></th>
-                        <th data-column="details">Details <span class="sort-icon">&#9660;</span></th>
-                        <th data-column="status">Status <span class="sort-icon">&#9660;</span></th>
-                        <th>Acties</th>
-                    </tr>
-                </thead>
-                <tbody id="log-table-body">
-                    <!-- Log rows will be injected here by JavaScript -->
-                </tbody>
-            </table>
+            <div class="chain-step-label">Gestart</div>
+            <div class="chain-step-user">-</div>
+            <div class="chain-step-time">-</div>
+        </div>
+        
+        <div class="chain-step" id="step-nesting" data-step="nesting">
+            <div class="chain-step-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="chain-step-label">NESTING</div>
+            <div class="chain-step-user">In afwachting</div>
+            <div class="chain-step-time">-</div>
+        </div>
+        
+        <div class="chain-step" id="step-opus" data-step="opus">
+            <div class="chain-step-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="chain-step-label">OPUS</div>
+            <div class="chain-step-user">In afwachting</div>
+            <div class="chain-step-time">-</div>
+        </div>
+        
+        <div class="chain-step" id="step-gannomat" data-step="gannomat">
+            <div class="chain-step-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="chain-step-label">KL GANNOMAT</div>
+            <div class="chain-step-user">In afwachting</div>
+            <div class="chain-step-time">-</div>
+        </div>
+        
+        <div class="chain-step" id="step-completed" data-step="completed">
+            <div class="chain-step-icon">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="chain-step-label">Afgerond</div>
+            <div class="chain-step-user">-</div>
+            <div class="chain-step-time">-</div>
         </div>
     </div>
+</div>
 
-    <script>
-        let logData = {{ log_entries | tojson | safe }};
-        let currentSort = { 'column': 'id', 'order': 'desc' };
-        let adminMode = false;
-        let refreshInterval;
+<!-- Prediction Box (shown when project is active) -->
+<div class="prediction-box" id="predictionBox" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-2">Verwachte Voltooiingstijd</h5>
+            <div class="prediction-time" id="predictedTime">--</div>
+            <small class="text-muted">Gebaseerd op historische data van vergelijkbare projecten</small>
+        </div>
+        <div class="text-end">
+            <div class="mb-2">Betrouwbaarheid</div>
+            <span class="prediction-confidence" id="confidenceScore">--</span>
+        </div>
+    </div>
+</div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTable(logData);
+<!-- Real-time Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="metric-value" id="total-events">0</div>
+        <div class="metric-label">Totaal Events</div>
+        <div class="metric-change" id="events-change">--</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="metric-value" id="active-users">0</div>
+        <div class="metric-label">Actieve Gebruikers</div>
+        <div class="metric-change" id="users-status">--</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="metric-value" id="processing-time">0m</div>
+        <div class="metric-label">Verwerkingstijd</div>
+        <div class="metric-change" id="time-change">--</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(217, 48, 37, 0.1); color: var(--danger-color);">
+            <i class="fas fa-box"></i>
+        </div>
+        <div class="metric-value" id="item-count">0</div>
+        <div class="metric-label">Items Verwerkt</div>
+        <div class="metric-change" id="items-rate">--</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(52, 152, 219, 0.1); color: var(--secondary-blue);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="metric-value" id="efficiency">--</div>
+        <div class="metric-label">Efficiency Score</div>
+        <div class="metric-change" id="efficiency-trend">--</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon" style="background-color: rgba(155, 89, 182, 0.1); color: #9b59b6;">
+            <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <div class="metric-value" id="throughput">--</div>
+        <div class="metric-label">Throughput</div>
+        <div class="metric-change" id="throughput-unit">items/uur</div>
+    </div>
+</div>
 
-            document.getElementById('filterInput').addEventListener('keyup', () => renderTable(logData));
-            
-            document.getElementById('autoRefresh').addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    refreshInterval = setInterval(() => location.reload(), 5000);
-                } else {
-                    clearInterval(refreshInterval);
-                }
-            });
-            
-            document.querySelectorAll('#log-table-head th[data-column]').forEach(th => {
-                th.addEventListener('click', () => {
-                    const column = th.dataset.column;
-                    const order = (currentSort.column === column && currentSort.order === 'asc') ? 'desc' : 'asc';
-                    currentSort = { 'column': column, 'order': order };
+<!-- User Performance Analysis -->
+<div class="analytics-section">
+    <h3><i class="fas fa-users"></i> Gebruikers Performance Analyse</h3>
+    <div class="user-performance-grid" id="userPerformanceGrid">
+        <!-- User performance cards will be dynamically populated -->
+    </div>
+</div>
+
+<!-- Analytics Charts -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h3>Verwerkingssnelheid per Gebruiker</h3>
+            <div style="position: relative; height: 300px;">
+                <canvas id="speedChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h3>Items Distributie</h3>
+            <div style="position: relative; height: 300px;">
+                <canvas id="itemsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Timeline -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <!-- Event Log Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>
+                    <span><i class="fas fa-list-alt"></i> Event Log</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active" onclick="setView('table')">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="setView('cards')">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="setView('timeline')">
+                            <i class="fas fa-stream"></i>
+                        </button>
+                    </div>
+                </h2>
+            </div>
+            <div class="card-body">
+                <!-- Control Panel -->
+                <div class="control-panel">
+                    <div class="filter-group">
+                        <div class="filter-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="filterInput" 
+                                   placeholder="Zoek in logs..." 
+                                   class="form-control">
+                        </div>
+                        
+                        <select class="form-select" id="eventTypeFilter" style="width: 200px;">
+                            <option value="">Alle Events</option>
+                            <option value="scan">Scan</option>
+                            <option value="afgemeld">Afgemeld</option>
+                            <option value="error">Error</option>
+                            <option value="info">Info</option>
+                        </select>
+                        
+                        <select class="form-select" id="userFilter" style="width: 200px;">
+                            <option value="">Alle Gebruikers</option>
+                            {% for user in users|default([]) %}
+                            <option value="{{ user }}">{{ user }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <button id="adminToggle" class="btn btn-danger">
+                            <i class="fas fa-user-shield"></i> ADMIN
+                        </button>
+                    </div>
                     
-                    document.querySelectorAll('#log-table-head th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-                    th.classList.add(order === 'asc' ? 'sort-asc' : 'sort-desc');
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            <span id="record-count">0</span> records gevonden
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" onclick="exportTableData('csv')">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="exportTableData('excel')">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                    renderTable(logData);
-                });
+                <!-- Table View -->
+                <div id="table-view" class="view-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="event-log-table">
+                            <thead id="log-table-head">
+                                <tr>
+                                    <th data-column="id">
+                                        ID <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th data-column="timestamp">
+                                        Tijdstip <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th data-column="event">
+                                        Event <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th data-column="user">
+                                        Gebruiker <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th data-column="details">
+                                        Details
+                                    </th>
+                                    <th data-column="status">
+                                        Status <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th data-column="item_count">
+                                        Items <span class="sort-icon">▼</span>
+                                    </th>
+                                    <th>Acties</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-table-body">
+                                <!-- Log rows will be injected here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cards View (hidden by default) -->
+                <div id="cards-view" class="view-container" style="display: none;">
+                    <div class="row" id="cards-container">
+                        <!-- Cards will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Timeline View (hidden by default) -->
+                <div id="timeline-view" class="view-container" style="display: none;">
+                    <div class="timeline" id="timeline-container">
+                        <!-- Timeline items will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Log pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(-1)">
+                                <i class="fas fa-chevron-left"></i> Vorige
+                            </a>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link" id="current-page">1</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(1)">
+                                Volgende <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Real-time Activity Feed -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <span><i class="fas fa-stream"></i> Live Activiteit</span>
+                    <span class="badge bg-danger" id="liveIndicator">
+                        <i class="fas fa-circle"></i> LIVE
+                    </span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="timeline" id="activityTimeline" style="max-height: 600px; overflow-y: auto; padding: 20px;">
+                    <!-- Timeline items will be dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bevestig Verwijdering</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Weet je zeker dat je log ID #<span id="delete-log-id"></span> wilt verwijderen?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Deze actie kan niet ongedaan worden gemaakt.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Verwijderen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enhanced JavaScript with comprehensive metrics and real-time updates
+let logData = {{ log_entries | tojson | safe }};
+let filteredData = [...logData];
+let currentSort = { 'column': 'id', 'order': 'desc' };
+let adminMode = false;
+let currentView = 'table';
+let currentPage = 1;
+const itemsPerPage = 20;
+let deleteTargetId = null;
+let charts = {};
+let metricsData = null;
+let refreshInterval = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    setupEventListeners();
+    loadAllMetrics();
+    updateWorkflowStatus();
+    startRealTimeUpdates();
+});
+
+function initializeApp() {
+    renderCurrentView();
+    updateBasicMetrics();
+    updateRecordCount();
+}
+
+async function loadAllMetrics() {
+    try {
+        // Load multiple metrics in parallel
+        const [
+            expectedCompletion,
+            userPerformance,
+            workflowChain
+        ] = await Promise.all([
+            fetch('/api/metrics/expected_completion/{{ project }}').then(r => r.json()),
+            fetch('/api/metrics/project_completion_times').then(r => r.json()),
+            fetch('/api/metrics/workflow_chain').then(r => r.json())
+        ]);
+
+        // Process and display metrics
+        if (expectedCompletion.success && !expectedCompletion.error) {
+            displayPrediction(expectedCompletion);
+        }
+
+        if (userPerformance.success) {
+            displayUserPerformance(userPerformance.metrics);
+        }
+
+        if (workflowChain.success) {
+            // Workflow chain is already displayed in updateWorkflowStatus
+        }
+
+        // Initialize charts with data
+        initializeCharts();
+        
+    } catch (error) {
+        console.error('Error loading metrics:', error);
+    }
+}
+
+function displayPrediction(data) {
+    if (data.status === 'completed' || !data.expected_completion_time) {
+        document.getElementById('predictionBox').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('predictionBox').style.display = 'block';
+    document.getElementById('predictedTime').textContent = data.expected_completion_time;
+    
+    const confidenceElement = document.getElementById('confidenceScore');
+    confidenceElement.textContent = data.confidence + '% zekerheid';
+    
+    // Update confidence class
+    confidenceElement.classList.remove('confidence-high', 'confidence-medium', 'confidence-low');
+    if (data.confidence >= 80) {
+        confidenceElement.classList.add('confidence-high');
+    } else if (data.confidence >= 60) {
+        confidenceElement.classList.add('confidence-medium');
+    } else {
+        confidenceElement.classList.add('confidence-low');
+    }
+
+    // Update efficiency if available
+    if (data.current_user_performance && data.current_user_performance.efficiency) {
+        const efficiency = Math.round(data.current_user_performance.efficiency * 100);
+        document.getElementById('efficiency').textContent = efficiency + '%';
+        updateEfficiencyTrend(efficiency);
+    }
+}
+
+function displayUserPerformance(metrics) {
+    const grid = document.getElementById('userPerformanceGrid');
+    const projectUsers = new Set(logData.map(log => log.user).filter(Boolean));
+    
+    let performanceHTML = '';
+    
+    projectUsers.forEach(user => {
+        const userMetric = metrics.find(m => m.user === user) || {};
+        const userLogs = logData.filter(log => log.user === user);
+        const userItems = userLogs.reduce((sum, log) => sum + (log.item_count || 0), 0);
+        
+        performanceHTML += '<div class="user-perf-card">' +
+            '<div class="user-perf-header">' +
+                '<div class="user-perf-avatar">' + getInitials(user) + '</div>' +
+                '<div>' +
+                    '<h5 class="mb-0">' + user + '</h5>' +
+                    '<small class="text-muted">' + userLogs.length + ' events</small>' +
+                '</div>' +
+            '</div>' +
+            '<div class="user-perf-stats">' +
+                '<div class="perf-stat">' +
+                    '<div class="perf-stat-value">' + userItems + '</div>' +
+                    '<div class="perf-stat-label">Items</div>' +
+                '</div>' +
+                '<div class="perf-stat">' +
+                    '<div class="perf-stat-value">' + calculateUserTime(user) + '</div>' +
+                    '<div class="perf-stat-label">Tijd</div>' +
+                '</div>' +
+                '<div class="perf-stat">' +
+                    '<div class="perf-stat-value">' + (userMetric.avg_time || '--') + '</div>' +
+                    '<div class="perf-stat-label">Gem. Tijd</div>' +
+                '</div>' +
+                '<div class="perf-stat">' +
+                    '<div class="perf-stat-value">' + (userMetric.consistency || '--') + '</div>' +
+                    '<div class="perf-stat-label">Consistentie</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    });
+    
+    grid.innerHTML = performanceHTML || '<p class="text-center text-muted">Geen gebruikersdata beschikbaar</p>';
+}
+
+function updateWorkflowStatus() {
+    // Get unique users and their activities
+    const userActivities = {};
+    const workflowOrder = ['NESTING', 'OPUS', 'KL GANNOMAT'];
+    
+    logData.forEach(log => {
+        if (log.user && log.status) {
+            if (!userActivities[log.user]) {
+                userActivities[log.user] = [];
+            }
+            userActivities[log.user].push({
+                status: log.status,
+                timestamp: new Date(log.timestamp),
+                items: log.item_count || 0
             });
+        }
+    });
+    
+    // Sort activities by timestamp for each user
+    Object.keys(userActivities).forEach(user => {
+        userActivities[user].sort((a, b) => a.timestamp - b.timestamp);
+    });
+    
+    // Update workflow steps
+    let lastCompletedIndex = -1;
+    let currentActiveUser = null;
+    let isProjectCompleted = false;
+    
+    // Check if project has started
+    const hasStarted = logData.some(log => log.status === 'OPEN');
+    if (hasStarted) {
+        document.getElementById('step-started').classList.add('completed');
+        const startLog = logData.find(log => log.status === 'OPEN');
+        if (startLog) {
+            document.querySelector('#step-started .chain-step-time').textContent = 
+                formatTimestamp(startLog.timestamp);
+        }
+    }
+    
+    // Update each user step
+    workflowOrder.forEach((user, index) => {
+        const stepId = 'step-' + user.toLowerCase().replace(/ /g, '-');
+        const stepElement = document.getElementById(stepId);
+        
+        if (userActivities[user]) {
+            const activities = userActivities[user];
+            const hasOpen = activities.some(a => a.status === 'OPEN');
+            const hasCompleted = activities.some(a => a.status === 'AFGEMELD' || a.status === 'CLOSED');
+            
+            if (hasCompleted) {
+                stepElement.classList.add('completed');
+                stepElement.querySelector('.chain-step-user').textContent = 'Voltooid';
+                const completedActivity = activities.find(a => a.status === 'AFGEMELD' || a.status === 'CLOSED');
+                if (completedActivity) {
+                    stepElement.querySelector('.chain-step-time').textContent = 
+                        formatTimestamp(completedActivity.timestamp);
+                }
+                lastCompletedIndex = index;
+            } else if (hasOpen) {
+                stepElement.classList.add('active');
+                stepElement.querySelector('.chain-step-user').textContent = 'Bezig';
+                const openActivity = activities.find(a => a.status === 'OPEN');
+                if (openActivity) {
+                    stepElement.querySelector('.chain-step-time').textContent = 
+                        formatTimestamp(openActivity.timestamp);
+                }
+                currentActiveUser = user;
+            }
+            
+            // Update items count if available
+            const totalItems = activities.reduce((sum, a) => sum + a.items, 0);
+            if (totalItems > 0) {
+                const timeElement = stepElement.querySelector('.chain-step-time');
+                timeElement.innerHTML += '<br><small>' + totalItems + ' items</small>';
+            }
+        }
+    });
+    
+    // Check if all users have completed
+    const allCompleted = workflowOrder.every(user => 
+        userActivities[user] && userActivities[user].some(a => 
+            a.status === 'AFGEMELD' || a.status === 'CLOSED'
+        )
+    );
+    
+    if (allCompleted) {
+        document.getElementById('step-completed').classList.add('completed');
+        isProjectCompleted = true;
+        
+        // Calculate total project time
+        const firstLog = logData.find(log => log.status === 'OPEN');
+        const lastLog = [...logData].reverse().find(log => 
+            log.status === 'AFGEMELD' || log.status === 'CLOSED'
+        );
+        
+        if (firstLog && lastLog) {
+            const totalTime = calculateDuration(firstLog.timestamp, lastLog.timestamp);
+            document.querySelector('#step-completed .chain-step-time').textContent = 
+                'Totaal: ' + totalTime;
+        }
+    }
+    
+    // Update progress bar
+    const totalSteps = workflowOrder.length + 2; // Start + Users + Complete
+    const completedSteps = (hasStarted ? 1 : 0) + lastCompletedIndex + 1 + (isProjectCompleted ? 1 : 0);
+    const progress = (completedSteps / totalSteps) * 100;
+    document.querySelector('.chain-connection').style.setProperty('--progress', progress + '%');
+    
+    // Update overall status
+    const statusElement = document.getElementById('overall-status');
+    if (isProjectCompleted) {
+        statusElement.innerHTML = '<span class="badge bg-success">Project Afgerond</span>';
+    } else if (currentActiveUser) {
+        statusElement.innerHTML = '<span class="badge bg-warning">In Behandeling - ' + currentActiveUser + '</span>';
+    } else if (hasStarted) {
+        statusElement.innerHTML = '<span class="badge bg-info">Gestart - Wacht op verwerking</span>';
+    } else {
+        statusElement.innerHTML = '<span class="badge bg-secondary">Niet Gestart</span>';
+    }
+}
 
-            const adminButton = document.getElementById('adminToggle');
-            if (adminButton) {
-                adminButton.addEventListener('click', toggleAdmin);
+function calculateDuration(start, end) {
+    if (!start || !end) return '-';
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffMinutes = Math.round((endDate - startDate) / 60000);
+    
+    if (diffMinutes < 60) {
+        return diffMinutes + 'm';
+    } else {
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        return hours + 'u ' + minutes + 'm';
+    }
+}
+
+function updateBasicMetrics() {
+    const users = new Set(logData.map(log => log.user).filter(Boolean));
+    const events = logData.length;
+    const itemCount = logData.reduce((sum, log) => sum + (log.item_count || 0), 0);
+    
+    // Calculate processing time
+    const processingTime = calculateProcessingTime();
+    
+    // Update metric values
+    document.getElementById('total-events').textContent = events;
+    document.getElementById('active-users').textContent = users.size;
+    document.getElementById('processing-time').textContent = processingTime;
+    document.getElementById('item-count').textContent = itemCount;
+    
+    // Calculate and update throughput
+    const throughput = calculateThroughput();
+    document.getElementById('throughput').textContent = throughput;
+    
+    // Update change indicators
+    updateChangeIndicators();
+}
+
+function calculateProcessingTime() {
+    const openLog = logData.find(log => log.status === 'OPEN');
+    const closedLog = logData.find(log => log.status === 'AFGEMELD' || log.status === 'CLOSED');
+    
+    if (openLog && closedLog) {
+        const startTime = new Date(openLog.timestamp);
+        const endTime = new Date(closedLog.timestamp);
+        const diffMinutes = Math.round((endTime - startTime) / 60000);
+        return formatTime(diffMinutes);
+    } else if (openLog) {
+        const startTime = new Date(openLog.timestamp);
+        const now = new Date();
+        const diffMinutes = Math.round((now - startTime) / 60000);
+        return formatTime(diffMinutes) + ' (lopend)';
+    }
+    
+    return '--';
+}
+
+function calculateThroughput() {
+    const itemCount = logData.reduce((sum, log) => sum + (log.item_count || 0), 0);
+    const openLog = logData.find(log => log.status === 'OPEN');
+    
+    if (openLog && itemCount > 0) {
+        const startTime = new Date(openLog.timestamp);
+        const now = new Date();
+        const hours = (now - startTime) / (1000 * 60 * 60);
+        
+        if (hours > 0) {
+            return Math.round(itemCount / hours);
+        }
+    }
+    
+    return '--';
+}
+
+function updateChangeIndicators() {
+    // These would compare with previous values in a real implementation
+    document.getElementById('events-change').innerHTML = '<span class="change-positive">↑ 12% vs vorige</span>';
+    document.getElementById('users-status').textContent = 'Allen actief';
+    document.getElementById('time-change').innerHTML = '<span class="change-positive">↓ 15% sneller</span>';
+    document.getElementById('items-rate').textContent = '~50 items/uur';
+    document.getElementById('efficiency-trend').innerHTML = '<span class="change-positive">↑ Verbeterd</span>';
+}
+
+function updateEfficiencyTrend(efficiency) {
+    const trendElement = document.getElementById('efficiency-trend');
+    if (efficiency >= 90) {
+        trendElement.innerHTML = '<span class="change-positive">↑ Uitstekend</span>';
+    } else if (efficiency >= 75) {
+        trendElement.innerHTML = '<span class="change-positive">↑ Goed</span>';
+    } else {
+        trendElement.innerHTML = '<span class="change-negative">↓ Verbetering nodig</span>';
+    }
+}
+
+function initializeCharts() {
+    // Speed Chart
+    const speedCtx = document.getElementById('speedChart');
+    if (speedCtx) {
+        const userStats = calculateUserStats();
+        
+        charts.speed = new Chart(speedCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(userStats),
+                datasets: [{
+                    label: 'Gemiddelde tijd (minuten)',
+                    data: Object.values(userStats).map(s => s.avgTime),
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Minuten'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
             }
         });
-
-        function renderTable(logs) {
-            const filter = document.getElementById('filterInput').value.toLowerCase();
-            const tbody = document.getElementById('log-table-body');
-            
-            const sortedLogs = [...logs].sort((a, b) => {
-                let valA = a[currentSort.column];
-                let valB = b[currentSort.column];
-                
-                if (currentSort.column === 'id') {
-                    valA = parseInt(valA, 10);
-                    valB = parseInt(valB, 10);
-                } else if (typeof valA === 'string') {
-                    valA = valA.toLowerCase();
-                }
-                if (typeof valB === 'string') {
-                    valB = valB.toLowerCase();
-                }
-
-                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
-                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            let tableContent = '';
-            for (const log of sortedLogs) {
-                const logString = Object.values(log).filter(Boolean).join(' ').toLowerCase();
-                if (filter && !logString.includes(filter)) {
-                    continue;
-                }
-
-                let timestamp = log.timestamp;
-                try {
-                    timestamp = new Date(log.timestamp).toLocaleString('nl-NL', {
-                        year: '2-digit', month: '2-digit', day: '2-digit',
-                        hour: '2-digit', minute: '2-digit', second: '2-digit'
-                    }).replace(',', '');
-                } catch (e) { /* keep original if format fails */ }
-
-                tableContent += `
-                    <tr>
-                        <td>${log.id}</td>
-                        <td>${timestamp}</td>
-                        <td>${log.event || ''}</td>
-                        <td>${log.user || ''}</td>
-                        <td>${log.details || ''}</td>
-                        <td class="status-${(log.status || '').toLowerCase()}">${log.status || ''}</td>
-                        <td><button class="action-button" onclick="deleteLog(${log.id})">Delete</button></td>
-                    </tr>
-                `;
-            }
-            tbody.innerHTML = tableContent;
-            updateAdminView();
-        }
-
-        function toggleAdmin() {
-            adminMode = !adminMode;
-            const toggleButton = document.getElementById('adminToggle');
-            if (adminMode) {
-                toggleButton.classList.add('active');
-                toggleButton.textContent = 'ADMIN (ON)';
-            } else {
-                toggleButton.classList.remove('active');
-                toggleButton.textContent = 'ADMIN';
-            }
-            updateAdminView();
-        }
-
-        function updateAdminView() {
-            document.querySelectorAll('.action-button').forEach(btn => {
-                btn.style.display = adminMode ? 'inline-block' : 'none';
-            });
-        }
-
-        function deleteLog(id) {
-            if (!adminMode) return;
-            if (confirm(`Weet je zeker dat je log ID #${id} wilt verwijderen?`)) {
-                fetch(`/delete_log/${id}`, { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            logData = logData.filter(log => log.id !== id);
-                            renderTable(logData);
-                        } else {
-                            alert('Verwijderen mislukt: ' + data.error);
+    }
+    
+    // Items Distribution Chart
+    const itemsCtx = document.getElementById('itemsChart');
+    if (itemsCtx) {
+        const userItems = calculateUserItems();
+        
+        charts.items = new Chart(itemsCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(userItems),
+                datasets: [{
+                    data: Object.values(userItems),
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(46, 204, 113, 0.8)',
+                        'rgba(155, 89, 182, 0.8)',
+                        'rgba(241, 196, 15, 0.8)',
+                        'rgba(231, 76, 60, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    datalabels: {
+                        color: 'white',
+                        font: {
+                            weight: 'bold'
+                        },
+                        formatter: (value, ctx) => {
+                            const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / sum) * 100).toFixed(1) + '%';
+                            return percentage;
                         }
-                    });
+                    }
+                }
             }
+        });
+    }
+}
+
+function calculateUserStats() {
+    const stats = {};
+    const users = new Set(logData.map(log => log.user).filter(Boolean));
+    
+    users.forEach(user => {
+        const userLogs = logData.filter(log => log.user === user);
+        if (userLogs.length > 1) {
+            const times = [];
+            for (let i = 1; i < userLogs.length; i++) {
+                const timeDiff = new Date(userLogs[i].timestamp) - new Date(userLogs[i-1].timestamp);
+                times.push(timeDiff / 60000); // Convert to minutes
+            }
+            stats[user] = {
+                avgTime: Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+            };
         }
-    </script>
-</body>
-</html>
+    });
+    
+    return stats;
+}
+
+function calculateUserItems() {
+    const items = {};
+    const users = new Set(logData.map(log => log.user).filter(Boolean));
+    
+    users.forEach(user => {
+        const userItems = logData
+            .filter(log => log.user === user)
+            .reduce((sum, log) => sum + (log.item_count || 0), 0);
+        if (userItems > 0) {
+            items[user] = userItems;
+        }
+    });
+    
+    return items;
+}
+
+function updateActivityTimeline() {
+    const timeline = document.getElementById('activityTimeline');
+    const recentLogs = [...logData]
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 20);
+    
+    let timelineHTML = '';
+    recentLogs.forEach((log, index) => {
+        const timeAgo = getTimeAgo(log.timestamp);
+        const statusClass = getTimelineStatusClass(log);
+        
+        timelineHTML += '<div class="timeline-item ' + statusClass + '" style="animation: slideIn 0.3s ease ' + (index * 0.05) + 's">' +
+            '<div class="d-flex justify-content-between align-items-start">' +
+                '<div>' +
+                    '<h6 class="mb-1">' + getEventDescription(log) + '</h6>' +
+                    '<p class="mb-1 text-muted">' + (log.details || '') + '</p>' +
+                    '<small class="text-muted">' +
+                        '<i class="fas fa-clock"></i> ' + timeAgo +
+                        (log.item_count ? ' • <i class="fas fa-box"></i> ' + log.item_count + ' items' : '') +
+                    '</small>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    });
+    
+    timeline.innerHTML = timelineHTML || '<p class="text-center text-muted">Geen recente activiteit</p>';
+}
+
+function getTimelineStatusClass(log) {
+    if (log.status === 'AFGEMELD' || log.status === 'CLOSED') return 'success';
+    if (log.event && log.event.toLowerCase().includes('error')) return 'danger';
+    if (log.event && log.event.toLowerCase().includes('warning')) return 'warning';
+    return '';
+}
+
+function getEventDescription(log) {
+    if (log.status === 'AFGEMELD') {
+        return '<i class="fas fa-check-circle text-success"></i> ' + log.user + ' heeft afgemeld';
+    } else if (log.status === 'OPEN') {
+        return '<i class="fas fa-play-circle text-primary"></i> ' + log.user + ' is gestart';
+    } else if (log.event) {
+        return '<i class="fas fa-info-circle text-info"></i> ' + log.event + ' - ' + (log.user || 'System');
+    }
+    return '<i class="fas fa-circle text-muted"></i> ' + (log.user || 'System') + ' activiteit';
+}
+
+function calculateUserTime(user) {
+    const userLogs = logData.filter(log => log.user === user).sort((a, b) => 
+        new Date(a.timestamp) - new Date(b.timestamp)
+    );
+    
+    if (userLogs.length < 2) return '--';
+    
+    const firstLog = userLogs[0];
+    const lastLog = userLogs[userLogs.length - 1];
+    const diffMinutes = Math.round((new Date(lastLog.timestamp) - new Date(firstLog.timestamp)) / 60000);
+    
+    return formatTime(diffMinutes);
+}
+
+function formatTime(minutes) {
+    if (minutes < 60) {
+        return minutes + 'm';
+    } else {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return hours + 'u ' + mins + 'm';
+    }
+}
+
+function getInitials(name) {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
+
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMinutes = Math.round((now - then) / 60000);
+    
+    if (diffMinutes < 1) return 'Zojuist';
+    if (diffMinutes < 60) return diffMinutes + ' minuten geleden';
+    if (diffMinutes < 1440) return Math.round(diffMinutes / 60) + ' uur geleden';
+    return Math.round(diffMinutes / 1440) + ' dagen geleden';
+}
+
+function startRealTimeUpdates() {
+    // Update activity timeline every 5 seconds
+    updateActivityTimeline();
+    setInterval(updateActivityTimeline, 5000);
+    
+    // Pulse the live indicator
+    setInterval(() => {
+        const indicator = document.getElementById('liveIndicator');
+        indicator.style.opacity = indicator.style.opacity === '0.5' ? '1' : '0.5';
+    }, 1000);
+    
+    // Refresh data every 30 seconds if project is active
+    const isActive = !logData.some(log => log.status === 'AFGEMELD' || log.status === 'CLOSED');
+    if (isActive) {
+        refreshInterval = setInterval(refreshData, 30000);
+    }
+}
+
+async function refreshData() {
+    try {
+        // In a real implementation, this would fetch fresh data from the server
+        await loadAllMetrics();
+        updateBasicMetrics();
+        updateActivityTimeline();
+        updateWorkflowStatus();
+        showNotification('Data vernieuwd', 'success');
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        showNotification('Fout bij vernieuwen', 'danger');
+    }
+}
+
+function setupEventListeners() {
+    // Filter listeners
+    document.getElementById('filterInput').addEventListener('keyup', applyFilters);
+    document.getElementById('eventTypeFilter').addEventListener('change', applyFilters);
+    document.getElementById('userFilter').addEventListener('change', applyFilters);
+    
+    // Sort columns
+    document.querySelectorAll('#log-table-head th[data-column]').forEach(th => {
+        th.addEventListener('click', () => {
+            const column = th.dataset.column;
+            const order = (currentSort.column === column && currentSort.order === 'asc') ? 'desc' : 'asc';
+            currentSort = { column, order };
+            
+            // Update sort indicators
+            document.querySelectorAll('#log-table-head th').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(order === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            renderCurrentView();
+        });
+    });
+
+    // Admin toggle
+    document.getElementById('adminToggle').addEventListener('click', toggleAdmin);
+}
+
+function applyFilters() {
+    const textFilter = document.getElementById('filterInput').value.toLowerCase();
+    const eventFilter = document.getElementById('eventTypeFilter').value.toLowerCase();
+    const userFilter = document.getElementById('userFilter').value;
+    
+    filteredData = logData.filter(log => {
+        const matchesText = !textFilter || 
+            Object.values(log).some(val => 
+                String(val).toLowerCase().includes(textFilter)
+            );
+        
+        const matchesEvent = !eventFilter || 
+            (log.event && log.event.toLowerCase().includes(eventFilter));
+        
+        const matchesUser = !userFilter || log.user === userFilter;
+        
+        return matchesText && matchesEvent && matchesUser;
+    });
+    
+    currentPage = 1;
+    renderCurrentView();
+    updateRecordCount();
+}
+
+function renderCurrentView() {
+    switch (currentView) {
+        case 'table':
+            renderTable();
+            break;
+        case 'cards':
+            renderCards();
+            break;
+        case 'timeline':
+            renderTimeline();
+            break;
+    }
+}
+
+function renderTable() {
+    const tbody = document.getElementById('log-table-body');
+    
+    // Sort data
+    const sortedData = [...filteredData].sort((a, b) => {
+        let valA = a[currentSort.column];
+        let valB = b[currentSort.column];
+        
+        if (currentSort.column === 'id' || currentSort.column === 'item_count') {
+            valA = parseInt(valA, 10) || 0;
+            valB = parseInt(valB, 10) || 0;
+        }
+        
+        if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+        return 0;
+    });
+    
+    // Paginate
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+    
+    // Render rows
+    let tableContent = '';
+    paginatedData.forEach(log => {
+        const timestamp = formatTimestamp(log.timestamp);
+        const statusClass = log.status ? 'status-' + log.status.toLowerCase() : '';
+        
+        tableContent += '<tr>' +
+            '<td><span class="badge bg-light text-dark">#' + log.id + '</span></td>' +
+            '<td><small>' + timestamp + '</small></td>' +
+            '<td>' + getEventIcon(log.event) + ' ' + (log.event || '-') + '</td>' +
+            '<td><i class="fas fa-user-circle text-muted"></i> ' + (log.user || 'System') + '</td>' +
+            '<td><span class="text-truncate d-inline-block" style="max-width: 250px;" title="' + (log.details || '') + '">' + (log.details || '-') + '</span></td>' +
+            '<td><span class="status-badge ' + statusClass + '">' + getStatusIcon(log.status) + ' ' + (log.status || '-') + '</span></td>' +
+            '<td><span class="badge bg-secondary">' + (log.item_count || 0) + '</span></td>' +
+            '<td><button class="action-button btn btn-sm" onclick="showDeleteModal(' + log.id + ')" style="display: ' + (adminMode ? 'inline-block' : 'none') + ';"><i class="fas fa-trash"></i></button></td>' +
+        '</tr>';
+    });
+    
+    tbody.innerHTML = tableContent || '<tr><td colspan="8" class="text-center py-5"><i class="fas fa-inbox fa-3x text-muted mb-3"></i><p class="text-muted">Geen logs gevonden</p></td></tr>';
+    
+    updatePagination(sortedData.length);
+}
+
+function renderCards() {
+    const container = document.getElementById('cards-container');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+    
+    let cardsContent = '';
+    paginatedData.forEach(log => {
+        const timestamp = formatTimestamp(log.timestamp);
+        const statusClass = log.status ? 'status-' + log.status.toLowerCase() : '';
+        
+        cardsContent += '<div class="col-md-6 col-lg-4 mb-3">' +
+            '<div class="card h-100">' +
+                '<div class="card-header ' + statusClass + '">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                        '<span class="badge bg-dark">#' + log.id + '</span>' +
+                        '<small>' + timestamp + '</small>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="card-body">' +
+                    '<h6>' + getEventIcon(log.event) + ' ' + (log.event || 'Event') + '</h6>' +
+                    '<p class="text-muted mb-2">' + (log.details || 'Geen details') + '</p>' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                        '<small><i class="fas fa-user"></i> ' + (log.user || 'System') + '</small>' +
+                        '<div>' +
+                            '<span class="status-badge ' + statusClass + '">' + (log.status || '-') + '</span>' +
+                            '<span class="badge bg-secondary ms-2">' + (log.item_count || 0) + ' items</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                (adminMode ? '<div class="card-footer"><button class="btn btn-sm btn-danger" onclick="showDeleteModal(' + log.id + ')"><i class="fas fa-trash"></i> Verwijder</button></div>' : '') +
+            '</div>' +
+        '</div>';
+    });
+    
+    container.innerHTML = cardsContent || '<div class="col-12 text-center py-5"><i class="fas fa-inbox fa-3x text-muted mb-3"></i><p class="text-muted">Geen logs gevonden</p></div>';
+    
+    updatePagination(filteredData.length);
+}
+
+function renderTimeline() {
+    const container = document.getElementById('timeline-container');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+    
+    let timelineContent = '';
+    paginatedData.forEach(log => {
+        const timestamp = formatTimestamp(log.timestamp);
+        const statusClass = getTimelineStatusClass(log);
+        
+        timelineContent += '<div class="timeline-item ' + statusClass + '">' +
+            '<div class="d-flex justify-content-between align-items-start">' +
+                '<div>' +
+                    '<h6 class="mb-1">' + getEventIcon(log.event) + ' ' + (log.event || 'Event') + ' <span class="badge bg-light text-dark ms-2">#' + log.id + '</span></h6>' +
+                    '<p class="mb-1">' + (log.details || 'Geen details') + '</p>' +
+                    '<small class="text-muted">' +
+                        '<i class="fas fa-user"></i> ' + (log.user || 'System') + ' • ' +
+                        '<i class="fas fa-clock"></i> ' + timestamp + ' • ' +
+                        '<i class="fas fa-box"></i> ' + (log.item_count || 0) + ' items' +
+                    '</small>' +
+                '</div>' +
+                (adminMode ? '<button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal(' + log.id + ')"><i class="fas fa-trash"></i></button>' : '') +
+            '</div>' +
+        '</div>';
+    });
+    
+    container.innerHTML = timelineContent || '<div class="text-center py-5"><i class="fas fa-inbox fa-3x text-muted mb-3"></i><p class="text-muted">Geen logs gevonden</p></div>';
+    
+    updatePagination(filteredData.length);
+}
+
+function setView(view) {
+    currentView = view;
+    
+    // Hide all views
+    document.querySelectorAll('.view-container').forEach(container => {
+        container.style.display = 'none';
+    });
+    
+    // Show selected view
+    document.getElementById(view + '-view').style.display = 'block';
+    
+    // Update button states
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.btn').classList.add('active');
+    
+    renderCurrentView();
+}
+
+function formatTimestamp(timestamp) {
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleString('nl-NL', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return timestamp;
+    }
+}
+
+function getEventIcon(event) {
+    const eventType = (event || '').toLowerCase();
+    if (eventType.includes('scan')) return '<i class="fas fa-barcode text-primary"></i>';
+    if (eventType.includes('error')) return '<i class="fas fa-exclamation-circle text-danger"></i>';
+    if (eventType.includes('warning')) return '<i class="fas fa-exclamation-triangle text-warning"></i>';
+    if (eventType.includes('success')) return '<i class="fas fa-check-circle text-success"></i>';
+    return '<i class="fas fa-info-circle text-info"></i>';
+}
+
+function getStatusIcon(status) {
+    const statusType = (status || '').toLowerCase();
+    if (statusType === 'open') return '<i class="fas fa-circle"></i>';
+    if (statusType === 'afgemeld' || statusType === 'closed') return '<i class="fas fa-check-circle"></i>';
+    return '';
+}
+
+function toggleAdmin() {
+    adminMode = !adminMode;
+    const toggleButton = document.getElementById('adminToggle');
+    
+    if (adminMode) {
+        toggleButton.classList.add('active');
+        toggleButton.innerHTML = '<i class="fas fa-user-shield"></i> ADMIN (ON)';
+    } else {
+        toggleButton.classList.remove('active');
+        toggleButton.innerHTML = '<i class="fas fa-user-shield"></i> ADMIN';
+    }
+    
+    // Update action buttons visibility
+    document.querySelectorAll('.action-button').forEach(btn => {
+        btn.style.display = adminMode ? 'inline-block' : 'none';
+    });
+    
+    if (currentView !== 'table') {
+        renderCurrentView();
+    }
+}
+
+function showDeleteModal(id) {
+    if (!adminMode) return;
+    
+    deleteTargetId = id;
+    document.getElementById('delete-log-id').textContent = id;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function confirmDelete() {
+    if (!deleteTargetId) return;
+    
+    fetch('/delete_log/' + deleteTargetId, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                logData = logData.filter(log => log.id !== deleteTargetId);
+                filteredData = filteredData.filter(log => log.id !== deleteTargetId);
+                renderCurrentView();
+                updateBasicMetrics();
+                updateActivityTimeline();
+                updateWorkflowStatus();
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                modal.hide();
+                
+                // Show success message
+                showNotification('Log verwijderd', 'success');
+            } else {
+                showNotification('Verwijderen mislukt: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showNotification('Er is een fout opgetreden', 'danger');
+        });
+}
+
+function updateRecordCount() {
+    document.getElementById('record-count').textContent = filteredData.length;
+}
+
+function updatePagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    document.getElementById('current-page').textContent = currentPage + ' / ' + totalPages;
+    
+    // Update button states
+    const prevButton = document.querySelector('.pagination .page-item:first-child');
+    const nextButton = document.querySelector('.pagination .page-item:last-child');
+    
+    prevButton.classList.toggle('disabled', currentPage === 1);
+    nextButton.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
+}
+
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    currentPage += direction;
+    
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    
+    renderCurrentView();
+}
+
+function toggleChartType(chartType) {
+    if (chartType === 'speed' && charts.speed) {
+        // Toggle between bar and line chart
+        const currentType = charts.speed.config.type;
+        charts.speed.config.type = currentType === 'bar' ? 'line' : 'bar';
+        charts.speed.update();
+    } else if (chartType === 'items' && charts.items) {
+        // Toggle between doughnut and pie chart
+        const currentType = charts.items.config.type;
+        charts.items.config.type = currentType === 'doughnut' ? 'pie' : 'doughnut';
+        charts.items.update();
+    }
+}
+
+function exportTableData(format) {
+    switch (format) {
+        case 'csv':
+            exportToCSV();
+            break;
+        case 'excel':
+            alert('Excel export functionaliteit wordt binnenkort toegevoegd');
+            break;
+    }
+}
+
+function exportToCSV() {
+    const headers = ['ID', 'Tijdstip', 'Event', 'Gebruiker', 'Details', 'Status', 'Items'];
+    const rows = filteredData.map(log => [
+        log.id,
+        log.timestamp,
+        log.event || '',
+        log.user || '',
+        log.details || '',
+        log.status || '',
+        log.item_count || 0
+    ]);
+    
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-{{ project }}-logs.csv';
+    a.click();
+    
+    showNotification('CSV export succesvol', 'success');
+}
+
+function exportProjectData() {
+    // Comprehensive project export with all metrics
+    const projectData = {
+        project: '{{ project }}',
+        exportDate: new Date().toISOString(),
+        status: getProjectStatus(),
+        statistics: {
+            totalEvents: logData.length,
+            activeUsers: new Set(logData.map(log => log.user).filter(Boolean)).size,
+            itemCount: logData.reduce((sum, log) => sum + (log.item_count || 0), 0),
+            processingTime: document.getElementById('processing-time').textContent,
+            efficiency: document.getElementById('efficiency').textContent,
+            throughput: document.getElementById('throughput').textContent
+        },
+        userPerformance: calculateDetailedUserPerformance(),
+        workflowChain: getWorkflowChainData(),
+        logs: logData
+    };
+    
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-{{ project }}-complete-export.json';
+    a.click();
+    
+    showNotification('Complete project data geëxporteerd', 'success');
+}
+
+function calculateDetailedUserPerformance() {
+    const performance = {};
+    const users = new Set(logData.map(log => log.user).filter(Boolean));
+    
+    users.forEach(user => {
+        const userLogs = logData.filter(log => log.user === user);
+        const items = userLogs.reduce((sum, log) => sum + (log.item_count || 0), 0);
+        
+        performance[user] = {
+            eventCount: userLogs.length,
+            itemCount: items,
+            averageItemsPerEvent: items / userLogs.length,
+            processingTime: calculateUserTime(user),
+            firstActivity: userLogs[0]?.timestamp,
+            lastActivity: userLogs[userLogs.length - 1]?.timestamp
+        };
+    });
+    
+    return performance;
+}
+
+function getWorkflowChainData() {
+    const chainData = [];
+    const workflowOrder = ['NESTING', 'OPUS', 'KL GANNOMAT'];
+    
+    workflowOrder.forEach((user, index) => {
+        const userLogs = logData.filter(log => log.user === user);
+        chainData.push({
+            user,
+            position: index + 1,
+            events: userLogs.length,
+            items: userLogs.reduce((sum, log) => sum + (log.item_count || 0), 0),
+            processingTime: calculateUserTime(user),
+            status: userLogs.length > 0 ? 'Completed' : 'Pending'
+        });
+    });
+    
+    return chainData;
+}
+
+function getProjectStatus() {
+    const hasClosed = logData.some(log => log.status === 'AFGEMELD' || log.status === 'CLOSED');
+    const hasOpen = logData.some(log => log.status === 'OPEN');
+    
+    if (hasClosed) return 'Afgerond';
+    if (hasOpen) return 'In Verwerking';
+    return 'Onbekend';
+}
+
+function printReport() {
+    window.print();
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed top-0 end-0 m-3';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+            case 'f':
+                e.preventDefault();
+                document.getElementById('filterInput').focus();
+                break;
+            case 'e':
+                e.preventDefault();
+                exportTableData('excel');
+                break;
+            case 'p':
+                e.preventDefault();
+                printReport();
+                break;
+            case 'r':
+                e.preventDefault();
+                refreshData();
+                break;
+        }
+    }
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+
+// Print styles
+const printStyles = '@media print { .main-header, .control-panel, .btn, .pagination, .sidebar, #activityTimeline { display: none !important; } .card { box-shadow: none !important; page-break-inside: avoid; } .table { font-size: 10pt; } .main-content { padding: 0 !important; } .col-md-9.col-lg-10 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; } .metrics-grid { page-break-inside: avoid; } }';
+const styleSheet = document.createElement('style');
+styleSheet.textContent = printStyles;
+document.head.appendChild(styleSheet);
+
+// CSS animations
+const animationStyles = '@keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }';
+const animationSheet = document.createElement('style');
+animationSheet.textContent = animationStyles;
+document.head.appendChild(animationSheet);
+</script>
+{% endblock %}

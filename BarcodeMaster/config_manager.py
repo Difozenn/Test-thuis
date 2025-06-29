@@ -1,7 +1,8 @@
 import configparser
 import os
+from path_utils import get_writable_path
 
-CONFIG_FILE = 'config.ini'
+CONFIG_FILE = get_writable_path('config.ini')
 
 def get_config():
     config = configparser.ConfigParser()
@@ -10,6 +11,8 @@ def get_config():
 
 def ensure_config_exists():
     if not os.path.exists(CONFIG_FILE):
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
         config = configparser.ConfigParser()
         config['Startup'] = {
             'start_db_api_on_boot': 'false',

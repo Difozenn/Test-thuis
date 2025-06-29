@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Gebruikers - BarcodeMaster{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+/* User cards grid */
+.user-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.user-card-header {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: white;
+    color: var(--secondary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.user-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.user-role {
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.user-card-body {
+    padding: 25px;
+}
+
+.user-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-stat:last-child {
+    border-bottom: none;
+}
+
+.user-stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.user-stat-value {
+    font-weight: 600;
+    color: var(--dark-blue);
+}
+
+/* Action buttons */
+.user-actions {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+}
+
+/* Stats overview */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.overview-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.overview-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+}
+
+.overview-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--dark-blue);
+    margin-bottom: 5px;
+}
+
+.overview-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Add user button */
+.add-user-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--secondary-blue);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.add-user-btn:hover {
+    background: var(--primary-blue);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>Gebruikers Beheer</h1>
+    <p>Beheer gebruikers en monitor hun performance</p>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-overview">
+    <div class="overview-card">
+        <div class="overview-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="overview-value">{{ total_users|default(8) }}</div>
+        <div class="overview-label">Totaal Gebruikers</div>
+    </div>
+    
+    <div class="overview-card">
+        <div class="overview-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="overview-value">{{ active_users|default(6) }}</div>
+        <div class="overview-label">Actieve Gebruikers</div>
+    </div>
+    
+    <div class="overview-card">
+        <div class="overview-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="overview-value">{{ avg_performance|default('85%') }}</div>
+        <div class="overview-label">Gem. Performance</div>
+    </div>
+    
+    <div class="overview-card">
+        <div class="overview-icon" style="background-color: rgba(217, 48, 37, 0.1); color: var(--danger-color);">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="overview-value">{{ avg_process_time|default('2.5h') }}</div>
+        <div class="overview-label">Gem. Verwerkingstijd</div>
+    </div>
+</div>
+
+<!-- User Cards -->
+<div class="user-cards-grid">
+    {% for user in users|default([
+        {'name': 'Jan Janssen', 'role': 'Operator', 'initials': 'JJ', 'active_projects': 5, 'completed_today': 12, 'avg_time': '1.8h', 'efficiency': 92},
+        {'name': 'Marie Peters', 'role': 'Operator', 'initials': 'MP', 'active_projects': 3, 'completed_today': 8, 'avg_time': '2.1h', 'efficiency': 88},
+        {'name': 'Pieter de Vries', 'role': 'Supervisor', 'initials': 'PV', 'active_projects': 7, 'completed_today': 15, 'avg_time': '1.5h', 'efficiency': 95},
+        {'name': 'Anna Bakker', 'role': 'Operator', 'initials': 'AB', 'active_projects': 4, 'completed_today': 10, 'avg_time': '2.3h', 'efficiency': 85}
+    ]) %}
+    <div class="user-card">
+        <div class="user-card-header">
+            <div class="user-avatar">
+                {{ user.initials }}
+            </div>
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-role">{{ user.role }}</div>
+        </div>
+        
+        <div class="user-card-body">
+            <div class="user-stat">
+                <span class="user-stat-label">Actieve Projecten</span>
+                <span class="user-stat-value">{{ user.active_projects }}</span>
+            </div>
+            <div class="user-stat">
+                <span class="user-stat-label">Afgerond Vandaag</span>
+                <span class="user-stat-value">{{ user.completed_today }}</span>
+            </div>
+            <div class="user-stat">
+                <span class="user-stat-label">Gem. Verwerkingstijd</span>
+                <span class="user-stat-value">{{ user.avg_time }}</span>
+            </div>
+            <div class="user-stat">
+                <span class="user-stat-label">Efficiency</span>
+                <span class="user-stat-value">
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: {{ user.efficiency }}%">
+                            {{ user.efficiency }}%
+                        </div>
+                    </div>
+                </span>
+            </div>
+            
+            <div style="position: relative; height: 150px; width: 100%;">
+                <canvas class="performance-chart" id="chart-{{ loop.index }}"></canvas>
+            </div>
+        </div>
+        
+        <div class="user-actions">
+            <button class="btn btn-sm btn-outline-primary flex-fill">
+                <i class="fas fa-chart-bar"></i> Details
+            </button>
+            <button class="btn btn-sm btn-outline-secondary flex-fill">
+                <i class="fas fa-edit"></i> Bewerken
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add User Button -->
+<button class="add-user-btn">
+    <i class="fas fa-plus"></i>
+</button>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize mini performance charts for each user
+    document.addEventListener('DOMContentLoaded', function() {
+        const users = document.querySelectorAll('.user-card');
+        
+        users.forEach((user, index) => {
+            const canvas = document.getElementById(`chart-${index + 1}`);
+            if (canvas) {
+                // Set explicit size to prevent infinite scaling
+                canvas.style.width = '100%';
+                canvas.style.height = '150px';
+                
+                const ctx = canvas.getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Ma', 'Di', 'Wo', 'Do', 'Vr'],
+                        datasets: [{
+                            label: 'Projecten',
+                            data: [
+                                Math.floor(Math.random() * 20) + 5,
+                                Math.floor(Math.random() * 20) + 5,
+                                Math.floor(Math.random() * 20) + 5,
+                                Math.floor(Math.random() * 20) + 5,
+                                Math.floor(Math.random() * 20) + 5
+                            ],
+                            borderColor: 'rgb(52, 152, 219)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                display: false,
+                                max: 30
+                            },
+                            x: {
+                                display: false
+                            }
+                        },
+                        elements: {
+                            line: {
+                                borderJoinStyle: 'round'
+                            }
+                        },
+                        layout: {
+                            padding: 0
+                        }
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

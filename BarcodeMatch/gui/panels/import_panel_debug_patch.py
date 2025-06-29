@@ -1,17 +1,27 @@
-print('[DIAG] import_panel_debug_patch.py starting import')
+import time
+import os
+import sys
+
+# Debug mode check
+DEBUG = os.environ.get('BARCODEMATCH_DEBUG', '').lower() == 'true'
+if DEBUG:
+    print(f'[DIAG] import_panel.py import start {time.time()}')
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import os
 import json
 try:
     from config_utils import update_config, get_config_path
-    print('[DIAG] config_utils import succeeded')
+    if DEBUG:
+        print('[DIAG] config_utils import succeeded')
 except Exception as e:
     print(f'[DIAG ERROR] config_utils import failed: {e}')
 import threading
 
-class ImportPanelDebug(ttk.Frame):
+class ImportPanel(ttk.Frame):
     def __init__(self, parent, main_app):
+        if DEBUG:
+            print(f'[DIAG] ImportPanel __init__ start {time.time()}')
         super().__init__(parent)
         self.main_app = main_app
         self.root = parent
@@ -70,11 +80,12 @@ class ImportPanelDebug(ttk.Frame):
         self.directory_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
         dir_entry = ttk.Entry(self.directory_frame, textvariable=self.directory_var, width=50)
         dir_entry.grid(row=0, column=0, padx=5)
-        dir_btn = ttk.Button(self.directory_frame, text="Bladeren", command=self.browse_directory)
-        dir_btn.grid(row=0, column=1, padx=5)
-        scan_mode_combo = ttk.Combobox(self.directory_frame, textvariable=self.scan_mode_var, values=["OPUS", "GANNOMAT"], state="readonly", width=16)
-        scan_mode_combo.grid(row=0, column=2, padx=5)
-        scan_mode_combo.bind("<<ComboboxSelected>>", self.on_scan_mode_change)
+        self.dir_btn = ttk.Button(self.directory_frame, text="Bladeren", command=self.browse_directory)
+        self.dir_btn.grid(row=0, column=1, padx=5)
+        self.scan_mode_combo = ttk.Combobox(self.directory_frame, textvariable=self.scan_mode_var, values=["OPUS", "GANNOMAT"], state="readonly", width=16)
+        self.scan_mode_combo.grid(row=0, column=2, padx=5)
+        self.scan_mode_combo.bind("<<ComboboxSelected>>", self.on_scan_mode_change)
+        self.update_browse_button()
         # Base directory
         self.base_dir_frame = ttk.LabelFrame(self.main_frame, text="Basis map", padding="5")
         self.base_dir_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -99,11 +110,7 @@ class ImportPanelDebug(ttk.Frame):
         self.results_frame.grid(row=3, column=0, sticky=(tk.W, tk.E, tk.S))
         self.results_text = tk.Text(self.results_frame, height=15, width=80)
         self.results_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.S))
-        print("[DIAG] ImportPanelDebug __init__ called!")
-        try:
-            self.results_text.insert('end', "[DIAG] ImportPanelDebug loaded!\n")
-        except Exception as e:
-            print(f"[DIAG ERROR] Could not insert into results_text in __init__: {e}")
+
         self.results_frame.columnconfigure(0, weight=1)
         self.results_frame.rowconfigure(0, weight=1)
         self.main_frame.rowconfigure(3, weight=1)
@@ -118,30 +125,24 @@ class ImportPanelDebug(ttk.Frame):
             if not path or not (path.lower().endswith('.mdb') or path.lower().endswith('.accdb')):
                 messagebox.showwarning("Missing File", "Please select a .mdb file to scan.")
                 return
-            self.scan_button.config(state=tk.DISABLED)
             self.scanning = True
             threading.Thread(target=self._scan_thread, args=(path, scan_mode), daemon=True).start()
         else:
             if not path:
                 messagebox.showwarning("Missing Directory", "Please select a directory to scan.")
                 return
-            self.scan_button.config(state=tk.DISABLED)
             self.scanning = True
             threading.Thread(target=self._scan_thread, args=(path, scan_mode), daemon=True).start()
 
     def _scan_thread(self, path, scan_mode):
-        import threading
-        print(f"[DIAG] _scan_thread started. Thread: {threading.current_thread().name}")
-        print(f"[DIAG] self.results_text type: {type(self.results_text)}, id: {id(self.results_text)}")
-        try:
-            self.results_text.insert('end', f"[DIAG] _scan_thread running. Thread: {threading.current_thread().name}, widget id: {id(self.results_text)}\n")
-        except Exception as e:
-            print(f"[DIAG ERROR] Could not insert into results_text: {e}")
+        if DEBUG:
+            print(f"[DIAG] _scan_thread started. Thread: {threading.current_thread().name}")
         try:
             self.files = []
             self.processed_files = 0
             self.progress_var.set(0)
             self.status_label.config(text="Scannen gestart...")
+            
             if scan_mode == "GANNOMAT" and (path.lower().endswith('.mdb') or path.lower().endswith('.accdb')):
                 try:
                     import pyodbc
@@ -150,6 +151,7 @@ class ImportPanelDebug(ttk.Frame):
                     self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
                     self.after(0, lambda: messagebox.showerror("Scanfout", "pyodbc is niet geïnstalleerd. Kan MDB-bestanden niet scannen."))
                     return
+                    
                 results = []
                 try:
                     conn_str = (
@@ -161,6 +163,8 @@ class ImportPanelDebug(ttk.Frame):
                     tables = [tbl_info.table_name for tbl_info in cursor.tables(tableType='TABLE')]
                     program_table = None
                     fallback_table = None
+                    mdb_filename_without_extension = os.path.splitext(os.path.basename(path))[0]
+                    
                     for table in tables:
                         columns = [column.column_name for column in cursor.columns(table=table)]
                         if table.lower() == 'program' and 'ProgramNumber' in columns:
@@ -168,16 +172,20 @@ class ImportPanelDebug(ttk.Frame):
                             break
                         elif not fallback_table and 'ProgramNumber' in columns:
                             fallback_table = table
+                            
                     if program_table:
                         cursor.execute(f'SELECT ProgramNumber FROM [{program_table}]')
                         for row in cursor.fetchall():
-                            results.append({'MDB File': os.path.basename(path), 'ProgramNumber': row.ProgramNumber})
+                            item_name = f"{mdb_filename_without_extension}:{row.ProgramNumber}"
+                            results.append({'MDB File': os.path.basename(path), 'Item': item_name})
                     elif fallback_table:
                         cursor.execute(f'SELECT ProgramNumber FROM [{fallback_table}]')
                         for row in cursor.fetchall():
-                            results.append({'MDB File': os.path.basename(path), 'ProgramNumber': row.ProgramNumber})
+                            item_name = f"{mdb_filename_without_extension}:{row.ProgramNumber}"
+                            results.append({'MDB File': os.path.basename(path), 'Item': item_name})
                     else:
                         self.after(0, lambda: self.results_text.insert('end', f"Geen tabel met 'ProgramNumber' kolom gevonden in {os.path.basename(path)}\n"))
+                        
                     conn.close()
                     self.files = results
                     self.processed_files = 1
@@ -197,145 +205,132 @@ class ImportPanelDebug(ttk.Frame):
                             if filename.lower().endswith(('.hop', '.hops')):
                                 total_files += 1
                     return total_files
-                base_dir = self.base_dir_var.get() or path
-                print(f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}, using base_dir: {base_dir}")
-                self.after(0, lambda: self.results_text.insert('end', f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}, using base_dir: {base_dir}\n"))
-                self.total_files = count_files()
-                print(f"[DEBUG] Total .hop/.hops files expected: {self.total_files}")
-                self.after(0, lambda: self.results_text.insert('end', f"[DEBUG] Total .hop/.hops files expected: {self.total_files}\n"))
-                files = []
-                processed = 0
-                print(f"[DEBUG] Entering os.walk loop for path: {path}")
-                self.after(0, lambda: self.results_text.insert('end', f"[DEBUG] Entering os.walk loop for path: {path}\n"))
-                for rootdir, _, filenames in os.walk(path):
-                    print(f"[DEBUG] Scanning directory: {rootdir} with {len(filenames)} files")
-                    self.after(0, lambda dir=rootdir, n=len(filenames): self.results_text.insert('end', f"[DEBUG] Scanning directory: {dir} with {n} files\n"))
-                    for filename in filenames:
-                        print(f"[DEBUG] Considering file: {filename}")
-                        self.after(0, lambda fname=filename: self.results_text.insert('end', f"[DEBUG] Considering file: {fname}\n"))
-                        if filename.lower().endswith(('.hop', '.hops')):
-                            try:
-                                file_path = os.path.join(rootdir, filename)
-                                relative_path = os.path.relpath(file_path, base_dir)
-                                files.append({'Relative Path': relative_path})
-                                processed += 1
-                                print(f"[DEBUG] Found: {relative_path}")
-                                self.after(0, lambda rel=relative_path: self.results_text.insert('end', f"[DEBUG] Found: {rel}\n"))
-                                self.after(0, lambda count=processed, total=self.total_files: self._update_progress(count, total))
-                            except Exception as e:
-                                print(f"[ERROR] Exception processing file {filename}: {e}")
-                                self.after(0, lambda: self.results_text.insert('end', f"Fout bij verwerken van {filename}: {str(e)}\n"))
-                print(f"[DEBUG] Exited os.walk loop for path: {path}")
-                self.after(0, lambda: self.results_text.insert('end', f"[DEBUG] Exited os.walk loop for path: {path}\n"))
-                print(f"[DEBUG] OPUS scan finished. Total found: {len(files)}")
-                self.after(0, lambda: self.results_text.insert('end', f"[DEBUG] OPUS scan finished. Total found: {len(files)}\n"))
-                if len(files) == 0:
-                    print("[WARNING] No .hop or .hops files found in selected directory.")
-                    self.after(0, lambda: self.results_text.insert('end', '[WARNING] No .hop or .hops files found in selected directory.\n'))
-                    self.after(0, lambda: messagebox.showwarning("Geen bestanden gevonden", "Geen .hop of .hops bestanden gevonden in de geselecteerde map."))
-                self.files = files
-                self.processed_files = processed
-                self.after(0, lambda: self._show_results(files, scan_mode, path))
-                self.after(0, lambda: messagebox.showinfo("Scan voltooid", f"Scan voltooid. {len(files)} bestanden gevonden."))
-            # Save to Excel after scan
-            self.after(0, lambda: self._create_excel(path, scan_mode))
-        except Exception as e:
-            print(f"[FATAL ERROR] Exception in scan thread: {e}")
-            import traceback
-            tb = traceback.format_exc()
-            print(tb)
-            self.after(0, lambda: self.results_text.insert('end', f"[FATAL ERROR] Exception in scan thread: {str(e)}\n{tb}\n"))
-            self.after(0, lambda: messagebox.showerror("Scanfout", f"Fout tijdens het scannen: {str(e)}"))
-        finally:
-            self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
-            self.after(0, lambda: self.status_label.config(text="Scan voltooid."))
+                    
+                # Get the user's input for "Basis map" once
+                user_basis_map_setting = self.base_dir_var.get().strip()
 
-    def _update_progress(self, current, total):
-        if total > 0:
-            self.progress_var.set((current / total) * 100)
-            self.status_label.config(text=f"Scanning... {current}/{total} files processed")
-            self.root.update()
+                if DEBUG:
+                    print(f"[DEBUG] [SCAN THREAD START] OPUS scan started for directory: {path}. User 'Basis map' setting: '{user_basis_map_setting}'.")
+
+                self.total_files = count_files()
+                if DEBUG:
+                    print(f"[DEBUG] [SCAN THREAD] Total .hop/.hops files found: {self.total_files}")
+                    
+                if self.total_files == 0:
+                    self.after(0, lambda: self.results_text.insert('end', f"Geen .hop/.hops bestanden gevonden in {path}\n"))
+                    self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
+                    return
+                    
+                found_files = []
+                for root, _, filenames_in_loop in os.walk(path):
+                    for filename_item in filenames_in_loop:
+                        if filename_item.lower().endswith(('.hop', '.hops')):
+                            full_hop_path = os.path.join(root, filename_item)
+                            item_to_display = ""
+
+                            if not user_basis_map_setting: # "Basis map" is empty
+                                item_to_display = full_hop_path
+                            else: # "Basis map" is NOT empty
+                                item_to_display = filename_item
+                            
+                            found_files.append({'Item': item_to_display})
+                            self.processed_files += 1
+                            if self.processed_files % 10 == 0 or self.processed_files == self.total_files:
+                                self.after(0, lambda: self._update_progress(self.processed_files, self.total_files))
+                                
+                self.files = found_files
+                if DEBUG:
+                    print(f"[DEBUG] [SCAN THREAD] Files to show: {len(found_files)}")
+                self.after(0, lambda: self._show_results(found_files, scan_mode, path))
+                self.after(0, lambda: self._update_progress(self.total_files, self.total_files))
+                self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
+                self.after(0, lambda: messagebox.showinfo("Scan voltooid", f"Scan voltooid. {len(found_files)} bestanden gevonden."))
+        except Exception as e:
+            if DEBUG:
+                print(f"[DIAG ERROR] Exception in _scan_thread: {e}")
+            self.after(0, lambda: self.results_text.insert('end', f"[DIAG ERROR] Exception in _scan_thread: {e}\n"))
+            self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
+        finally:
+            self.after(0, lambda: self._create_excel(path, scan_mode))
+
+    def _create_excel(self, directory, scan_mode="OPUS"):
+        if DEBUG:
+            print(f'[DIAG] importing pandas in import_panel.py {time.time()}')
+        import pandas as pd
+        if DEBUG:
+            print(f'[DIAG] pandas imported in import_panel.py {time.time()}')
+            
+        if not hasattr(self, 'files') or not self.files:
+            self.results_text.insert('end', "No files to save to Excel.\n")
+            return
+            
+        df = pd.DataFrame(self.files)
+        export_dir = directory
+        if scan_mode == "GANNOMAT" and os.path.isfile(directory):
+            export_dir = os.path.dirname(directory)
+            folder_name = os.path.splitext(os.path.basename(directory))[0]
+        else:
+            folder_name = os.path.basename(os.path.normpath(directory))
+            
+        if scan_mode == "GANNOMAT":
+            if 'Item' in df.columns:
+                df = df[['Item']]
+                df['Status'] = '' # Ensure Status column is added
+            excel_path = os.path.join(export_dir, f"{folder_name}.xlsx")
+        else:
+            # Always add Status column for OPUS
+            if 'Status' not in df.columns:
+                df['Status'] = ''
+            excel_path = os.path.join(export_dir, f"{folder_name}.xlsx")
+            
+        try:
+            df.to_excel(excel_path, index=False)
+            self.results_text.insert('end', f"Excel bestand opgeslagen: {excel_path}\n")
+        except Exception as e:
+            self.results_text.insert('end', f"Fout bij opslaan van Excel: {e}\n")
+
+    def _update_progress(self, processed, total):
+        progress = (processed / total) * 100 if total > 0 else 0
+        self.progress_var.set(progress)
+        self.status_label.config(text=f"{processed} van {total} bestanden verwerkt...")
 
     def _show_results(self, results, scan_mode, path):
         self.results_text.delete(1.0, tk.END)
-        if not results:
-            self.results_text.insert(tk.END, "Geen resultaten gevonden.\n")
-            return
         if scan_mode == "GANNOMAT":
-            self.results_text.insert(tk.END, f"Resultaten voor {os.path.basename(path)}:\n")
-            for entry in results:
-                self.results_text.insert(tk.END, f"ProgramNumber: {entry.get('ProgramNumber', '')}\n")
-        else:
-            self.results_text.insert(tk.END, f"Gevonden bestanden in {path}:\n")
-            for entry in results:
-                self.results_text.insert(tk.END, f"{entry.get('Relative Path', '')}\n")
-        self.results_text.see(tk.END)
-
-    def _create_excel(self, directory, scan_mode="OPUS"):
-        import pandas as pd
-        if not self.files:
-            self.results_text.insert(tk.END, "No files to save to Excel.\n")
-            return
-        df = pd.DataFrame(self.files)
-        # Always use base_dir for OPUS export if set, fallback to directory
-        if scan_mode == "OPUS":
-            base_dir = self.base_dir_var.get() or directory
-            export_dir = base_dir
-            folder_name = os.path.basename(os.path.normpath(base_dir))
-        else:
-            export_dir = directory
-            if scan_mode == "GANNOMAT" and os.path.isfile(directory):
-                export_dir = os.path.dirname(directory)
-                folder_name = os.path.splitext(os.path.basename(directory))[0]  # Just the MDB name, no extension
-            else:
-                folder_name = os.path.basename(os.path.normpath(directory))
-        if scan_mode == "GANNOMAT":
-            # Only export ProgramNumber column if it exists
-            if 'ProgramNumber' in df.columns:
-                df = df[['ProgramNumber']]
-                # Always add an empty 'Status' column for scanner compatibility
-                df['Status'] = ''
-            excel_path = os.path.join(export_dir, f"{folder_name}.xlsx")
-        else:
-            # For OPUS and other modes, always add an empty 'Status' column if missing
-            if 'Status' not in df.columns:
-                df['Status'] = ''
-            excel_path = os.path.join(export_dir, f"{folder_name}_scan.xlsx")
-        try:
-            df.to_excel(excel_path, index=False)
-            self.results_text.insert(tk.END, f"\nExcel file saved: {excel_path}\n")
-        except Exception as e:
-            self.results_text.insert(tk.END, f"Error saving Excel: {str(e)}\n")
-        self.results_text.see(tk.END)
+            self.results_text.insert(tk.END, f"Scanned file: {os.path.basename(path)} (mode: {scan_mode})\n")
+            for row in results:
+                self.results_text.insert(tk.END, f"{row['Item']}\n")
+        else: # Opus mode
+            self.results_text.insert(tk.END, f"Scanned directory: {path} (mode: {scan_mode})\n")
+            for row in results:
+                self.results_text.insert(tk.END, f"{row['Item']}\n")
 
     def browse_directory(self):
         scan_mode = self.scan_mode_var.get() if hasattr(self, 'scan_mode_var') else "OPUS"
         if scan_mode == "GANNOMAT":
-            mdb_file = filedialog.askopenfilename(
-                filetypes=[("Access Database", "*.mdb;*.accdb")],
-                title="Selecteer GANNOMAT .mdb bestand"
-            )
-            if mdb_file:
-                self.directory_var.set(mdb_file)
-                self.results_text.delete(1.0, tk.END)
-                self.results_text.insert(tk.END, f"Selected file: {mdb_file}\n")
-                self.results_text.see(tk.END)
+            filetypes = [("Access Database", "*.mdb;*.accdb"), ("All Files", "*.*")]
+            file_path = filedialog.askopenfilename(title="Selecteer MDB/ACCDB-bestand", filetypes=filetypes)
+            if file_path:
+                self.directory_var.set(file_path)
         else:
             directory = filedialog.askdirectory()
             if directory:
                 self.directory_var.set(directory)
-                if not self.base_dir_var.get():
-                    self.base_dir_var.set(directory)
-                    self.base_dir = os.path.abspath(directory)
-                self.results_text.delete(1.0, tk.END)
-                self.results_text.insert(tk.END, f"Selected directory: {directory}\n")
-                self.results_text.see(tk.END)
 
     def browse_base_directory(self):
         directory = filedialog.askdirectory()
         if directory:
             self.base_dir_var.set(directory)
-            self.base_dir = os.path.abspath(directory)
 
     def on_scan_mode_change(self, event=None):
+        self.update_browse_button()
         self.save_config()
+
+    def update_browse_button(self):
+        scan_mode = self.scan_mode_var.get() if hasattr(self, 'scan_mode_var') else "OPUS"
+        if scan_mode == "GANNOMAT":
+            self.dir_btn.config(text="Bestand kiezen")
+            self.directory_frame.config(text="Selecteer MDB/ACCDB-bestand")
+        else:
+            self.dir_btn.config(text="Bladeren")
+            self.directory_frame.config(text="Selecteer map")

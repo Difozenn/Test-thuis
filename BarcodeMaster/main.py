@@ -8,9 +8,12 @@ from urllib.parse import urlparse
 from PIL import Image, ImageTk
 
 # Add the project root to the Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_root = os.path.abspath(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+# Import path utilities first
+from path_utils import ensure_writable_dirs, get_resource_path, get_writable_path
 
 # --- Dependency Check ---
 REQUIRED_MODULES = {
@@ -42,6 +45,15 @@ def check_dependencies():
         print("FATAL: MISSING DEPENDENCIES")
         print(error_message)
         print("="*60)
+        
+        # Try to show GUI error if possible
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            tk.messagebox.showerror("Missing Dependencies", error_message)
+        except:
+            pass
+        
         sys.exit(1)
 
 # Check dependencies early
@@ -50,8 +62,10 @@ check_dependencies()
 # --- App Imports (after dependency check) ---
 from gui.app import MainApp, ServiceStatus
 from config_utils import get_config
-from path_utils import get_resource_path
-from database.db_log_api import run_api_server
+from database.db_log_api import run_api_server, stop_api_server
+
+# Global variable to track the API thread
+db_api_thread = None
 
 def show_splash(main_tk_root):
     splash = tk.Toplevel(main_tk_root)
@@ -77,6 +91,7 @@ def show_splash(main_tk_root):
     return splash
 
 def start_db_api_thread():
+    global db_api_thread
     config = get_config()
     if not config.get('database_enabled', True):
         print("Database is disabled in config. API server will not start.")
@@ -91,15 +106,36 @@ def start_db_api_thread():
     except Exception as e:
         print(f"Could not parse port from api_url: {e}. Falling back to default port {port}.")
 
-    api_thread = threading.Thread(target=run_api_server, kwargs={'port': port}, daemon=True)
-    api_thread.start()
+    db_api_thread = threading.Thread(target=run_api_server, kwargs={'port': port}, daemon=True)
+    db_api_thread.start()
     print(f"Database API thread started on port {port}.")
-    return api_thread
+    print(f"Dashboard available at: http://localhost:{port}/dashboard")
+    return db_api_thread
+
+def cleanup_on_exit():
+    """Cleanup function called on application exit"""
+    global db_api_thread
+    print("Cleaning up on exit...")
+    
+    # Stop the DB API server
+    try:
+        stop_api_server()
+        if db_api_thread and db_api_thread.is_alive():
+            db_api_thread.join(timeout=2.0)
+    except Exception as e:
+        print(f"Error stopping DB API: {e}")
 
 def main():
+    # Ensure writable directories exist
+    ensure_writable_dirs()
+    
     # Create root window but keep it hidden initially
     root = tk.Tk()
     root.withdraw()
+    
+    # Register cleanup on exit
+    import atexit
+    atexit.register(cleanup_on_exit)
     
     splash = show_splash(root)
     
@@ -124,6 +160,15 @@ def main():
         # Configure the root window
         root.title("BarcodeMaster")
         root.geometry("800x600")
+        
+        # Set icon if available
+        try:
+            icon_path = get_resource_path("assets/ico.ico")
+            if os.path.exists(icon_path):
+                root.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"Could not set icon: {e}")
+        
         root.deiconify()  # Show the main window
         
         # Create the main app
@@ -131,7 +176,12 @@ def main():
         app.pack(side="top", fill="both", expand=True)
     
     root.after(3000, launch_main_app)
-    root.mainloop()
+    
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        print("\nApplication interrupted by user")
+        cleanup_on_exit()
 
 if __name__ == "__main__":
     main()

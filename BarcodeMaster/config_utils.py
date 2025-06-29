@@ -1,8 +1,8 @@
 import json
 import os
-from path_utils import get_resource_path
+from path_utils import get_writable_path
 
-CONFIG_PATH = get_resource_path('config.json')
+CONFIG_PATH = get_writable_path('config.json')
 
 def get_config():
     if os.path.exists(CONFIG_PATH):
@@ -16,6 +16,8 @@ def get_config():
 def save_config(new_data):
     config = get_config()
     config.update(new_data)
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
     with open(CONFIG_PATH, 'w') as f:
         json.dump(config, f, indent=4)
 

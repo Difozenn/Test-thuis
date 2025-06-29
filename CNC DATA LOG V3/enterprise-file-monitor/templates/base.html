@@ -416,13 +416,6 @@
 <body>
     <!-- Updated Header -->
     <div class="main-header">
-        <!-- Secondary Program Tab -->
-        <div class="secondary-program-tab">
-            <a href="http://192.168.244.160:5001\logs_html" target="_blank">
-                <i class="fas fa-check-square"></i>
-                <span>BARCODEMATCH</span>
-            </a>
-        </div>
         
         <div class="header-content">
             {% if current_user.is_authenticated %}
@@ -501,6 +494,11 @@
                         </a>
                         
                         <hr>
+                        
+                        <a class="nav-link" href="http://192.168.244.160:5001/logs_html" target="_blank">
+                            <i class="fas fa-barcode"></i>
+                            Barcodemaster
+                        </a>
                         
                         <!-- Language Selector in Sidebar -->
                         <div class="language-selector-sidebar">

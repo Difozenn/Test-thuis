@@ -1,0 +1,750 @@
+{% extends "base.html" %}
+
+{% block title %}Rapporten - BarcodeMaster{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- SheetJS for Excel Export -->
+<script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+/* Report types grid */
+.report-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.report-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: var(--secondary-blue);
+}
+
+.report-card.selected {
+    border-color: var(--secondary-blue);
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.report-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 2.5rem;
+}
+
+.report-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 10px;
+}
+
+.report-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Report configuration */
+.config-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.date-selector {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.date-preset {
+    padding: 10px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.date-preset:hover {
+    border-color: var(--secondary-blue);
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.date-preset.active {
+    background-color: var(--secondary-blue);
+    color: white;
+    border-color: var(--secondary-blue);
+}
+
+/* Preview section */
+.preview-section {
+    margin-top: 30px;
+}
+
+.preview-table {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Export button */
+.export-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.export-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading spinner */
+.spinner-wrapper {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* Process flow visualization */
+.process-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.flow-node {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.flow-node::after {
+    content: '→';
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: var(--secondary-blue);
+}
+
+.flow-node:last-child::after {
+    display: none;
+}
+
+.flow-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--secondary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.5rem;
+    color: var(--secondary-blue);
+}
+
+.flow-label {
+    font-weight: 600;
+    color: var(--dark-blue);
+}
+
+.flow-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>Rapporten Generator</h1>
+    <p>Genereer gedetailleerde rapporten en analyses</p>
+</div>
+
+<!-- Report Type Selection -->
+<h5 class="mb-3">Selecteer Rapport Type</h5>
+<div class="report-types">
+    <div class="report-card" onclick="selectReportType('workflow')">
+        <div class="report-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
+            <i class="fas fa-sitemap"></i>
+        </div>
+        <div class="report-title">Workflow Analyse</div>
+        <div class="report-description">
+            Analyseer doorlooptijden tussen gebruikers in de workflow keten
+        </div>
+    </div>
+    
+    <div class="report-card" onclick="selectReportType('performance')">
+        <div class="report-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+            <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <div class="report-title">Performance Rapport</div>
+        <div class="report-description">
+            Gebruikers performance en efficiency metrics
+        </div>
+    </div>
+    
+    <div class="report-card" onclick="selectReportType('projects')">
+        <div class="report-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
+            <i class="fas fa-project-diagram"></i>
+        </div>
+        <div class="report-title">Project Overzicht</div>
+        <div class="report-description">
+            Complete project status en statistieken
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Section -->
+<div class="config-section" id="configSection" style="display: none;">
+    <h5 class="mb-4">Rapport Configuratie</h5>
+    
+    <!-- Period Selection -->
+    <div class="mb-4">
+        <label class="form-label fw-bold">Selecteer Periode:</label>
+        <div class="date-selector">
+            <button class="date-preset" onclick="selectPeriod('week')" data-period="week">
+                <i class="fas fa-calendar-week"></i> Deze Week
+            </button>
+            <button class="date-preset" onclick="selectPeriod('month')" data-period="month">
+                <i class="fas fa-calendar-alt"></i> Deze Maand
+            </button>
+            <button class="date-preset" onclick="selectPeriod('year')" data-period="year">
+                <i class="fas fa-calendar"></i> Dit Jaar
+            </button>
+            <button class="date-preset" onclick="selectPeriod('custom')" data-period="custom">
+                <i class="fas fa-calendar-plus"></i> Aangepast
+            </button>
+        </div>
+        
+        <!-- Custom Date Range -->
+        <div class="row mt-3" id="customDateRange" style="display: none;">
+            <div class="col-md-6">
+                <label class="form-label">Van Datum:</label>
+                <input type="date" class="form-control" id="startDate">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tot Datum:</label>
+                <input type="date" class="form-control" id="endDate">
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Options -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Gebruikers Filter:</label>
+            <select class="form-select" id="userFilter" multiple>
+                <option value="all" selected>Alle Gebruikers</option>
+                <option value="NESTING">NESTING</option>
+                <option value="OPUS">OPUS</option>
+                <option value="KL GANNOMAT">KL GANNOMAT</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Project Status:</label>
+            <select class="form-select" id="statusFilter">
+                <option value="all">Alle Statussen</option>
+                <option value="open">Open</option>
+                <option value="afgemeld">Afgemeld</option>
+                <option value="in-progress">In Behandeling</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Process Flow Visualization -->
+    <div id="workflowPreview" style="display: none;">
+        <h6 class="mb-3">Workflow Keten Overzicht</h6>
+        <div class="process-flow">
+            <div class="flow-node">
+                <div class="flow-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="flow-label">NESTING</div>
+                <div class="flow-time">Gem. 1.2u</div>
+            </div>
+            <div class="flow-node">
+                <div class="flow-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="flow-label">OPUS</div>
+                <div class="flow-time">Gem. 0.8u</div>
+            </div>
+            <div class="flow-node">
+                <div class="flow-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="flow-label">KL GANNOMAT</div>
+                <div class="flow-time">Gem. 1.5u</div>
+            </div>
+            <div class="flow-node">
+                <div class="flow-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="flow-label">Afgerond</div>
+                <div class="flow-time">Totaal: 3.5u</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Button -->
+    <div class="text-center mt-4">
+        <button class="export-btn" onclick="generateReport()" id="generateBtn">
+            <i class="fas fa-magic"></i> Genereer Rapport
+        </button>
+    </div>
+</div>
+
+<!-- Preview Section -->
+<div class="preview-section" id="previewSection" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Rapport Preview</h5>
+                <button class="export-btn btn-sm" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> Export naar Excel
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="spinner-wrapper" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Rapport wordt gegenereerd...</p>
+            </div>
+            
+            <div class="preview-table" id="previewTable" style="display: none;">
+                <table class="table table-striped" id="reportTable">
+                    <thead>
+                        <tr id="tableHeaders">
+                            <!-- Headers will be dynamically generated -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be dynamically generated -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="row mt-4" id="summaryStats" style="display: none;">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6>Totaal Projecten</h6>
+                            <h3 id="totalProjects">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6>Gem. Doorlooptijd</h6>
+                            <h3 id="avgProcessTime">0h</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h6>Actieve Projecten</h6>
+                            <h3 id="activeProjects">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6>Efficiency Score</h6>
+                            <h3 id="efficiencyScore">0%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedReportType = null;
+let selectedPeriod = 'week';
+let reportData = null;
+
+function selectReportType(type) {
+    selectedReportType = type;
+    
+    // Update UI
+    document.querySelectorAll('.report-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // Show configuration section
+    document.getElementById('configSection').style.display = 'block';
+    
+    // Show workflow preview for workflow reports
+    if (type === 'workflow') {
+        document.getElementById('workflowPreview').style.display = 'block';
+    } else {
+        document.getElementById('workflowPreview').style.display = 'none';
+    }
+}
+
+function selectPeriod(period) {
+    selectedPeriod = period;
+    
+    // Update UI
+    document.querySelectorAll('.date-preset').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    // Show/hide custom date range
+    if (period === 'custom') {
+        document.getElementById('customDateRange').style.display = 'block';
+        // Set default dates
+        document.getElementById('startDate').value = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+    } else {
+        document.getElementById('customDateRange').style.display = 'none';
+    }
+}
+
+function generateReport() {
+    if (!selectedReportType) {
+        alert('Selecteer eerst een rapport type');
+        return;
+    }
+    
+    // Show preview section and loading spinner
+    document.getElementById('previewSection').style.display = 'block';
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('previewTable').style.display = 'none';
+    document.getElementById('summaryStats').style.display = 'none';
+    
+    // Prepare request data
+    const requestData = {
+        report_type: selectedReportType,
+        period: selectedPeriod,
+        start_date: selectedPeriod === 'custom' ? document.getElementById('startDate').value : null,
+        end_date: selectedPeriod === 'custom' ? document.getElementById('endDate').value : null,
+        users: Array.from(document.getElementById('userFilter').selectedOptions).map(o => o.value),
+        status: document.getElementById('statusFilter').value
+    };
+    
+    // Generate report via API
+    fetch('/api/report/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            reportData = data.data;
+            displayReport(data);
+        } else {
+            alert('Fout bij genereren rapport: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Er is een fout opgetreden bij het genereren van het rapport');
+    })
+    .finally(() => {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    });
+}
+
+function displayReport(data) {
+    // Hide loading, show table
+    document.getElementById('previewTable').style.display = 'block';
+    document.getElementById('summaryStats').style.display = 'flex';
+    
+    // Clear previous data
+    document.getElementById('tableHeaders').innerHTML = '';
+    document.getElementById('tableBody').innerHTML = '';
+    
+    if (selectedReportType === 'workflow') {
+        displayWorkflowReport(data.data);
+    } else if (selectedReportType === 'performance') {
+        displayPerformanceReport(data.data);
+    } else if (selectedReportType === 'projects') {
+        displayProjectsReport(data.data);
+    }
+    
+    // Update summary stats
+    updateSummaryStats(data.data);
+}
+
+function displayWorkflowReport(data) {
+    // Create headers
+    const headers = ['Project', 'Start', 'Eind', 'Doorlooptijd', 'Workflow', 'Status'];
+    const headerRow = document.getElementById('tableHeaders');
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    
+    // Add data rows
+    const tbody = document.getElementById('tableBody');
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Project
+        row.innerHTML = `
+            <td><strong>${item.project}</strong></td>
+            <td>${formatDateTime(item.start_time)}</td>
+            <td>${formatDateTime(item.end_time)}</td>
+            <td>${calculateDuration(item.start_time, item.end_time)}</td>
+            <td>${formatWorkflow(item.user_flow)}</td>
+            <td><span class="status-badge status-${item.final_status ? item.final_status.toLowerCase() : 'open'}">${item.final_status || 'OPEN'}</span></td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function displayPerformanceReport(data) {
+    // Create headers
+    const headers = ['Gebruiker', 'Projecten', 'Gem. Tijd', 'Min Tijd', 'Max Tijd', 'Efficiency'];
+    const headerRow = document.getElementById('tableHeaders');
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    
+    // Mock data for performance report
+    const mockData = [
+        { user: 'NESTING', projects: 45, avgTime: '1.2u', minTime: '0.5u', maxTime: '2.1u', efficiency: 92 },
+        { user: 'OPUS', projects: 52, avgTime: '0.8u', minTime: '0.3u', maxTime: '1.5u', efficiency: 88 },
+        { user: 'KL GANNOMAT', projects: 38, avgTime: '1.5u', minTime: '0.8u', maxTime: '2.8u', efficiency: 85 }
+    ];
+    
+    const tbody = document.getElementById('tableBody');
+    mockData.forEach(item => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td><strong>${item.user}</strong></td>
+            <td>${item.projects}</td>
+            <td>${item.avgTime}</td>
+            <td>${item.minTime}</td>
+            <td>${item.maxTime}</td>
+            <td>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: ${item.efficiency}%">${item.efficiency}%</div>
+                </div>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function displayProjectsReport(data) {
+    // Create headers
+    const headers = ['Project Code', 'Gebruiker', 'Status', 'Events', 'Start', 'Laatste Update'];
+    const headerRow = document.getElementById('tableHeaders');
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+    
+    // Mock data for projects report
+    const mockData = [
+        { project: 'PRJ-2024-001', user: 'NESTING', status: 'OPEN', events: 12, start: '2024-01-28 08:00', lastUpdate: '2024-01-28 10:30' },
+        { project: 'PRJ-2024-002', user: 'OPUS', status: 'AFGEMELD', events: 18, start: '2024-01-28 09:15', lastUpdate: '2024-01-28 11:45' },
+        { project: 'PRJ-2024-003', user: 'KL GANNOMAT', status: 'OPEN', events: 8, start: '2024-01-28 10:00', lastUpdate: '2024-01-28 12:00' }
+    ];
+    
+    const tbody = document.getElementById('tableBody');
+    mockData.forEach(item => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td><strong>${item.project}</strong></td>
+            <td>${item.user}</td>
+            <td><span class="status-badge status-${item.status.toLowerCase()}">${item.status}</span></td>
+            <td>${item.events}</td>
+            <td>${item.start}</td>
+            <td>${item.lastUpdate}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function updateSummaryStats(data) {
+    // Calculate summary statistics
+    if (Array.isArray(data)) {
+        document.getElementById('totalProjects').textContent = data.length;
+        
+        // Calculate other stats based on report type
+        if (selectedReportType === 'workflow') {
+            const completedProjects = data.filter(p => p.final_status === 'AFGEMELD').length;
+            const activeProjects = data.length - completedProjects;
+            
+            document.getElementById('activeProjects').textContent = activeProjects;
+            document.getElementById('avgProcessTime').textContent = '2.5u'; // Mock value
+            document.getElementById('efficiencyScore').textContent = '87%'; // Mock value
+        }
+    }
+}
+
+function formatDateTime(datetime) {
+    if (!datetime) return '-';
+    const date = new Date(datetime);
+    return date.toLocaleString('nl-NL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function calculateDuration(start, end) {
+    if (!start || !end) return '-';
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffMinutes = Math.round((endDate - startDate) / 60000);
+    
+    if (diffMinutes < 60) {
+        return diffMinutes + 'm';
+    } else {
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        return hours + 'u ' + minutes + 'm';
+    }
+}
+
+function formatWorkflow(userFlow) {
+    if (!userFlow || userFlow.length === 0) return '-';
+    return userFlow.map(flow => `${flow[0]} (${flow[1]}u)`).join(' → ');
+}
+
+function exportToExcel() {
+    if (!reportData) {
+        alert('Genereer eerst een rapport voordat u exporteert');
+        return;
+    }
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Get table data
+    const table = document.getElementById('reportTable');
+    const ws = XLSX.utils.table_to_sheet(table);
+    
+    // Add to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Rapport");
+    
+    // Create filename
+    const filename = `rapport_${selectedReportType}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Write file
+    XLSX.writeFile(wb, filename);
+    
+    // Show notification
+    showNotification('Rapport geëxporteerd naar Excel', 'success');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Initialize multi-select
+document.addEventListener('DOMContentLoaded', function() {
+    // Enable multi-select functionality
+    const userFilter = document.getElementById('userFilter');
+    userFilter.addEventListener('change', function() {
+        if (this.options[0].selected && this.options[0].value === 'all') {
+            // If "All Users" is selected, deselect others
+            for (let i = 1; i < this.options.length; i++) {
+                this.options[i].selected = false;
+            }
+        } else if (this.selectedOptions.length > 1 && this.options[0].selected) {
+            // If other options are selected, deselect "All Users"
+            this.options[0].selected = false;
+        }
+    });
+});
+</script>
+{% endblock %}

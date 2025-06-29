@@ -452,7 +452,7 @@
                         </td>
                         <td>
                             {% if path.last_modified %}
-                                {{ path.last_modified.strftime('%Y-%m-%d %H:%M') }}
+                                {{ format_local_time(path.last_modified, '%Y-%m-%d %H:%M') }}
                             {% else %}
                                 <small class="text-muted">{{ t('not_checked_yet') }}</small>
                             {% endif %}

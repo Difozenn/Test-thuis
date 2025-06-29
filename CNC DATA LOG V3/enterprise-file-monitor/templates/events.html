@@ -73,7 +73,7 @@
                 <tbody>
                     {% for event in events.items %}
                     <tr>
-                        <td>{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ format_local_time(event.timestamp, '%Y-%m-%d %H:%M:%S') }}</td>
                         <td>
                             {% if event.category %}
                                 <span class="badge" style="background-color: {{ event.category.color }}">

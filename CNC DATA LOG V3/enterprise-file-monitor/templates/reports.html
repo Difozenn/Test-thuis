@@ -291,7 +291,7 @@
                         </td>
                         <td><span class="badge bg-secondary">{{ report.type }}</span></td>
                         <td>{{ report.user.username }}</td>
-                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ format_local_time(report.created_at, '%Y-%m-%d %H:%M') }}</td>
                         <td>
                             <a href="{{ url_for('main.download_report', id=report.id) }}" 
                                class="btn btn-sm btn-outline-primary">

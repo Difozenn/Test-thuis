@@ -1,11 +1,11 @@
 import tkinter as tk
 from PIL import Image, ImageTk
+import os
 
 class SplashScreen(tk.Toplevel):
     def __init__(self, parent, logo_path, duration=2000):
         super().__init__(parent)
         self.overrideredirect(True)
-        # self.configure(bg='white') # Remove explicit white background for Toplevel
 
         # Center splash
         w, h = 400, 400
@@ -17,15 +17,24 @@ class SplashScreen(tk.Toplevel):
 
         # Load and resize logo
         try:
-            pil_img = Image.open(logo_path).resize((400, 400), Image.LANCZOS) # Resize to fill 400x400 splash window
-            self.img = ImageTk.PhotoImage(pil_img)
-            label = tk.Label(self, image=self.img, borderwidth=0, highlightthickness=0)
-            label.image = self.img # Keep a reference
-            label.pack(expand=True)
+            if os.path.exists(logo_path):
+                pil_img = Image.open(logo_path).resize((400, 400), Image.LANCZOS)
+                self.img = ImageTk.PhotoImage(pil_img)
+                label = tk.Label(self, image=self.img, borderwidth=0, highlightthickness=0)
+                label.image = self.img # Keep a reference
+                label.pack(expand=True)
+            else:
+                print(f"[WARNING] Splash screen image not found: {logo_path}")
+                self._show_fallback()
         except Exception as e:
-            print(f"Error loading splash screen image: {e}")
-            # Optional: show text if image fails
-            tk.Label(self, text="Loading...", bg='white', font=("Arial", 16)).pack(expand=True)
+            print(f"[ERROR] Loading splash screen image: {e}")
+            self._show_fallback()
 
         # This is a fallback, the main app should destroy it.
         self.after(duration, self.destroy)
+    
+    def _show_fallback(self):
+        """Show fallback UI when image fails to load"""
+        self.configure(bg='white')
+        tk.Label(self, text="BarcodeMatch", bg='white', font=("Arial", 24)).pack(expand=True, pady=(150, 20))
+        tk.Label(self, text="Loading...", bg='white', font=("Arial", 16)).pack(expand=True)

@@ -1,10 +1,23 @@
-Pillow
-psutil
-requests
-pyserial
-Flask>=2.0.0,<3.0.0
-waitress>=2.0.0,<3.0.0
-pandas
-openpyxl
-pyodbc==4.0.35
-pyinstaller==5.6.2
+# Core GUI
+Pillow>=10.0.0
+
+# System and process management
+psutil>=5.9.0
+
+# Network and API
+requests>=2.31.0
+Flask>=3.0.0
+waitress>=2.1.2
+
+# Serial communication
+pyserial>=3.5
+
+# Data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Database access (for MDB files)
+pyodbc>=4.0.39
+
+# Build tools (for creating EXE)
+pyinstaller>=6.0.0

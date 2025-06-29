@@ -235,7 +235,7 @@
                 <tbody>
                     {% for backup in recent_backups %}
                     <tr>
-                        <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ format_local_time(backup.created_at, '%Y-%m-%d %H:%M') }}</td>
                         <td>{{ backup.size_mb }}MB</td>
                         <td><span class="badge bg-secondary">{{ backup.type }}</span></td>
                         <td>{{ backup.note or '-' }}</td>
@@ -445,7 +445,7 @@
         {% if scheduled_backup.last_run %}
         <div class="mt-3">
             <small class="text-muted">
-                {{ t('last_backup') }}: {{ scheduled_backup.last_run.strftime('%Y-%m-%d %H:%M') }}
+                {{ t('last_backup') }}: {{ format_local_time(scheduled_backup.last_run, '%Y-%m-%d %H:%M') }}
             </small>
         </div>
         {% endif %}

@@ -7,7 +7,9 @@ import re
 import json
 import requests
 import threading
+import time
 from config_utils import get_config, save_config
+from path_utils import get_resource_path
 
 PANEL_BG = "#f0f0f0"
 
@@ -16,6 +18,8 @@ class DatabasePanel(tk.Frame):
         super().__init__(master, bg=PANEL_BG)
         self.app = app
         self.config = get_config()
+        self.api_base_url = self.config.get('api_url', 'http://localhost:5001/log').split('/log')[0]
+        self._checking_connection = True
         self.build_panel()
         self.start_api_status_check()
 
@@ -108,6 +112,8 @@ class DatabasePanel(tk.Frame):
 
     def save_api_url(self, *args):
         save_config({'api_url': self.api_url_var.get()})
+        # Update the base URL
+        self.api_base_url = self.api_url_var.get().split('/log')[0]
 
     def save_user(self, *args):
         save_config({'user': self.user_var.get()})
@@ -156,12 +162,14 @@ class DatabasePanel(tk.Frame):
             messagebox.showerror("Fout", f"Verbinding mislukt: {e}")
 
     def set_connection_status(self, connected, error_reason=None):
+        """Update connection status in a thread-safe manner."""
+        if not self.winfo_exists():
+            return
+            
         if connected:
-            self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Verbonden", foreground="green"))
+            self.connection_status_label.config(text="Verbonden", foreground="green")
         else:
-            self.connection_status_label.after(0, lambda: self.connection_status_label.winfo_exists() and self.connection_status_label.config(text="Niet verbonden", foreground="red"))
-
-
+            self.connection_status_label.config(text="Niet verbonden", foreground="red")
 
     def log_event(self, event, details=None):
         if not self.database_enabled_var.get():
@@ -197,38 +205,46 @@ class DatabasePanel(tk.Frame):
 
     def _get_health_check_url(self):
         """Constructs the health check URL from the base API URL."""
-        base_url = self.api_url_var.get().split('/log')[0]
-        return f"{base_url}/logs/count"
+        return f"{self.api_base_url}/logs/count"
 
     def start_api_status_check(self):
-        """Starts the periodic API status check loop using `self.after`."""
-        self._check_api_status()  # Start the first check
+        """Starts the connection checker thread."""
+        self._connection_thread = threading.Thread(target=self._perform_network_check, daemon=True)
+        self._connection_thread.start()
 
-    def _check_api_status(self):
-        """Schedules the network check and the next iteration of itself."""
-        if not self.winfo_exists():
-            return  # Stop the loop if the widget is destroyed
-
-        if self.database_enabled_var.get():
-            # The url parameter for _perform_network_check is now unused, so we can pass None.
-            threading.Thread(target=self._perform_network_check, args=(None,), daemon=True).start()
-
-        self.after(5000, self._check_api_status)  # Schedule the next check
-
-    def _perform_network_check(self, url):
-        """Performs the blocking network request in a background thread."""
-        health_check_url = self._get_health_check_url()
-        try:
-            resp = requests.get(health_check_url, timeout=3)
-            is_active = resp.status_code == 200
-            # Schedule the UI update on the main thread
-            self.after(0, self.set_connection_status, is_active)
-        except Exception:
-            # Schedule the UI update on the main thread
-            self.after(0, self.set_connection_status, False)
+    def _perform_network_check(self):
+        """Perform the actual network check in a background thread."""
+        while self._checking_connection:
+            try:
+                if self.database_enabled_var.get():
+                    response = requests.get(f"{self.api_base_url}/logs/count", timeout=2)
+                    is_active = response.status_code == 200
+                    
+                    # Use after_idle to ensure GUI update happens in main thread
+                    try:
+                        self.winfo_toplevel().after_idle(self.set_connection_status, is_active)
+                    except tk.TclError:
+                        # Widget might be destroyed
+                        break
+                else:
+                    # Database is disabled
+                    try:
+                        self.winfo_toplevel().after_idle(self.set_connection_status, False)
+                    except tk.TclError:
+                        # Widget might be destroyed
+                        break
+            except Exception:
+                # Connection failed
+                try:
+                    self.winfo_toplevel().after_idle(self.set_connection_status, False)
+                except tk.TclError:
+                    # Widget might be destroyed
+                    break
+            
+            # Sleep in the background thread
+            time.sleep(5)
 
     def shutdown(self):
         """Graceful shutdown method to be called on application close."""
-        # The status check loop now stops automatically when the widget is destroyed,
-        # so no explicit stop signal is needed.
+        self._checking_connection = False
         logging.info("[DatabasePanel] Shutdown called.")

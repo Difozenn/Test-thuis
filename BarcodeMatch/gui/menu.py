@@ -10,6 +10,7 @@ from gui.panels.email_panel import EmailPanel
 from gui.panels.database_panel import DatabasePanel
 from gui.panels.help_panel import HelpPanel
 from gui.panels.settings_panel import SettingsPanel
+from gui.asset_utils import get_asset_path, asset_exists
 
 MENU_OPTIONS = [
     {"name": "Import", "panel": ImportPanel, "icon": "importeren.png"},
@@ -26,14 +27,18 @@ def create_menu(root, main_app):
     menu_frame.pack_propagate(False)
 
     # Load icons for each menu option
-    asset_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
     icon_imgs = []
     for opt in MENU_OPTIONS:
-        icon_path = os.path.join(asset_dir, opt["icon"])
+        icon_path = get_asset_path(opt["icon"])
         if os.path.exists(icon_path):
-            pil_img = Image.open(icon_path).resize((75, 75), Image.LANCZOS)
-            icon_img = ImageTk.PhotoImage(pil_img)
+            try:
+                pil_img = Image.open(icon_path).resize((75, 75), Image.LANCZOS)
+                icon_img = ImageTk.PhotoImage(pil_img)
+            except Exception as e:
+                print(f"[ERROR] Failed to load icon {opt['icon']}: {e}")
+                icon_img = None
         else:
+            print(f"[WARNING] Icon file not found: {icon_path}")
             icon_img = None
         icon_imgs.append(icon_img)
     root.icon_imgs = icon_imgs  # Prevent garbage-collection
@@ -57,20 +62,24 @@ def create_menu(root, main_app):
     def open_panel_idx(idx):
         # Hide any existing panel
         if root._active_panel is not None:
-            print(f"[DIAG] Hiding panel: {type(root._active_panel).__name__}")
-            root._active_panel.pack_forget()
+            try:
+                if hasattr(root._active_panel, 'winfo_exists') and root._active_panel.winfo_exists():
+                    root._active_panel.pack_forget()
+            except tk.TclError:
+                pass  # Widget already destroyed
+        
         # Show the persistent panel instance
         panel_name = MENU_OPTIONS[idx]["name"]
         panel = main_app.get_panel_by_name(panel_name)
-        root._active_panel = panel  # Assign before pack!
-        print(f"[DIAG] Showing panel: {type(panel).__name__}")
-        panel.pack(fill=tk.BOTH, expand=True)
-        # If this is the DatabasePanel, start auto-refresh after packing
-        from gui.panels.database_panel import DatabasePanel
-        if isinstance(panel, DatabasePanel):
-            panel.start_auto_refresh()
-        root.active_tab.set(idx)
-        update_tabs()
+        if panel:
+            root._active_panel = panel  # Assign before pack!
+            panel.pack(fill=tk.BOTH, expand=True)
+            # If this is the DatabasePanel, start auto-refresh after packing
+            from gui.panels.database_panel import DatabasePanel
+            if isinstance(panel, DatabasePanel):
+                panel.start_auto_refresh()
+            root.active_tab.set(idx)
+            update_tabs()
 
     MENU_BG = "#f0f0f0"
     root._tab_buttons = []
@@ -79,19 +88,27 @@ def create_menu(root, main_app):
         frame = tk.Frame(menu_frame, width=75, height=75, bg=MENU_BG, highlightthickness=0)
         frame.pack_propagate(False)
         frame.pack(side=tk.LEFT, padx=0, pady=0)
-        btn = tk.Button(
-            frame,
-            image=icon_imgs[idx],
-            command=lambda i=idx: open_panel_idx(i),
-            width=75, height=75,
-            bg=MENU_BG,
-            activebackground="#d0e0ff",
-            activeforeground="black",
-            relief=tk.FLAT,
-            bd=0,
-            highlightthickness=0,
-            takefocus=0
-        )
+        
+        # Create button with or without icon
+        btn_kwargs = {
+            'command': lambda i=idx: open_panel_idx(i),
+            'width': 75, 
+            'height': 75,
+            'bg': MENU_BG,
+            'activebackground': "#d0e0ff",
+            'activeforeground': "black",
+            'relief': tk.FLAT,
+            'bd': 0,
+            'highlightthickness': 0,
+            'takefocus': 0
+        }
+        
+        if icon_imgs[idx]:
+            btn_kwargs['image'] = icon_imgs[idx]
+        else:
+            btn_kwargs['text'] = opt["name"]
+            
+        btn = tk.Button(frame, **btn_kwargs)
         btn.pack(expand=True, fill=tk.BOTH, padx=0, pady=0)
         root._tab_buttons.append(btn)
         root._tab_frames.append(frame)

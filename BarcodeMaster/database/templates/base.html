@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BarcodeMaster{% endblock %}</title>
+    {% block refresh %}{% endblock %}
+    
+    <!-- Favicon -->
+    <!-- <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icon.ico') }}"> -->
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+    
+    <style>
+        :root {
+            --primary-blue: #0071b4;
+            --secondary-blue: #3498db;
+            --dark-blue: #2c3e50;
+            --light-blue: #f4f7f6;
+            --border-color: #dee2e6;
+            --hover-bg: #f8f9fa;
+            --success-color: #1e8e3e;
+            --danger-color: #d93025;
+            --warning-color: #f9ab00;
+            --info-color: #1a73e8;
+        }
+
+        body {
+            background-color: var(--light-blue);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Header styling */
+        .main-header {
+            background-image: url('/static/header.png');
+            background-repeat: no-repeat;
+            background-position: left center;
+            background-size: auto 100%;
+            background-color: #0071b4;
+            padding: 40px 20px;
+            margin: 20px;
+            border-radius: 8px;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .main-header .header-content {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            height: 100%;
+        }
+
+        /* User section */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--dark-blue);
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info .badge {
+            margin-left: 8px;
+        }
+
+        .dropdown .btn-light {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--dark-blue);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dropdown .btn-light:hover {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Main container */
+        .main-container {
+            padding: 0 20px 20px 20px;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            min-height: calc(100vh - 180px);
+            background: white;
+            border-right: 1px solid var(--border-color);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-right: 20px;
+        }
+        
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-blue);
+            border-left-color: var(--secondary-blue);
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: var(--secondary-blue);
+            color: white;
+            border-left-color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .sidebar hr {
+            margin: 15px 20px;
+            border-color: var(--border-color);
+        }
+
+        .sidebar small.text-muted {
+            padding: 0 20px;
+            font-weight: 600;
+            color: var(--dark-blue) !important;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Main content area */
+        .main-content {
+            padding: 0 20px 40px 0;
+        }
+
+        /* Page header - Updated to match reference */
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            color: var(--dark-blue);
+            border-bottom: 2px solid var(--secondary-blue);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        /* Card header - Updated to match reference */
+        .card-header {
+            background-color: #f8f9fa !important;
+            border-bottom: 2px solid var(--secondary-blue);
+            padding: 20px 25px;
+        }
+
+        .card-header h2,
+        .card-header h3,
+        .card-header h4,
+        .card-header h5,
+        .card-header h6 {
+            color: var(--dark-blue);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-header h2 {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Status badges */
+        .status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge i {
+    font-size: 0.75rem;
+}
+
+/* OPEN - Active project (Yellow/Gold) */
+.status-open {
+    background-color: rgba(241, 196, 15, 0.1);  /* Light yellow background */
+    color: #f39c12;  /* Gold text */
+}
+
+/* AFGEMELD - Completed (Green) */
+.status-afgemeld,
+.status-closed {
+    background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
+    color: #27ae60;  /* Green text */
+}
+
+        /* Table styling */
+        .table {
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--dark-blue);
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+
+        /* Alert styling */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            border-left: 4px solid;
+            padding: 15px 20px;
+        }
+
+        /* Form styling */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-header {
+                margin: 10px;
+                padding: 20px 15px;
+            }
+
+            .sidebar {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .main-content {
+                padding: 0 10px 20px 0;
+            }
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <div class="user-section">
+                <div class="user-info">
+                    <i class="fas fa-user"></i> {{ current_user|default('Administrator') }}
+                    <span class="badge bg-danger">Admin</span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">
+                            <i class="fas fa-key"></i> Wachtwoord wijzigen
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">
+                            <i class="fas fa-sign-out-alt"></i> Uitloggen
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <nav class="nav flex-column p-3">
+                        <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a class="nav-link {% if active_page == 'projects' %}active{% endif %}" href="/projects">
+                            <i class="fas fa-project-diagram"></i> Projecten
+                        </a>
+                        <a class="nav-link {% if active_page == 'users' %}active{% endif %}" href="/users">
+                            <i class="fas fa-users"></i> Gebruikers
+                        </a>
+                        <a class="nav-link {% if active_page == 'reports' %}active{% endif %}" href="/reports">
+                            <i class="fas fa-chart-bar"></i> Rapporten
+                        </a>
+                        <a class="nav-link {% if active_page == 'statistics' %}active{% endif %}" href="/statistics">
+                            <i class="fas fa-chart-pie"></i> Statistieken
+                        </a>
+                        
+                        <hr>
+                        <small class="text-muted">ADMINISTRATIE</small>
+                        <a class="nav-link {% if active_page == 'user_admin' %}active{% endif %}" href="#">
+                            <i class="fas fa-user-cog"></i> Gebruikersbeheer
+                        </a>
+                        <a class="nav-link {% if active_page == 'database' %}active{% endif %}" href="/database">
+                            <i class="fas fa-database"></i> Database
+                        </a>
+                        <a class="nav-link {% if active_page == 'export' %}active{% endif %}" href="#">
+                            <i class="fas fa-file-export"></i> Export/Import
+                        </a>
+                        <a class="nav-link {% if active_page == 'audit' %}active{% endif %}" href="#">
+                            <i class="fas fa-history"></i> Audit Log
+                        </a>
+                        
+                        <hr>
+                        <a class="nav-link" href="http://192.168.244.160:5002" target="_blank">
+                            <i class="fa-solid fa-square-poll-vertical"></i>CNC DATALOG
+                        </a>
+                        
+                        <hr>
+                        <!-- Language Selector -->
+                        <div class="px-3 py-2">
+                            <select class="form-select form-select-sm" id="languageSelector">
+                                <option value="nl" selected>Nederlands</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

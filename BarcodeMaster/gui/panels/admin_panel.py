@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import serial.tools.list_ports
 import threading
+import time
 import queue
 import os
 import subprocess
@@ -16,7 +17,9 @@ from tkinter import filedialog
 from config_utils import get_config, save_config
 import config_manager
 from com_splitter import ComSplitter
-from path_utils import get_resource_path
+from path_utils import get_resource_path, get_writable_path
+from database.db_log_api import run_api_server, stop_api_server
+from urllib.parse import urlparse
 
 PANEL_BG = "#f0f0f0"
 
@@ -28,11 +31,12 @@ class AdminPanel(tk.Frame):
         self.splitter_instance = None
         self.log_queue = queue.Queue()
         self.api_status_thread_stop = threading.Event()
+        self.db_api_thread = None
+        self._running = True  # Flag to track if panel is still running
 
         # Define db_path here to be accessible by all tab creation methods
-        self.db_path = get_resource_path('database/central_logging.sqlite')
-        self.db_log_path = get_resource_path('database/db_log_api.log')
-        self.api_script_path = get_resource_path('database/db_log_api.py')
+        self.db_path = get_writable_path('database/central_logging.sqlite')
+        self.db_log_path = get_writable_path('database/db_log_api.log')
 
         # Backup tab related variables
         self.backup_enabled_var = tk.BooleanVar()
@@ -110,7 +114,7 @@ class AdminPanel(tk.Frame):
         db_startup_check.pack(side='right', padx=10, pady=5)
 
         # Initial status update
-        self._update_api_status_label()
+        self._update_api_status_label(False, "N/A")
         # Start the background thread for continuous updates
         self.start_api_status_thread()
 
@@ -145,12 +149,12 @@ class AdminPanel(tk.Frame):
     def start_api_status_thread(self):
         threading.Thread(target=self._check_api_status_loop, daemon=True).start()
 
-    def _update_api_status_label(self):
-        # Diagnostic print
-        
+    def _update_api_status_label(self, is_active, log_count_text):
+        """Updates the UI labels with pre-fetched data. Non-blocking."""
+        if not self._running:
+            return
+            
         # Update API Status Label
-        api_status_str = self.app.service_status.db_api_status.upper()
-        is_active = "RUNNING" in api_status_str
         status_text = "Actief" if is_active else "Inactief"
         status_color = 'green' if is_active else 'red'
         
@@ -158,75 +162,91 @@ class AdminPanel(tk.Frame):
             self.api_status_label.config(text=status_text, foreground=status_color)
 
         # Update Log Count Label
-        log_count_text = "N/A"
-        if is_active:
-            try:
-                base_url = self.api_url.split('/log')[0]
-                count_url = f"{base_url}/logs/count"
-                response = requests.get(count_url, timeout=2)
-                response.raise_for_status()
-                result = response.json()
-                if result.get('success'):
-                    log_count_text = str(result.get('count', 'Fout'))
-                else:
-                    log_count_text = "API Fout"
-            except requests.exceptions.RequestException:
-                log_count_text = "Onbereikbaar" # Unreachable
-        
         if self.winfo_exists() and hasattr(self, 'log_count_label'):
             self.log_count_label.config(text=log_count_text)
 
     def _check_api_status_loop(self):
-        """Continuously checks API status and schedules UI updates."""
-        while not self.api_status_thread_stop.is_set():
-            is_active = False
+        """Background thread that continuously checks API status."""
+        while not self.api_status_thread_stop.is_set() and self._running:
             try:
-                # Use a lightweight endpoint to check for liveness.
+                # Check if API is active
                 base_url = self.api_url.split('/log')[0]
                 test_url = f"{base_url}/logs/count"
-                response = requests.get(test_url, timeout=1)
+                response = requests.get(test_url, timeout=2)
+                
                 if response.status_code == 200:
-                    is_active = True
-            except requests.exceptions.RequestException:
+                    data = response.json()
+                    if data.get('success'):
+                        log_count = data.get('count', 0)
+                        log_count_text = f"Logs in database: {log_count}"
+                        is_active = True
+                    else:
+                        log_count_text = "Failed to get log count"
+                        is_active = False
+                else:
+                    log_count_text = f"API returned status: {response.status_code}"
+                    is_active = False
+                    
+            except requests.exceptions.RequestException as e:
+                log_count_text = f"Connection error: {type(e).__name__}"
                 is_active = False
-
+            except Exception as e:
+                log_count_text = f"Unexpected error: {str(e)}"
+                is_active = False
+            
             # Update the central status object
             if self.app.service_status:
                 self.app.service_status.db_api_status = "Running" if is_active else "Inactive"
 
-            # Schedule the UI update to run on the main thread
-            self.after(0, self._update_api_status_label)
+            # Use after_idle to ensure GUI update happens in main thread
+            try:
+                self.winfo_toplevel().after_idle(self._update_api_status_label, is_active, log_count_text)
+            except Exception:
+                # Widget might be destroyed
+                break
             
-            # Wait for 5 seconds before the next check
-            self.api_status_thread_stop.wait(5)
+            # Sleep for a bit before checking again
+            time.sleep(3)
 
     def _start_db_api(self):
         try:
-            subprocess.Popen([sys.executable, self.api_script_path])
+            # Get port from API URL
+            port = 5001  # default
+            try:
+                parsed = urlparse(self.api_url)
+                if parsed.port:
+                    port = parsed.port
+            except:
+                pass
+            
+            # Start in thread
+            self.db_api_thread = threading.Thread(
+                target=run_api_server, 
+                kwargs={'port': port},
+                daemon=True
+            )
+            self.db_api_thread.start()
             messagebox.showinfo("API Beheer", "Database API is gestart.")
         except Exception as e:
             messagebox.showerror("API Fout", f"Kon de API niet starten:\n{e}")
 
     def _stop_db_api(self, silent=False):
-        stopped = False
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            if proc.info['cmdline'] and self.api_script_path in proc.info['cmdline']:
-                try:
-                    p = psutil.Process(proc.info['pid'])
-                    p.terminate()
-                    stopped = True
-                except psutil.Error as e:
-                    if not silent:
-                        messagebox.showerror("Fout bij Stoppen", f"Kon proces {proc.info['pid']} niet stoppen: {e}")
-        if not silent:
-            if stopped:
-                messagebox.showinfo("API Beheer", "Database API proces gestopt.")
-            else:
-                messagebox.showwarning("API Beheer", "Geen actief Database API proces gevonden.")
+        try:
+            stop_api_server()
+            if not silent:
+                messagebox.showinfo("API Beheer", "Database API gestopt.")
+        except Exception as e:
+            if not silent:
+                messagebox.showerror("Fout", f"Kon API niet stoppen: {e}")
 
     def _view_db_log(self):
         try:
-            os.startfile(self.db_log_path)
+            if sys.platform == "win32":
+                os.startfile(self.db_log_path)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", self.db_log_path])
+            else:
+                subprocess.run(["xdg-open", self.db_log_path])
         except Exception as e:
             messagebox.showerror("Fout", f"Kon logboek niet openen:\n{e}")
 
@@ -245,8 +265,8 @@ class AdminPanel(tk.Frame):
 
         try:
             # Check if API is running first
-            api_status_str = self.app.service_status.db_api_status.upper()
-            if "RUNNING" not in api_status_str:
+            api_status_str = self.app.service_status.db_api_status.upper() if self.app.service_status else "UNKNOWN"
+            if "RUNNING" not in api_status_str and "ACTIEF" not in api_status_str and "STARTING" not in api_status_str:
                 messagebox.showerror("Fout", "De Database API is niet actief. Kan logboek niet wissen.")
                 return
 
@@ -259,7 +279,7 @@ class AdminPanel(tk.Frame):
             if result.get('success'):
                 messagebox.showinfo("Succes", "Alle logboekvermeldingen zijn succesvol verwijderd.")
                 # Trigger an immediate update of the count
-                self._update_api_status_label() 
+                self._update_api_status_label(True, "0") 
             else:
                 messagebox.showerror("Fout", f"API Fout: {result.get('message', 'Onbekende fout')}")
 
@@ -574,7 +594,11 @@ class AdminPanel(tk.Frame):
 
             if not interrupted and self.backup_enabled_var.get() and self.backup_directory_var.get():
                 # Schedule _perform_backup to run in the main Tkinter thread
-                self.after(0, self._perform_backup, False) # manual=False
+                try:
+                    self.winfo_toplevel().after_idle(self._perform_backup, False) # manual=False
+                except:
+                    # Widget might be destroyed
+                    break
             elif interrupted:
                 self.log_to_queue("Backup scheduler loop onderbroken.")
                 break # Exit loop if stop event is set
@@ -608,7 +632,8 @@ class AdminPanel(tk.Frame):
             self._validate_and_save_backup_config() # Save status
             return
 
-        backup_filename = "central_logging_backup.sqlite"
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        backup_filename = f'backup_{timestamp}.sqlite'
         backup_target_path = os.path.join(backup_dir, backup_filename)
 
         try:
@@ -654,8 +679,6 @@ class AdminPanel(tk.Frame):
 
     def set_lock_button_visibility(self, visible):
         """Shows or hides the admin lock button."""
-        # Actual implementation for visibility can be added later if needed.
-        # For now, ensure the method exists to prevent indentation errors.
         if visible and self.winfo_exists():
             self.lock_button_frame.pack(side='bottom', fill='x')
         elif self.winfo_exists():
@@ -663,19 +686,17 @@ class AdminPanel(tk.Frame):
 
     def shutdown(self):
         """Gracefully shut down services managed by AdminPanel."""
+        self._running = False
         self.log_to_queue("AdminPanel shutdown gestart...")
         # Stop API status checking loop
         self.api_status_thread_stop.set()
-        # Stop COM Splitter if running (assuming it's managed here or has a similar stop event)
-        # self._stop_splitter() # If splitter has its own thread that needs joining, handle here
+        # Stop COM Splitter if running
+        self._stop_splitter()
         # Stop Backup Scheduler
         self._stop_backup_scheduler()
+        # Stop DB API
+        self._stop_db_api(silent=True)
         self.log_to_queue("AdminPanel shutdown voltooid.")
-        """Shows or hides the admin lock button."""
-        if visible and self.winfo_exists():
-            self.lock_button_frame.pack(side='bottom', fill='x')
-        elif self.winfo_exists():
-            self.lock_button_frame.pack_forget()
 
     def _save_db_startup_setting(self):
         value = self.db_api_startup_var.get()
@@ -688,11 +709,3 @@ class AdminPanel(tk.Frame):
         config_manager.save_startup_setting('start_com_splitter_on_boot', value)
         status = "ingeschakeld" if value else "uitgeschakeld"
         self.log_to_queue(f"Automatisch opstarten van COM Splitter {status}.")
-
-    def shutdown(self):
-        """Graceful shutdown method to be called on application close."""
-        self.log_to_queue("Applicatie wordt afgesloten, services stoppen...")
-        if hasattr(self, 'api_status_thread_stop'):
-            self.api_status_thread_stop.set()
-        self._stop_splitter()
-        self._stop_db_api(silent=True)

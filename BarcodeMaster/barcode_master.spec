@@ -1,85 +1,90 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
-from pathlib import Path
+import sys
 
-# Get the current directory
-current_dir = Path(os.getcwd())
+# Get the directory containing this spec file
+ROOT_DIR = os.path.dirname(os.path.abspath(SPEC))
 
-block_cipher = None
+# Simple data collection - include all project files
+def collect_project_files():
+    """Collect all project files for the executable"""
+    datas = []
+    
+    # Add assets folder
+    assets_dir = os.path.join(ROOT_DIR, 'assets')
+    if os.path.exists(assets_dir):
+        datas.append((assets_dir, 'assets'))
+    
+    # Add gui folder
+    gui_dir = os.path.join(ROOT_DIR, 'gui')
+    if os.path.exists(gui_dir):
+        datas.append((gui_dir, 'gui'))
+    
+    # Add services folder  
+    services_dir = os.path.join(ROOT_DIR, 'services')
+    if os.path.exists(services_dir):
+        datas.append((services_dir, 'services'))
+    
+    # Add database folder
+    database_dir = os.path.join(ROOT_DIR, 'database')
+    if os.path.exists(database_dir):
+        datas.append((database_dir, 'database'))
+    
+    # Add config files
+    config_files = ['config.json', 'version_info.txt']
+    for config_file in config_files:
+        config_path = os.path.join(ROOT_DIR, config_file)
+        if os.path.exists(config_path):
+            datas.append((config_path, '.'))
+    
+    return datas
+
+# Collect project data files
+project_datas = collect_project_files()
+print(f"Including {len(project_datas)} data file groups")
 
 a = Analysis(
     ['main.py'],
-    pathex=[str(current_dir)],
+    pathex=[ROOT_DIR],
     binaries=[],
-    datas=[
-        # Include configuration files
-        ('config.json', '.'),
-        ('config.ini', '.'),
-        # Include assets directory and all its contents
-        ('assets', 'assets'),
-        # Include database directory structure
-        ('database', 'database'),
-        # Include GUI directory
-        ('gui', 'gui'),
-        # Include services directory
-        ('services', 'services'),
-        # Include logs directory if it exists
-        ('logs', 'logs') if os.path.exists('logs') else None,
-    ],
+    datas=project_datas,
     hiddenimports=[
-        # GUI modules
-        'gui.app',
-        'gui.panels.admin_panel',
-        'gui.panels.database_panel',
-        'gui.panels.scanner_panel',
-        # Core modules
-        'config_utils',
-        'database_manager',
-        'path_utils',
-        'com_splitter',
-        'startup_manager',
-        'config_manager',
-        # Database modules
-        'database.db_log_api',
-        # Services
-        'services.background_import_service',
-        # Third-party modules that might not be auto-detected
-        'PIL._tkinter_finder',
-        'pkg_resources.py2_warn',
-        'waitress',
-        'flask',
-        'requests',
-        'pandas',
-        'openpyxl',
-        'pyodbc',
-        'psutil',
-        'serial',
-        'serial.tools.list_ports',
-        # Tkinter related
+        # Only include essential hidden imports that PyInstaller typically misses
         'tkinter',
-        'tkinter.ttk',
+        'tkinter.ttk', 
         'tkinter.messagebox',
         'tkinter.filedialog',
+        '_tkinter',
+        
+        # PIL essentials
+        'PIL._tkinter_finder',
+        
+        # Project modules (let PyInstaller auto-detect most others)
+        'gui.app',
+        'path_utils',
+        'config_utils',
+        'database.db_log_api',
+        'services.background_import_service',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Only exclude truly unnecessary modules
+        # Exclude large unnecessary modules to reduce size
         'matplotlib',
         'numpy.distutils',
+        'scipy',
+        'IPython',
+        'jupyter',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=block_cipher,
+    cipher=None,
     noarchive=False,
 )
 
-# Filter out None values from datas
-a.datas = [item for item in a.datas if item is not None]
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 exe = EXE(
     pyz,
@@ -93,12 +98,17 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
+    upx_exclude=[
+        'vcruntime140.dll',
+        'msvcp140.dll',
+        'api-ms-win-*.dll',
+        'ucrtbase.dll',
+    ],
     runtime_tmpdir=None,
-    console=False,  # Set to True for debugging, False for release
+    console=False, # Disable console for production build
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(current_dir / 'assets' / 'ico.ico') if (current_dir / 'assets' / 'ico.ico').exists() else None,
+    icon=os.path.join(ROOT_DIR, 'assets', 'ico.ico') if os.path.exists(os.path.join(ROOT_DIR, 'assets', 'ico.ico')) else None,
 )

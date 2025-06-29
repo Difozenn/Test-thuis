@@ -1,10 +1,10 @@
 {
     "buildnr": "v2",
     "database_enabled": true,
-    "api_url": "http://192.168.244.160:5001/log",
-    "user": "OPUS",
+    "api_url": "http://localhost:5001/log",
+    "user": "KL GANNOMAT",
     "default_scanner_type": "USB",
-    "default_base_dir": "0617_0526_MO07546_Bureau_REP_BC\\MW_02BCRV.HOP0617_0526_MO",
+    "default_base_dir": "",
     "default_scan_mode": "OPUS",
     "email_sender": "",
     "email_receiver": "",
@@ -15,7 +15,7 @@
     "email_enabled": false,
     "email_send_mode": "daily",
     "Paths": {
-        "last_excel_file": ""
+        "last_excel_file": "C:/OPUS/KORPUS\\0618_MO07834_Boekenkast_Rep_VL5\\0618_MO07834_Boekenkast_Rep_VL5.xlsx"
     },
     "Scanner": {
         "type": "USB",

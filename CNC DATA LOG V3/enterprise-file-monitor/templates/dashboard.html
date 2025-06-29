@@ -140,7 +140,7 @@
 <!-- Page Header with Blue Underline -->
 <div class="page-header">
     <h1>{{ t('dashboard') }}</h1>
-    <p>{{ datetime.now().strftime('%A, %d %B %Y') }}</p>
+    <p>{{ local_now().strftime('%A, %d %B %Y %H:%M') }}</p>
 </div>
 
 <!-- Filter Section -->
@@ -210,7 +210,7 @@
                 <div class="col-md-3">
                     <div class="text-center">
                         <h3 class="mb-0">{{ today_events }}</h3>
-                        <small>{{ t('todays_events') }} ({{ work_hours.get_hours_for_day(datetime.now().weekday()) }}h day)</small>
+                        <small>{{ t('todays_events') }} ({{ work_hours.get_hours_for_day(local_now().weekday()) }}h day)</small>
                     </div>
                 </div>
             </div>
@@ -226,7 +226,7 @@
                     ] %}
                     {% for i in range(7) %}
                     <div class="col">
-                        <div class="card border-0 {% if i == datetime.now().weekday() %}bg-warning text-dark{% else %}bg-light{% endif %} text-center day-card">
+                        <div class="card border-0 {% if i == local_now().weekday() %}bg-warning text-dark{% else %}bg-light{% endif %} text-center day-card">
                             <div class="card-body py-2">
                                 <div class="small">{{ t(days[i]) }}</div>
                                 <div class="h6 mb-0">
@@ -306,7 +306,6 @@
         <div class="chart-container">
             <h5 class="mb-3">
                 <i class="fas fa-chart-bar"></i> {{ t('weekly_activity_normalized') }}
-                <small class="text-muted">({{ t('events_per_work_hour') }})</small>
             </h5>
             <div class="chart-wrapper">
                 <canvas id="weeklyNormalizedChart"></canvas>
@@ -327,10 +326,10 @@
                         </thead>
                         <tbody>
                             {% for day_data in weekly_activity %}
-                            <tr {% if loop.index0 == datetime.now().weekday() %}class="table-primary"{% endif %}>
+                            <tr {% if loop.index0 == local_now().weekday() %}class="table-primary"{% endif %}>
                                 <td>
-                                    <strong>{{ day_data.day }}</strong>
-                                    {% if loop.index0 == datetime.now().weekday() %}
+                                    <strong>{{ t(day_data.day.lower()) }}</strong>
+                                    {% if loop.index0 == local_now().weekday() %}
                                         <span class="badge bg-primary ms-1">{{ t('today') }}</span>
                                     {% endif %}
                                 </td>
@@ -386,7 +385,7 @@
                 <div class="timeline-item">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <strong>{{ event.timestamp.strftime('%H:%M:%S') }}</strong>
+                            <strong>{{ format_local_time(event.timestamp, '%H:%M:%S') }}</strong>
                             <span class="badge" style="background-color: {{ event.category.color if event.category else '#6c757d' }}">
                                 {{ event.category.name if event.category else t('uncategorized') }}
                             </span>
@@ -726,10 +725,21 @@ function initializeCharts() {
     if (weeklyCtx) {
         const weeklyData = {{ weekly_activity|tojson }};
         
+        // Translate day names
+        const translatedDays = {
+            'monday': '{{ t("monday") }}',
+            'tuesday': '{{ t("tuesday") }}',
+            'wednesday': '{{ t("wednesday") }}',
+            'thursday': '{{ t("thursday") }}',
+            'friday': '{{ t("friday") }}',
+            'saturday': '{{ t("saturday") }}',
+            'sunday': '{{ t("sunday") }}'
+        };
+        
         charts.weeklyChart = new Chart(weeklyCtx, {
             type: 'bar',
             data: {
-                labels: weeklyData.map(d => d.day),
+                labels: weeklyData.map(d => translatedDays[d.day.toLowerCase()] || d.day),
                 datasets: [
                     {
                         label: '{{ t("events") }}',
@@ -812,7 +822,7 @@ function initializeCharts() {
                             afterLabel: function(context) {
                                 const dayData = weeklyData[context.dataIndex];
                                 if (context.datasetIndex === 0) { // Events dataset
-                                    return `Work Hours: ${dayData.work_hours}h\nEvents/Hour: ${dayData.work_hours > 0 ? (dayData.events / dayData.work_hours).toFixed(1) : '0'}\nEfficiency: ${dayData.efficiency}`;
+                                    return `{{ t("work_hours") }}: ${dayData.work_hours}h\n{{ t("events_per_hour") }}: ${dayData.work_hours > 0 ? (dayData.events / dayData.work_hours).toFixed(1) : '0'}\n{{ t("efficiency") }}: ${dayData.efficiency}`;
                                 }
                                 return '';
                             }

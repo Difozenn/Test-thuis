@@ -1,5 +1,10 @@
 # Changelog
 
+## [Onuitgebracht]
+
+### Toegevoegd
+- Begonnen met het opstellen van de technische documentatie (`TECHNICAL_DOCUMENTATION.md`).
+
 Alle belangrijke wijzigingen aan dit project worden in dit bestand bijgehouden.
 
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/) (Nederlandse versie als beschikbaar, anders Engelse link behouden).

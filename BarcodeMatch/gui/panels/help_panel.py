@@ -1,6 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from build_info import get_build_number
+from gui.asset_utils import get_asset_path
+import os
+import sys
 
 class HelpPanel(ttk.Frame):
     def __init__(self, parent, main_app):
@@ -21,12 +24,19 @@ class HelpPanel(ttk.Frame):
         copyright_label.pack(side=tk.BOTTOM, pady=2)
 
     def _open_manual(self):
-        # Stub for opening manual
-        # In BarcodeMaster, this would open the PDF manual from assets
-        # You can implement this to open the file using os.startfile or similar
-        import os
-        manual_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'BarcodeMatch_Gebruikershandleiding.pdf'))
+        # Use the asset_utils to get the correct path for both dev and frozen states
+        manual_path = get_asset_path('BarcodeMatch_Gebruikershandleiding.pdf')
+        
+        if not os.path.exists(manual_path):
+            messagebox.showerror("Fout", f"Handleiding niet gevonden:\n{manual_path}")
+            return
+            
         try:
-            os.startfile(manual_path)
+            if sys.platform.startswith('win'):
+                os.startfile(manual_path)
+            elif sys.platform.startswith('darwin'):  # macOS
+                os.system(f'open "{manual_path}"')
+            else:  # linux variants
+                os.system(f'xdg-open "{manual_path}"')
         except Exception as e:
-            tk.messagebox.showerror("Fout", f"Kan handleiding niet openen:\n{manual_path}\n{e}")
+            messagebox.showerror("Fout", f"Kan handleiding niet openen:\n{manual_path}\n{e}")

@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block title %}Statistieken - BarcodeMaster{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Date Range Picker -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+/* Filter section */
+.filter-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Statistics cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--dark-blue);
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.stat-trend {
+    font-size: 0.875rem;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.trend-positive {
+    color: var(--success-color);
+}
+
+.trend-negative {
+    color: var(--danger-color);
+}
+
+.trend-neutral {
+    color: #6c757d;
+}
+
+/* User performance table */
+.performance-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.performance-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark-blue);
+    padding: 15px;
+    border: none;
+}
+
+.performance-table tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.performance-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.performance-excellent {
+    background-color: rgba(30, 142, 62, 0.1);
+    color: var(--success-color);
+}
+
+.performance-good {
+    background-color: rgba(26, 115, 232, 0.1);
+    color: var(--info-color);
+}
+
+.performance-average {
+    background-color: rgba(249, 171, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.performance-poor {
+    background-color: rgba(217, 48, 37, 0.1);
+    color: var(--danger-color);
+}
+
+/* Charts section */
+.chart-container {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    height: 100%;
+    position: relative;
+}
+
+.chart-container h3 {
+    color: var(--dark-blue);
+    border-bottom: 2px solid var(--secondary-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Date range picker custom styles */
+.daterangepicker {
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-section {
+        padding: 15px;
+    }
+    
+    .performance-table {
+        font-size: 0.85rem;
+    }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>Globale Statistieken</h1>
+    <p>Analyse en inzichten over alle projecten en gebruikers</p>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Periode:</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                <input type="text" class="form-control" id="dateRange" placeholder="Selecteer periode">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Gebruiker Filter:</label>
+            <select class="form-select" id="userFilter">
+                <option value="">Alle Gebruikers</option>
+                <option value="NESTING">NESTING</option>
+                <option value="OPUS">OPUS</option>
+                <option value="KL GANNOMAT">KL GANNOMAT</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Project Type:</label>
+            <select class="form-select" id="projectTypeFilter">
+                <option value="">Alle Types</option>
+                <option value="normal">Normaal</option>
+                <option value="rep">REP Variant</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Filter Toepassen
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="loading-spinner" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
+            <i class="fas fa-project-diagram"></i>
+        </div>
+        <div class="stat-value" id="totalProjects">0</div>
+        <div class="stat-label">Totaal Projecten</div>
+        <div class="stat-trend trend-neutral" id="projectsTrend">--</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-value" id="completedProjects">0</div>
+        <div class="stat-label">Voltooide Projecten</div>
+        <div class="stat-trend trend-neutral" id="completedTrend">--</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-value" id="avgCompletionTime">--</div>
+        <div class="stat-label">Gem. Doorlooptijd</div>
+        <div class="stat-trend trend-neutral" id="timeTrend">--</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background-color: rgba(52, 152, 219, 0.1); color: var(--secondary-blue);">
+            <i class="fas fa-percentage"></i>
+        </div>
+        <div class="stat-value" id="efficiencyRate">0%</div>
+        <div class="stat-label">Efficiency Score</div>
+        <div class="stat-trend trend-neutral" id="efficiencyTrend">--</div>
+    </div>
+</div>
+
+<!-- User Performance Table -->
+<div class="card performance-table">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-users"></i> Gebruikers Performance</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Gebruiker</th>
+                        <th>Projecten</th>
+                        <th>Voltooid</th>
+                        <th>Gem. Tijd</th>
+                        <th>Min Tijd</th>
+                        <th>Max Tijd</th>
+                        <th>Consistentie</th>
+                        <th>Trend</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody id="userPerformanceTable">
+                    <!-- Data will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Projecten per Dag</h3>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" onclick="switchChartView('daily', 'projects')">Dagelijks</button>
+                    <button class="btn btn-outline-secondary" onclick="switchChartView('weekly', 'projects')">Wekelijks</button>
+                    <button class="btn btn-outline-secondary" onclick="switchChartView('monthly', 'projects')">Maandelijks</button>
+                </div>
+            </div>
+            <canvas id="projectsChart" height="300"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Doorlooptijd Trend</h3>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" onclick="switchChartView('daily', 'time')">Dagelijks</button>
+                    <button class="btn btn-outline-secondary" onclick="switchChartView('weekly', 'time')">Wekelijks</button>
+                    <button class="btn btn-outline-secondary" onclick="switchChartView('monthly', 'time')">Maandelijks</button>
+                </div>
+            </div>
+            <canvas id="timeChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h3>Workflow Distributie</h3>
+            <canvas id="workflowChart" height="300"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h3>Gebruikers Vergelijking</h3>
+            <canvas id="userComparisonChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilters = {
+    startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
+    endDate: moment().format('YYYY-MM-DD'),
+    user: '',
+    projectType: ''
+};
+
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date range picker
+    $('#dateRange').daterangepicker({
+        startDate: moment().subtract(30, 'days'),
+        endDate: moment(),
+        locale: {
+            format: 'DD-MM-YYYY',
+            applyLabel: 'Toepassen',
+            cancelLabel: 'Annuleren',
+            fromLabel: 'Van',
+            toLabel: 'Tot',
+            customRangeLabel: 'Aangepast',
+            weekLabel: 'W',
+            daysOfWeek: ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
+            monthNames: ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 
+                         'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
+        },
+        ranges: {
+            'Vandaag': [moment(), moment()],
+            'Gisteren': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'Laatste 7 dagen': [moment().subtract(6, 'days'), moment()],
+            'Laatste 30 dagen': [moment().subtract(29, 'days'), moment()],
+            'Deze maand': [moment().startOf('month'), moment().endOf('month')],
+            'Vorige maand': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }
+    });
+    
+    $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+        currentFilters.startDate = picker.startDate.format('YYYY-MM-DD');
+        currentFilters.endDate = picker.endDate.format('YYYY-MM-DD');
+    });
+    
+    // Load initial data
+    loadStatistics();
+});
+
+function applyFilters() {
+    currentFilters.user = document.getElementById('userFilter').value;
+    currentFilters.projectType = document.getElementById('projectTypeFilter').value;
+    loadStatistics();
+}
+
+function loadStatistics() {
+    showLoading(true);
+    
+    // Load all metrics in parallel
+    Promise.all([
+        loadSummaryStats(),
+        loadUserPerformance(),
+        loadChartData()
+    ]).then(() => {
+        showLoading(false);
+    }).catch(error => {
+        console.error('Error loading statistics:', error);
+        showLoading(false);
+        showNotification('Fout bij het laden van statistieken', 'danger');
+    });
+}
+
+function loadSummaryStats() {
+    // Fetch daily summary stats
+    return fetch(`/api/metrics/daily_summary?date=${currentFilters.endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateSummaryCards(data.summary);
+            }
+        });
+}
+
+function loadUserPerformance() {
+    return fetch('/api/metrics/project_completion_times')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateUserPerformanceTable(data.metrics);
+            }
+        });
+}
+
+function loadChartData() {
+    // This would load data for all charts
+    // For now, we'll create sample data
+    updateCharts();
+}
+
+function updateSummaryCards(summary) {
+    document.getElementById('totalProjects').textContent = summary.projects_started || 0;
+    document.getElementById('completedProjects').textContent = summary.projects_completed || 0;
+    
+    // Calculate average completion time (mock data for now)
+    document.getElementById('avgCompletionTime').textContent = '2.5u';
+    
+    // Calculate efficiency (mock data for now)
+    const efficiency = summary.projects_completed > 0 
+        ? Math.round((summary.projects_completed / summary.projects_started) * 100) 
+        : 0;
+    document.getElementById('efficiencyRate').textContent = efficiency + '%';
+}
+
+function updateUserPerformanceTable(metrics) {
+    const tbody = document.getElementById('userPerformanceTable');
+    tbody.innerHTML = '';
+    
+    // Filter by user if needed
+    let filteredMetrics = metrics;
+    if (currentFilters.user) {
+        filteredMetrics = metrics.filter(m => m.user === currentFilters.user);
+    }
+    
+    filteredMetrics.forEach(metric => {
+        const row = document.createElement('tr');
+        
+        // Determine performance level
+        let performanceClass = 'performance-average';
+        let performanceText = 'Gemiddeld';
+        
+        if (metric.consistency === 'Zeer consistent' && metric.trend_class === 'positive') {
+            performanceClass = 'performance-excellent';
+            performanceText = 'Uitstekend';
+        } else if (metric.consistency === 'Consistent' || metric.trend_class === 'positive') {
+            performanceClass = 'performance-good';
+            performanceText = 'Goed';
+        } else if (metric.trend_class === 'negative') {
+            performanceClass = 'performance-poor';
+            performanceText = 'Verbetering nodig';
+        }
+        
+        row.innerHTML = `
+            <td><strong>${metric.user}</strong></td>
+            <td>${metric.total_completed}</td>
+            <td>${metric.recent_count || 0}</td>
+            <td>${metric.avg_time}</td>
+            <td>${metric.min_time}</td>
+            <td>${metric.max_time}</td>
+            <td>${metric.consistency}</td>
+            <td class="${metric.trend_class}">${metric.trend}</td>
+            <td><span class="performance-badge ${performanceClass}">${performanceText}</span></td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function updateCharts() {
+    // Projects per Day Chart
+    if (charts.projects) {
+        charts.projects.destroy();
+    }
+    
+    const projectsCtx = document.getElementById('projectsChart').getContext('2d');
+    charts.projects = new Chart(projectsCtx, {
+        type: 'line',
+        data: {
+            labels: getLast7Days(),
+            datasets: [{
+                label: 'Projecten',
+                data: [12, 19, 15, 17, 14, 20, 18],
+                borderColor: 'rgb(52, 152, 219)',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Time Trend Chart
+    if (charts.time) {
+        charts.time.destroy();
+    }
+    
+    const timeCtx = document.getElementById('timeChart').getContext('2d');
+    charts.time = new Chart(timeCtx, {
+        type: 'line',
+        data: {
+            labels: getLast7Days(),
+            datasets: [{
+                label: 'Doorlooptijd (minuten)',
+                data: [145, 138, 142, 135, 128, 130, 125],
+                borderColor: 'rgb(46, 204, 113)',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Workflow Distribution Chart
+    if (charts.workflow) {
+        charts.workflow.destroy();
+    }
+    
+    const workflowCtx = document.getElementById('workflowChart').getContext('2d');
+    charts.workflow = new Chart(workflowCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['NESTING', 'OPUS', 'KL GANNOMAT'],
+            datasets: [{
+                data: [35, 40, 25],
+                backgroundColor: [
+                    'rgba(52, 152, 219, 0.8)',
+                    'rgba(46, 204, 113, 0.8)',
+                    'rgba(155, 89, 182, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // User Comparison Chart
+    if (charts.userComparison) {
+        charts.userComparison.destroy();
+    }
+    
+    const userCtx = document.getElementById('userComparisonChart').getContext('2d');
+    charts.userComparison = new Chart(userCtx, {
+        type: 'bar',
+        data: {
+            labels: ['NESTING', 'OPUS', 'KL GANNOMAT'],
+            datasets: [{
+                label: 'Projecten',
+                data: [45, 52, 38],
+                backgroundColor: 'rgba(52, 152, 219, 0.8)'
+            }, {
+                label: 'Gem. Tijd (min)',
+                data: [120, 105, 95],
+                backgroundColor: 'rgba(46, 204, 113, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function getLast7Days() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        days.push(moment().subtract(i, 'days').format('DD-MM'));
+    }
+    return days;
+}
+
+function switchChartView(view, chartType) {
+    // Update button states
+    event.target.parentElement.querySelectorAll('.btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update chart based on view
+    // In a real implementation, this would fetch new data
+    updateCharts();
+}
+
+function showLoading(show) {
+    document.getElementById('loadingSpinner').style.display = show ? 'flex' : 'none';
+    document.getElementById('statsGrid').style.opacity = show ? '0.5' : '1';
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Auto-refresh every 60 seconds
+setInterval(() => {
+    if (!document.hidden) {
+        loadStatistics();
+    }
+}, 60000);
+</script>
+{% endblock %}

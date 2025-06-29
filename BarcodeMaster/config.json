@@ -15,7 +15,7 @@
         "KL GANNOMAT": "MDB_PROCESSING"
     },
     "scanner_panel_event_type": "OPEN",
-    "scanner_panel_event_type_locked": false,
+    "scanner_panel_event_type_locked": true,
     "database_panel_api_config_locked": false,
     "scanner_panel_open_event_user_logic_active": {
         "OPUS": true,
@@ -29,7 +29,7 @@
     },
     "master_background_service_active": true,
     "backup_enabled": true,
-    "backup_directory": "C:/OPUS",
+    "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
-    "last_backup_status": "Succesvol gebackupt naar C:/OPUS\\central_logging_backup.sqlite op 2025-06-18 20:54:45"
+    "last_backup_status": "Succesvol gebackupt naar C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups\\central_logging_backup.sqlite op 2025-06-29 21:47:06"
 }

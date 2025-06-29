@@ -24,7 +24,7 @@ import re
 from functools import wraps
 from sqlalchemy import func, and_, or_, text
 from sqlalchemy.exc import OperationalError
-
+import pytz
 # Import our translation module
 from translations import get_translation, setup_translations, get_available_languages
 
@@ -119,6 +119,61 @@ def create_app():
 
 # Create app instance
 app = create_app()
+
+# Add timezone context processor
+@app.context_processor
+def inject_timezone_functions():
+    """Context processor to make timezone functions available in templates"""
+    def format_local_time(dt, format='%Y-%m-%d %H:%M:%S'):
+        """Format datetime in local timezone"""
+        if dt is None:
+            return ''
+        local_dt = utc_to_local(dt)
+        return local_dt.strftime(format) if local_dt else ''
+    
+    def to_local_time(dt):
+        """Convert UTC datetime to local time for display"""
+        return utc_to_local(dt)
+    
+    return {
+        'format_local_time': format_local_time,
+        'to_local_time': to_local_time,
+        'local_now': lambda: datetime.now(get_local_timezone())
+    }
+
+def get_local_timezone():
+    """Get the configured timezone"""
+    import pytz
+    return pytz.timezone(app.config.get('TIMEZONE', 'Europe/Brussels'))
+
+def utc_to_local(utc_dt):
+    """Convert UTC datetime to local timezone"""
+    import pytz
+    
+    if utc_dt is None:
+        return None
+    
+    # Ensure the datetime is timezone-aware
+    if utc_dt.tzinfo is None:
+        utc_dt = utc_dt.replace(tzinfo=pytz.UTC)
+    
+    local_tz = get_local_timezone()
+    return utc_dt.astimezone(local_tz)
+
+def local_to_utc(local_dt):
+    """Convert local datetime to UTC"""
+    import pytz
+    
+    if local_dt is None:
+        return None
+    
+    local_tz = get_local_timezone()
+    
+    # If datetime is naive, localize it
+    if local_dt.tzinfo is None:
+        local_dt = local_tz.localize(local_dt)
+    
+    return local_dt.astimezone(pytz.UTC)
 
 # Add custom Jinja2 filters
 @app.template_filter('basename')
@@ -716,7 +771,9 @@ def dashboard():
     operators = User.query.filter_by(is_active=True, role='operator').order_by(User.username).all()
     
     # Date range setup
-    now = datetime.now(timezone.utc)
+    local_tz = get_local_timezone()
+    now = datetime.now(local_tz)
+    now_utc = now.astimezone(pytz.UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     
     if date_range == 'week':
@@ -728,6 +785,11 @@ def dashboard():
     else:  # today
         start_date = today_start
         end_date = now
+    
+    # Convert to UTC for database queries
+    today_start_utc = today_start.astimezone(pytz.UTC)
+    start_date_utc = start_date.astimezone(pytz.UTC)
+    end_date_utc = end_date.astimezone(pytz.UTC)
     
     # Initialize query objects based on user role
     if current_user.role == 'admin':
@@ -751,18 +813,20 @@ def dashboard():
     
     # Apply date range filter
     date_filtered_events = events_query.filter(
-        Event.timestamp >= start_date,
-        Event.timestamp <= end_date
+        Event.timestamp >= start_date_utc,
+        Event.timestamp <= end_date_utc
     )
     
     # KPI Metrics with weekly work hours
-    today_events = events_query.filter(Event.timestamp >= today_start).count()
+    today_events = events_query.filter(Event.timestamp >= today_start_utc).count()
     
     yesterday_start = today_start - timedelta(days=1)
     yesterday_end = today_start
+    yesterday_start_utc = yesterday_start.astimezone(pytz.UTC)
+    yesterday_end_utc = yesterday_end.astimezone(pytz.UTC)
     yesterday_events = events_query.filter(
-        Event.timestamp >= yesterday_start,
-        Event.timestamp < yesterday_end
+        Event.timestamp >= yesterday_start_utc,
+        Event.timestamp < yesterday_end_utc
     ).count()
     
     # Calculate hourly average using today's configured work hours
@@ -783,7 +847,7 @@ def dashboard():
     total_dirs = paths_query.filter_by(is_directory=True).count()
     
     active_categories = db.session.query(Category.id).join(Event).filter(
-        Event.timestamp >= start_date
+        Event.timestamp >= start_date_utc
     ).distinct().count()
     total_categories = Category.query.count()
     
@@ -796,8 +860,8 @@ def dashboard():
         Category.color,
         func.count(Event.id).label('count')
     ).join(Event).filter(
-        Event.timestamp >= start_date,
-        Event.timestamp <= end_date
+        Event.timestamp >= start_date_utc,
+        Event.timestamp <= end_date_utc
     )
     
     if user_filter:
@@ -816,8 +880,8 @@ def dashboard():
         func.date(Event.timestamp).label('date'),
         func.count(Event.id).label('count')
     ).filter(
-        Event.timestamp >= start_date,
-        Event.timestamp <= end_date
+        Event.timestamp >= start_date_utc,
+        Event.timestamp <= end_date_utc
     )
     
     if user_filter:
@@ -851,9 +915,11 @@ def dashboard():
     for i in range(7):  # 0=Monday, 6=Sunday
         day_start = week_start + timedelta(days=i)
         day_end = day_start + timedelta(days=1)
+        day_start_utc = day_start.astimezone(pytz.UTC)
+        day_end_utc = day_end.astimezone(pytz.UTC)
         day_events = events_query.filter(
-            Event.timestamp >= day_start,
-            Event.timestamp < day_end
+            Event.timestamp >= day_start_utc,
+            Event.timestamp < day_end_utc
         ).count()
         
         day_work_hours = work_hours_for_stats.get_hours_for_day(i) if work_hours_for_stats else 8.0
@@ -879,37 +945,50 @@ def dashboard():
             'efficiency': efficiency
         })
     
-    # Path distribution
-    path_stats = db.session.query(
+    # Path distribution - Fixed to properly filter paths by owner
+    path_stats_query = db.session.query(
         MonitoredPath.id,
         MonitoredPath.path,
         MonitoredPath.description,
+        MonitoredPath.user_id,
         func.count(Event.id).label('count')
     ).join(
         Event,
-        # Proper join: events must match the monitored path
-        # For files: exact path match
-        # For directories: event path must start with directory path
-        db.or_(
-            db.and_(
-                MonitoredPath.is_directory == False,
-                Event.file_path == MonitoredPath.path
+        and_(
+            or_(
+                and_(
+                    MonitoredPath.is_directory == False,
+                    Event.file_path == MonitoredPath.path
+                ),
+                and_(
+                    MonitoredPath.is_directory == True,
+                    Event.file_path.like(func.concat(MonitoredPath.path, '%'))
+                )
             ),
-            db.and_(
-                MonitoredPath.is_directory == True,
-                Event.file_path.like(func.concat(MonitoredPath.path, '%'))
-            )
+            Event.user_id == MonitoredPath.user_id  # Events must belong to path owner
         )
     ).filter(
-        Event.timestamp >= start_date,
-        Event.timestamp <= end_date,
+        Event.timestamp >= start_date_utc,
+        Event.timestamp <= end_date_utc,
         MonitoredPath.is_active == True
     )
     
-    if user_filter:
-        path_stats = path_stats.filter(Event.user_id == user_filter)
+    # Apply strict user filtering on BOTH MonitoredPath and Event
+    if current_user.role == 'admin' and user_filter:
+        # Admin viewing specific user - show only that user's paths with their events
+        path_stats_query = path_stats_query.filter(
+            MonitoredPath.user_id == user_filter,
+            Event.user_id == user_filter
+        )
+    elif current_user.role != 'admin':
+        # Non-admin users can only see their own paths and events
+        path_stats_query = path_stats_query.filter(
+            MonitoredPath.user_id == current_user.id,
+            Event.user_id == current_user.id
+        )
+    # Note: If admin without filter, show all paths with their respective user's events
     
-    path_stats = path_stats.group_by(MonitoredPath.id).order_by(func.count(Event.id).desc()).limit(10).all()
+    path_stats = path_stats_query.group_by(MonitoredPath.id).order_by(func.count(Event.id).desc()).limit(10).all()
     
     path_distribution_data = {
         'labels': [stat.description or os.path.basename(stat.path) for stat in path_stats],
@@ -921,7 +1000,7 @@ def dashboard():
         func.extract('hour', Event.timestamp).label('hour'),
         func.count(Event.id).label('count')
     ).filter(
-        Event.timestamp >= today_start
+        Event.timestamp >= today_start_utc
     )
     
     if user_filter:
@@ -944,7 +1023,7 @@ def dashboard():
         Category.color,
         func.count(Event.id).label('count')
     ).join(Event).filter(
-        Event.timestamp >= today_start
+        Event.timestamp >= today_start_utc
     )
     
     if user_filter:
@@ -966,7 +1045,7 @@ def dashboard():
             User.username,
             func.count(Event.id).label('event_count')
         ).join(Event).filter(
-            Event.timestamp >= today_start,
+            Event.timestamp >= today_start_utc,
             User.role == 'operator'
         ).group_by(User.id).order_by(
             func.count(Event.id).desc()

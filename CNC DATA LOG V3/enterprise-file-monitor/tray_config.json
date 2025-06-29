@@ -1,6 +1,6 @@
 {
-  "Username": "OPUS",
-  "WebAppUrl": "http://localhost:5002",
+  "Username": "VISION",
+  "WebAppUrl": "http://192.168.0.148:5002",
   "Language": "nl",
   "ScanFileContents": true,
   "MaxFileSizeMB": 10

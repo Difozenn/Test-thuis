@@ -140,36 +140,73 @@
     font-size: 0.875rem;
 }
 
-/* Add user button */
-.add-user-btn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+/* User Details Modal */
+.modal-header {
     background: var(--secondary-blue);
     color: white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    transition: all 0.3s ease;
 }
 
-.add-user-btn:hover {
-    background: var(--primary-blue);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.project-timeline {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.timeline-item {
+    padding: 15px;
+    border-left: 3px solid var(--secondary-blue);
+    margin-left: 20px;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--secondary-blue);
+}
+
+.timeline-item.completed {
+    border-left-color: var(--success-color);
+}
+
+.timeline-item.completed::before {
+    background: var(--success-color);
+}
+
+/* Performance chart container */
+.performance-chart-container {
+    position: relative;
+    height: 150px;
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* No data state */
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.no-data i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
 }
 {% endblock %}
 
 {% block content %}
 <!-- Page Header with Blue Underline -->
 <div class="page-header">
-    <h1>Gebruikers Beheer</h1>
+    <h1>Gebruikers</h1>
     <p>Beheer gebruikers en monitor hun performance</p>
 </div>
 
@@ -179,7 +216,7 @@
         <div class="overview-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
             <i class="fas fa-users"></i>
         </div>
-        <div class="overview-value">{{ total_users|default(8) }}</div>
+        <div class="overview-value">{{ total_users|default(0) }}</div>
         <div class="overview-label">Totaal Gebruikers</div>
     </div>
     
@@ -187,7 +224,7 @@
         <div class="overview-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
             <i class="fas fa-user-check"></i>
         </div>
-        <div class="overview-value">{{ active_users|default(6) }}</div>
+        <div class="overview-value">{{ active_users|default(0) }}</div>
         <div class="overview-label">Actieve Gebruikers</div>
     </div>
     
@@ -195,7 +232,7 @@
         <div class="overview-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
             <i class="fas fa-chart-line"></i>
         </div>
-        <div class="overview-value">{{ avg_performance|default('85%') }}</div>
+        <div class="overview-value">{{ avg_performance|default('--') }}</div>
         <div class="overview-label">Gem. Performance</div>
     </div>
     
@@ -203,79 +240,142 @@
         <div class="overview-icon" style="background-color: rgba(217, 48, 37, 0.1); color: var(--danger-color);">
             <i class="fas fa-clock"></i>
         </div>
-        <div class="overview-value">{{ avg_process_time|default('2.5h') }}</div>
+        <div class="overview-value">{{ avg_process_time|default('--') }}</div>
         <div class="overview-label">Gem. Verwerkingstijd</div>
     </div>
 </div>
 
 <!-- User Cards -->
 <div class="user-cards-grid">
-    {% for user in users|default([
-        {'name': 'Jan Janssen', 'role': 'Operator', 'initials': 'JJ', 'active_projects': 5, 'completed_today': 12, 'avg_time': '1.8h', 'efficiency': 92},
-        {'name': 'Marie Peters', 'role': 'Operator', 'initials': 'MP', 'active_projects': 3, 'completed_today': 8, 'avg_time': '2.1h', 'efficiency': 88},
-        {'name': 'Pieter de Vries', 'role': 'Supervisor', 'initials': 'PV', 'active_projects': 7, 'completed_today': 15, 'avg_time': '1.5h', 'efficiency': 95},
-        {'name': 'Anna Bakker', 'role': 'Operator', 'initials': 'AB', 'active_projects': 4, 'completed_today': 10, 'avg_time': '2.3h', 'efficiency': 85}
-    ]) %}
-    <div class="user-card">
-        <div class="user-card-header">
-            <div class="user-avatar">
-                {{ user.initials }}
-            </div>
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-role">{{ user.role }}</div>
-        </div>
-        
-        <div class="user-card-body">
-            <div class="user-stat">
-                <span class="user-stat-label">Actieve Projecten</span>
-                <span class="user-stat-value">{{ user.active_projects }}</span>
-            </div>
-            <div class="user-stat">
-                <span class="user-stat-label">Afgerond Vandaag</span>
-                <span class="user-stat-value">{{ user.completed_today }}</span>
-            </div>
-            <div class="user-stat">
-                <span class="user-stat-label">Gem. Verwerkingstijd</span>
-                <span class="user-stat-value">{{ user.avg_time }}</span>
-            </div>
-            <div class="user-stat">
-                <span class="user-stat-label">Efficiency</span>
-                <span class="user-stat-value">
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar bg-success" 
-                             role="progressbar" 
-                             style="width: {{ user.efficiency }}%">
-                            {{ user.efficiency }}%
-                        </div>
-                    </div>
-                </span>
+    {% if users %}
+        {% for user in users %}
+        <div class="user-card" data-username="{{ user.name }}">
+            <div class="user-card-header">
+                <div class="user-avatar">
+                    {{ user.initials }}
+                </div>
+                <div class="user-name">{{ user.name }}</div>
+                <div class="user-role">{{ user.role }}</div>
             </div>
             
-            <div style="position: relative; height: 150px; width: 100%;">
-                <canvas class="performance-chart" id="chart-{{ loop.index }}"></canvas>
+            <div class="user-card-body">
+                <div class="user-stat">
+                    <span class="user-stat-label">Actieve Projecten</span>
+                    <span class="user-stat-value">{{ user.active_projects }}</span>
+                </div>
+                <div class="user-stat">
+                    <span class="user-stat-label">Afgerond Vandaag</span>
+                    <span class="user-stat-value">{{ user.completed_today }}</span>
+                </div>
+                <div class="user-stat">
+                    <span class="user-stat-label">Gem. Verwerkingstijd</span>
+                    <span class="user-stat-value">{{ user.avg_time }}</span>
+                </div>
+                <div class="user-stat">
+                    <span class="user-stat-label">Efficiency</span>
+                    <span class="user-stat-value">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" 
+                                 role="progressbar" 
+                                 style="width: {{ user.efficiency }}%">
+                                {{ user.efficiency }}%
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <div class="performance-chart-container">
+                    <canvas class="performance-chart" id="chart-{{ loop.index }}" data-activity="{{ user.activity_data|tojson }}"></canvas>
+                </div>
+            </div>
+            
+            <div class="user-actions">
+                <button class="btn btn-sm btn-outline-primary flex-fill" onclick="showUserDetails('{{ user.name }}')">
+                    <i class="fas fa-chart-bar"></i> Details
+                </button>
+                <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="refreshUserData('{{ user.name }}')">
+                    <i class="fas fa-sync-alt"></i> Vernieuwen
+                </button>
             </div>
         </div>
-        
-        <div class="user-actions">
-            <button class="btn btn-sm btn-outline-primary flex-fill">
-                <i class="fas fa-chart-bar"></i> Details
-            </button>
-            <button class="btn btn-sm btn-outline-secondary flex-fill">
-                <i class="fas fa-edit"></i> Bewerken
-            </button>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="no-data">
+                <i class="fas fa-users-slash"></i>
+                <p>Geen gebruikers geconfigureerd</p>
+                <small>Gebruikers kunnen worden toegevoegd via het Scanner Panel</small>
+            </div>
         </div>
-    </div>
-    {% endfor %}
+    {% endif %}
 </div>
 
-<!-- Add User Button -->
-<button class="add-user-btn">
-    <i class="fas fa-plus"></i>
-</button>
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user"></i> <span id="modalUserName">Gebruiker Details</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Statistieken</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Totaal Projecten (30 dagen):</td>
+                                <td><strong id="modalTotalProjects">--</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Gemiddelde Verwerkingstijd:</td>
+                                <td><strong id="modalAvgTime">--</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Snelste Tijd:</td>
+                                <td><strong id="modalMinTime">--</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Langzaamste Tijd:</td>
+                                <td><strong id="modalMaxTime">--</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Efficiency Score:</td>
+                                <td><strong id="modalEfficiency">--</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Trend (7 dagen)</h6>
+                        <canvas id="modalPerformanceChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Recente Projecten</h6>
+                <div class="project-timeline" id="modalProjectTimeline">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Sluiten</button>
+                <button type="button" class="btn btn-primary" onclick="exportUserReport()">
+                    <i class="fas fa-download"></i> Export Rapport
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    let currentDetailUser = null;
+    let modalChart = null;
+
     // Initialize mini performance charts for each user
     document.addEventListener('DOMContentLoaded', function() {
         const users = document.querySelectorAll('.user-card');
@@ -283,25 +383,29 @@
         users.forEach((user, index) => {
             const canvas = document.getElementById(`chart-${index + 1}`);
             if (canvas) {
+                const activityData = JSON.parse(canvas.dataset.activity || '[0,0,0,0,0,0,0]');
+                
                 // Set explicit size to prevent infinite scaling
                 canvas.style.width = '100%';
                 canvas.style.height = '150px';
                 
                 const ctx = canvas.getContext('2d');
                 
+                // Get the last 7 days labels
+                const labels = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    labels.push(date.toLocaleDateString('nl-NL', { weekday: 'short' }));
+                }
+                
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Ma', 'Di', 'Wo', 'Do', 'Vr'],
+                        labels: labels,
                         datasets: [{
                             label: 'Projecten',
-                            data: [
-                                Math.floor(Math.random() * 20) + 5,
-                                Math.floor(Math.random() * 20) + 5,
-                                Math.floor(Math.random() * 20) + 5,
-                                Math.floor(Math.random() * 20) + 5,
-                                Math.floor(Math.random() * 20) + 5
-                            ],
+                            data: activityData,
                             borderColor: 'rgb(52, 152, 219)',
                             backgroundColor: 'rgba(52, 152, 219, 0.1)',
                             tension: 0.4,
@@ -323,31 +427,235 @@
                                 display: false
                             },
                             tooltip: {
-                                enabled: false
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.parsed.y + ' projecten';
+                                    }
+                                }
                             }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                display: false,
-                                max: 30
+                                ticks: {
+                                    stepSize: 1
+                                }
                             },
                             x: {
-                                display: false
+                                ticks: {
+                                    maxRotation: 0,
+                                    minRotation: 0
+                                }
                             }
-                        },
-                        elements: {
-                            line: {
-                                borderJoinStyle: 'round'
-                            }
-                        },
-                        layout: {
-                            padding: 0
                         }
                     }
                 });
             }
         });
     });
+
+    async function showUserDetails(username) {
+        currentDetailUser = username;
+        document.getElementById('modalUserName').textContent = username + ' Details';
+        
+        // Show loading state
+        document.getElementById('modalTotalProjects').textContent = 'Laden...';
+        document.getElementById('modalAvgTime').textContent = 'Laden...';
+        document.getElementById('modalProjectTimeline').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Laden...</div>';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+        modal.show();
+        
+        try {
+            // Fetch user stats
+            const response = await fetch(`/api/user/${username}/stats`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update stats
+                document.getElementById('modalTotalProjects').textContent = data.stats.active_projects + data.stats.completed_today;
+                document.getElementById('modalAvgTime').textContent = data.stats.avg_time;
+                document.getElementById('modalEfficiency').textContent = data.stats.efficiency + '%';
+                
+                // Update performance chart
+                updateModalChart(data.stats.activity_last_7_days);
+            }
+            
+            // Fetch recent projects
+            const projectsResponse = await fetch(`/api/user/${username}/recent_projects`);
+            const projectsData = await projectsResponse.json();
+            
+            if (projectsData.success) {
+                updateProjectTimeline(projectsData.projects);
+            }
+            
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+            showNotification('Fout bij laden gebruikersgegevens', 'danger');
+        }
+    }
+
+    function updateModalChart(activityData) {
+        const ctx = document.getElementById('modalPerformanceChart').getContext('2d');
+        
+        if (modalChart) {
+            modalChart.destroy();
+        }
+        
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }));
+        }
+        
+        modalChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Projecten per dag',
+                    data: activityData,
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateProjectTimeline(projects) {
+        const timeline = document.getElementById('modalProjectTimeline');
+        
+        if (projects.length === 0) {
+            timeline.innerHTML = '<p class="text-muted text-center">Geen recente projecten</p>';
+            return;
+        }
+        
+        let html = '';
+        projects.forEach(project => {
+            const date = new Date(project.last_activity);
+            const statusClass = project.status === 'Completed' ? 'completed' : '';
+            
+            html += `
+                <div class="timeline-item ${statusClass}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${project.project}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> ${date.toLocaleString('nl-NL')}
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge bg-${project.status === 'Completed' ? 'success' : 'warning'}">
+                                ${project.status}
+                            </span>
+                            <small class="text-muted d-block">${project.event_count} events</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        timeline.innerHTML = html;
+    }
+
+    async function refreshUserData(username) {
+        const card = document.querySelector(`[data-username="${username}"]`);
+        if (!card) return;
+        
+        // Show loading state
+        const refreshBtn = card.querySelector('.btn-outline-secondary');
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Laden...';
+        refreshBtn.disabled = true;
+        
+        try {
+            const response = await fetch(`/api/user/${username}/stats`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update card values
+                updateUserCard(card, data.stats);
+                showNotification('Gebruikersgegevens bijgewerkt', 'success');
+            }
+        } catch (error) {
+            console.error('Error refreshing user data:', error);
+            showNotification('Fout bij vernieuwen gegevens', 'danger');
+        } finally {
+            refreshBtn.innerHTML = originalHTML;
+            refreshBtn.disabled = false;
+        }
+    }
+
+    function updateUserCard(card, stats) {
+        // Update stat values
+        const statValues = card.querySelectorAll('.user-stat-value');
+        statValues[0].textContent = stats.active_projects;
+        statValues[1].textContent = stats.completed_today;
+        statValues[2].textContent = stats.avg_time;
+        
+        // Update efficiency progress bar
+        const progressBar = statValues[3].querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.style.width = stats.efficiency + '%';
+            progressBar.textContent = stats.efficiency + '%';
+        }
+    }
+
+    function exportUserReport() {
+        if (!currentDetailUser) return;
+        
+        // Create CSV content
+        const headers = ['Datum', 'Projecten', 'Status'];
+        const rows = []; // Would populate from actual data
+        
+        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gebruiker-${currentDetailUser}-rapport.csv`;
+        a.click();
+        
+        showNotification('Rapport geëxporteerd', 'success');
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+        notification.style.zIndex = '9999';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Auto-refresh every 60 seconds
+    setInterval(() => {
+        if (!document.hidden) {
+            // Could implement partial refresh here
+            console.log('Auto-refresh check');
+        }
+    }, 60000);
 </script>
 {% endblock %}

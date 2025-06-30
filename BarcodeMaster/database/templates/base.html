@@ -232,31 +232,43 @@
 
         /* Status badges */
         .status-badge {
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
 
-.status-badge i {
-    font-size: 0.75rem;
-}
+        .status-badge i {
+            font-size: 0.75rem;
+        }
 
-/* OPEN - Active project (Yellow/Gold) */
-.status-open {
-    background-color: rgba(241, 196, 15, 0.1);  /* Light yellow background */
-    color: #f39c12;  /* Gold text */
-}
+        /* OPEN - Active project (Yellow/Gold) */
+        .status-open {
+            background-color: rgba(241, 196, 15, 0.1);  /* Light yellow background */
+            color: #f39c12;  /* Gold text */
+        }
 
-/* AFGEMELD - Completed (Green) */
-.status-afgemeld,
-.status-closed {
-    background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
-    color: #27ae60;  /* Green text */
-}
+        /* AFGEMELD - Completed by user (Green) */
+        .status-afgemeld,
+        .status-closed {
+            background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
+            color: #27ae60;  /* Green text */
+        }
+
+        /* AFGEROND - Fully completed project (Green) */
+        .status-afgerond {
+            background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
+            color: #27ae60;  /* Green text */
+        }
+
+        /* UNKNOWN - Unknown status (Gray) */
+        .status-unknown {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
 
         /* Table styling */
         .table {
@@ -375,7 +387,7 @@
                         
                         <hr>
                         <small class="text-muted">ADMINISTRATIE</small>
-                        <a class="nav-link {% if active_page == 'user_admin' %}active{% endif %}" href="#">
+                        <a class="nav-link {% if active_page == 'settings' %}active{% endif %}" href="/dashboard-settings">
                             <i class="fas fa-user-cog"></i> Gebruikersbeheer
                         </a>
                         <a class="nav-link {% if active_page == 'database' %}active{% endif %}" href="/database">

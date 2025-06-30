@@ -1,0 +1,6 @@
+{
+    "database_enabled": true,
+    "api_url": "http://localhost:5001/log",
+    "user": "KL GANNOMAT",
+    "archive_on_all_ok": false
+}

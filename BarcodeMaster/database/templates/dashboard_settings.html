@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Gebruikersbeheer</h1>
+    <p>Beheer welke gebruikers altijd op het dashboard worden weergegeven</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Dashboard Gebruikers</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> 
+            Deze gebruikers worden altijd op het dashboard getoond, zelfs als ze geen actieve projecten hebben.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Huidige Dashboard Gebruikers</h6>
+                <ul class="list-group" id="dashboard-users-list">
+                    <!-- Will be populated by JavaScript -->
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Beschikbare Scanner Gebruikers</h6>
+                <ul class="list-group" id="scanner-users-list">
+                    <!-- Will be populated by JavaScript -->
+                </ul>
+                <button class="btn btn-primary mt-3" onclick="syncWithScannerUsers()">
+                    <i class="fas fa-sync"></i> Synchroniseer met Scanner Gebruikers
+                </button>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h6>Gebruiker Toevoegen</h6>
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" id="new-user-input" placeholder="Gebruikersnaam">
+            <button class="btn btn-success" onclick="addUser()">
+                <i class="fas fa-plus"></i> Toevoegen
+            </button>
+        </div>
+        
+        <button class="btn btn-primary" onclick="saveUsers()">
+            <i class="fas fa-save"></i> Opslaan
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let dashboardUsers = [];
+let scannerUsers = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+});
+
+function loadUsers() {
+    fetch('/api/dashboard/users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                dashboardUsers = data.dashboard_users || [];
+                scannerUsers = data.scanner_users || [];
+                renderLists();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            alert('Fout bij laden van gebruikers');
+        });
+}
+
+function renderLists() {
+    // Render dashboard users
+    const dashboardList = document.getElementById('dashboard-users-list');
+    dashboardList.innerHTML = '';
+    
+    if (dashboardUsers.length === 0) {
+        dashboardList.innerHTML = '<li class="list-group-item text-muted">Geen gebruikers geconfigureerd</li>';
+    } else {
+        dashboardUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                ${user}
+                <button class="btn btn-sm btn-danger" onclick="removeUser('${user}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            dashboardList.appendChild(li);
+        });
+    }
+    
+    // Render scanner users
+    const scannerList = document.getElementById('scanner-users-list');
+    scannerList.innerHTML = '';
+    
+    if (scannerUsers.length === 0) {
+        scannerList.innerHTML = '<li class="list-group-item text-muted">Geen scanner gebruikers</li>';
+    } else {
+        scannerUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.textContent = user;
+            scannerList.appendChild(li);
+        });
+    }
+}
+
+function addUser() {
+    const input = document.getElementById('new-user-input');
+    const username = input.value.trim();
+    
+    if (!username) {
+        alert('Voer een gebruikersnaam in');
+        return;
+    }
+    
+    if (dashboardUsers.includes(username)) {
+        alert('Gebruiker bestaat al');
+        return;
+    }
+    
+    dashboardUsers.push(username);
+    input.value = '';
+    renderLists();
+}
+
+function removeUser(username) {
+    dashboardUsers = dashboardUsers.filter(u => u !== username);
+    renderLists();
+}
+
+function syncWithScannerUsers() {
+    if (confirm('Wilt u de dashboard gebruikers synchroniseren met de scanner gebruikers?')) {
+        fetch('/api/dashboard/sync-users', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Synchronisatie succesvol');
+                loadUsers();
+            } else {
+                alert('Synchronisatie mislukt: ' + (data.error || 'Onbekende fout'));
+            }
+        })
+        .catch(error => {
+            console.error('Error syncing users:', error);
+            alert('Fout bij synchroniseren');
+        });
+    }
+}
+
+function saveUsers() {
+    fetch('/api/dashboard/users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ users: dashboardUsers })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Gebruikers opgeslagen');
+        } else {
+            alert('Fout bij opslaan: ' + (data.error || 'Onbekende fout'));
+        }
+    })
+    .catch(error => {
+        console.error('Error saving users:', error);
+        alert('Fout bij opslaan');
+    });
+}
+</script>
+{% endblock %}

@@ -131,11 +131,6 @@
     font-size: 0.9rem;
 }
 
-.status-in-progress {
-    background-color: rgba(249, 171, 0, 0.1);
-    color: var(--warning-color);
-}
-
 /* No results */
 .no-results {
     text-align: center;
@@ -186,7 +181,7 @@
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+        <div class="stat-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
             <i class="fas fa-folder-open"></i>
         </div>
         <div class="stat-value" id="open-projects">{{ open_projects|default(0) }}</div>
@@ -202,7 +197,7 @@
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(217, 48, 37, 0.1); color: var(--danger-color);">
+        <div class="stat-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
             <i class="fas fa-check-circle"></i>
         </div>
         <div class="stat-value" id="completed-projects">{{ completed_projects|default(0) }}</div>
@@ -307,8 +302,44 @@
 
     // Sort functionality
     document.getElementById('sortSelect').addEventListener('change', function(e) {
-        // Implement sorting logic here
-        console.log('Sort by:', e.target.value);
+        const sortBy = e.target.value;
+        const projectItems = Array.from(document.querySelectorAll('.project-item'));
+        const container = document.getElementById('projectListContent');
+        
+        projectItems.sort((a, b) => {
+            switch(sortBy) {
+                case 'recent':
+                    // Sort by timestamp (most recent first)
+                    const timestampA = a.querySelector('.project-stat:nth-child(2)').textContent;
+                    const timestampB = b.querySelector('.project-stat:nth-child(2)').textContent;
+                    return timestampB.localeCompare(timestampA);
+                
+                case 'oldest':
+                    // Sort by timestamp (oldest first)
+                    const timestampA2 = a.querySelector('.project-stat:nth-child(2)').textContent;
+                    const timestampB2 = b.querySelector('.project-stat:nth-child(2)').textContent;
+                    return timestampA2.localeCompare(timestampB2);
+                
+                case 'code':
+                    // Sort by project code
+                    const codeA = a.querySelector('.project-code').textContent.trim();
+                    const codeB = b.querySelector('.project-code').textContent.trim();
+                    return codeA.localeCompare(codeB);
+                
+                case 'status':
+                    // Sort by status
+                    const statusA = a.querySelector('.status-badge').textContent.trim();
+                    const statusB = b.querySelector('.status-badge').textContent.trim();
+                    return statusA.localeCompare(statusB);
+                
+                default:
+                    return 0;
+            }
+        });
+        
+        // Clear container and re-append sorted items
+        container.innerHTML = '';
+        projectItems.forEach(item => container.appendChild(item));
     });
 </script>
 {% endblock %}

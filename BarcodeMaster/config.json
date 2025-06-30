@@ -7,6 +7,7 @@
     "scanner_panel_type": "USB",
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
+        "NESTING",
         "OPUS",
         "KL GANNOMAT"
     ],
@@ -31,5 +32,10 @@
     "backup_enabled": true,
     "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
-    "last_backup_status": "Succesvol gebackupt naar C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups\\central_logging_backup.sqlite op 2025-06-29 21:47:06"
+    "last_backup_status": "Succesvol gebackupt naar C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups\\central_logging_backup.sqlite op 2025-06-29 21:47:06",
+    "dashboard_display_users": [
+        "NESTING",
+        "OPUS",
+        "KL GANNOMAT"
+    ]
 }

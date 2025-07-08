@@ -10,6 +10,7 @@ using Microsoft.Win32;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -29,6 +30,14 @@ namespace FileMonitorTray
         private Timer statusTimer;
         private List<FileSystemWatcher> fileWatchers = new List<FileSystemWatcher>();
         private Dictionary<FileSystemWatcher, MonitoredPathInfo> watcherInfoMap = new Dictionary<FileSystemWatcher, MonitoredPathInfo>();
+        
+        // Enhanced caching for duplicate prevention
+        private static readonly ConcurrentDictionary<string, DateTime> recentEvents = new ConcurrentDictionary<string, DateTime>();
+        private static readonly ConcurrentDictionary<string, long> fileChangeSizes = new ConcurrentDictionary<string, long>();
+        private static readonly ConcurrentDictionary<string, string> fileContentHashes = new ConcurrentDictionary<string, string>();
+        private static readonly ConcurrentDictionary<string, int> fileCategoryCache = new ConcurrentDictionary<string, int>();
+        private static readonly TimeSpan eventCooldown = TimeSpan.FromSeconds(10); // Increased to 10 seconds
+        
         private const string APP_NAME = "CNC DATALOG";
         private const string CONFIG_FILE = "tray_config.json";
         private const string STARTUP_KEY_PATH = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -212,8 +221,31 @@ namespace FileMonitorTray
             statusTimer.Interval = 30000; // Check every 30 seconds
             statusTimer.Tick += async (s, e) => 
             {
-                // Verify connection on each timer tick
                 await UpdateTrayIcon();
+                
+                // Clean up caches every 30 seconds
+                var cutoffTime = DateTime.UtcNow.AddMinutes(-10);
+                
+                // Clean file size cache
+                var oldSizeKeys = fileChangeSizes.Where(kvp => !File.Exists(kvp.Key.Replace(":size", ""))).Select(kvp => kvp.Key).ToList();
+                foreach (var key in oldSizeKeys)
+                {
+                    fileChangeSizes.TryRemove(key, out _);
+                }
+                
+                // Clean content hash cache
+                var oldHashKeys = fileContentHashes.Where(kvp => !File.Exists(kvp.Key.Replace(":hash", ""))).Select(kvp => kvp.Key).ToList();
+                foreach (var key in oldHashKeys)
+                {
+                    fileContentHashes.TryRemove(key, out _);
+                }
+                
+                // Clean category cache
+                var oldCategoryKeys = fileCategoryCache.Where(kvp => !File.Exists(kvp.Key)).Select(kvp => kvp.Key).ToList();
+                foreach (var key in oldCategoryKeys)
+                {
+                    fileCategoryCache.TryRemove(key, out _);
+                }
             };
             statusTimer.Start();
         }
@@ -656,12 +688,12 @@ namespace FileMonitorTray
                 MessageBox.Show(localization.T("please_login"), "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            string statusMessage = $@"User: {currentUser}\n" +
-                                 $@"Server: {webAppUrl}\n" +
-                                 $@"Monitoring: {(monitoringActive ? "Active" : "Inactive")}\n" +
-                                 $@"Watching: {fileWatchers.Count} paths\n" +
-                                 $@"Content Scanning: {(config.ScanFileContents ? "Enabled" : "Disabled")}\n" +
-                                 $@"Max Scan Size: {config.MaxFileSizeMB} MB";
+            string statusMessage = $@"User: {currentUser}
+Server: {webAppUrl}
+Monitoring: {(monitoringActive ? "Active" : "Inactive")}
+Watching: {fileWatchers.Count} paths
+Content Scanning: {(config.ScanFileContents ? "Enabled" : "Disabled")}
+Max Scan Size: {config.MaxFileSizeMB} MB";
             MessageBox.Show(statusMessage, "Application Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -774,9 +806,17 @@ namespace FileMonitorTray
 
         private void OnFileSystemEvent(object sender, FileSystemEventArgs e)
         {
+            // Filter out temporary files and system files
+            string filename = Path.GetFileName(e.FullPath);
+            if (filename.StartsWith("~") || filename.StartsWith(".") || filename.EndsWith(".tmp"))
+            {
+                return; // Ignore temporary files
+            }
+            
             if (watcherInfoMap.TryGetValue((FileSystemWatcher)sender, out var pathInfo))
             {
-                LogFileChangeAsync(pathInfo, e.ChangeType.ToString(), e.FullPath);
+                // Add a small delay to batch rapid events
+                Task.Delay(100).ContinueWith(_ => LogFileChangeAsync(pathInfo, e.ChangeType.ToString(), e.FullPath));
             }
         }
 
@@ -791,6 +831,41 @@ namespace FileMonitorTray
 
         private async void LogFileChangeAsync(MonitoredPathInfo pathInfo, string changeType, string fullPath)
         {
+            // Enhanced debounce logic with file content hash checking
+            var now = DateTime.UtcNow;
+            string eventKey = $"{fullPath}:{changeType}";
+            
+            // Check if we've processed this event recently
+            if (recentEvents.TryGetValue(eventKey, out var lastEventTime))
+            {
+                var timeSinceLastEvent = now - lastEventTime;
+                if (timeSinceLastEvent < eventCooldown)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Debounced event for {Path.GetFileName(fullPath)} ({changeType}) - {timeSinceLastEvent.TotalSeconds:F1}s since last event");
+                    return;
+                }
+            }
+            
+            // Update the last event time immediately to prevent concurrent processing
+            recentEvents[eventKey] = now;
+
+            // Clean up old entries from the debounce cache
+            if (recentEvents.Count > 1000)
+            {
+                var cleanupTime = now.AddMinutes(-5); // Keep entries for 5 minutes
+                var oldKeys = recentEvents.Where(kvp => kvp.Value < cleanupTime).Select(kvp => kvp.Key).ToList();
+                foreach (var key in oldKeys)
+                {
+                    recentEvents.TryRemove(key, out _);
+                }
+            }
+
+            // For 'changed' events, add a longer delay to ensure file is fully written
+            if (changeType.ToLower() == "changed")
+            {
+                await Task.Delay(1000); // Wait 1 full second for file to stabilize
+            }
+
             long? fileSize = null;
             CategoryInfo matchedCategory = null;
             string matchedKeyword = null;
@@ -805,65 +880,52 @@ namespace FileMonitorTray
                     var fileInfo = new FileInfo(fullPath);
                     fileSize = fileInfo.Length;
                     
-                    // First, check file patterns and filename keywords
+                    // Check if file has actually changed by comparing size
+                    string sizeKey = $"{fullPath}:size";
+                    if (fileChangeSizes.TryGetValue(sizeKey, out var lastSize) && lastSize == fileSize)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] File size unchanged for {Path.GetFileName(fullPath)}, skipping content scan");
+                        return;
+                    }
+                    fileChangeSizes[sizeKey] = fileSize.Value;
+                    
                     string filename = Path.GetFileName(fullPath).ToLower();
                     string fileExtension = Path.GetExtension(fullPath).ToLower();
                     
-                    foreach (var category in categories)
-                    {
-                        // Check file patterns
-                        if (category.file_patterns != null)
-                        {
-                            foreach (var pattern in category.file_patterns)
-                            {
-                                try
-                                {
-                                    if (Regex.IsMatch(fullPath, pattern, RegexOptions.IgnoreCase))
-                                    {
-                                        matchedCategory = category;
-                                        matchedKeyword = $"Pattern: {pattern}";
-                                        break;
-                                    }
-                                }
-                                catch { /* Invalid regex pattern */ }
-                            }
-                        }
-                        
-                        if (matchedCategory != null) break;
-                        
-                        // Check keywords in filename
-                        if (category.keywords != null)
-                        {
-                            foreach (var keyword in category.keywords)
-                            {
-                                if (filename.Contains(keyword.ToLower()))
-                                {
-                                    matchedCategory = category;
-                                    matchedKeyword = $"Filename: {keyword}";
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if (matchedCategory != null) break;
-                    }
-                    
-                    // If no match yet and content scanning is enabled, scan file contents
-                    if (matchedCategory == null && config.ScanFileContents && 
+                    // Check if we should scan file contents
+                    if (config.ScanFileContents && 
                         SCANNABLE_EXTENSIONS.Contains(fileExtension) &&
                         fileSize < config.MaxFileSizeMB * 1024 * 1024)
                     {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Scanning file content: {Path.GetFileName(fullPath)}");
                         try
                         {
-                            // Read file content with appropriate encoding
+                            // Read file content with improved error handling
                             string content = await ReadFileContentAsync(fullPath);
                             
                             if (!string.IsNullOrEmpty(content))
                             {
+                                // Calculate content hash to detect duplicate scans
+                                string contentHash = CalculateContentHash(content);
+                                string hashKey = $"{fullPath}:hash";
+                                
+                                if (fileContentHashes.TryGetValue(hashKey, out var lastHash) && lastHash == contentHash)
+                                {
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Content unchanged for {Path.GetFileName(fullPath)}, skipping duplicate event");
+                                    // Content hasn't changed, so don't create a new event
+                                    return;
+                                }
+                                fileContentHashes[hashKey] = contentHash;
+                                
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Content changed or new, scanning {content.Length} characters");
                                 string contentLower = content.ToLower();
                                 
+                                // IMPORTANT: Stop after finding the FIRST matching category
+                                bool foundMatch = false;
                                 foreach (var category in categories)
                                 {
+                                    if (foundMatch) break; // Stop if we already found a match
+                                    
                                     if (category.keywords != null)
                                     {
                                         foreach (var keyword in category.keywords)
@@ -885,33 +947,62 @@ namespace FileMonitorTray
                                                             contextLine = contextLine.Substring(0, 47) + "...";
                                                         }
                                                         matchedKeyword = $"Content: {keyword} (Line {i + 1}: {contextLine})";
+                                                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Found '{keyword}' at line {i + 1} -> {category.name}");
                                                         break;
                                                     }
                                                 }
-                                                break;
+                                                foundMatch = true; // Mark that we found a match
+                                                break; // Stop checking keywords for this category
                                             }
                                         }
                                     }
-                                    
-                                    if (matchedCategory != null) break;
                                 }
+                                
+                                // Cache the category for this file
+                                if (matchedCategory != null)
+                                {
+                                    fileCategoryCache[fullPath] = matchedCategory.id;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No keywords found in content");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Could not read file content (empty or locked)");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Error scanning file content for {fullPath}: {ex.Message}");
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error scanning file content: {ex.Message}");
                         }
+                    }
+                    
+                    SendEvent:
+                    // Log final categorization
+                    if (matchedCategory != null)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Final category: {matchedCategory.name} ({matchedKeyword ?? "cached"})");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No category matched, will use default (Allerlei)");
                     }
                 }
             }
-            catch { /* Ignore errors if file is gone or inaccessible */ }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error processing file {Path.GetFileName(fullPath)}: {ex.Message}");
+            }
 
+            // Only send ONE event per file change
             var payload = new
             {
                 path_id = pathInfo.id,
                 change_type = changeType.ToLower(),
                 file_path = fullPath,
-                timestamp_utc = DateTime.UtcNow.ToString("o"), // ISO 8601 format
+                timestamp_utc = DateTime.UtcNow.ToString("o"),
                 new_size = fileSize,
                 computer_name = Environment.MachineName,
                 category_id = matchedCategory?.id,
@@ -923,23 +1014,40 @@ namespace FileMonitorTray
                 string jsonPayload = JsonSerializer.Serialize(payload);
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 
-                await httpClient.PostAsync($@"{webAppUrl}/api/log_event", content);
+                var response = await httpClient.PostAsync($@"{webAppUrl}/api/log_event", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Failed to log event: {response.StatusCode}");
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Event logged successfully for {Path.GetFileName(fullPath)} -> {matchedCategory?.name ?? "Allerlei"}");
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Silent fail for event logging
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error sending event to server: {ex.Message}");
             }
         }
 
         private async Task<string> ReadFileContentAsync(string filePath)
         {
-            const int MAX_RETRIES = 3;
-            const int RETRY_DELAY_MS = 100;
+            const int MAX_RETRIES = 5;
+            const int INITIAL_RETRY_DELAY_MS = 100;
+            const int MAX_RETRY_DELAY_MS = 2000;
             
             for (int retry = 0; retry < MAX_RETRIES; retry++)
             {
                 try
                 {
+                    // Wait before retry (exponential backoff)
+                    if (retry > 0)
+                    {
+                        int delay = Math.Min(INITIAL_RETRY_DELAY_MS * (int)Math.Pow(2, retry - 1), MAX_RETRY_DELAY_MS);
+                        await Task.Delay(delay);
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Retry {retry}/{MAX_RETRIES} after {delay}ms delay");
+                    }
+                    
                     // Try to detect encoding
                     Encoding encoding = DetectFileEncoding(filePath);
                     
@@ -947,21 +1055,48 @@ namespace FileMonitorTray
                     using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     using (var reader = new StreamReader(stream, encoding))
                     {
-                        return await reader.ReadToEndAsync();
+                        // Read in chunks to handle large files better
+                        var sb = new StringBuilder();
+                        char[] buffer = new char[4096];
+                        int bytesRead;
+                        int totalBytesRead = 0;
+                        int maxBytes = config.MaxFileSizeMB * 1024 * 1024;
+                        
+                        while ((bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            sb.Append(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+                            
+                            // Stop reading if we've exceeded the max size
+                            if (totalBytesRead > maxBytes)
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] File truncated at {totalBytesRead} bytes (max: {maxBytes})");
+                                break;
+                            }
+                        }
+                        
+                        return sb.ToString();
                     }
                 }
-                catch (IOException) when (retry < MAX_RETRIES - 1)
+                catch (IOException ioEx) when (retry < MAX_RETRIES - 1)
                 {
-                    // File might be locked, wait and retry
-                    await Task.Delay(RETRY_DELAY_MS);
+                    // File might be locked, log and retry
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] File locked ({Path.GetFileName(filePath)}), retry {retry + 1}/{MAX_RETRIES}: {ioEx.Message}");
                 }
-                catch
+                catch (UnauthorizedAccessException uaEx) when (retry < MAX_RETRIES - 1)
                 {
-                    // Other errors, return empty
+                    // Access denied, wait and retry
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Access denied ({Path.GetFileName(filePath)}), retry {retry + 1}/{MAX_RETRIES}: {uaEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // Other errors, log and return empty
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error reading file ({Path.GetFileName(filePath)}): {ex.GetType().Name} - {ex.Message}");
                     return string.Empty;
                 }
             }
             
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Failed to read file after {MAX_RETRIES} attempts: {Path.GetFileName(filePath)}");
             return string.Empty;
         }
 
@@ -988,6 +1123,16 @@ namespace FileMonitorTray
             
             // Default to UTF-8 without BOM (most common for text files)
             return Encoding.UTF8;
+        }
+
+        private string CalculateContentHash(string content)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(content);
+                byte[] hash = sha256.ComputeHash(bytes);
+                return Convert.ToBase64String(hash);
+            }
         }
         #endregion
 

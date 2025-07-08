@@ -6,9 +6,11 @@ import serial.tools.list_ports
 import serial
 import threading
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from config_utils import get_config, save_config
 from ..utils import Tooltip
+import requests
+import json
 
 class ScannerPanel(tk.Frame):
     
@@ -26,6 +28,13 @@ class ScannerPanel(tk.Frame):
             self.background_import_service.log_callback = self.log_message_from_service
         
         config = get_config()
+        
+        # Add session tracking
+        self.current_session_id = None
+        self.session_start_time = None
+        
+        # Initialize work hours cache
+        self._work_hours_cache = None
         
         # --- USB Keyboard Frame ---
         self.usb_frame = tk.LabelFrame(self, text="USB Keyboard Scanner", bg="#f0f0f0", padx=10, pady=5)
@@ -74,6 +83,9 @@ class ScannerPanel(tk.Frame):
         self.event_type_var = tk.StringVar(value=event_type)
         self.event_frame = tk.LabelFrame(self, text="Event Type", bg="#f0f0f0", padx=10, pady=5)
         self.event_frame.pack(pady=(0, 10), fill='x', padx=20)
+        
+        # Add START button frame after event type frame
+        self._create_session_controls()
 
         # --- Log Viewer Frame ---
         self.log_viewer_frame = tk.LabelFrame(self, text="Activiteitenlog", bg="#f0f0f0", padx=10, pady=5)
@@ -152,6 +164,396 @@ class ScannerPanel(tk.Frame):
             self.after(100, self.connect_com)
 
         self._create_lock_button()
+
+    def _create_session_controls(self):
+        """Create session START button and status display with work hours indicator"""
+        self.session_frame = tk.LabelFrame(self, text="Werk Sessie", bg="#f0f0f0", padx=10, pady=5)
+        self.session_frame.pack(pady=(0, 10), fill='x', padx=20, after=self.event_frame)
+        
+        # Work hours status
+        work_status_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
+        work_status_frame.pack(fill='x', pady=(0, 5))
+        
+        self.work_hours_label = tk.Label(
+            work_status_frame,
+            text="",
+            bg="#f0f0f0",
+            font=('Arial', 9)
+        )
+        self.work_hours_label.pack(side='left', padx=10)
+        
+        # Session controls frame
+        controls_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
+        controls_frame.pack(fill='x', pady=5)
+        
+        # START button
+        self.start_button = tk.Button(
+            controls_frame, 
+            text="START NIEUWE SESSIE", 
+            command=self.start_new_session,
+            bg="#4CAF50", 
+            fg="white", 
+            font=('Arial', 12, 'bold'),
+            padx=20, 
+            pady=10
+        )
+        self.start_button.pack(side='left', padx=10)
+        
+        # Session status label
+        self.session_status_label = tk.Label(
+            controls_frame, 
+            text="Geen actieve sessie", 
+            bg="#f0f0f0", 
+            font=('Arial', 10)
+        )
+        self.session_status_label.pack(side='left', padx=20)
+        
+        # Session timer removed per user request
+        
+        # Load work hours asynchronously after panel is shown
+        self._initial_work_hours_display()
+        self.after(100, self.async_update_work_hours_status)
+        
+        # Start periodic work hours status updates (30 seconds)
+        self.after(30000, self.update_work_hours_status)
+
+    def _initial_work_hours_display(self):
+        """Show initial work hours display without API call"""
+        now = datetime.now()
+        self.work_hours_label.config(
+            text=f"⏳ Werktijd laden... {now.strftime('%H:%M')}",
+            fg="orange"
+        )
+
+    def async_update_work_hours_status(self):
+        """Load work hours asynchronously in background thread"""
+        import threading
+        import time
+        
+        def _load_work_hours():
+            try:
+                # Load work hours in background
+                work_hours = self.get_work_hours_from_api()
+                self._work_hours_cache = work_hours
+                self._last_cache_refresh = time.time()
+                
+                # Update UI in main thread
+                self.after(0, lambda: self._update_work_hours_display(work_hours))
+            except Exception as e:
+                print(f"Error loading work hours asynchronously: {e}")
+                # Use defaults and update UI
+                defaults = {
+                    'monday': {'start': 7.5, 'end': 16},
+                    'tuesday': {'start': 7.5, 'end': 16},
+                    'wednesday': {'start': 7.5, 'end': 16},
+                    'thursday': {'start': 7.5, 'end': 16},
+                    'friday': {'start': 7.5, 'end': 15},
+                    'break_start': 12.0,
+                    'break_end': 12.5,
+                    'work_days': [0, 1, 2, 3, 4]
+                }
+                self._work_hours_cache = defaults
+                self._last_cache_refresh = time.time()
+                self.after(0, lambda: self._update_work_hours_display(defaults))
+        
+        # Start background thread
+        threading.Thread(target=_load_work_hours, daemon=True).start()
+
+    def _update_work_hours_display(self, work_hours):
+        """Update work hours display with loaded data"""
+        now = datetime.now()
+        is_work_time, message = self._check_work_status(work_hours)
+        
+        if is_work_time:
+            # Get current day's work hours
+            day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            day_name = day_names[now.weekday()]
+            day_config = work_hours.get(day_name, {'start': 7.5, 'end': 16})
+            
+            start_time = f"{int(day_config['start'])}:{int((day_config['start'] % 1) * 60):02d}"
+            end_time = f"{int(day_config['end'])}:{int((day_config['end'] % 1) * 60):02d}"
+            
+            self.work_hours_label.config(
+                text=f"✓ Werktijd: {now.strftime('%H:%M')} ({start_time}-{end_time})",
+                fg="green"
+            )
+            if hasattr(self, 'start_button'):
+                self.start_button.config(state='normal')
+        else:
+            self.work_hours_label.config(
+                text=f"✗ {message}",
+                fg="red"
+            )
+            if hasattr(self, 'start_button') and not self.current_session_id:
+                self.start_button.config(state='disabled')
+
+    def refresh_work_hours_cache(self):
+        """Force refresh of work hours cache from API"""
+        print("Refreshing work hours cache from API...")
+        self._work_hours_cache = None
+        if hasattr(self, '_last_cache_refresh'):
+            delattr(self, '_last_cache_refresh')
+        self.async_update_work_hours_status()
+
+    def force_refresh_work_hours(self):
+        """Public method to force immediate work hours refresh (for external calls)"""
+        self.refresh_work_hours_cache()
+
+    def update_work_hours_status(self):
+        """Update work hours status display (called periodically)"""
+        # Refresh cache every 30 seconds to pick up settings changes quickly
+        if hasattr(self, '_last_cache_refresh'):
+            import time
+            if time.time() - self._last_cache_refresh > 30:  # 30 seconds
+                self.refresh_work_hours_cache()
+                return
+        
+        if self._work_hours_cache:
+            # Use cached work hours for regular updates
+            self._update_work_hours_display(self._work_hours_cache)
+        else:
+            # If cache not available, trigger async load
+            self.async_update_work_hours_status()
+        
+        # Update every 30 seconds for faster settings pickup
+        self.after(30000, self.update_work_hours_status)
+
+    def get_work_hours_from_api(self):
+        """Fetch work hours configuration from API with fallback handling"""
+        defaults = {
+            'monday': {'start': 7.5, 'end': 16},
+            'tuesday': {'start': 7.5, 'end': 16},
+            'wednesday': {'start': 7.5, 'end': 16},
+            'thursday': {'start': 7.5, 'end': 16},
+            'friday': {'start': 7.5, 'end': 15},
+            'break_start': 12.0,
+            'break_end': 12.5,
+            'work_days': [0, 1, 2, 3, 4]
+        }
+        
+        try:
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            if not api_url:
+                return defaults
+            
+            # Use shorter timeout and handle connection issues gracefully
+            response = requests.get(
+                api_url.replace('/log', '/api/settings/work-hours'), 
+                timeout=2  # Reduced timeout
+            )
+            
+            if response.ok:
+                data = response.json()
+                if data.get('success') and 'settings' in data:
+                    settings = data['settings']
+                    
+                    # Handle new per-day format
+                    result = {
+                        'break_start': float(settings.get('break_start', 12)),
+                        'break_end': float(settings.get('break_end', 12.5)),
+                        'work_days': settings.get('work_days', [0, 1, 2, 3, 4])
+                    }
+                    
+                    # Extract per-day configurations
+                    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                    for day in days:
+                        if day in settings and isinstance(settings[day], dict):
+                            result[day] = {
+                                'start': float(settings[day].get('start', 7.5)),
+                                'end': float(settings[day].get('end', 16))
+                            }
+                        else:
+                            # Fallback for weekend or missing days
+                            result[day] = {'start': 0, 'end': 0}
+                    
+                    print(f"Work hours loaded from API: {result}")
+                    return result
+            else:
+                print(f"API returned error status: {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            print("Work hours API timeout - using defaults")
+        except requests.exceptions.ConnectionError:
+            print("Work hours API connection error - using defaults")
+        except ValueError as e:
+            print(f"Work hours API data conversion error: {e} - using defaults")
+        except Exception as e:
+            print(f"Unexpected error fetching work hours from API: {e} - using defaults")
+        
+        return defaults
+
+    def _check_work_status(self, work_hours):
+        """Check if current time is within work hours using provided work hours data"""
+        now = datetime.now()
+        
+        # Weekend check
+        if now.weekday() not in work_hours['work_days']:
+            return False, "Weekend - kantoor gesloten"
+        
+        # Get day-specific work hours
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        day_name = day_names[now.weekday()]
+        day_config = work_hours.get(day_name, {'start': 7.5, 'end': 16})
+        
+        # Time check with per-day configuration
+        hour = now.hour + now.minute / 60
+        
+        if hour < day_config['start']:
+            start_time = f"{int(day_config['start'])}:{int((day_config['start'] % 1) * 60):02d}"
+            return False, f"Te vroeg - werk begint om {start_time}"
+        
+        if hour > day_config['end']:
+            end_time = f"{int(day_config['end'])}:{int((day_config['end'] % 1) * 60):02d}"
+            return False, f"Te laat - werk eindigt om {end_time}"
+        
+        # Break time check
+        if work_hours['break_start'] <= hour <= work_hours['break_end']:
+            return False, f"Pauze - van {int(work_hours['break_start']):02d}:{int((work_hours['break_start'] % 1) * 60):02d} tot {int(work_hours['break_end']):02d}:{int((work_hours['break_end'] % 1) * 60):02d}"
+        
+        return True, "Werktijd"
+
+    def get_current_work_status(self):
+        """Check if current time is within work hours using cached or API configuration"""
+        if self._work_hours_cache:
+            return self._check_work_status(self._work_hours_cache)
+        else:
+            # Fallback to API call if cache not available
+            work_hours = self.get_work_hours_from_api()
+            return self._check_work_status(work_hours)
+
+    def start_new_session(self):
+        """Start a new work session for current user or close existing session"""
+        if self.current_session_id:
+            # If there's an active session, stop it
+            self.close_current_session()
+            return
+            
+        config = get_config()
+        current_user = config.get('user', 'NESTING')
+        api_url = config.get('api_url', '').rstrip('/')
+        
+        if not api_url:
+            self.log_message("❌ API URL niet geconfigureerd", "error")
+            return
+        
+        # Check if within work hours
+        is_work_time, message = self.get_current_work_status()
+        if not is_work_time:
+            self.log_message(f"❌ {message}", "error")
+            messagebox.showwarning("Buiten Werktijd", f"Kan geen sessie starten: {message}")
+            return
+        
+        # Create new session
+        self.session_start_time = datetime.now()
+        self.current_session_id = f"{current_user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+        
+        data = {
+            'event': 'SESSION_START',
+            'user': current_user,
+            'session_id': self.current_session_id,
+            'timestamp': self.session_start_time.isoformat(),
+            'session_type': 'SCANNER'  # Scanner panel sessions
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=3)
+            if response.ok:
+                self.log_message(f"✓ Werk sessie gestart voor {current_user}", "success")
+                self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
+                self.start_button.config(text="STOP SESSIE", bg="#f44336")
+            else:
+                self.log_message("❌ Kon sessie niet starten", "error")
+                self.current_session_id = None
+                self.session_start_time = None
+        except Exception as e:
+            self.log_message(f"❌ Fout bij starten sessie: {e}", "error")
+            self.current_session_id = None
+            self.session_start_time = None
+
+    def close_current_session(self):
+        """Close the current active session"""
+        if not self.current_session_id:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        
+        data = {
+            'session_id': self.current_session_id,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/end'), json=data, timeout=3)
+            if response.ok:
+                end_time = datetime.now()
+                # Use work minutes calculation that excludes breaks
+                work_minutes = int(self.calculate_work_minutes_local(self.session_start_time, end_time))
+                self.log_message(f"✓ Sessie afgesloten. Duur: {work_minutes} minuten", "success")
+        except Exception as e:
+            self.log_message(f"⚠️ Fout bij afsluiten sessie: {e}", "warning")
+        
+        self.current_session_id = None
+        self.session_start_time = None
+        self.session_status_label.config(text="Geen actieve sessie", fg="black")
+        self.start_button.config(text="START NIEUWE SESSIE", bg="#4CAF50")
+    
+
+    # update_session_timer function removed - timer no longer displayed
+
+    def calculate_work_minutes_local(self, start_time, end_time):
+        """Calculate work minutes locally for display using dynamic work hours from settings"""
+        total_minutes = 0
+        current = start_time
+        
+        # Get work hours from cache or fallback to API
+        work_hours = self._work_hours_cache if self._work_hours_cache else self.get_work_hours_from_api()
+        
+        # Day name mapping
+        day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        
+        while current < end_time:
+            # Skip weekends (or non-work days)
+            if current.weekday() not in work_hours.get('work_days', [0, 1, 2, 3, 4]):
+                current = current.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+                continue
+            
+            # Get work hours for current day
+            day_name = day_names[current.weekday()]
+            day_config = work_hours.get(day_name, {'start': 7.5, 'end': 16})
+            
+            # Work hours for current day
+            day_start_hour = day_config['start']
+            day_end_hour = day_config['end']
+            day_start = current.replace(hour=int(day_start_hour), minute=int((day_start_hour % 1) * 60), second=0)
+            day_end = current.replace(hour=int(day_end_hour), minute=int((day_end_hour % 1) * 60), second=0)
+            
+            # Break hours
+            break_start_hour = work_hours.get('break_start', 12)
+            break_end_hour = work_hours.get('break_end', 12.5)
+            break_start = current.replace(hour=int(break_start_hour), minute=int((break_start_hour % 1) * 60), second=0)
+            break_end = current.replace(hour=int(break_end_hour), minute=int((break_end_hour % 1) * 60), second=0)
+            
+            # Actual work period
+            actual_start = max(current, day_start)
+            actual_end = min(end_time, day_end)
+            
+            if actual_start < actual_end:
+                # Morning
+                if actual_start < break_start:
+                    morning_end = min(actual_end, break_start)
+                    total_minutes += (morning_end - actual_start).total_seconds() / 60
+                
+                # Afternoon
+                if actual_end > break_end:
+                    afternoon_start = max(actual_start, break_end)
+                    total_minutes += (actual_end - afternoon_start).total_seconds() / 60
+            
+            # Next day
+            current = current.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+        
+        return round(total_minutes)
 
     def log_message(self, message, level="info", show_timestamp=True):
         """Adds a user-friendly message to the log viewer."""
@@ -591,6 +993,74 @@ class ScannerPanel(tk.Frame):
                 else:
                     browse_btn.config(state=tk.NORMAL if is_corresponding_logic_active else tk.DISABLED)
 
+    def get_item_count_dialog(self, project_name):
+        """Show dialog to get item count for a project"""
+        # Allow dialog even without active session for AFGEMELD events
+        # if not self.current_session_id:
+        #     # No active session, return None to skip dialog
+        #     return None
+            
+        # Create dialog window
+        dialog = tk.Toplevel(self)
+        dialog.title("Aantal Items")
+        dialog.geometry("400x200")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        # Create content
+        tk.Label(dialog, text="Project afmelden", font=('Arial', 12, 'bold')).pack(pady=10)
+        tk.Label(dialog, text=f"Project: {project_name}", font=('Arial', 10)).pack(pady=5)
+        tk.Label(dialog, text="Aantal verwerkte items:", font=('Arial', 10)).pack(pady=(20, 5))
+        
+        item_count_var = tk.StringVar(value="0")
+        entry = tk.Entry(dialog, textvariable=item_count_var, font=('Arial', 14), width=10, justify='center')
+        entry.pack(pady=5)
+        entry.focus()
+        entry.select_range(0, tk.END)
+        
+        result = {'confirmed': False, 'count': 0}
+        
+        def on_confirm():
+            try:
+                count = int(item_count_var.get())
+                if count < 0:
+                    tk.messagebox.showerror("Fout", "Aantal moet 0 of hoger zijn", parent=dialog)
+                    return
+                result['confirmed'] = True
+                result['count'] = count
+                dialog.destroy()
+            except ValueError:
+                tk.messagebox.showerror("Fout", "Voer een geldig getal in", parent=dialog)
+        
+        def on_cancel():
+            dialog.destroy()
+        
+        # Buttons
+        button_frame = tk.Frame(dialog)
+        button_frame.pack(pady=20)
+        
+        tk.Button(button_frame, text="Bevestigen", command=on_confirm, 
+                 bg='#4CAF50', fg='white', font=('Arial', 10, 'bold'), 
+                 width=12, pady=5).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Annuleren", command=on_cancel,
+                 bg='#f44336', fg='white', font=('Arial', 10),
+                 width=12, pady=5).pack(side=tk.LEFT, padx=5)
+        
+        # Bind keys
+        entry.bind('<Return>', lambda e: on_confirm())
+        dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # Wait for dialog
+        dialog.wait_window()
+        
+        return result if result['confirmed'] else None
+
     def log_scan_event(self, code):
         import requests
         from config_utils import get_config
@@ -619,14 +1089,29 @@ class ScannerPanel(tk.Frame):
         all_ok = True
         current_user = config.get('user', 'unknown')
 
+        # Add session_id to data if available
+        session_data = {}
+        if self.current_session_id:
+            session_data['session_id'] = self.current_session_id
+
         if event_type == 'OPEN':
+            # First send automatic AFGEMELD to close existing project
+            # Ask for item count for automatic AFGEMELD only if session is active
+            auto_afgemeld_item_count = 0
+            if self.current_session_id:
+                item_dialog_result = self.get_item_count_dialog(f"Project {project_code_to_log}")
+                if item_dialog_result:
+                    auto_afgemeld_item_count = item_dialog_result['count']
+            
             data_afgemeld = {
                 'event': 'AFGEMELD',
                 'details': code,
                 'project': project_code_to_log,
                 'base_mo_code': base_project_code,
                 'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
-                'user': current_user
+                'user': current_user,
+                'item_count': auto_afgemeld_item_count,
+                **session_data
             }
             try:
                 resp_afgemeld = requests.post(api_url, json=data_afgemeld, timeout=3)
@@ -640,13 +1125,19 @@ class ScannerPanel(tk.Frame):
                 all_ok = False
 
             self.log_message(f"🔄 Project {project_code_to_log} wordt verwerkt voor alle gebruikers...", "info")
+            
+            # Use session start time if available, otherwise current time
+            scan_timestamp = self.session_start_time.isoformat() if self.session_start_time else None
+            
+            # Trigger background service for other users
             self.background_import_service.process_scan_for_open_event_async(
                 project_code_to_log=project_code_to_log,
                 base_project_code=base_project_code,
                 scanned_code=code,
                 current_user_scanner=current_user,
                 api_url=api_url,
-                config_data=config
+                config_data=config,
+                timestamp=scan_timestamp
             )
             
             if all_ok:
@@ -656,18 +1147,31 @@ class ScannerPanel(tk.Frame):
                 self.usb_entry.config(bg='red')
             self.after(2000, lambda: self.usb_entry.config(bg='white'))
         else:
+            # AFGEMELD event type - prompt for item count and send AFGEMELD event
+            # Get item count from user dialog
+            item_count_result = self.get_item_count_dialog(project_code_to_log)
+            if item_count_result and item_count_result['confirmed']:
+                item_count = item_count_result['count']
+            else:
+                # User cancelled or no session, default to 0
+                item_count = 0
+                self.log_message(f"⚠️ Geen items opgegeven voor {project_code_to_log}", "warning")
+            
             data = {
-                'event': event_type,
+                'event': 'AFGEMELD',
                 'details': code,
                 'project': project_code_to_log,
                 'base_mo_code': base_project_code,
                 'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
-                'user': current_user
+                'user': current_user,
+                'item_count': item_count,
+                **session_data
             }
+            
             try:
                 response = requests.post(api_url, json=data, timeout=3)
                 if response.ok:
-                    if event_type == 'AFGEMELD' and project_code_to_log:
+                    if project_code_to_log:
                         self.open_projects.discard(project_code_to_log)
                         self.log_message(f"✓ Project {project_code_to_log} afgesloten", "success")
                     self.usb_entry.config(bg='light green')
@@ -699,16 +1203,14 @@ class ScannerPanel(tk.Frame):
         import os
 
         base_project_code = ""
-        mo_match = re.search(r'(MO\d{4,6})', code_input, re.IGNORECASE)
+        # Look for MOxxxxx pattern (exactly 5 digits to match BarcodeMatch)
+        mo_match = re.search(r'(MO\d{5})', code_input, re.IGNORECASE)
         if mo_match:
             base_project_code = mo_match.group(0).upper()
-        else:
-            accura_match = re.search(r'(\d{5,6})', code_input)
-            if accura_match:
-                base_project_code = accura_match.group(0)
         
         if not base_project_code:
-            return "", ""
+            # Use full code_input as fallback when no MO code found
+            return code_input, code_input
 
         full_project_code = base_project_code
         
@@ -885,6 +1387,10 @@ class ScannerPanel(tk.Frame):
     def shutdown(self):
         """Gracefully disconnect COM port on app shutdown without changing auto-connect config."""
         print("[ScannerPanel] Shutdown called. Disconnecting COM port.")
+        # Close session if active
+        if self.current_session_id:
+            self.close_current_session()
+        
         self.is_reading = False
         if hasattr(self, 'read_thread') and self.read_thread and self.read_thread.is_alive():
             self.read_thread.join(timeout=1.0)

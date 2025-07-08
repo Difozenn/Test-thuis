@@ -6,46 +6,27 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-<!-- Date Range Picker -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
 {% endblock %}
 
 {% block extra_styles %}
-/* Filter section */
-.filter-section {
+/* Enterprise-grade statistics styling */
+.stats-section {
     background: white;
     border-radius: 15px;
     padding: 25px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-/* Statistics cards */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
 }
 
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+.stats-section:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
 }
 
-.stat-card::before {
+.stats-section::before {
     content: '';
     position: absolute;
     top: 0;
@@ -53,200 +34,279 @@
     right: 0;
     height: 4px;
     background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+    border-radius: 15px 15px 0 0;
 }
 
-.stat-icon {
-    width: 60px;
-    height: 60px;
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-icon {
+    width: 50px;
+    height: 50px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
-    font-size: 1.8rem;
+    font-size: 1.5rem;
+    margin-right: 15px;
+    color: white;
 }
 
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: bold;
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--dark-blue);
-    margin-bottom: 5px;
+    margin: 0;
 }
 
-.stat-label {
+.section-subtitle {
+    font-size: 0.9rem;
     color: #6c757d;
-    font-size: 0.95rem;
-    font-weight: 500;
+    margin: 5px 0 0 0;
 }
 
-.stat-trend {
-    font-size: 0.875rem;
-    margin-top: 10px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.trend-positive {
-    color: var(--success-color);
-}
-
-.trend-negative {
-    color: var(--danger-color);
-}
-
-.trend-neutral {
-    color: #6c757d;
-}
-
-/* Performance indicators */
-.performance-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
-.performance-excellent {
-    background-color: rgba(30, 142, 62, 0.1);
-    color: var(--success-color);
-}
-
-.performance-good {
-    background-color: rgba(26, 115, 232, 0.1);
-    color: var(--info-color);
-}
-
-.performance-average {
-    background-color: rgba(249, 171, 0, 0.1);
-    color: var(--warning-color);
-}
-
-.performance-poor {
-    background-color: rgba(217, 48, 37, 0.1);
-    color: var(--danger-color);
-}
-
-/* User performance table */
-.performance-table {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+/* Metrics grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
     margin-bottom: 30px;
 }
 
-.performance-table thead th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: var(--dark-blue);
-    padding: 15px;
-    border: none;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.performance-table tbody tr {
-    transition: background-color 0.2s;
-}
-
-.performance-table tbody tr:hover {
-    background-color: var(--hover-bg);
-}
-
-.performance-table td {
-    padding: 12px 15px;
-    vertical-align: middle;
-}
-
-/* Charts section */
-.chart-container {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    height: 100%;
-    position: relative;
-}
-
-.chart-container h3 {
-    color: var(--dark-blue);
-    border-bottom: 2px solid var(--secondary-blue);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.chart-controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-/* Advanced metrics */
-.metric-box {
+.metric-card {
     background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 15px;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
 }
 
-.metric-box h5 {
-    color: var(--dark-blue);
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+.metric-card:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.metric-trend {
+    font-size: 0.75rem;
+    margin-top: 5px;
+}
+
+.metric-trend.positive {
+    color: var(--success-color);
+}
+
+.metric-trend.negative {
+    color: var(--error-color);
+}
+
+/* Charts container */
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.chart-title {
+    font-size: 1.1rem;
     font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 15px;
+    text-align: center;
 }
 
-.metric-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e9ecef;
+.chart-container {
+    position: relative;
+    height: 300px;
 }
 
-.metric-item:last-child {
-    border-bottom: none;
-}
-
-/* Export controls */
-.export-controls {
-    display: flex;
-    gap: 10px;
+/* Tables */
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
 }
 
-/* Loading states */
-.loading-spinner {
+.stats-table th,
+.stats-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.stats-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark-blue);
+}
+
+.stats-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Efficiency badges */
+.efficiency-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.efficiency-high {
+    background: rgba(30, 142, 62, 0.1);
+    color: var(--success-color);
+}
+
+.efficiency-medium {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f39c12;
+}
+
+.efficiency-low {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--error-color);
+}
+
+/* Controls */
+.stats-controls {
     display: flex;
-    justify-content: center;
     align-items: center;
-    min-height: 200px;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-    border-width: 0.3em;
+.period-selector {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.skeleton {
+.quick-periods {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.period-btn {
+    padding: 8px 16px;
+    border: 1px solid #e9ecef;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.period-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+.period-btn:hover {
+    border-color: var(--secondary-blue);
+}
+
+.custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.date-input {
+    width: 140px;
+    padding: 6px 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.3s ease;
+}
+
+.date-input:focus {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+.current-period-display {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+/* Predictive calculator */
+.calculator-section {
+    background: linear-gradient(135deg, rgba(0, 113, 180, 0.05), rgba(52, 152, 219, 0.05));
+    border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.calculator-inputs {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.calculator-result {
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.result-highlight {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+/* Loading states */
+.loading-skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
+    border-radius: 8px;
+    height: 20px;
 }
 
 @keyframes loading {
@@ -254,35 +314,75 @@
     100% { background-position: -200% 0; }
 }
 
-/* Responsive */
+/* Responsive design */
 @media (max-width: 768px) {
-    .stats-grid {
+    .charts-container {
         grid-template-columns: 1fr;
     }
     
-    .filter-section {
-        padding: 15px;
+    .calculator-inputs {
+        grid-template-columns: 1fr;
     }
     
-    .performance-table {
-        font-size: 0.85rem;
-    }
-    
-    .chart-controls {
+    .stats-controls {
         flex-direction: column;
         align-items: stretch;
     }
-}
-
-/* Print styles */
-@media print {
-    .filter-section, .export-controls, .btn-group {
-        display: none !important;
+    
+    .period-selector {
+        flex-direction: column;
+        gap: 10px;
     }
     
-    .chart-container {
-        break-inside: avoid;
-        page-break-inside: avoid;
+    .quick-periods {
+        justify-content: center;
+        gap: 5px;
+    }
+    
+    .period-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .custom-date-range {
+        justify-content: center;
+        gap: 5px;
+    }
+    
+    .date-input {
+        width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-periods {
+        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        gap: 5px;
+    }
+    
+    .period-btn {
+        padding: 8px;
+        font-size: 0.75rem;
+        text-align: center;
+    }
+    
+    .custom-date-range {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
     }
 }
 {% endblock %}
@@ -290,390 +390,325 @@
 {% block content %}
 <!-- Page Header -->
 <div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1>Geavanceerde Statistieken</h1>
-            <p>Real-time analyse en inzichten over projecten en prestaties</p>
+    <h1>Productiviteit & Analyse Dashboard</h1>
+    <p>Comprehensive analytics voor productiviteit, efficiency en voorspellende analyses</p>
+</div>
+
+<!-- Controls -->
+<div class="stats-controls">
+    <div class="period-selector">
+        <span style="font-weight: 600; margin-right: 15px;">Periode:</span>
+        
+        <!-- Quick Period Buttons -->
+        <div class="quick-periods">
+            <button class="period-btn" data-period="1" data-type="days">Vandaag</button>
+            <button class="period-btn" data-period="7" data-type="days">Deze week</button>
+            <button class="period-btn active" data-period="30" data-type="days">Deze maand</button>
+            <button class="period-btn" data-period="90" data-type="days">Kwartaal</button>
+            <button class="period-btn" data-period="365" data-type="days">Dit jaar</button>
+            <button class="period-btn" data-period="all" data-type="all">Totaal</button>
         </div>
-        <div class="export-controls">
-            <button class="btn btn-outline-secondary" onclick="exportData('pdf')">
-                <i class="fas fa-file-pdf"></i> Export PDF
-            </button>
-            <button class="btn btn-outline-secondary" onclick="exportData('excel')">
-                <i class="fas fa-file-excel"></i> Export Excel
+        
+        <!-- Custom Date Range -->
+        <div class="custom-date-range">
+            <span style="margin: 0 15px; color: #6c757d;">|</span>
+            <label style="font-size: 0.875rem; margin-right: 8px;">Van:</label>
+            <input type="date" class="form-control date-input" id="start-date">
+            <label style="font-size: 0.875rem; margin: 0 8px;">Tot:</label>
+            <input type="date" class="form-control date-input" id="end-date">
+            <button class="btn btn-outline-primary btn-sm" onclick="applyCustomDateRange()">
+                <i class="fas fa-calendar-alt"></i> Toepassen
             </button>
         </div>
     </div>
+    
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+        <span class="current-period-display" id="current-period-display">Laatste 30 dagen</span>
+        <button class="btn btn-primary" onclick="refreshAllData()">
+            <i class="fas fa-sync-alt"></i> Vernieuwen
+        </button>
+    </div>
 </div>
 
-<!-- Filter Section -->
-<div class="filter-section">
-    <div class="row align-items-end g-3">
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Periode:</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                <input type="text" class="form-control" id="dateRange" placeholder="Selecteer periode">
+<!-- 1. Productivity & Throughput -->
+<div class="stats-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div>
+            <h2 class="section-title">Productiviteit & Doorvoer</h2>
+            <p class="section-subtitle">Items per uur, efficiëntie en trendanalyse</p>
+        </div>
+    </div>
+
+    <div class="metrics-grid" id="productivity-metrics">
+        <div class="metric-card">
+            <div class="metric-value" id="overall-items-per-hour">-</div>
+            <div class="metric-label">Items/uur (totaal)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="total-items">-</div>
+            <div class="metric-label">Totale items</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="total-hours">-</div>
+            <div class="metric-label">Totale uren</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="avg-time-per-item">-</div>
+            <div class="metric-label">Gem. tijd per item (min)</div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <div class="chart-title">Items/uur per gebruiker</div>
+            <div class="chart-container">
+                <canvas id="userProductivityChart"></canvas>
             </div>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">Gebruiker:</label>
-            <select class="form-select" id="userFilter">
-                <option value="">Alle Gebruikers</option>
-                {% for user in configured_users %}
-                <option value="{{ user }}">{{ user }}</option>
-                {% endfor %}
-            </select>
+        <div class="chart-card">
+            <div class="chart-title">Productiviteit trend (7 dagen)</div>
+            <div class="chart-container">
+                <canvas id="productivityTrendChart"></canvas>
+            </div>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">Project Type:</label>
-            <select class="form-select" id="projectTypeFilter">
-                <option value="">Alle Types</option>
-                <option value="normal">Normaal</option>
-                <option value="rep">REP Variant</option>
-            </select>
+    </div>
+
+    <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Gebruiker</th>
+                <th>Items/uur</th>
+                <th>Totale items</th>
+                <th>Handmatig</th>
+                <th>Automatisch</th>
+                <th>Sessie uren</th>
+                <th>Prestatie</th>
+            </tr>
+        </thead>
+        <tbody id="productivity-table">
+            <!-- Data loaded via JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 2. User Efficiency & Load Distribution -->
+<div class="stats-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+            <i class="fas fa-users"></i>
         </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">Status:</label>
-            <select class="form-select" id="statusFilter">
-                <option value="">Alle Statussen</option>
-                <option value="OPEN">Open</option>
-                <option value="AFGEMELD">Afgemeld</option>
-                <option value="CLOSED">Gesloten</option>
-            </select>
+        <div>
+            <h2 class="section-title">Gebruiker Efficiëntie & Werkverdeling</h2>
+            <p class="section-subtitle">Bijdrage per gebruiker, werkverdelingen en efficiency scores</p>
         </div>
-        <div class="col-md-1">
-            <button class="btn btn-primary w-100" onclick="applyFilters()">
-                <i class="fas fa-filter"></i> Filter
-            </button>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <div class="chart-title">Tijd vs Output bijdrage</div>
+            <div class="chart-container">
+                <canvas id="contributionChart"></canvas>
+            </div>
         </div>
-        <div class="col-md-2">
-            <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
-                <i class="fas fa-redo"></i> Reset
-            </button>
+        <div class="chart-card">
+            <div class="chart-title">Sessietijd vs Item output</div>
+            <div class="chart-container">
+                <canvas id="scatterChart"></canvas>
+            </div>
         </div>
+    </div>
+
+    <div class="metrics-grid" id="efficiency-metrics">
+        <!-- Dynamic content -->
     </div>
 </div>
 
-<!-- Loading Spinner -->
-<div id="loadingSpinner" class="loading-spinner" style="display: none;">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-</div>
-
-<!-- Key Performance Indicators -->
-<div class="stats-grid" id="statsGrid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
-            <i class="fas fa-project-diagram"></i>
-        </div>
-        <div class="stat-value" id="totalProjects">-</div>
-        <div class="stat-label">Totaal Projecten</div>
-        <div class="stat-trend trend-neutral" id="projectsTrend">
-            <i class="fas fa-minus"></i> Berekenen...
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-value" id="completedProjects">-</div>
-        <div class="stat-label">Voltooide Projecten</div>
-        <div class="stat-trend trend-neutral" id="completedTrend">
-            <i class="fas fa-minus"></i> Berekenen...
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
+<!-- 3. Time-Based Insights -->
+<div class="stats-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
             <i class="fas fa-clock"></i>
         </div>
-        <div class="stat-value" id="avgCompletionTime">-</div>
-        <div class="stat-label">Gem. Doorlooptijd</div>
-        <div class="stat-trend trend-neutral" id="timeTrend">
-            <i class="fas fa-minus"></i> Berekenen...
+        <div>
+            <h2 class="section-title">Tijd-gebaseerde Inzichten</h2>
+            <p class="section-subtitle">Idle tijd, cumulatieve trends en tijd efficiëntie</p>
         </div>
     </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(52, 152, 219, 0.1); color: var(--secondary-blue);">
-            <i class="fas fa-percentage"></i>
-        </div>
-        <div class="stat-value" id="efficiencyRate">-</div>
-        <div class="stat-label">Efficiency Score</div>
-        <div class="stat-trend trend-neutral" id="efficiencyTrend">
-            <i class="fas fa-minus"></i> Berekenen...
-        </div>
-    </div>
-</div>
 
-<!-- Advanced Metrics Row -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: rgba(155, 89, 182, 0.1); color: #9b59b6;">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-value" id="activeUsers">-</div>
-            <div class="stat-label">Actieve Gebruikers</div>
-        </div>
+    <div class="metrics-grid" id="time-metrics">
+        <!-- Dynamic content -->
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: rgba(231, 76, 60, 0.1); color: #e74c3c;">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="stat-value" id="bottlenecks">-</div>
-            <div class="stat-label">Knelpunten</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: rgba(46, 204, 113, 0.1); color: #2ecc71;">
-                <i class="fas fa-tachometer-alt"></i>
-            </div>
-            <div class="stat-value" id="throughput">-</div>
-            <div class="stat-label">Doorvoer/Uur</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: rgba(241, 196, 15, 0.1); color: #f1c40f;">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-value" id="utilization">-</div>
-            <div class="stat-label">Bezettingsgraad</div>
-        </div>
-    </div>
-</div>
 
-<!-- User Performance Table -->
-<div class="card performance-table">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fas fa-users"></i> Gebruiker Prestaties</h6>
-        <div class="performance-indicator performance-good">
-            <i class="fas fa-info-circle"></i>
-            <span id="overallPerformance">Algemeen: Goed</span>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Gebruiker</th>
-                        <th>Projecten</th>
-                        <th>Voltooid</th>
-                        <th>Gem. Tijd</th>
-                        <th>Min/Max</th>
-                        <th>Consistentie</th>
-                        <th>Trend (7d)</th>
-                        <th>Performance</th>
-                        <th>Acties</th>
-                    </tr>
-                </thead>
-                <tbody id="userPerformanceTable">
-                    <tr>
-                        <td colspan="9" class="text-center py-4">
-                            <div class="skeleton" style="height: 20px; width: 80%; margin: 0 auto;"></div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Section -->
-<div class="row mt-4">
-    <div class="col-lg-6 mb-4">
-        <div class="chart-container">
-            <div class="chart-header">
-                <h3>Projecten Tijdlijn</h3>
-                <div class="chart-controls">
-                    <select class="form-select form-select-sm" id="timelineGrouping" onchange="updateTimelineChart()">
-                        <option value="hour">Per Uur</option>
-                        <option value="day" selected>Per Dag</option>
-                        <option value="week">Per Week</option>
-                        <option value="month">Per Maand</option>
-                    </select>
-                </div>
-            </div>
-            <canvas id="projectsTimelineChart" height="300"></canvas>
-            <div class="metric-box">
-                <h5>Tijdlijn Analyse</h5>
-                <div class="metric-item">
-                    <span>Piek Uur:</span>
-                    <strong id="peakHour">-</strong>
-                </div>
-                <div class="metric-item">
-                    <span>Rustigste Uur:</span>
-                    <strong id="quietHour">-</strong>
-                </div>
-                <div class="metric-item">
-                    <span>Trend:</span>
-                    <strong id="timelineTrend">-</strong>
-                </div>
+    <div class="charts-container">
+        <div class="chart-card">
+            <div class="chart-title">Productief vs Idle tijd</div>
+            <div class="chart-container">
+                <canvas id="timeBreakdownChart"></canvas>
             </div>
         </div>
-    </div>
-    
-    <div class="col-lg-6 mb-4">
-        <div class="chart-container">
-            <div class="chart-header">
-                <h3>Doorlooptijd Analyse</h3>
-                <div class="chart-controls">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChartType('completion')">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-                </div>
-            </div>
-            <canvas id="completionTimeChart" height="300"></canvas>
-            <div class="metric-box">
-                <h5>Doorlooptijd Details</h5>
-                <div class="metric-item">
-                    <span>Mediaan:</span>
-                    <strong id="medianTime">-</strong>
-                </div>
-                <div class="metric-item">
-                    <span>90e Percentiel:</span>
-                    <strong id="p90Time">-</strong>
-                </div>
-                <div class="metric-item">
-                    <span>Standaardafwijking:</span>
-                    <strong id="stdDevTime">-</strong>
-                </div>
+        <div class="chart-card">
+            <div class="chart-title">Cumulatieve sessietijd (14 dagen)</div>
+            <div class="chart-container">
+                <canvas id="cumulativeChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h3>Workflow Distributie</h3>
-            <canvas id="workflowChart" height="300"></canvas>
-            <div class="metric-box">
-                <h5>Workflow Balans</h5>
-                <div id="workflowBalance">
-                    <div class="skeleton" style="height: 60px;"></div>
-                </div>
+<!-- 4. Bottleneck Analysis -->
+<div class="stats-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div>
+            <h2 class="section-title">Knelpunt Analyse</h2>
+            <p class="section-subtitle">Identificatie van vertragingen en inefficiënties</p>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <div class="chart-title">Projecten met meeste vertraging</div>
+            <div class="chart-container">
+                <canvas id="delayChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Verwacht vs Werkelijk (afwijking %)</div>
+            <div class="chart-container">
+                <canvas id="varianceChart"></canvas>
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h3>Project Types</h3>
-            <canvas id="projectTypesChart" height="300"></canvas>
-            <div class="metric-box">
-                <h5>Type Analyse</h5>
-                <div id="typeAnalysis">
-                    <div class="skeleton" style="height: 60px;"></div>
-                </div>
-            </div>
+
+    <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Project uren</th>
+                <th>Sessie uren</th>
+                <th>Idle uren</th>
+                <th>Efficiëntie %</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody id="bottleneck-table">
+            <!-- Data loaded via JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 5. Predictive Calculator -->
+<div class="stats-section calculator-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+            <i class="fas fa-crystal-ball"></i>
+        </div>
+        <div>
+            <h2 class="section-title">Voorspellende Tijd Calculator</h2>
+            <p class="section-subtitle">Schat benodigde tijd voor gewenste hoeveelheid items</p>
         </div>
     </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h3>Status Verdeling</h3>
-            <canvas id="statusChart" height="300"></canvas>
-            <div class="metric-box">
-                <h5>Status Details</h5>
-                <div id="statusDetails">
-                    <div class="skeleton" style="height: 60px;"></div>
-                </div>
-            </div>
+
+    <div class="calculator-inputs">
+        <div>
+            <label class="form-label">Gewenste hoeveelheid items:</label>
+            <input type="number" class="form-control" id="target-items" value="100" min="1" max="10000">
         </div>
+        <div>
+            <label class="form-label">Historische periode:</label>
+            <select class="form-select" id="prediction-period">
+                <option value="7">7 dagen</option>
+                <option value="30" selected>30 dagen</option>
+                <option value="90">90 dagen</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="calculatePrediction()">
+            <i class="fas fa-calculator"></i> Bereken
+        </button>
+    </div>
+
+    <div class="calculator-result" id="prediction-result" style="display: none;">
+        <!-- Prediction results -->
     </div>
 </div>
 
-<!-- Workflow Chain Analysis -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="chart-container">
-            <div class="chart-header">
-                <h3>Workflow Keten Analyse</h3>
-                <div class="chart-controls">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshWorkflowAnalysis()">
-                        <i class="fas fa-sync"></i> Ververs
-                    </button>
-                </div>
+<!-- 6. Quality Metrics -->
+<div class="stats-section" style="position: relative;">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+            <i class="fas fa-shield-check"></i>
+        </div>
+        <div>
+            <h2 class="section-title">Kwaliteitsstatistieken</h2>
+            <p class="section-subtitle">Defectpercentages en rework tracking via rep_variant logica</p>
+        </div>
+    </div>
+
+    <!-- Overall Quality Metrics -->
+    <div class="metrics-grid" id="overall-quality-metrics">
+        <div class="metric-card">
+            <div class="metric-value" id="overall-quality-rate">-</div>
+            <div class="metric-label">Kwaliteitspercentage</div>
+            <div class="metric-trend" id="overall-quality-trend">Gebaseerd op normale productie</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="overall-defect-rate">-</div>
+            <div class="metric-label">Defectpercentage</div>
+            <div class="metric-trend" id="overall-defect-trend">Rework vereist</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="total-rework-items">-</div>
+            <div class="metric-label">Rework Items</div>
+            <div class="metric-trend" id="rework-items-trend">Rep_variant detecties</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="normal-items">-</div>
+            <div class="metric-label">Normale Items</div>
+            <div class="metric-trend" id="normal-items-trend">Eerste keer goed</div>
+        </div>
+    </div>
+
+    <!-- Quality Charts -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h4>Kwaliteitstrend</h4>
+                <canvas id="qualityTrendChart"></canvas>
             </div>
-            <canvas id="workflowChainChart" height="150"></canvas>
-            <div class="row mt-3">
-                <div class="col-md-3">
-                    <div class="metric-box">
-                        <h5>Gemiddelde Overdrachtstijd</h5>
-                        <div id="avgTransferTime" class="text-center">
-                            <h3 class="mb-0">-</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-box">
-                        <h5>Totale Cyclustijd</h5>
-                        <div id="totalCycleTime" class="text-center">
-                            <h3 class="mb-0">-</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-box">
-                        <h5>Efficiency Index</h5>
-                        <div id="efficiencyIndex" class="text-center">
-                            <h3 class="mb-0">-</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-box">
-                        <h5>Knelpunt Station</h5>
-                        <div id="bottleneckStation" class="text-center">
-                            <h3 class="mb-0">-</h3>
-                        </div>
-                    </div>
-                </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h4>Defecten per Producttype</h4>
+                <canvas id="productQualityChart"></canvas>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Heatmap Analysis -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="chart-container">
-            <h3>Activiteit Heatmap</h3>
-            <canvas id="heatmapChart" height="200"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- User Detail Modal -->
-<div class="modal fade" id="userDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Gebruiker Details: <span id="modalUserName"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <canvas id="userActivityChart"></canvas>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Recent Projects</h6>
-                        <div id="userRecentProjects" style="max-height: 300px; overflow-y: auto;">
-                            <div class="skeleton" style="height: 200px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- User Quality Table -->
+    <div class="table-container">
+        <h4>Kwaliteit per Gebruiker</h4>
+        <table class="performance-table">
+            <thead>
+                <tr>
+                    <th>Gebruiker</th>
+                    <th>Totaal Items</th>
+                    <th>Rework Items</th>
+                    <th>Defectpercentage</th>
+                    <th>Kwaliteitspercentage</th>
+                    <th>Gem. Tijd Normaal</th>
+                    <th>Gem. Tijd Rework</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="quality-table">
+                <!-- Quality data will be populated here -->
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -681,598 +716,361 @@
 {% block scripts %}
 <script>
 // Global variables
-const configuredUsers = {{ configured_users | tojson | safe }};
-let currentFilters = {
-    startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
-    endDate: moment().format('YYYY-MM-DD'),
-    user: '',
-    projectType: '',
-    status: ''
-};
-
+let currentPeriod = 30;
+let currentPeriodType = 'days';
+let customDateRange = null;
 let charts = {};
-let cachedData = {};
-let refreshInterval;
+
+// Chart.js default configuration
+Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+Chart.defaults.color = '#6c757d';
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDateRangePicker();
-    loadStatistics();
-    startAutoRefresh();
-    initializeEventListeners();
+    initializePeriodButtons();
+    initializeDateInputs();
+    loadAllStatistics();
 });
 
-function initializeDateRangePicker() {
-    $('#dateRange').daterangepicker({
-        startDate: moment().subtract(30, 'days'),
-        endDate: moment(),
-        locale: {
-            format: 'DD-MM-YYYY',
-            applyLabel: 'Toepassen',
-            cancelLabel: 'Annuleren',
-            fromLabel: 'Van',
-            toLabel: 'Tot',
-            customRangeLabel: 'Aangepast',
-            weekLabel: 'W',
-            daysOfWeek: ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
-            monthNames: ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 
-                         'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
-        },
-        ranges: {
-            'Vandaag': [moment(), moment()],
-            'Gisteren': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            'Laatste 7 dagen': [moment().subtract(6, 'days'), moment()],
-            'Laatste 30 dagen': [moment().subtract(29, 'days'), moment()],
-            'Deze maand': [moment().startOf('month'), moment().endOf('month')],
-            'Vorige maand': [moment().subtract(1, 'month').startOf('month'), 
-                           moment().subtract(1, 'month').endOf('month')],
-            'Dit kwartaal': [moment().startOf('quarter'), moment().endOf('quarter')],
-            'Dit jaar': [moment().startOf('year'), moment()],
-        }
-    });
-    
-    $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
-        currentFilters.startDate = picker.startDate.format('YYYY-MM-DD');
-        currentFilters.endDate = picker.endDate.format('YYYY-MM-DD');
-    });
-}
-
-function initializeEventListeners() {
-    // Chart type toggles
-    document.querySelectorAll('[data-chart-toggle]').forEach(btn => {
+// Period button handling
+function initializePeriodButtons() {
+    document.querySelectorAll('.period-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            const chartId = this.dataset.chartToggle;
-            toggleChartType(chartId);
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            currentPeriod = this.dataset.period;
+            currentPeriodType = this.dataset.type;
+            customDateRange = null; // Clear custom range when using quick buttons
+            
+            updatePeriodDisplay();
+            loadAllStatistics();
         });
     });
 }
 
-function applyFilters() {
-    currentFilters.user = document.getElementById('userFilter').value;
-    currentFilters.projectType = document.getElementById('projectTypeFilter').value;
-    currentFilters.status = document.getElementById('statusFilter').value;
-    loadStatistics();
+// Initialize date inputs
+function initializeDateInputs() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    document.getElementById('start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
 }
 
-function resetFilters() {
-    document.getElementById('userFilter').value = '';
-    document.getElementById('projectTypeFilter').value = '';
-    document.getElementById('statusFilter').value = '';
-    $('#dateRange').data('daterangepicker').setStartDate(moment().subtract(30, 'days'));
-    $('#dateRange').data('daterangepicker').setEndDate(moment());
-    currentFilters = {
-        startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
-        endDate: moment().format('YYYY-MM-DD'),
-        user: '',
-        projectType: '',
-        status: ''
-    };
-    loadStatistics();
+// Apply custom date range
+function applyCustomDateRange() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    if (!startDate || !endDate) {
+        alert('Selecteer zowel een start- als einddatum');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        alert('Startdatum moet voor einddatum liggen');
+        return;
+    }
+    
+    // Clear active state from quick buttons
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    
+    customDateRange = { start: startDate, end: endDate };
+    currentPeriodType = 'custom';
+    
+    updatePeriodDisplay();
+    loadAllStatistics();
 }
 
-async function loadStatistics() {
-    showLoading(true);
+// Update period display text
+function updatePeriodDisplay() {
+    const displayElement = document.getElementById('current-period-display');
+    
+    if (customDateRange) {
+        const startDate = new Date(customDateRange.start).toLocaleDateString('nl-NL');
+        const endDate = new Date(customDateRange.end).toLocaleDateString('nl-NL');
+        displayElement.textContent = `${startDate} - ${endDate}`;
+    } else if (currentPeriodType === 'all') {
+        displayElement.textContent = 'Alle data';
+    } else {
+        const periodTexts = {
+            '1': 'Vandaag',
+            '7': 'Laatste 7 dagen',
+            '30': 'Laatste 30 dagen',
+            '90': 'Laatste 90 dagen',
+            '365': 'Laatste 365 dagen'
+        };
+        displayElement.textContent = periodTexts[currentPeriod] || `Laatste ${currentPeriod} dagen`;
+    }
+}
+
+// Load all statistics data
+async function loadAllStatistics() {
+    showLoadingStates();
     
     try {
-        // Load all data in parallel
-        const [
-            summaryData,
-            performanceData,
-            workflowData,
-            projectData
-        ] = await Promise.all([
-            loadSummaryStats(),
-            loadUserPerformance(),
-            loadWorkflowChainMetrics(),
-            loadProjectData()
+        await Promise.all([
+            loadProductivityMetrics(),
+            loadUserEfficiency(),
+            loadTimeInsights(),
+            loadBottleneckAnalysis(),
+            loadQualityMetrics()
         ]);
-        
-        // Update UI with loaded data
-        updateSummaryCards(summaryData);
-        updateUserPerformanceTable(performanceData);
-        updateAllCharts(summaryData, performanceData, workflowData, projectData);
-        
-        // Calculate advanced metrics
-        calculateAdvancedMetrics(projectData);
-        
     } catch (error) {
         console.error('Error loading statistics:', error);
-        showNotification('Fout bij het laden van statistieken', 'danger');
-    } finally {
-        showLoading(false);
     }
 }
 
-async function loadSummaryStats() {
-    try {
-        const response = await fetch(`/api/metrics/daily_summary?date=${currentFilters.endDate}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            return data.summary;
-        }
-        throw new Error('Failed to load summary stats');
-    } catch (error) {
-        console.error('Error loading summary stats:', error);
-        // Return default data
-        return {
-            projects_started: 0,
-            projects_completed: 0,
-            active_users: 0,
-            total_events: 0
-        };
-    }
-}
-
-async function loadUserPerformance() {
-    try {
-        const response = await fetch('/api/metrics/project_completion_times');
-        const data = await response.json();
-        
-        if (data.success) {
-            return data.metrics;
-        }
-        throw new Error('Failed to load user performance');
-    } catch (error) {
-        console.error('Error loading user performance:', error);
-        return [];
-    }
-}
-
-async function loadWorkflowChainMetrics() {
-    try {
-        const response = await fetch('/api/metrics/workflow_chain');
-        const data = await response.json();
-        
-        if (data.success) {
-            return data.transitions;
-        }
-        throw new Error('Failed to load workflow metrics');
-    } catch (error) {
-        console.error('Error loading workflow metrics:', error);
-        return [];
-    }
-}
-
-async function loadProjectData() {
-    try {
-        // Load project logs with filters
-        const params = new URLSearchParams({
-            start_date: currentFilters.startDate,
-            end_date: currentFilters.endDate,
-            user: currentFilters.user,
-            project_type: currentFilters.projectType,
-            status: currentFilters.status
-        });
-        
-        const response = await fetch(`/logs?${params}`);
-        const logs = await response.json();
-        
-        return processProjectData(logs);
-    } catch (error) {
-        console.error('Error loading project data:', error);
-        return [];
-    }
-}
-
-function processProjectData(logs) {
-    // Process logs into useful metrics
-    const projectMap = new Map();
-    const timelineData = {};
-    const statusCounts = { OPEN: 0, AFGEMELD: 0, CLOSED: 0 };
+// Build query parameters for API calls
+function buildQueryParams() {
+    const params = new URLSearchParams();
     
-    logs.forEach(log => {
-        // Group by project
-        if (!projectMap.has(log.project)) {
-            projectMap.set(log.project, {
-                project: log.project,
-                events: [],
-                users: new Set(),
-                startTime: null,
-                endTime: null,
-                status: log.status,
-                isRep: log.is_rep_variant === 1
-            });
-        }
+    if (customDateRange) {
+        params.append('start_date', customDateRange.start);
+        params.append('end_date', customDateRange.end);
+        params.append('period_type', 'custom');
+    } else if (currentPeriodType === 'all') {
+        params.append('period_type', 'all');
+    } else {
+        params.append('period', currentPeriod);
+        params.append('period_type', 'days');
+    }
+    
+    return params.toString();
+}
+
+// 1. Productivity Metrics
+async function loadProductivityMetrics() {
+    try {
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/productivity-metrics?${queryParams}`);
+        const data = await response.json();
         
-        const project = projectMap.get(log.project);
-        project.events.push(log);
-        project.users.add(log.user);
-        
-        // Update times
-        const timestamp = new Date(log.timestamp);
-        if (!project.startTime || timestamp < project.startTime) {
-            project.startTime = timestamp;
+        if (data.success) {
+            updateProductivityMetrics(data);
+            updateProductivityCharts(data);
+            updateProductivityTable(data.user_productivity);
         }
-        if (!project.endTime || timestamp > project.endTime) {
-            project.endTime = timestamp;
-        }
-        
-        // Count statuses
-        if (statusCounts.hasOwnProperty(log.status)) {
-            statusCounts[log.status]++;
-        }
-        
-        // Timeline data
-        const dateKey = timestamp.toISOString().split('T')[0];
-        if (!timelineData[dateKey]) {
-            timelineData[dateKey] = { started: 0, completed: 0 };
-        }
-        if (log.event === 'OPEN') {
-            timelineData[dateKey].started++;
-        } else if (log.event === 'AFGEMELD') {
-            timelineData[dateKey].completed++;
+    } catch (error) {
+        console.error('Error loading productivity metrics:', error);
+    }
+}
+
+function updateProductivityMetrics(data) {
+    const overall = data.overall_productivity;
+    document.getElementById('overall-items-per-hour').textContent = overall.items_per_hour || '0';
+    document.getElementById('total-items').textContent = overall.total_items || '0';
+    document.getElementById('total-hours').textContent = overall.total_hours || '0';
+    document.getElementById('avg-time-per-item').textContent = overall.avg_time_per_item_minutes || '0';
+}
+
+function updateProductivityCharts(data) {
+    // User productivity bar chart
+    const userCtx = document.getElementById('userProductivityChart').getContext('2d');
+    
+    if (charts.userProductivity) {
+        charts.userProductivity.destroy();
+    }
+    
+    charts.userProductivity = new Chart(userCtx, {
+        type: 'bar',
+        data: {
+            labels: data.user_productivity.map(u => u.user),
+            datasets: [{
+                label: 'Items/uur',
+                data: data.user_productivity.map(u => u.items_per_hour),
+                backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Items per uur'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
         }
     });
     
-    return {
-        projects: Array.from(projectMap.values()),
-        timeline: timelineData,
-        statusCounts: statusCounts,
-        totalProjects: projectMap.size
-    };
-}
-
-function updateSummaryCards(summary) {
-    // Calculate completion rate
-    const completionRate = summary.projects_started > 0 
-        ? Math.round((summary.projects_completed / summary.projects_started) * 100) 
-        : 0;
+    // Productivity trend line chart
+    const trendCtx = document.getElementById('productivityTrendChart').getContext('2d');
     
-    // Update card values with animation
-    animateValue('totalProjects', 0, summary.projects_started || 0, 1000);
-    animateValue('completedProjects', 0, summary.projects_completed || 0, 1000);
-    document.getElementById('efficiencyRate').textContent = completionRate + '%';
+    if (charts.productivityTrend) {
+        charts.productivityTrend.destroy();
+    }
     
-    // Calculate and display trends
-    calculateTrends(summary);
-}
-
-function animateValue(elementId, start, end, duration) {
-    const element = document.getElementById(elementId);
-    const range = end - start;
-    const increment = range / (duration / 16);
-    let current = start;
-    
-    const timer = setInterval(() => {
-        current += increment;
-        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-            element.textContent = end;
-            clearInterval(timer);
-        } else {
-            element.textContent = Math.round(current);
+    charts.productivityTrend = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: data.productivity_trend.map(t => new Date(t.date).toLocaleDateString()),
+            datasets: [{
+                label: 'Items/uur',
+                data: data.productivity_trend.map(t => t.items_per_hour),
+                borderColor: 'rgba(231, 76, 60, 1)',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Items per uur'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
         }
-    }, 16);
+    });
 }
 
-function calculateTrends(currentData) {
-    // This would compare with previous period data
-    // For now, show static trends
-    updateTrendIndicator('projectsTrend', 'positive', '+12% vs vorige periode');
-    updateTrendIndicator('completedTrend', 'positive', '+8% vs vorige periode');
-    updateTrendIndicator('timeTrend', 'negative', '+5% vs vorige periode');
-    updateTrendIndicator('efficiencyTrend', 'neutral', 'Stabiel');
-}
-
-function updateTrendIndicator(elementId, trend, text) {
-    const element = document.getElementById(elementId);
-    element.className = `stat-trend trend-${trend}`;
-    
-    let icon = 'fa-minus';
-    if (trend === 'positive') icon = 'fa-arrow-up';
-    else if (trend === 'negative') icon = 'fa-arrow-down';
-    
-    element.innerHTML = `<i class="fas ${icon}"></i> ${text}`;
-}
-
-function updateUserPerformanceTable(metrics) {
-    const tbody = document.getElementById('userPerformanceTable');
+function updateProductivityTable(userData) {
+    const tbody = document.getElementById('productivity-table');
     tbody.innerHTML = '';
     
-    if (metrics.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">Geen data beschikbaar</td></tr>';
-        return;
-    }
-    
-    // Filter by user if needed
-    let filteredMetrics = metrics;
-    if (currentFilters.user) {
-        filteredMetrics = metrics.filter(m => m.user === currentFilters.user);
-    }
-    
-    // Calculate overall performance
-    const avgEfficiency = filteredMetrics.reduce((sum, m) => {
-        const efficiency = calculateUserEfficiency(m);
-        return sum + efficiency;
-    }, 0) / filteredMetrics.length;
-    
-    updateOverallPerformance(avgEfficiency);
-    
-    filteredMetrics.forEach(metric => {
-        const row = createPerformanceRow(metric);
-        tbody.appendChild(row);
+    userData.forEach(user => {
+        const efficiency = user.items_per_hour;
+        let badgeClass = 'efficiency-low';
+        if (efficiency >= 5) badgeClass = 'efficiency-high';
+        else if (efficiency >= 2) badgeClass = 'efficiency-medium';
+        
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><strong>${user.user}</strong></td>
+            <td>${user.items_per_hour}</td>
+            <td>${user.total_items}</td>
+            <td>${user.manual_items || 0}</td>
+            <td>${user.auto_items || 0}</td>
+            <td>${user.session_hours}</td>
+            <td><span class="efficiency-badge ${badgeClass}">${efficiency >= 5 ? 'Hoog' : efficiency >= 2 ? 'Gemiddeld' : 'Laag'}</span></td>
+        `;
     });
 }
 
-function createPerformanceRow(metric) {
-    const row = document.createElement('tr');
-    
-    // Calculate performance level
-    const efficiency = calculateUserEfficiency(metric);
-    const performanceLevel = getPerformanceLevel(efficiency);
-    
-    // Format trend
-    const trendClass = metric.trend_class || 'neutral';
-    const trendText = metric.trend || 'Stabiel';
-    
-    row.innerHTML = `
-        <td><strong>${metric.user}</strong></td>
-        <td>${metric.total_completed || 0}</td>
-        <td>${metric.recent_count || 0}</td>
-        <td>${metric.avg_time || '-'}</td>
-        <td><small>${metric.min_time || '-'} / ${metric.max_time || '-'}</small></td>
-        <td>${metric.consistency || 'Onbekend'}</td>
-        <td class="trend-${trendClass}">${trendText}</td>
-        <td>
-            <span class="performance-indicator performance-${performanceLevel.class}">
-                ${performanceLevel.text}
-            </span>
-        </td>
-        <td>
-            <button class="btn btn-sm btn-outline-primary" onclick="showUserDetails('${metric.user}')">
-                <i class="fas fa-chart-line"></i>
-            </button>
-        </td>
-    `;
-    
-    return row;
-}
-
-function calculateUserEfficiency(metric) {
-    // Complex efficiency calculation based on multiple factors
-    let efficiency = 85; // Base efficiency
-    
-    // Factor in completion rate
-    if (metric.total_completed > 0) {
-        const completionBonus = Math.min(metric.total_completed / 10, 10);
-        efficiency += completionBonus;
+// 2. User Efficiency
+async function loadUserEfficiency() {
+    try {
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/user-efficiency?${queryParams}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateEfficiencyMetrics(data);
+            updateEfficiencyCharts(data);
+        }
+    } catch (error) {
+        console.error('Error loading user efficiency:', error);
     }
-    
-    // Factor in consistency
-    if (metric.consistency === 'Zeer consistent') {
-        efficiency += 5;
-    } else if (metric.consistency === 'Consistent') {
-        efficiency += 2;
-    } else if (metric.consistency === 'Zeer variabel') {
-        efficiency -= 5;
-    }
-    
-    // Factor in trend
-    if (metric.improvement_percentage) {
-        efficiency += metric.improvement_percentage / 10;
-    }
-    
-    return Math.max(0, Math.min(100, efficiency));
 }
 
-function getPerformanceLevel(efficiency) {
-    if (efficiency >= 95) return { class: 'excellent', text: 'Uitstekend' };
-    if (efficiency >= 85) return { class: 'good', text: 'Goed' };
-    if (efficiency >= 70) return { class: 'average', text: 'Gemiddeld' };
-    return { class: 'poor', text: 'Verbetering nodig' };
-}
-
-function updateOverallPerformance(avgEfficiency) {
-    const element = document.getElementById('overallPerformance');
-    const level = getPerformanceLevel(avgEfficiency);
+function updateEfficiencyMetrics(data) {
+    const container = document.getElementById('efficiency-metrics');
+    container.innerHTML = '';
     
-    element.parentElement.className = `performance-indicator performance-${level.class}`;
-    element.textContent = `Algemeen: ${level.text} (${Math.round(avgEfficiency)}%)`;
-}
-
-function updateAllCharts(summaryData, performanceData, workflowData, projectData) {
-    updateProjectsTimelineChart(projectData.timeline);
-    updateCompletionTimeChart(performanceData);
-    updateWorkflowChart(performanceData);
-    updateProjectTypesChart(projectData.projects);
-    updateStatusChart(projectData.statusCounts);
-    updateWorkflowChainChart(workflowData);
-    updateHeatmapChart(projectData.projects);
-}
-
-function updateProjectsTimelineChart(timelineData) {
-    const ctx = document.getElementById('projectsTimelineChart').getContext('2d');
-    const grouping = document.getElementById('timelineGrouping').value;
-    
-    // Process data based on grouping
-    const labels = [];
-    const startedData = [];
-    const completedData = [];
-    
-    Object.keys(timelineData).sort().forEach(date => {
-        labels.push(formatDateLabel(date, grouping));
-        startedData.push(timelineData[date].started);
-        completedData.push(timelineData[date].completed);
+    data.user_efficiency.forEach(user => {
+        const metricCard = document.createElement('div');
+        metricCard.className = 'metric-card';
+        metricCard.innerHTML = `
+            <div class="metric-value">${user.efficiency_score}</div>
+            <div class="metric-label">${user.user}</div>
+            <div class="metric-trend">${user.item_contribution_percent}% items | ${user.time_contribution_percent}% tijd</div>
+        `;
+        container.appendChild(metricCard);
     });
+}
+
+function updateEfficiencyCharts(data) {
+    // Contribution pie chart
+    const contributionCtx = document.getElementById('contributionChart').getContext('2d');
     
-    if (charts.timeline) {
-        charts.timeline.destroy();
+    if (charts.contribution) {
+        charts.contribution.destroy();
     }
     
-    charts.timeline = new Chart(ctx, {
-        type: 'line',
+    const colors = ['#3498db', '#e74c3c', '#f39c12', '#27ae60', '#9b59b6'];
+    
+    charts.contribution = new Chart(contributionCtx, {
+        type: 'doughnut',
         data: {
-            labels: labels,
-            datasets: [{
-                label: 'Gestart',
-                data: startedData,
-                borderColor: 'rgb(52, 152, 219)',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                tension: 0.4,
-                fill: true
-            }, {
-                label: 'Voltooid',
-                data: completedData,
-                borderColor: 'rgb(46, 204, 113)',
-                backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
+            labels: data.user_efficiency.map(u => u.user),
+            datasets: [
+                {
+                    label: 'Items (%)',
+                    data: data.user_efficiency.map(u => u.item_contribution_percent),
+                    backgroundColor: colors.map(c => c + '80'),
+                    borderColor: colors,
+                    borderWidth: 2
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        footer: function(tooltipItems) {
-                            const started = tooltipItems[0]?.raw || 0;
-                            const completed = tooltipItems[1]?.raw || 0;
-                            const ratio = started > 0 ? ((completed / started) * 100).toFixed(1) : 0;
-                            return `Voltooiingsratio: ${ratio}%`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
+                    position: 'bottom'
                 }
             }
         }
     });
     
-    // Update timeline analysis
-    updateTimelineAnalysis(timelineData);
-}
-
-function formatDateLabel(date, grouping) {
-    const d = new Date(date);
-    switch (grouping) {
-        case 'hour':
-            return d.toLocaleTimeString('nl-NL', { hour: '2-digit' });
-        case 'day':
-            return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' });
-        case 'week':
-            return `Week ${getWeekNumber(d)}`;
-        case 'month':
-            return d.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
-        default:
-            return date;
-    }
-}
-
-function getWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
-function updateTimelineAnalysis(timelineData) {
-    // Calculate peak hours and trends
-    let maxProjects = 0;
-    let minProjects = Infinity;
-    let peakDate = '';
-    let quietDate = '';
+    // Scatter plot
+    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
     
-    Object.keys(timelineData).forEach(date => {
-        const total = timelineData[date].started + timelineData[date].completed;
-        if (total > maxProjects) {
-            maxProjects = total;
-            peakDate = date;
-        }
-        if (total < minProjects) {
-            minProjects = total;
-            quietDate = date;
-        }
-    });
-    
-    document.getElementById('peakHour').textContent = formatDateLabel(peakDate, 'day') + ` (${maxProjects} events)`;
-    document.getElementById('quietHour').textContent = formatDateLabel(quietDate, 'day') + ` (${minProjects} events)`;
-    
-    // Calculate trend
-    const dates = Object.keys(timelineData).sort();
-    if (dates.length > 1) {
-        const firstHalf = dates.slice(0, Math.floor(dates.length / 2));
-        const secondHalf = dates.slice(Math.floor(dates.length / 2));
-        
-        const firstAvg = firstHalf.reduce((sum, date) => 
-            sum + timelineData[date].started + timelineData[date].completed, 0) / firstHalf.length;
-        const secondAvg = secondHalf.reduce((sum, date) => 
-            sum + timelineData[date].started + timelineData[date].completed, 0) / secondHalf.length;
-        
-        const trendPercentage = ((secondAvg - firstAvg) / firstAvg * 100).toFixed(1);
-        const trendText = trendPercentage > 0 ? `↑ ${trendPercentage}% stijging` : `↓ ${Math.abs(trendPercentage)}% daling`;
-        document.getElementById('timelineTrend').textContent = trendText;
-    }
-}
-
-function updateCompletionTimeChart(performanceData) {
-    const ctx = document.getElementById('completionTimeChart').getContext('2d');
-    
-    const users = performanceData.map(m => m.user);
-    const avgTimes = performanceData.map(m => {
-        if (m.avg_minutes) return m.avg_minutes;
-        return 0;
-    });
-    
-    if (charts.completion) {
-        charts.completion.destroy();
+    if (charts.scatter) {
+        charts.scatter.destroy();
     }
     
-    charts.completion = new Chart(ctx, {
-        type: 'bar',
+    charts.scatter = new Chart(scatterCtx, {
+        type: 'scatter',
         data: {
-            labels: users,
             datasets: [{
-                label: 'Gem. Doorlooptijd (minuten)',
-                data: avgTimes,
-                backgroundColor: users.map(user => {
-                    const metric = performanceData.find(m => m.user === user);
-                    const efficiency = calculateUserEfficiency(metric);
-                    if (efficiency >= 90) return 'rgba(46, 204, 113, 0.8)';
-                    if (efficiency >= 75) return 'rgba(52, 152, 219, 0.8)';
-                    if (efficiency >= 60) return 'rgba(241, 196, 15, 0.8)';
-                    return 'rgba(231, 76, 60, 0.8)';
-                })
+                label: 'Gebruikers',
+                data: data.scatter_data.map(u => ({ x: u.x, y: u.y, label: u.user })),
+                backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                pointRadius: 8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Sessie uren'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Items geproduceerd'
+                    }
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -1280,165 +1078,74 @@ function updateCompletionTimeChart(performanceData) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const minutes = context.parsed.y;
-                            const hours = Math.floor(minutes / 60);
-                            const mins = Math.round(minutes % 60);
-                            return `${context.dataset.label}: ${hours}u ${mins}m`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            const hours = Math.floor(value / 60);
-                            const mins = Math.round(value % 60);
-                            return hours > 0 ? `${hours}u ${mins}m` : `${mins}m`;
+                            const point = context.raw;
+                            return `${data.scatter_data[context.dataIndex].label}: ${point.x}h, ${point.y} items`;
                         }
                     }
                 }
             }
         }
     });
-    
-    // Update completion time metrics
-    updateCompletionTimeMetrics(avgTimes);
 }
 
-function updateCompletionTimeMetrics(times) {
-    if (times.length === 0) return;
-    
-    // Calculate median
-    const sorted = [...times].sort((a, b) => a - b);
-    const median = sorted[Math.floor(sorted.length / 2)];
-    
-    // Calculate 90th percentile
-    const p90Index = Math.floor(sorted.length * 0.9);
-    const p90 = sorted[p90Index];
-    
-    // Calculate standard deviation
-    const mean = times.reduce((a, b) => a + b) / times.length;
-    const stdDev = Math.sqrt(times.reduce((sum, time) => sum + Math.pow(time - mean, 2), 0) / times.length);
-    
-    document.getElementById('medianTime').textContent = formatMinutes(median);
-    document.getElementById('p90Time').textContent = formatMinutes(p90);
-    document.getElementById('stdDevTime').textContent = formatMinutes(stdDev);
-}
-
-function formatMinutes(minutes) {
-    if (!minutes || isNaN(minutes)) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    return hours > 0 ? `${hours}u ${mins}m` : `${mins}m`;
-}
-
-function updateWorkflowChart(performanceData) {
-    const ctx = document.getElementById('workflowChart').getContext('2d');
-    
-    const userCounts = {};
-    performanceData.forEach(metric => {
-        userCounts[metric.user] = metric.total_completed || 0;
-    });
-    
-    if (charts.workflow) {
-        charts.workflow.destroy();
-    }
-    
-    charts.workflow = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(userCounts),
-            datasets: [{
-                data: Object.values(userCounts),
-                backgroundColor: [
-                    'rgba(52, 152, 219, 0.8)',
-                    'rgba(46, 204, 113, 0.8)',
-                    'rgba(155, 89, 182, 0.8)',
-                    'rgba(241, 196, 15, 0.8)',
-                    'rgba(231, 76, 60, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return `${context.label}: ${context.parsed} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Update workflow balance
-    updateWorkflowBalance(userCounts);
-}
-
-function updateWorkflowBalance(userCounts) {
-    const balanceDiv = document.getElementById('workflowBalance');
-    const total = Object.values(userCounts).reduce((a, b) => a + b, 0);
-    const avgPerUser = total / Object.keys(userCounts).length;
-    
-    let balanceHtml = '';
-    Object.entries(userCounts).forEach(([user, count]) => {
-        const percentage = ((count / total) * 100).toFixed(1);
-        const deviation = ((count - avgPerUser) / avgPerUser * 100).toFixed(1);
-        const deviationClass = Math.abs(deviation) > 20 ? 'text-warning' : 'text-success';
+// 3. Time Insights
+async function loadTimeInsights() {
+    try {
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/time-insights?${queryParams}`);
+        const data = await response.json();
         
-        balanceHtml += `
-            <div class="metric-item">
-                <span>${user}:</span>
-                <strong class="${deviationClass}">${percentage}% (${deviation > 0 ? '+' : ''}${deviation}%)</strong>
-            </div>
-        `;
-    });
-    
-    balanceDiv.innerHTML = balanceHtml;
+        if (data.success) {
+            updateTimeMetrics(data);
+            updateTimeCharts(data);
+        }
+    } catch (error) {
+        console.error('Error loading time insights:', error);
+    }
 }
 
-function updateProjectTypesChart(projects) {
-    const ctx = document.getElementById('projectTypesChart').getContext('2d');
+function updateTimeMetrics(data) {
+    const container = document.getElementById('time-metrics');
+    const timeAnalysis = data.time_analysis;
+    const itemTiming = data.item_timing;
     
-    const typeCounts = { 'Normaal': 0, 'REP': 0 };
-    projects.forEach(project => {
-        if (project.isRep) {
-            typeCounts['REP']++;
-        } else {
-            typeCounts['Normaal']++;
-        }
-    });
+    container.innerHTML = `
+        <div class="metric-card">
+            <div class="metric-value">${timeAnalysis.total_project_hours}</div>
+            <div class="metric-label">Totale project uren</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">${timeAnalysis.total_session_hours}</div>
+            <div class="metric-label">Actieve sessie uren</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">${timeAnalysis.idle_time_hours}</div>
+            <div class="metric-label">Geschatte idle tijd</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">${timeAnalysis.productivity_ratio}%</div>
+            <div class="metric-label">Productiviteitsratio</div>
+        </div>
+    `;
+}
+
+function updateTimeCharts(data) {
+    // Time breakdown pie chart
+    const timeCtx = document.getElementById('timeBreakdownChart').getContext('2d');
     
-    if (charts.projectTypes) {
-        charts.projectTypes.destroy();
+    if (charts.timeBreakdown) {
+        charts.timeBreakdown.destroy();
     }
     
-    charts.projectTypes = new Chart(ctx, {
+    charts.timeBreakdown = new Chart(timeCtx, {
         type: 'pie',
         data: {
-            labels: Object.keys(typeCounts),
+            labels: ['Productief', 'Idle'],
             datasets: [{
-                data: Object.values(typeCounts),
-                backgroundColor: [
-                    'rgba(52, 152, 219, 0.8)',
-                    'rgba(155, 89, 182, 0.8)'
-                ]
+                data: [data.time_analysis.productivity_ratio, data.time_analysis.idle_ratio],
+                backgroundColor: ['rgba(39, 174, 96, 0.8)', 'rgba(231, 76, 60, 0.8)'],
+                borderColor: ['rgba(39, 174, 96, 1)', 'rgba(231, 76, 60, 1)'],
+                borderWidth: 2
             }]
         },
         options: {
@@ -1452,610 +1159,384 @@ function updateProjectTypesChart(projects) {
         }
     });
     
-    // Update type analysis
-    updateTypeAnalysis(typeCounts, projects);
-}
-
-function updateTypeAnalysis(typeCounts, projects) {
-    const analysisDiv = document.getElementById('typeAnalysis');
-    const total = typeCounts['Normaal'] + typeCounts['REP'];
+    // Cumulative timeline
+    const cumulativeCtx = document.getElementById('cumulativeChart').getContext('2d');
     
-    // Calculate average completion times per type
-    const normalTimes = [];
-    const repTimes = [];
-    
-    projects.forEach(project => {
-        if (project.endTime && project.startTime) {
-            const duration = (project.endTime - project.startTime) / (1000 * 60); // minutes
-            if (project.isRep) {
-                repTimes.push(duration);
-            } else {
-                normalTimes.push(duration);
-            }
-        }
-    });
-    
-    const avgNormalTime = normalTimes.length > 0 
-        ? normalTimes.reduce((a, b) => a + b) / normalTimes.length 
-        : 0;
-    const avgRepTime = repTimes.length > 0 
-        ? repTimes.reduce((a, b) => a + b) / repTimes.length 
-        : 0;
-    
-    analysisDiv.innerHTML = `
-        <div class="metric-item">
-            <span>Normaal:</span>
-            <strong>${typeCounts['Normaal']} (${((typeCounts['Normaal'] / total) * 100).toFixed(1)}%)</strong>
-        </div>
-        <div class="metric-item">
-            <span>REP Variant:</span>
-            <strong>${typeCounts['REP']} (${((typeCounts['REP'] / total) * 100).toFixed(1)}%)</strong>
-        </div>
-        <div class="metric-item">
-            <span>Gem. Tijd Normaal:</span>
-            <strong>${formatMinutes(avgNormalTime)}</strong>
-        </div>
-        <div class="metric-item">
-            <span>Gem. Tijd REP:</span>
-            <strong>${formatMinutes(avgRepTime)}</strong>
-        </div>
-    `;
-}
-
-function updateStatusChart(statusCounts) {
-    const ctx = document.getElementById('statusChart').getContext('2d');
-    
-    if (charts.status) {
-        charts.status.destroy();
+    if (charts.cumulative) {
+        charts.cumulative.destroy();
     }
     
-    const colors = {
-        'OPEN': 'rgba(52, 152, 219, 0.8)',
-        'AFGEMELD': 'rgba(46, 204, 113, 0.8)',
-        'CLOSED': 'rgba(155, 89, 182, 0.8)'
-    };
-    
-    charts.status = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(statusCounts),
-            datasets: [{
-                data: Object.values(statusCounts),
-                backgroundColor: Object.keys(statusCounts).map(status => colors[status] || 'rgba(200, 200, 200, 0.8)')
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // Update status details
-    updateStatusDetails(statusCounts);
-}
-
-function updateStatusDetails(statusCounts) {
-    const detailsDiv = document.getElementById('statusDetails');
-    const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-    
-    let detailsHtml = '';
-    Object.entries(statusCounts).forEach(([status, count]) => {
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-        detailsHtml += `
-            <div class="metric-item">
-                <span>${status}:</span>
-                <strong>${count} (${percentage}%)</strong>
-            </div>
-        `;
-    });
-    
-    detailsDiv.innerHTML = detailsHtml;
-}
-
-function updateWorkflowChainChart(transitions) {
-    const ctx = document.getElementById('workflowChainChart').getContext('2d');
-    
-    // Create Sankey-like visualization
-    const nodes = new Set();
-    transitions.forEach(t => {
-        nodes.add(t.current_user);
-        nodes.add(t.next_user);
-    });
-    
-    const nodeArray = Array.from(nodes);
-    const nodeIndex = {};
-    nodeArray.forEach((node, i) => {
-        nodeIndex[node] = i;
-    });
-    
-    // Prepare data for visualization
-    const data = transitions.map(t => ({
-        from: nodeIndex[t.current_user],
-        to: nodeIndex[t.next_user],
-        flow: t.transition_count,
-        avgTime: t.avg_transition_time || '-'
-    }));
-    
-    if (charts.workflowChain) {
-        charts.workflowChain.destroy();
-    }
-    
-    // For now, create a simple bar chart showing average times
-    const avgTimes = {};
-    transitions.forEach(t => {
-        const key = `${t.current_user} → ${t.next_user}`;
-        avgTimes[key] = t.avg_transition_minutes || 0;
-    });
-    
-    charts.workflowChain = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(avgTimes),
-            datasets: [{
-                label: 'Gem. Overdrachtstijd (minuten)',
-                data: Object.values(avgTimes),
-                backgroundColor: 'rgba(52, 152, 219, 0.8)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return formatMinutes(value);
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Update workflow metrics
-    updateWorkflowMetrics(transitions);
-}
-
-function updateWorkflowMetrics(transitions) {
-    // Calculate average transfer time
-    const avgTransferTimes = transitions
-        .filter(t => t.avg_transition_minutes)
-        .map(t => t.avg_transition_minutes);
-    
-    const avgTransfer = avgTransferTimes.length > 0
-        ? avgTransferTimes.reduce((a, b) => a + b) / avgTransferTimes.length
-        : 0;
-    
-    document.getElementById('avgTransferTime').innerHTML = `<h3 class="mb-0">${formatMinutes(avgTransfer)}</h3>`;
-    
-    // Calculate total cycle time (sum of all transitions)
-    const totalCycle = avgTransferTimes.reduce((a, b) => a + b, 0);
-    document.getElementById('totalCycleTime').innerHTML = `<h3 class="mb-0">${formatMinutes(totalCycle)}</h3>`;
-    
-    // Calculate efficiency index
-    const theoreticalMin = avgTransferTimes.length * 30; // Assume 30 min minimum per transition
-    const efficiency = theoreticalMin > 0 ? Math.round((theoreticalMin / totalCycle) * 100) : 0;
-    document.getElementById('efficiencyIndex').innerHTML = `<h3 class="mb-0">${efficiency}%</h3>`;
-    
-    // Find bottleneck
-    let maxTime = 0;
-    let bottleneck = '-';
-    transitions.forEach(t => {
-        if (t.avg_transition_minutes && t.avg_transition_minutes > maxTime) {
-            maxTime = t.avg_transition_minutes;
-            bottleneck = t.current_user;
-        }
-    });
-    document.getElementById('bottleneckStation').innerHTML = `<h3 class="mb-0">${bottleneck}</h3>`;
-}
-
-function updateHeatmapChart(projects) {
-    const ctx = document.getElementById('heatmapChart').getContext('2d');
-    
-    // Create hourly heatmap data
-    const heatmapData = [];
-    const days = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-    const hours = Array.from({length: 24}, (_, i) => i);
-    
-    // Initialize heatmap data
-    days.forEach((day, dayIndex) => {
-        hours.forEach(hour => {
-            heatmapData.push({
-                x: hour,
-                y: dayIndex,
-                v: 0
-            });
-        });
-    });
-    
-    // Process project data
-    projects.forEach(project => {
-        project.events.forEach(event => {
-            const date = new Date(event.timestamp);
-            const dayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
-            const hour = date.getHours();
-            
-            const dataPoint = heatmapData.find(d => d.x === hour && d.y === dayIndex);
-            if (dataPoint) {
-                dataPoint.v++;
-            }
-        });
-    });
-    
-    // Find max value for scaling
-    const maxValue = Math.max(...heatmapData.map(d => d.v), 1);
-    
-    if (charts.heatmap) {
-        charts.heatmap.destroy();
-    }
-    
-    // Create matrix chart
-    charts.heatmap = new Chart(ctx, {
-        type: 'matrix',
-        data: {
-            datasets: [{
-                label: 'Activiteit',
-                data: heatmapData,
-                backgroundColor(context) {
-                    const value = context.dataset.data[context.dataIndex].v;
-                    const alpha = value / maxValue;
-                    return `rgba(52, 152, 219, ${alpha})`;
-                },
-                borderWidth: 1,
-                borderColor: '#fff',
-                width: ({chart}) => (chart.chartArea || {}).width / hours.length - 1,
-                height: ({chart}) => (chart.chartArea || {}).height / days.length - 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        title: function(context) {
-                            const hour = context[0].raw.x;
-                            const day = days[context[0].raw.y];
-                            return `${day} ${hour}:00`;
-                        },
-                        label: function(context) {
-                            return `Activiteiten: ${context.raw.v}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom',
-                    ticks: {
-                        stepSize: 1,
-                        callback: (value) => value + ':00'
-                    },
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    type: 'linear',
-                    ticks: {
-                        stepSize: 1,
-                        callback: (value) => days[value] || ''
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
-function calculateAdvancedMetrics(projectData) {
-    const projects = projectData.projects;
-    const now = new Date();
-    
-    // Active users (users with activity in last hour)
-    const recentUsers = new Set();
-    projects.forEach(project => {
-        project.events.forEach(event => {
-            const eventTime = new Date(event.timestamp);
-            if ((now - eventTime) < 3600000) { // 1 hour
-                recentUsers.add(event.user);
-            }
-        });
-    });
-    document.getElementById('activeUsers').textContent = recentUsers.size;
-    
-    // Bottlenecks (projects stuck in one stage for too long)
-    let bottleneckCount = 0;
-    projects.forEach(project => {
-        if (project.status === 'OPEN' && project.startTime) {
-            const stuckTime = (now - project.startTime) / (1000 * 60 * 60); // hours
-            if (stuckTime > 4) { // More than 4 hours
-                bottleneckCount++;
-            }
-        }
-    });
-    document.getElementById('bottlenecks').textContent = bottleneckCount;
-    
-    // Throughput per hour
-    const lastHourProjects = projects.filter(project => {
-        return project.events.some(event => {
-            const eventTime = new Date(event.timestamp);
-            return (now - eventTime) < 3600000;
-        });
-    });
-    document.getElementById('throughput').textContent = lastHourProjects.length;
-    
-    // Utilization rate
-    const utilizationRate = Math.round((recentUsers.size / configuredUsers.length) * 100);
-    document.getElementById('utilization').textContent = utilizationRate + '%';
-    
-    // Update average completion time
-    const completedProjects = projects.filter(p => p.status === 'AFGEMELD' || p.status === 'CLOSED');
-    if (completedProjects.length > 0) {
-        const avgMinutes = completedProjects.reduce((sum, project) => {
-            if (project.endTime && project.startTime) {
-                return sum + (project.endTime - project.startTime) / (1000 * 60);
-            }
-            return sum;
-        }, 0) / completedProjects.length;
-        
-        document.getElementById('avgCompletionTime').textContent = formatMinutes(avgMinutes);
-    } else {
-        document.getElementById('avgCompletionTime').textContent = '-';
-    }
-}
-
-async function showUserDetails(username) {
-    const modal = new bootstrap.Modal(document.getElementById('userDetailModal'));
-    document.getElementById('modalUserName').textContent = username;
-    
-    // Show loading state
-    document.getElementById('userRecentProjects').innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div></div>';
-    
-    modal.show();
-    
-    try {
-        // Load user-specific data
-        const [stats, projects] = await Promise.all([
-            fetch(`/api/user/${username}/stats`).then(r => r.json()),
-            fetch(`/api/user/${username}/recent_projects`).then(r => r.json())
-        ]);
-        
-        // Update user activity chart
-        updateUserActivityChart(username, stats.stats.activity_last_7_days);
-        
-        // Update recent projects
-        updateUserRecentProjects(projects.projects);
-        
-    } catch (error) {
-        console.error('Error loading user details:', error);
-        document.getElementById('userRecentProjects').innerHTML = '<div class="alert alert-danger">Fout bij het laden van gebruikersgegevens</div>';
-    }
-}
-
-function updateUserActivityChart(username, activityData) {
-    const ctx = document.getElementById('userActivityChart').getContext('2d');
-    
-    if (charts.userActivity) {
-        charts.userActivity.destroy();
-    }
-    
-    const labels = [];
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        labels.push(date.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' }));
-    }
-    
-    charts.userActivity = new Chart(ctx, {
+    charts.cumulative = new Chart(cumulativeCtx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: data.cumulative_timeline.map(t => new Date(t.date).toLocaleDateString()),
             datasets: [{
-                label: 'Projecten',
-                data: activityData,
-                borderColor: 'rgb(52, 152, 219)',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                tension: 0.4,
-                fill: true
+                label: 'Cumulatieve uren',
+                data: data.cumulative_timeline.map(t => t.cumulative_hours),
+                borderColor: 'rgba(155, 89, 182, 1)',
+                backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                fill: true,
+                tension: 0.4
             }]
         },
         options: {
             responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `Activiteit ${username} - Laatste 7 dagen`
-                }
-            },
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+                    title: {
+                        display: true,
+                        text: 'Uren'
                     }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
                 }
             }
         }
     });
 }
 
-function updateUserRecentProjects(projects) {
-    const container = document.getElementById('userRecentProjects');
+// 4. Bottleneck Analysis
+async function loadBottleneckAnalysis() {
+    try {
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/bottleneck-analysis?${queryParams}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateBottleneckCharts(data);
+            updateBottleneckTable(data.coordination_delays);
+        }
+    } catch (error) {
+        console.error('Error loading bottleneck analysis:', error);
+    }
+}
+
+function updateBottleneckCharts(data) {
+    // Delay chart
+    const delayCtx = document.getElementById('delayChart').getContext('2d');
     
-    if (projects.length === 0) {
-        container.innerHTML = '<p class="text-muted">Geen recente projecten gevonden</p>';
-        return;
+    if (charts.delay) {
+        charts.delay.destroy();
     }
     
-    let html = '<div class="list-group">';
-    projects.forEach(project => {
-        const statusBadge = project.status === 'Completed' 
-            ? '<span class="badge bg-success">Voltooid</span>'
-            : '<span class="badge bg-primary">Actief</span>';
+    const topDelays = data.coordination_delays.slice(0, 10);
+    
+    charts.delay = new Chart(delayCtx, {
+        type: 'bar',
+        data: {
+            labels: topDelays.map(d => d.project.substring(0, 8) + '...'),
+            datasets: [{
+                label: 'Idle uren',
+                data: topDelays.map(d => d.idle_hours),
+                backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                borderColor: 'rgba(231, 76, 60, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Idle uren'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Variance chart
+    const varianceCtx = document.getElementById('varianceChart').getContext('2d');
+    
+    if (charts.variance) {
+        charts.variance.destroy();
+    }
+    
+    charts.variance = new Chart(varianceCtx, {
+        type: 'bar',
+        data: {
+            labels: data.variance_analysis.map(v => v.user),
+            datasets: [{
+                label: 'Afwijking %',
+                data: data.variance_analysis.map(v => v.variance_percent),
+                backgroundColor: data.variance_analysis.map(v => 
+                    v.variance_percent >= 0 ? 'rgba(39, 174, 96, 0.8)' : 'rgba(231, 76, 60, 0.8)'
+                ),
+                borderColor: data.variance_analysis.map(v => 
+                    v.variance_percent >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'
+                ),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Afwijking %'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function updateBottleneckTable(delays) {
+    const tbody = document.getElementById('bottleneck-table');
+    tbody.innerHTML = '';
+    
+    delays.slice(0, 10).forEach(delay => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><strong>${delay.project}</strong></td>
+            <td>${delay.project_hours}</td>
+            <td>${delay.session_hours}</td>
+            <td>${delay.idle_hours}</td>
+            <td>${delay.efficiency_ratio}%</td>
+            <td>${delay.total_items}</td>
+        `;
+    });
+}
+
+// 5. Predictive Calculator
+async function calculatePrediction() {
+    const targetItems = document.getElementById('target-items').value;
+    const period = document.getElementById('prediction-period').value;
+    
+    try {
+        const response = await fetch(`/api/statistics/predictive-analytics?target_items=${targetItems}&period=${period}`);
+        const data = await response.json();
         
-        const lastActivity = new Date(project.last_activity);
-        const timeAgo = getTimeAgo(lastActivity);
-        
-        html += `
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">${project.project}</h6>
-                        <small class="text-muted">${project.event_count} events · ${timeAgo}</small>
-                    </div>
-                    ${statusBadge}
+        if (data.success) {
+            displayPredictionResults(data);
+        }
+    } catch (error) {
+        console.error('Error calculating prediction:', error);
+    }
+}
+
+function displayPredictionResults(data) {
+    const resultDiv = document.getElementById('prediction-result');
+    const global = data.global_prediction;
+    
+    let userPredictionsHtml = '';
+    data.user_predictions.forEach(user => {
+        userPredictionsHtml += `
+            <div class="col-md-4 mb-2">
+                <div class="metric-card">
+                    <div class="metric-value">${user.estimated_hours_for_target}h</div>
+                    <div class="metric-label">${user.user}</div>
                 </div>
             </div>
         `;
     });
-    html += '</div>';
     
-    container.innerHTML = html;
-}
-
-function getTimeAgo(date) {
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 60) return `${diffMins} minuten geleden`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} uur geleden`;
-    return `${Math.floor(diffMins / 1440)} dagen geleden`;
-}
-
-function toggleChartType(chartId) {
-    // Toggle between different chart types
-    if (chartId === 'completion') {
-        const chart = charts.completion;
-        if (chart) {
-            const currentType = chart.config.type;
-            chart.config.type = currentType === 'bar' ? 'line' : 'bar';
-            chart.update();
-        }
-    }
-}
-
-function updateTimelineChart() {
-    // Re-render timeline chart with new grouping
-    loadStatistics();
-}
-
-function refreshWorkflowAnalysis() {
-    // Refresh workflow chain analysis
-    loadWorkflowChainMetrics().then(data => {
-        updateWorkflowChainChart(data);
-    });
-}
-
-function exportData(format) {
-    const exportBtn = event.target;
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Exporteren...';
-    
-    // Simulate export process
-    setTimeout(() => {
-        if (format === 'pdf') {
-            window.print();
-        } else if (format === 'excel') {
-            // In real implementation, this would call an API endpoint
-            showNotification('Excel export wordt voorbereid...', 'info');
-        }
-        
-        exportBtn.disabled = false;
-        exportBtn.innerHTML = format === 'pdf' 
-            ? '<i class="fas fa-file-pdf"></i> Export PDF'
-            : '<i class="fas fa-file-excel"></i> Export Excel';
-    }, 1000);
-}
-
-function showLoading(show) {
-    const spinner = document.getElementById('loadingSpinner');
-    const grid = document.getElementById('statsGrid');
-    
-    if (show) {
-        spinner.style.display = 'flex';
-        grid.style.opacity = '0.5';
-    } else {
-        spinner.style.display = 'none';
-        grid.style.opacity = '1';
-    }
-}
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    notification.style.zIndex = '9999';
-    notification.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    resultDiv.innerHTML = `
+        <h5>Voorspelling voor ${data.target_items} items</h5>
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="result-highlight">${global.estimated_hours} uur</div>
+                <small>Geschatte tijd (gemiddeld)</small>
+            </div>
+            <div class="col-md-4">
+                <div style="color: #27ae60; font-weight: 600;">${global.best_case_hours} uur</div>
+                <small>Best case scenario</small>
+            </div>
+            <div class="col-md-4">
+                <div style="color: #e74c3c; font-weight: 600;">${global.worst_case_hours} uur</div>
+                <small>Worst case scenario</small>
+            </div>
+        </div>
+        <h6>Per gebruiker:</h6>
+        <div class="row">
+            ${userPredictionsHtml}
+        </div>
+        <small class="text-muted">Gebaseerd op ${data.historical_data.sessions_analyzed} sessies van de laatste ${data.historical_data.period_days} dagen</small>
     `;
     
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 5000);
+    resultDiv.style.display = 'block';
 }
 
-function startAutoRefresh() {
-    // Auto-refresh every 60 seconds
-    refreshInterval = setInterval(() => {
-        if (!document.hidden) {
-            loadStatistics();
-        }
-    }, 60000);
-}
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
+// 6. Quality Metrics
+async function loadQualityMetrics() {
+    try {
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/quality-metrics?${queryParams}`);
+        const data = await response.json();
+        
+        updateQualityOverview(data.overall);
+        updateQualityCharts(data);
+        updateQualityTable(data.user_metrics);
+    } catch (error) {
+        console.error('Error loading quality metrics:', error);
     }
-});
+}
 
-// Register Chart.js matrix controller if not already registered
-if (window.Chart && !window.Chart.controllers.matrix) {
-    // Simple matrix implementation for heatmap
-    Chart.controllers.matrix = Chart.controllers.bar.extend({
-        dataElementType: Chart.elements.Rectangle,
-        update: function() {
-            Chart.controllers.bar.prototype.update.apply(this, arguments);
-            
-            const meta = this.getMeta();
-            const dataset = this.getDataset();
-            
-            meta.data.forEach((rect, index) => {
-                const data = dataset.data[index];
-                const xScale = this.getScaleForId(meta.xAxisID);
-                const yScale = this.getScaleForId(meta.yAxisID);
-                
-                rect._model.x = xScale.getPixelForValue(data.x);
-                rect._model.y = yScale.getPixelForValue(data.y);
-                rect._model.width = dataset.width;
-                rect._model.height = dataset.height;
-                rect._model.backgroundColor = dataset.backgroundColor(data);
-            });
+function updateQualityOverview(overall) {
+    document.getElementById('overall-quality-rate').textContent = overall.quality_rate + '%';
+    document.getElementById('overall-defect-rate').textContent = overall.defect_rate + '%';
+    document.getElementById('total-rework-items').textContent = overall.rework_items;
+    document.getElementById('normal-items').textContent = overall.normal_items;
+    
+    // Update trends
+    document.getElementById('overall-quality-trend').textContent = 
+        `${overall.normal_items} van ${overall.total_items} items`;
+    document.getElementById('overall-defect-trend').textContent = 
+        `${overall.rework_items} rework gevallen`;
+    document.getElementById('rework-items-trend').textContent = 
+        `Rep_variant gedetecteerd`;
+    document.getElementById('normal-items-trend').textContent = 
+        `Eerste keer goed`;
+}
+
+function updateQualityCharts(data) {
+    // Quality trend chart
+    const trendCtx = document.getElementById('qualityTrendChart').getContext('2d');
+    
+    if (charts.qualityTrend) {
+        charts.qualityTrend.destroy();
+    }
+    
+    charts.qualityTrend = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: data.trends.map(t => new Date(t.date).toLocaleDateString()),
+            datasets: [{
+                label: 'Kwaliteitspercentage',
+                data: data.trends.map(t => t.quality_rate),
+                borderColor: 'rgba(46, 204, 113, 1)',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Defectpercentage',
+                data: data.trends.map(t => t.defect_rate),
+                borderColor: 'rgba(231, 76, 60, 1)',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Percentage'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
+                }
+            }
         }
     });
+    
+    // Product quality chart
+    const productCtx = document.getElementById('productQualityChart').getContext('2d');
+    
+    if (charts.productQuality) {
+        charts.productQuality.destroy();
+    }
+    
+    charts.productQuality = new Chart(productCtx, {
+        type: 'doughnut',
+        data: {
+            labels: data.product_metrics.map(p => p.product_type),
+            datasets: [{
+                label: 'Defectpercentage',
+                data: data.product_metrics.map(p => p.defect_rate),
+                backgroundColor: [
+                    'rgba(231, 76, 60, 0.8)',
+                    'rgba(241, 196, 15, 0.8)',
+                    'rgba(52, 152, 219, 0.8)',
+                    'rgba(155, 89, 182, 0.8)',
+                    'rgba(46, 204, 113, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(231, 76, 60, 1)',
+                    'rgba(241, 196, 15, 1)',
+                    'rgba(52, 152, 219, 1)',
+                    'rgba(155, 89, 182, 1)',
+                    'rgba(46, 204, 113, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function updateQualityTable(userMetrics) {
+    const tbody = document.getElementById('quality-table');
+    tbody.innerHTML = '';
+    
+    userMetrics.forEach(user => {
+        let qualityClass = 'efficiency-low';
+        if (user.quality_rate >= 95) qualityClass = 'efficiency-high';
+        else if (user.quality_rate >= 85) qualityClass = 'efficiency-medium';
+        
+        const avgNormalTime = user.avg_normal_minutes ? `${Math.round(user.avg_normal_minutes)}m` : '-';
+        const avgReworkTime = user.avg_rework_minutes ? `${Math.round(user.avg_rework_minutes)}m` : '-';
+        
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><strong>${user.user}</strong></td>
+            <td>${user.total_items}</td>
+            <td>${user.rework_items}</td>
+            <td>${user.defect_rate}%</td>
+            <td>${user.quality_rate}%</td>
+            <td>${avgNormalTime}</td>
+            <td>${avgReworkTime}</td>
+            <td><span class="efficiency-badge ${qualityClass}">${user.quality_rate >= 95 ? 'Uitstekend' : user.quality_rate >= 85 ? 'Goed' : 'Verbetering'}</span></td>
+        `;
+    });
+}
+
+// Utility functions
+function showLoadingStates() {
+    // Add loading skeletons to metric cards
+    document.querySelectorAll('.metric-value').forEach(el => {
+        el.innerHTML = '<div class="loading-skeleton"></div>';
+    });
+}
+
+function refreshAllData() {
+    loadAllStatistics();
 }
 </script>
 {% endblock %}

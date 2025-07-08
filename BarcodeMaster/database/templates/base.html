@@ -263,6 +263,12 @@
             background-color: rgba(46, 204, 113, 0.1);  /* Light green background */
             color: #27ae60;  /* Green text */
         }
+        
+        /* BEZIG - In progress project (Blue) */
+        .status-bezig {
+            background-color: rgba(52, 152, 219, 0.1);  /* Light blue background */
+            color: #2980b9;  /* Blue text */
+        }
 
         /* UNKNOWN - Unknown status (Gray) */
         .status-unknown {
@@ -387,14 +393,11 @@
                         
                         <hr>
                         <small class="text-muted">ADMINISTRATIE</small>
-                        <a class="nav-link {% if active_page == 'settings' %}active{% endif %}" href="/dashboard-settings">
-                            <i class="fas fa-user-cog"></i> Gebruikersbeheer
-                        </a>
                         <a class="nav-link {% if active_page == 'database' %}active{% endif %}" href="/database">
                             <i class="fas fa-database"></i> Database
                         </a>
-                        <a class="nav-link {% if active_page == 'export' %}active{% endif %}" href="#">
-                            <i class="fas fa-file-export"></i> Export/Import
+                        <a class="nav-link {% if active_page == 'settings' %}active{% endif %}" href="/settings">
+                            <i class="fas fa-cog"></i> Instellingen
                         </a>
                         <a class="nav-link {% if active_page == 'audit' %}active{% endif %}" href="#">
                             <i class="fas fa-history"></i> Audit Log

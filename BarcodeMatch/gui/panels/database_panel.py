@@ -136,6 +136,10 @@ class DatabasePanel(ttk.Frame):
         # Right-click context menu
         self.tree_menu = tk.Menu(self, tearoff=0)
         self.tree_menu.add_command(label="Log 'OPEN' Event", command=lambda: self._log_manual_event("OPEN"))
+        self.tree_menu.add_separator()
+        self.tree_menu.add_command(label="Start Manual Session", command=self._start_manual_session)
+        self.tree_menu.add_command(label="Finish Manual Session", command=self._finish_manual_session)
+        self.tree_menu.add_separator()
         self.tree_menu.add_command(label="Log 'AFGEMELD' Event", command=lambda: self._log_manual_event("AFGEMELD"))
         self.logs_tree.bind("<Button-3>", self._show_tree_menu)
         self.logs_tree.bind("<Double-1>", self._on_log_double_click)
@@ -162,10 +166,10 @@ class DatabasePanel(ttk.Frame):
             print(f"[DBLCLICK DEBUG] Insufficient data in row")
             return # Not enough data in the row
 
-        log_status = str(item_values[1]).upper() # Status is the second column (index 1)
+        log_status = str(item_values[1] or '').upper() # Status is the second column (index 1)
         project_name = str(item_values[2])    # Project is the third column (index 2)
         log_details = str(item_values[3]) if len(item_values) > 3 else ""
-        log_user = str(item_values[4]).upper() if len(item_values) > 4 else ""
+        log_user = str(item_values[4] or '').upper() if len(item_values) > 4 else ""
         file_path_from_db = str(item_values[5]) if len(item_values) > 5 else ""
 
         # DEBUG: Print extracted values
@@ -366,6 +370,181 @@ class DatabasePanel(ttk.Frame):
         details = f"{project_name} handmatig op '{event_type}' gezet door {user}"
         self.log_event(event_type, project_name, details)
 
+    def _start_manual_session(self):
+        """Start a manual session for the selected project."""
+        selected_item = self.logs_tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Geen selectie", "Selecteer een project in de lijst.")
+            return
+
+        item_data = self.logs_tree.item(selected_item)
+        if len(item_data['values']) < 3:
+            messagebox.showerror("Fout", "Onvoldoende projectgegevens beschikbaar.")
+            return
+
+        project_name = item_data['values'][2]
+        project_status = (item_data['values'][1] or '').upper()
+        user = self.user_var.get()
+
+        # Check if project is in OPEN status
+        if project_status != 'OPEN':
+            messagebox.showwarning("Ongeldige status", 
+                                 f"Kan alleen een sessie starten voor OPEN projecten.\nHuidige status: {project_status}")
+            return
+
+        # Confirm with user
+        if not messagebox.askyesno("Bevestig sessie start", 
+                                   f"Weet u zeker dat u een handmatige sessie wilt starten voor:\n\n"
+                                   f"Project: {project_name}\nGebruiker: {user}"):
+            return
+
+        try:
+            # Call the manual session start API
+            api_url = self.api_url_var.get()
+            base_url = api_url.replace('/log', '')
+            
+            response = requests.post(f"{base_url}/session/manual_start", 
+                                   json={
+                                       'user': user,
+                                       'project': project_name,
+                                       'timestamp': datetime.now().isoformat()
+                                   }, 
+                                   timeout=2)  # Reduced timeout
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('success'):
+                    messagebox.showinfo("Succes", f"Handmatige sessie gestart voor {project_name}")
+                    self.refresh_logs()  # Refresh to show updated status
+                else:
+                    messagebox.showerror("Fout", f"API fout: {result.get('error', 'Onbekende fout')}")
+            else:
+                messagebox.showerror("Fout", f"HTTP {response.status_code}: {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Verbindingsfout", f"Kan geen verbinding maken met de API:\n{str(e)}")
+        except Exception as e:
+            messagebox.showerror("Fout", f"Onverwachte fout: {str(e)}")
+
+    def _finish_manual_session(self):
+        """Finish a manual session with item count input."""
+        selected_item = self.logs_tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Geen selectie", "Selecteer een project in de lijst.")
+            return
+
+        item_data = self.logs_tree.item(selected_item)
+        if len(item_data['values']) < 3:
+            messagebox.showerror("Fout", "Onvoldoende projectgegevens beschikbaar.")
+            return
+
+        project_name = item_data['values'][2]
+        project_status = (item_data['values'][1] or '').upper()
+        user = self.user_var.get()
+
+        # Check if project is in BEZIG status
+        if project_status != 'BEZIG':
+            messagebox.showwarning("Ongeldige status", 
+                                 f"Kan alleen een sessie afronden voor BEZIG projecten.\nHuidige status: {project_status}")
+            return
+
+        # Create dialog for item count input
+        dialog = tk.Toplevel(self)
+        dialog.title("Sessie afronden")
+        dialog.geometry("350x200")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Dialog content
+        tk.Label(dialog, text=f"Sessie afronden voor:", font=('Arial', 10, 'bold')).pack(pady=10)
+        tk.Label(dialog, text=f"Project: {project_name}", font=('Arial', 9)).pack(pady=5)
+        tk.Label(dialog, text=f"Gebruiker: {user}", font=('Arial', 9)).pack(pady=5)
+        
+        tk.Label(dialog, text="Aantal verwerkte items:", font=('Arial', 10)).pack(pady=(20, 5))
+        
+        item_count_var = tk.StringVar()
+        item_count_entry = tk.Entry(dialog, textvariable=item_count_var, font=('Arial', 12), width=10, justify='center')
+        item_count_entry.pack(pady=5)
+        item_count_entry.focus()
+
+        result = {'confirmed': False, 'item_count': 0}
+
+        def on_finish():
+            try:
+                item_count = int(item_count_var.get())
+                if item_count < 0:
+                    messagebox.showerror("Ongeldige invoer", "Aantal items moet 0 of hoger zijn.")
+                    return
+                result['confirmed'] = True
+                result['item_count'] = item_count
+                dialog.destroy()
+            except ValueError:
+                messagebox.showerror("Ongeldige invoer", "Voer een geldig getal in.")
+
+        def on_cancel():
+            dialog.destroy()
+
+        # Buttons
+        button_frame = tk.Frame(dialog)
+        button_frame.pack(pady=20)
+        
+        tk.Button(button_frame, text="Afronden", command=on_finish, bg='#4CAF50', fg='white', 
+                 font=('Arial', 10, 'bold'), width=10).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Annuleren", command=on_cancel, bg='#f44336', fg='white', 
+                 font=('Arial', 10), width=10).pack(side=tk.LEFT, padx=5)
+
+        # Bind Enter key to finish
+        item_count_entry.bind('<Return>', lambda e: on_finish())
+        dialog.bind('<Escape>', lambda e: on_cancel())
+
+        # Wait for dialog to close
+        dialog.wait_window()
+
+        if not result['confirmed']:
+            return
+
+        try:
+            # Call the manual session finish API
+            api_url = self.api_url_var.get()
+            base_url = api_url.replace('/log', '')
+            
+            response = requests.post(f"{base_url}/session/manual_finish", 
+                                   json={
+                                       'user': user,
+                                       'project': project_name,
+                                       'item_count': result['item_count'],
+                                       'timestamp': datetime.now().isoformat()
+                                   }, 
+                                   timeout=2)  # Reduced timeout
+            
+            if response.status_code == 200:
+                api_result = response.json()
+                if api_result.get('success'):
+                    work_minutes = api_result.get('work_minutes', 0)
+                    messagebox.showinfo("Succes", 
+                                      f"Handmatige sessie afgerond voor {project_name}\n\n"
+                                      f"Items verwerkt: {result['item_count']}\n"
+                                      f"Werktijd: {work_minutes:.1f} minuten")
+                    
+                    # Send AFGEMELD event to complete the workflow with item count
+                    self.log_project_closed(project_name, item_count=result['item_count'])
+                    self.refresh_logs()  # Refresh to show updated status
+                else:
+                    messagebox.showerror("Fout", f"API fout: {api_result.get('error', 'Onbekende fout')}")
+            else:
+                messagebox.showerror("Fout", f"HTTP {response.status_code}: {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Verbindingsfout", f"Kan geen verbinding maken met de API:\n{str(e)}")
+        except Exception as e:
+            messagebox.showerror("Fout", f"Onverwachte fout: {str(e)}")
+
     def start_auto_refresh(self):
         """
         Call this method after the panel is packed/shown to start background log refresh.
@@ -414,7 +593,7 @@ class DatabasePanel(ttk.Frame):
             "user": self.user_var.get() if hasattr(self, 'user_var') else 'testuser'
         }
         try:
-            response = requests.post(url, json=payload, timeout=3)
+            response = requests.post(url, json=payload, timeout=2)  # Reduced timeout
             if response.status_code == 200 and response.json().get('success'):
                 self.connection_status_label.config(text="Verbonden (TEST)", foreground="green")
                 print('[DB PANEL] Manual test connection successful')
@@ -427,8 +606,8 @@ class DatabasePanel(ttk.Frame):
             messagebox.showerror("Verbinding mislukt", f"Kon geen verbinding maken met de API:\n{e}")
             print(f'[DB PANEL] Manual test connection exception: {e}')
 
-    def log_event(self, event, project_name, details, on_error_recheck=None, base_mo_code=None, is_rep_variant=None):
-        """Post a generic event to the API, optionally including base_mo_code and is_rep_variant."""
+    def log_event(self, event, project_name, details, on_error_recheck=None, base_mo_code=None, is_rep_variant=None, item_count=None):
+        """Post a generic event to the API, optionally including base_mo_code, is_rep_variant, and item_count."""
         if not self.database_enabled_var.get():
             return False
 
@@ -444,9 +623,11 @@ class DatabasePanel(ttk.Frame):
             payload['base_mo_code'] = base_mo_code
         if is_rep_variant is not None:
             payload['is_rep_variant'] = is_rep_variant
+        if item_count is not None:
+            payload['item_count'] = item_count
 
         try:
-            resp = requests.post(api_url, json=payload, timeout=5)
+            resp = requests.post(api_url, json=payload, timeout=2)  # Reduced timeout
             if resp.status_code in [200, 201] and resp.json().get('success'):
                 messagebox.showinfo("Succes", f"Event '{event}' voor '{project_name}' succesvol gelogd.")
                 self.refresh_logs()
@@ -462,15 +643,15 @@ class DatabasePanel(ttk.Frame):
                 on_error_recheck()
             return False
 
-    def log_project_closed(self, project_name, on_error_recheck=None, base_mo_code=None, is_rep_variant=None):
+    def log_project_closed(self, project_name, on_error_recheck=None, base_mo_code=None, is_rep_variant=None, item_count=None):
         """
-        Post a AFGEMELD event to the API, including base_mo_code and is_rep_variant if provided.
+        Post a AFGEMELD event to the API, including base_mo_code, is_rep_variant, and item_count if provided.
         If POST fails and database is enabled, call on_error_recheck (if provided).
         Returns True if success, False if error.
         """
         user = self.user_var.get() if hasattr(self, 'user_var') else 'user'
         details = f"{project_name} afgemeld aan {user}"
-        return self.log_event("AFGEMELD", project_name, details, on_error_recheck, base_mo_code=base_mo_code, is_rep_variant=is_rep_variant)
+        return self.log_event("AFGEMELD", project_name, details, on_error_recheck, base_mo_code=base_mo_code, is_rep_variant=is_rep_variant, item_count=item_count)
 
     def set_db_recheck_callback(self, callback):
         """Set a callback to be called when a connection recheck is needed (e.g., from log_project_closed)."""
@@ -488,7 +669,7 @@ class DatabasePanel(ttk.Frame):
             try:
                 url = self.api_url_var.get()
                 logs_url = url.replace('/log', '/logs')
-                response = requests.get(logs_url, timeout=5)
+                response = requests.get(logs_url, timeout=2)  # Reduced timeout
                 if response.status_code == 200:
                     logs = response.json()
                     # Update connection status on successful logs fetch
@@ -541,7 +722,7 @@ class DatabasePanel(ttk.Frame):
                     continue
 
                 project_name = log_entry.get('project')
-                status = log_entry.get('status', '').upper() # Ensure status is uppercase for comparison
+                status = (log_entry.get('status') or '').upper() # Ensure status is uppercase for comparison
                 timestamp_str = log_entry.get('timestamp')
 
                 if not project_name or not status or not timestamp_str:
@@ -567,7 +748,7 @@ class DatabasePanel(ttk.Frame):
                     latest_events[project_name] = log_entry
                 else:
                     current_latest_datetime = datetime.fromisoformat(current_latest['timestamp'])
-                    current_latest_status = current_latest['status'].upper()
+                    current_latest_status = (current_latest.get('status') or '').upper()
 
                     if status in ['OPEN', 'EXCEL_GENERATED']:
                         # An OPEN or EXCEL_GENERATED event always takes precedence if it's newer,

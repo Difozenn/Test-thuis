@@ -196,7 +196,7 @@ class BackgroundImportService:
         else:
             self._log(f"Geen processing_type geconfigureerd voor gebruiker '{user_type}'.")
 
-    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data, timestamp=None):
         """Processes the OPEN scan event for other users in a background thread."""
         thread = threading.Thread(
             target=self._process_scan_for_open_event_task,
@@ -206,14 +206,15 @@ class BackgroundImportService:
                 scanned_code,
                 current_user_scanner,
                 api_url,
-                config_data
+                config_data,
+                timestamp
             )
         )
         thread.daemon = True # Ensure thread doesn't block program exit
         thread.start()
         self._log(f"Background task started for OPEN event: {project_code_to_log}")
 
-    def _process_scan_for_open_event_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data):
+    def _process_scan_for_open_event_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data, timestamp=None):
         """Task run in a separate thread to handle OPEN event logic for other users."""
         try:
             self._log(f"[BG_TASK] Processing OPEN for {project_code_to_log}, scanned by {current_user_scanner}.")
@@ -267,6 +268,10 @@ class BackgroundImportService:
                             'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
                             'user': user  # This preserves the actual user name (e.g., "KL GANNOMAT")
                         }
+                        
+                        # Include original timestamp if provided
+                        if timestamp:
+                            data_open['timestamp'] = timestamp
                         try:
                             resp_open = requests.post(api_url, json=data_open, timeout=10)
                             if resp_open.ok:
@@ -325,17 +330,14 @@ class BackgroundImportService:
             self._log(f"Fout in MDB import thread voor user '{user_name}': {e}")
 
     def _get_base_code(self, project_code):
-        """Extracts the base project code (e.g., MO12345 or 123456) from a full project code string."""
+        """Extracts MO codes (5 digits) or uses full project name as fallback."""
         import re
-        # Prioritize MOxxxxx pattern
-        mo_match = re.search(r'(MO\d{4,6})', project_code)
+        # Look for MOxxxxx pattern (exactly 5 digits to match BarcodeMatch)
+        mo_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
         if mo_match:
-            return mo_match.group(0)
-        # Fallback for ACCURA style 5-6 digit codes
-        accura_match = re.search(r'(\d{5,6})', project_code)
-        if accura_match:
-            return accura_match.group(0)
-        return ""
+            return mo_match.group(0).upper()
+        # Use full project name when no MO code found
+        return project_code
 
     def _trigger_hops_import(self, user_name, project_event_code, details, timestamp, hops_scan_path):
         """Trigger automatische HOPS import en Excel generatie voor .hop/.hops bestanden in de gespecificeerde map."""
@@ -400,13 +402,21 @@ class BackgroundImportService:
             # Schrijf naar Excel
             df.to_excel(excel_path, index=False)
             self._log(f"HOPS Excel rapport succesvol opgeslagen: {excel_path}")
+            
+            # Count items in the Excel file
+            item_count = len(df)
+            self._log(f"HOPS Excel rapport bevat {item_count} items")
 
-            # Update the OPEN event with the Excel file path
-            self._update_open_event_with_file_path(
+            # Update the OPEN event with the Excel file path AND item count
+            self._update_open_event_with_file_path_and_count(
                 user_name,
                 project_code,  # Use the actual project code from the OPEN event
-                excel_path
+                excel_path,
+                item_count
             )
+            
+            # Note: OPEN events for other users are already created by process_scan_for_open_event_async
+            # Sessions will be created when users actually start working (not here)
 
         except ImportError:
             self._log("Pandas is niet geïnstalleerd. Kan geen Excel rapport genereren.")
@@ -576,19 +586,27 @@ class BackgroundImportService:
             self._log(f"MDB Excel rapport succesvol opgeslagen: {excel_path}")
             self.logger.info(f"MDB Excel report successfully saved: {excel_path}")
             
-            # Update the OPEN event with the Excel file path
-            self._update_open_event_with_file_path(
+            # Count items in the Excel file
+            item_count = len(df_export)
+            self._log(f"MDB Excel rapport bevat {item_count} items")
+            
+            # Update the OPEN event with the Excel file path AND item count
+            self._update_open_event_with_file_path_and_count(
                 user_name,
                 project_code,  # Use the actual project code from the OPEN event
-                excel_path
+                excel_path,
+                item_count
             )
+            
+            # Note: OPEN events for other users are already created by process_scan_for_open_event_async
+            # Sessions will be created when users actually start working (not here)
 
         except Exception as e:
             self._log(f"Fout bij opslaan van MDB Excel rapport voor {mdb_basename}: {e}")
             self.logger.error(f"Error saving MDB Excel report for {mdb_basename}: {e}")
 
-    def _update_open_event_with_file_path(self, user_name, project, file_path):
-        """Update the existing OPEN event with the Excel file path instead of creating a new event."""
+    def _update_open_event_with_file_path_and_count(self, user_name, project, file_path, item_count):
+        """Update the existing OPEN event with the Excel file path and item count."""
         try:
             config = get_config()
             # Ensure api_url is correctly retrieved
@@ -598,26 +616,41 @@ class BackgroundImportService:
                 self._log("Geen API URL geconfigureerd voor event logging")
                 return
 
-            # Use the update endpoint
+            # Update file path
             update_url = api_url.replace('/log', '/update_file_path')
-            
             data = {
                 'project': project,
                 'user': user_name,
                 'file_path': file_path,
                 'timestamp': datetime.now().isoformat()
             }
-
+            
             response = requests.post(update_url, json=data, timeout=5)
-
+            
             if response.ok:
                 self._log(f"OPEN event updated with Excel path for: {user_name} - {project} at {file_path}")
             else:
                 self._log(f"Fout bij updaten OPEN event met Excel path: HTTP {response.status_code} - {response.text}")
 
+            # Update item count
+            update_count_url = api_url.replace('/log', '/update_item_count')
+            count_data = {
+                'project': project,
+                'user': user_name,
+                'item_count': item_count,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = requests.post(update_count_url, json=count_data, timeout=5)
+            
+            if response.ok:
+                self._log(f"OPEN event updated with item count ({item_count}) for: {user_name} - {project}")
+            else:
+                self._log(f"Fout bij updaten OPEN event met item count: HTTP {response.status_code} - {response.text}")
+
         except Exception as e:
-            self.logger.error(f"Fout bij updaten OPEN event met Excel path: {e}")
-            self._log(f"Fout bij API update (Excel path): {str(e)}")
+            self.logger.error(f"Fout bij updaten OPEN event: {e}")
+            self._log(f"Fout bij API update: {str(e)}")
 
     def _extract_project_code(self, code):
         """Extract project code met _REP_ handling (consistent met scanner panel)."""

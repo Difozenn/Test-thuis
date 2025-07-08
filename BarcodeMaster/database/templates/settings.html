@@ -1,0 +1,1349 @@
+{% extends "base.html" %}
+
+{% block title %}Instellingen - BarcodeMaster{% endblock %}
+
+{% block extra_styles %}
+/* Settings page specific styling using existing design system */
+.settings-section {
+    margin-bottom: 35px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h6 {
+    margin: 0;
+    color: var(--dark-blue);
+    font-weight: 600;
+}
+
+/* Day Configuration using enterprise grid */
+.day-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.day-config-card {
+    background: white;
+    border: 2px solid #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.day-config-card:hover {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+}
+
+.day-config-card.disabled {
+    opacity: 0.6;
+    background: #f8f9fa;
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.day-name {
+    font-weight: 600;
+    color: var(--dark-blue);
+    font-size: 1.1rem;
+}
+
+.day-toggle {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-blue);
+}
+
+.time-config {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.time-input {
+    padding: 10px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.time-input:focus {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+.time-input:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.time-separator {
+    color: #6c757d;
+    font-weight: 500;
+    text-align: center;
+}
+
+.hours-display {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-blue);
+    padding: 8px;
+    background: rgba(0, 113, 180, 0.1);
+    border-radius: 6px;
+}
+
+/* Break configuration using existing patterns */
+.break-config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.break-input-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 8px;
+}
+
+/* Summary dashboard using existing metric patterns */
+.summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Save section using existing button patterns */
+.save-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.save-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #6c757d;
+}
+
+.btn-save {
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+}
+
+/* Efficiency Targets Styles */
+.efficiency-target-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.efficiency-target-card:hover {
+    border-color: var(--secondary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.1);
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--secondary-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+}
+
+.target-input-group label {
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 8px;
+}
+
+.target-input-group .input-group-text {
+    background: var(--secondary-blue);
+    color: white;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.target-input-group .form-control {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.target-input-group .form-control:focus {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.current-performance {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 4px solid var(--secondary-blue);
+}
+
+/* User Management Styles */
+.user-management-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.user-management-card:hover {
+    border-color: var(--secondary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.1);
+}
+
+.user-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--secondary-blue);
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--secondary-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.user-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.config-group {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.config-group label {
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.config-group .form-control, .config-group .form-select {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.config-group .form-control:focus, .config-group .form-select:focus {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.user-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-remove-user {
+    background: #dc3545;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-remove-user:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.add-user-section {
+    background: #e8f4fd;
+    border: 2px dashed var(--secondary-blue);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.btn-add-user {
+    background: var(--secondary-blue);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-add-user:hover {
+    background: var(--dark-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+}
+
+/* User roles styling */
+.user-roles {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.user-roles label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: var(--dark-blue);
+    cursor: pointer;
+}
+
+.user-roles input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-blue);
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Page Header using existing pattern -->
+    <div class="page-header">
+        <h1><i class="fas fa-cogs"></i> Instellingen</h1>
+        <p>Configureer systeeminstellingen voor optimale werking van BarcodeMaster</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="alert-container"></div>
+
+    <!-- Summary Metrics using existing pattern -->
+    <div class="summary-metrics">
+        <div class="metric-card">
+            <div class="metric-value" id="total-hours">37</div>
+            <div class="metric-label">Totale uren per week</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="work-days">5</div>
+            <div class="metric-label">Werkdagen</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="avg-hours">7.4</div>
+            <div class="metric-label">Gem. uren per dag</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="break-time">0.5</div>
+            <div class="metric-label">Pauze (uren)</div>
+        </div>
+    </div>
+
+    <!-- Work Hours Configuration Card -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-clock"></i> Werkuren</h5>
+        </div>
+        <div class="card-body">
+            <!-- Work Days Section -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-calendar-week"></i>
+                    <h6>Werkdagen en tijden</h6>
+                </div>
+                
+                <div class="day-config-grid">
+                    <!-- Monday -->
+                    <div class="day-config-card" id="card-monday">
+                        <div class="day-header">
+                            <span class="day-name">Maandag</span>
+                            <input type="checkbox" class="day-toggle" id="monday_enabled" checked onchange="toggleDay('monday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="monday_start" value="07:30" class="time-input" onchange="updateHours('monday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="monday_end" value="16:00" class="time-input" onchange="updateHours('monday')">
+                        </div>
+                        <div class="hours-display" id="monday_hours">8.0 uur</div>
+                    </div>
+
+                    <!-- Tuesday -->
+                    <div class="day-config-card" id="card-tuesday">
+                        <div class="day-header">
+                            <span class="day-name">Dinsdag</span>
+                            <input type="checkbox" class="day-toggle" id="tuesday_enabled" checked onchange="toggleDay('tuesday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="tuesday_start" value="07:30" class="time-input" onchange="updateHours('tuesday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="tuesday_end" value="16:00" class="time-input" onchange="updateHours('tuesday')">
+                        </div>
+                        <div class="hours-display" id="tuesday_hours">8.0 uur</div>
+                    </div>
+
+                    <!-- Wednesday -->
+                    <div class="day-config-card" id="card-wednesday">
+                        <div class="day-header">
+                            <span class="day-name">Woensdag</span>
+                            <input type="checkbox" class="day-toggle" id="wednesday_enabled" checked onchange="toggleDay('wednesday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="wednesday_start" value="07:30" class="time-input" onchange="updateHours('wednesday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="wednesday_end" value="16:00" class="time-input" onchange="updateHours('wednesday')">
+                        </div>
+                        <div class="hours-display" id="wednesday_hours">8.0 uur</div>
+                    </div>
+
+                    <!-- Thursday -->
+                    <div class="day-config-card" id="card-thursday">
+                        <div class="day-header">
+                            <span class="day-name">Donderdag</span>
+                            <input type="checkbox" class="day-toggle" id="thursday_enabled" checked onchange="toggleDay('thursday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="thursday_start" value="07:30" class="time-input" onchange="updateHours('thursday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="thursday_end" value="16:00" class="time-input" onchange="updateHours('thursday')">
+                        </div>
+                        <div class="hours-display" id="thursday_hours">8.0 uur</div>
+                    </div>
+
+                    <!-- Friday -->
+                    <div class="day-config-card" id="card-friday">
+                        <div class="day-header">
+                            <span class="day-name">Vrijdag</span>
+                            <input type="checkbox" class="day-toggle" id="friday_enabled" checked onchange="toggleDay('friday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="friday_start" value="07:30" class="time-input" onchange="updateHours('friday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="friday_end" value="15:00" class="time-input" onchange="updateHours('friday')">
+                        </div>
+                        <div class="hours-display" id="friday_hours">7.0 uur</div>
+                    </div>
+
+                    <!-- Saturday -->
+                    <div class="day-config-card disabled" id="card-saturday">
+                        <div class="day-header">
+                            <span class="day-name">Zaterdag</span>
+                            <input type="checkbox" class="day-toggle" id="saturday_enabled" onchange="toggleDay('saturday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="saturday_start" value="08:00" class="time-input" disabled onchange="updateHours('saturday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="saturday_end" value="16:00" class="time-input" disabled onchange="updateHours('saturday')">
+                        </div>
+                        <div class="hours-display" id="saturday_hours">Vrije dag</div>
+                    </div>
+
+                    <!-- Sunday -->
+                    <div class="day-config-card disabled" id="card-sunday">
+                        <div class="day-header">
+                            <span class="day-name">Zondag</span>
+                            <input type="checkbox" class="day-toggle" id="sunday_enabled" onchange="toggleDay('sunday')">
+                        </div>
+                        <div class="time-config">
+                            <input type="time" id="sunday_start" value="08:00" class="time-input" disabled onchange="updateHours('sunday')">
+                            <span class="time-separator">tot</span>
+                            <input type="time" id="sunday_end" value="16:00" class="time-input" disabled onchange="updateHours('sunday')">
+                        </div>
+                        <div class="hours-display" id="sunday_hours">Vrije dag</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Break Times Section -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-coffee"></i>
+                    <h6>Pauzetijden</h6>
+                </div>
+                
+                <div class="break-config-grid">
+                    <div class="break-input-group">
+                        <label for="break_start">
+                            <i class="fas fa-pause"></i>
+                            Pauze start
+                        </label>
+                        <input type="time" class="time-input" id="break_start" value="12:00" onchange="updateSummary()">
+                    </div>
+                    
+                    <div class="break-input-group">
+                        <label for="break_end">
+                            <i class="fas fa-play"></i>
+                            Pauze eind
+                        </label>
+                        <input type="time" class="time-input" id="break_end" value="12:30" onchange="updateSummary()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Section -->
+            <div class="save-actions">
+                <div class="save-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Wijzigingen worden direct toegepast op alle berekeningen</span>
+                </div>
+                <button class="btn btn-primary btn-save" onclick="saveWorkHours()">
+                    <i class="fas fa-save"></i> Werkuren Opslaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Efficiency Targets Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-target"></i> Gebruiker Efficiëntie Doelen</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Stel efficiëntie doelen in voor elke gebruiker om prestaties te volgen en historische trends te analyseren.</p>
+            
+            <!-- Efficiency Targets Grid -->
+            <div id="efficiency-targets-container">
+                <!-- Dynamic user efficiency targets will be loaded here -->
+            </div>
+            
+            <!-- Save Button -->
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" class="btn btn-primary" onclick="saveEfficiencyTargets()">
+                    <i class="fas fa-save"></i> Efficiëntie Doelen Opslaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-users"></i> Gebruikersbeheer</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Beheer gebruikers en hun configuratie-instellingen voor het systeem.</p>
+            
+            <!-- User Configuration Grid -->
+            <div id="user-management-container">
+                <!-- Dynamic user management will be loaded here -->
+            </div>
+            
+            <!-- Save Button -->
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" class="btn btn-primary" onclick="saveUserConfiguration()">
+                    <i class="fas fa-save"></i> Gebruikersconfiguratie Opslaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Future Settings Sections -->
+    <!-- Additional settings cards can be added here -->
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Instellingen opslaan...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentSettings();
+    updateSummary();
+});
+
+// Load current settings from backend
+function loadCurrentSettings() {
+    fetch('/api/settings/work-hours')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                applySettings(data.settings);
+            }
+        })
+        .catch(error => console.error('Error loading settings:', error));
+}
+
+// Apply settings to form
+function applySettings(settings) {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    days.forEach((day, index) => {
+        const enabled = settings.work_days && settings.work_days.includes(index);
+        const startTime = settings[`${day}_start_time`] || '08:00';
+        const endTime = settings[`${day}_end_time`] || '16:00';
+        
+        document.getElementById(`${day}_enabled`).checked = enabled;
+        document.getElementById(`${day}_start`).value = startTime;
+        document.getElementById(`${day}_end`).value = endTime;
+        
+        toggleDay(day, false); // Update UI without triggering change
+        updateHours(day);
+    });
+    
+    // Set break times
+    if (settings.break_start_time) {
+        document.getElementById('break_start').value = settings.break_start_time;
+    }
+    if (settings.break_end_time) {
+        document.getElementById('break_end').value = settings.break_end_time;
+    }
+    
+    updateSummary();
+}
+
+// Toggle day enabled/disabled
+function toggleDay(day, updateSummaryFlag = true) {
+    const enabled = document.getElementById(`${day}_enabled`).checked;
+    const card = document.getElementById(`card-${day}`);
+    const startInput = document.getElementById(`${day}_start`);
+    const endInput = document.getElementById(`${day}_end`);
+    
+    if (enabled) {
+        card.classList.remove('disabled');
+        startInput.disabled = false;
+        endInput.disabled = false;
+        updateHours(day);
+    } else {
+        card.classList.add('disabled');
+        startInput.disabled = true;
+        endInput.disabled = true;
+        document.getElementById(`${day}_hours`).textContent = 'Vrije dag';
+    }
+    
+    if (updateSummaryFlag) {
+        updateSummary();
+    }
+}
+
+// Update hours display for a day
+function updateHours(day) {
+    const enabled = document.getElementById(`${day}_enabled`).checked;
+    if (!enabled) return;
+    
+    const startTime = document.getElementById(`${day}_start`).value;
+    const endTime = document.getElementById(`${day}_end`).value;
+    
+    if (startTime && endTime) {
+        const start = new Date(`2000-01-01 ${startTime}`);
+        const end = new Date(`2000-01-01 ${endTime}`);
+        const breakStart = document.getElementById('break_start').value;
+        const breakEnd = document.getElementById('break_end').value;
+        
+        let hours = (end - start) / (1000 * 60 * 60);
+        
+        // Subtract break time if it falls within work hours
+        if (breakStart && breakEnd) {
+            const breakStartTime = new Date(`2000-01-01 ${breakStart}`);
+            const breakEndTime = new Date(`2000-01-01 ${breakEnd}`);
+            
+            if (breakStartTime >= start && breakEndTime <= end) {
+                hours -= (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+            }
+        }
+        
+        document.getElementById(`${day}_hours`).textContent = `${hours.toFixed(1)} uur`;
+    }
+    
+    updateSummary();
+}
+
+// Update summary dashboard
+function updateSummary() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    let totalHours = 0;
+    let workDays = 0;
+    
+    days.forEach(day => {
+        const enabled = document.getElementById(`${day}_enabled`).checked;
+        if (enabled) {
+            workDays++;
+            const hoursText = document.getElementById(`${day}_hours`).textContent;
+            const hours = parseFloat(hoursText) || 0;
+            totalHours += hours;
+        }
+    });
+    
+    const avgHours = workDays > 0 ? totalHours / workDays : 0;
+    
+    // Calculate break time
+    const breakStart = document.getElementById('break_start').value;
+    const breakEnd = document.getElementById('break_end').value;
+    let breakHours = 0;
+    
+    if (breakStart && breakEnd) {
+        const start = new Date(`2000-01-01 ${breakStart}`);
+        const end = new Date(`2000-01-01 ${breakEnd}`);
+        breakHours = (end - start) / (1000 * 60 * 60);
+    }
+    
+    // Update display
+    document.getElementById('total-hours').textContent = totalHours.toFixed(1);
+    document.getElementById('work-days').textContent = workDays;
+    document.getElementById('avg-hours').textContent = avgHours.toFixed(1);
+    document.getElementById('break-time').textContent = breakHours.toFixed(1);
+}
+
+// Save work hours configuration
+function saveWorkHours() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay.classList.add('active');
+    
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const workDays = [];
+    const settings = {};
+    
+    // Collect per-day configurations
+    days.forEach((day, index) => {
+        const enabled = document.getElementById(`${day}_enabled`).checked;
+        
+        if (enabled) {
+            workDays.push(index);
+            settings[`${day}_start`] = document.getElementById(`${day}_start`).value;
+            settings[`${day}_end`] = document.getElementById(`${day}_end`).value;
+        }
+    });
+    
+    // Collect break time settings
+    settings.work_days = workDays;
+    settings.break_start = document.getElementById('break_start').value;
+    settings.break_end = document.getElementById('break_end').value;
+    
+    // Send to backend
+    fetch('/api/settings/work-hours', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingOverlay.classList.remove('active');
+        
+        if (data.success) {
+            showAlert('success', 'Werkuren succesvol opgeslagen!');
+        } else {
+            showAlert('danger', 'Fout bij opslaan: ' + (data.message || 'Onbekende fout'));
+        }
+    })
+    .catch(error => {
+        loadingOverlay.classList.remove('active');
+        showAlert('danger', 'Netwerkfout: ' + error.message);
+    });
+}
+
+// Show alert message
+function showAlert(type, message) {
+    const alertContainer = document.getElementById('alert-container');
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    alertContainer.innerHTML = alertHtml;
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = alertContainer.querySelector('.alert');
+        if (alert) {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        }
+    }, 5000);
+}
+
+function showLoadingOverlay() {
+    let overlay = document.getElementById('loading-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = `
+            <div class="loading-content">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Laden...</span>
+                </div>
+                <div class="mt-3">Bezig met opslaan...</div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+// Initialize hours display on all days
+document.addEventListener('DOMContentLoaded', function() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    days.forEach(day => {
+        updateHours(day);
+    });
+    
+    // Load efficiency targets
+    loadEfficiencyTargets();
+    
+    // Load user management
+    loadUserManagement();
+});
+
+// Load efficiency targets from backend
+async function loadEfficiencyTargets() {
+    console.log('Loading efficiency targets...'); // Debug
+    try {
+        const response = await fetch('/api/settings/efficiency-targets');
+        const data = await response.json();
+        console.log('Efficiency targets API response:', data); // Debug
+        if (data.targets) {
+            await displayEfficiencyTargets(data.targets);
+        } else {
+            console.log('No targets data, displaying empty targets'); // Debug
+            await displayEfficiencyTargets({});
+        }
+    } catch (error) {
+        console.error('Error loading efficiency targets:', error);
+        showAlert('danger', 'Fout bij laden efficiëntie doelen');
+        // Still try to display empty targets so the UI shows
+        try {
+            await displayEfficiencyTargets({});
+        } catch (e) {
+            console.error('Failed to display fallback targets:', e);
+        }
+    }
+}
+
+// Display efficiency targets in UI
+async function displayEfficiencyTargets(targets) {
+    const container = document.getElementById('efficiency-targets-container');
+    
+    // Get configured users from user config API
+    let configuredUsers = [];
+    try {
+        const response = await fetch('/api/settings/user-config');
+        const data = await response.json();
+        console.log('User config API response:', data); // Debug
+        if (data.success && data.users) {
+            // Get active users who have dashboard role
+            configuredUsers = data.users
+                .filter(user => user.active && user.roles && user.roles.includes('dashboard'))
+                .map(user => user.name);
+            console.log('Using configured users from user config:', configuredUsers); // Debug
+        }
+    } catch (error) {
+        console.error('Could not load user configuration:', error);
+    }
+    
+    // If no users found, don't display anything
+    if (configuredUsers.length === 0) {
+        container.innerHTML = '<p class="text-muted">Geen actieve gebruikers gevonden. Configureer eerst gebruikers in de Gebruikersbeheer sectie.</p>';
+        return;
+    }
+    
+    let html = '<div class="row">';
+    
+    configuredUsers.forEach(user => {
+        const currentTarget = targets[user] ? targets[user].target_items_per_hour : '';
+        const lastUpdated = targets[user] ? new Date(targets[user].updated_date).toLocaleDateString('nl-NL') : 'Nooit';
+        
+        html += `
+            <div class="col-md-4 mb-3">
+                <div class="efficiency-target-card">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="user-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-0">${user}</h6>
+                            <small class="text-muted">Laatst bijgewerkt: ${lastUpdated}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="target-input-group">
+                        <label class="form-label">Doel (items/uur)</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="target-${user}" 
+                                   value="${currentTarget}" 
+                                   min="0" 
+                                   step="0.1"
+                                   placeholder="Bijv. 25.5">
+                            <span class="input-group-text">items/uur</span>
+                        </div>
+                    </div>
+                    
+                    <div class="current-performance mt-3" id="current-${user}">
+                        <small class="text-muted">Huidige prestatie wordt geladen...</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Load current performance for each user
+    configuredUsers.forEach(user => {
+        loadCurrentPerformance(user);
+    });
+}
+
+// Load current performance for a user
+function loadCurrentPerformance(user) {
+    fetch(`/api/efficiency/history/${user}?days=7`)
+        .then(response => response.json())
+        .then(data => {
+            const currentElement = document.getElementById(`current-${user}`);
+            if (data.history && data.history.length > 0) {
+                const latestPerformance = data.history[0].items_per_hour;
+                const trend = calculateTrend(data.history);
+                
+                currentElement.innerHTML = `
+                    <small class="text-muted">
+                        Huidige: <strong>${latestPerformance}</strong> items/uur
+                        <span class="${trend.color}">${trend.icon} ${trend.text}</span>
+                    </small>
+                `;
+            } else {
+                currentElement.innerHTML = '<small class="text-muted">Geen recente gegevens</small>';
+            }
+        })
+        .catch(error => {
+            console.error(`Error loading performance for ${user}:`, error);
+        });
+}
+
+// Calculate trend from performance history
+function calculateTrend(history) {
+    if (history.length < 2) {
+        return { icon: '', text: '', color: 'text-muted' };
+    }
+    
+    const latest = history[0].items_per_hour;
+    const previous = history[1].items_per_hour;
+    const change = ((latest - previous) / previous) * 100;
+    
+    if (Math.abs(change) < 1) {
+        return { icon: '→', text: 'Stabiel', color: 'text-muted' };
+    } else if (change > 0) {
+        return { icon: '↗', text: `+${change.toFixed(1)}%`, color: 'text-success' };
+    } else {
+        return { icon: '↘', text: `${change.toFixed(1)}%`, color: 'text-danger' };
+    }
+}
+
+// Save efficiency targets
+async function saveEfficiencyTargets() {
+    console.log('SaveEfficiencyTargets function called'); // Debug
+    
+    // Get configured users from user config API
+    let configuredUsers = [];
+    try {
+        const response = await fetch('/api/settings/user-config');
+        const data = await response.json();
+        console.log('User config response:', data); // Debug
+        if (data.success && data.users) {
+            // Get active users who have dashboard role
+            configuredUsers = data.users
+                .filter(user => user.active && user.roles && user.roles.includes('dashboard'))
+                .map(user => user.name);
+            console.log('Configured users with dashboard role:', configuredUsers); // Debug
+        }
+    } catch (error) {
+        console.error('Could not load user configuration:', error);
+        showAlert('danger', 'Fout bij laden gebruikersconfiguratie');
+        return;
+    }
+    
+    if (configuredUsers.length === 0) {
+        showAlert('warning', 'Geen actieve gebruikers gevonden. Configureer eerst gebruikers in de Gebruikersbeheer sectie.');
+        return;
+    }
+    
+    const targets = {};
+    
+    // Collect all target values
+    console.log('Looking for input fields...'); // Debug
+    configuredUsers.forEach(user => {
+        const input = document.getElementById(`target-${user}`);
+        console.log(`Input for ${user}:`, input, input?.value); // Debug
+        if (input && input.value) {
+            targets[user] = parseFloat(input.value);
+        }
+    });
+    
+    console.log('Collected targets:', targets); // Debug
+    
+    if (Object.keys(targets).length === 0) {
+        showAlert('warning', 'Voer ten minste één efficiëntie doel in');
+        return;
+    }
+    
+    // Show loading
+    showLoadingOverlay();
+    
+    fetch('/api/settings/efficiency-targets', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targets: targets })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingOverlay();
+        if (data.success) {
+            showAlert('success', 'Efficiëntie doelen succesvol opgeslagen!');
+            loadEfficiencyTargets(); // Refresh the display
+        } else {
+            showAlert('danger', 'Fout bij opslaan: ' + (data.error || 'Onbekende fout'));
+        }
+    })
+    .catch(error => {
+        hideLoadingOverlay();
+        console.error('Error saving efficiency targets:', error);
+        showAlert('danger', 'Netwerkfout bij opslaan efficiëntie doelen');
+    });
+}
+
+// User Management Functions
+async function loadUserManagement() {
+    console.log('Loading user management...'); // Debug
+    try {
+        const response = await fetch('/api/settings/user-config');
+        const data = await response.json();
+        console.log('User config API response:', data); // Debug
+        if (data.success && data.users) {
+            displayUserManagement(data.users);
+        } else {
+            console.log('No user config data, displaying empty users'); // Debug
+            displayUserManagement([]);
+        }
+    } catch (error) {
+        console.error('Error loading user management:', error);
+        showAlert('danger', 'Fout bij laden gebruikersbeheer');
+        // Still try to display empty users so the UI shows
+        displayUserManagement([]);
+    }
+}
+
+async function displayUserManagement(users) {
+    const container = document.getElementById('user-management-container');
+    
+    // Available processing types based on system architecture
+    const availableProcessingTypes = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING'];
+    
+    let html = '<div class="user-management-content">';
+    html += '<div class="user-management-header">';
+    html += '<h6>Gebruikers Configuratie</h6>';
+    html += '<button type="button" class="btn btn-sm btn-primary" onclick="addNewUser()">';
+    html += '<i class="fas fa-plus"></i> Gebruiker Toevoegen';
+    html += '</button>';
+    html += '</div>';
+    
+    html += '<div class="user-list" id="user-list">';
+    
+    users.forEach((user, index) => {
+        html += '<div class="user-item" data-index="' + index + '">';
+        html += '<div class="user-item-content">';
+        html += '<div class="user-name">';
+        html += '<input type="text" class="form-control user-name-input" value="' + (user.name || '') + '" placeholder="Gebruikersnaam">';
+        html += '</div>';
+        html += '<div class="user-settings">';
+        html += '<div class="user-setting-item">';
+        html += '<label>Actief:</label>';
+        html += '<input type="checkbox" class="user-active-checkbox" ' + (user.active ? 'checked' : '') + '>';
+        html += '</div>';
+        html += '<div class="user-setting-item">';
+        html += '<label>Processing Type:</label>';
+        html += '<select class="form-control user-type-select">';
+        availableProcessingTypes.forEach(type => {
+            html += '<option value="' + type + '" ' + (user.type === type ? 'selected' : '') + '>' + type + '</option>';
+        });
+        html += '</select>';
+        html += '</div>';
+        html += '<div class="user-setting-item">';
+        html += '<label>Rollen:</label>';
+        html += '<div class="user-roles">';
+        html += '<label><input type="checkbox" class="user-role-scanner" ' + (user.roles && user.roles.includes('scanner') ? 'checked' : '') + '> Scanner</label>';
+        html += '<label><input type="checkbox" class="user-role-dashboard" ' + (user.roles && user.roles.includes('dashboard') ? 'checked' : '') + '> Dashboard</label>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="user-actions">';
+        html += '<button type="button" class="btn btn-sm btn-danger" onclick="removeUser(' + index + ')">';
+        html += '<i class="fas fa-trash"></i>';
+        html += '</button>';
+        html += '</div>';
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+async function addNewUser() {
+    const userList = document.getElementById('user-list');
+    const userCount = userList.children.length;
+    
+    // Available processing types based on system architecture
+    const availableProcessingTypes = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING'];
+    
+    let typeOptions = '';
+    availableProcessingTypes.forEach(type => {
+        typeOptions += `<option value="${type}">${type}</option>`;
+    });
+    
+    const newUserHtml = `
+        <div class="user-item" data-index="${userCount}">
+            <div class="user-item-content">
+                <div class="user-name">
+                    <input type="text" class="form-control user-name-input" value="" placeholder="Gebruikersnaam">
+                </div>
+                <div class="user-settings">
+                    <div class="user-setting-item">
+                        <label>Actief:</label>
+                        <input type="checkbox" class="user-active-checkbox" checked>
+                    </div>
+                    <div class="user-setting-item">
+                        <label>Processing Type:</label>
+                        <select class="form-control user-type-select">
+                            ${typeOptions}
+                        </select>
+                    </div>
+                    <div class="user-setting-item">
+                        <label>Rollen:</label>
+                        <div class="user-roles">
+                            <label><input type="checkbox" class="user-role-scanner" checked> Scanner</label>
+                            <label><input type="checkbox" class="user-role-dashboard" checked> Dashboard</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeUser(${userCount})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    userList.insertAdjacentHTML('beforeend', newUserHtml);
+}
+
+function removeUser(index) {
+    const userItem = document.querySelector(`[data-index="${index}"]`);
+    if (userItem) {
+        userItem.remove();
+        // Update indices of remaining items
+        const remainingItems = document.querySelectorAll('.user-item');
+        remainingItems.forEach((item, newIndex) => {
+            item.setAttribute('data-index', newIndex);
+            const removeBtn = item.querySelector('.btn-danger');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', `removeUser(${newIndex})`);
+            }
+        });
+    }
+}
+
+async function saveUserConfiguration() {
+    const userItems = document.querySelectorAll('.user-item');
+    const users = [];
+    
+    userItems.forEach(item => {
+        const nameInput = item.querySelector('.user-name-input');
+        const activeCheckbox = item.querySelector('.user-active-checkbox');
+        const typeSelect = item.querySelector('.user-type-select');
+        const scannerRole = item.querySelector('.user-role-scanner');
+        const dashboardRole = item.querySelector('.user-role-dashboard');
+        
+        if (nameInput.value.trim()) {
+            const roles = [];
+            if (scannerRole && scannerRole.checked) roles.push('scanner');
+            if (dashboardRole && dashboardRole.checked) roles.push('dashboard');
+            
+            users.push({
+                name: nameInput.value.trim(),
+                active: activeCheckbox.checked,
+                type: typeSelect.value,
+                roles: roles
+            });
+        }
+    });
+    
+    console.log('Saving user configuration:', users); // Debug
+    
+    showLoadingOverlay();
+    
+    fetch('/api/settings/user-config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ users: users })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingOverlay();
+        if (data.success) {
+            showAlert('success', 'Gebruikersconfiguratie succesvol opgeslagen');
+            // Reload user management to show updated data
+            loadUserManagement();
+        } else {
+            showAlert('danger', 'Fout bij opslaan gebruikersconfiguratie: ' + (data.message || 'Onbekende fout'));
+        }
+    })
+    .catch(error => {
+        hideLoadingOverlay();
+        console.error('Error saving user configuration:', error);
+        showAlert('danger', 'Netwerkfout bij opslaan gebruikersconfiguratie');
+    });
+}
+</script>
+{% endblock %}

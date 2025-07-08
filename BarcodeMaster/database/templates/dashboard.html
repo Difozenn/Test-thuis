@@ -78,6 +78,10 @@
     color: var(--danger-color);
 }
 
+.trend-neutral {
+    color: #6c757d;
+}
+
 /* Enhanced user frames */
 .user-frames-container {
     display: grid;
@@ -331,15 +335,16 @@
 </div>
 
 <!-- Analytics Dashboard -->
+<!-- Analytics Dashboard -->
 <div class="analytics-row">
     <div class="metric-card">
         <div class="metric-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
             <i class="fas fa-folder-open"></i>
         </div>
-        <div class="metric-value" id="total-projects">0</div>
+        <div class="metric-value">{{ total_projects|default(0) }}</div>
         <div class="metric-label">Totaal Projecten</div>
-        <div class="metric-trend trend-up">
-            <i class="fas fa-arrow-up"></i> 12% deze week
+        <div class="metric-trend trend-neutral">
+            <i class="fas fa-info-circle"></i> Alle projecten
         </div>
     </div>
     
@@ -347,32 +352,32 @@
         <div class="metric-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
             <i class="fas fa-check-circle"></i>
         </div>
-        <div class="metric-value" id="completed-today">0</div>
+        <div class="metric-value">{{ completed_today|default(0) }}</div>
         <div class="metric-label">Afgerond Vandaag</div>
-        <div class="metric-trend trend-up">
-            <i class="fas fa-arrow-up"></i> 8% vs gisteren
+        <div class="metric-trend trend-neutral">
+            <i class="fas fa-calendar-day"></i> Vandaag voltooid
         </div>
     </div>
     
     <div class="metric-card">
-        <div class="metric-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
-            <i class="fas fa-clock"></i>
+        <div class="metric-icon" style="background-color: rgba(220, 53, 69, 0.1); color: var(--danger-color);">
+            <i class="fas fa-tools"></i>
         </div>
-        <div class="metric-value" id="avg-time">0h</div>
-        <div class="metric-label">Gem. Verwerkingstijd</div>
-        <div class="metric-trend trend-down">
-            <i class="fas fa-arrow-down"></i> 5% sneller
+        <div class="metric-value">{{ repairs_today|default(0) }}</div>
+        <div class="metric-label">Reparaties</div>
+        <div class="metric-trend trend-neutral">
+            <i class="fas fa-calendar-day"></i> Vandaag
         </div>
     </div>
     
     <div class="metric-card">
-        <div class="metric-icon" style="background-color: rgba(217, 48, 37, 0.1); color: var(--danger-color);">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="metric-icon" style="background-color: rgba(52, 152, 219, 0.1); color: var(--secondary-blue);">
+            <i class="fas fa-spinner"></i>
         </div>
-        <div class="metric-value" id="errors-count">0</div>
-        <div class="metric-label">Fouten</div>
-        <div class="metric-trend trend-down">
-            <i class="fas fa-arrow-down"></i> 15% minder
+        <div class="metric-value">{{ active_projects|default(0) }}</div>
+        <div class="metric-label">Actieve Projecten</div>
+        <div class="metric-trend trend-neutral">
+            <i class="fas fa-play-circle"></i> Nu actief
         </div>
     </div>
 </div>
@@ -388,7 +393,7 @@
     </div>
     <div class="card-body p-4">
         <div class="user-frames-container">
-            {% set user_order = configured_users|default(['NESTING', 'OPUS', 'KL GANNOMAT']) %}
+            {% set user_order = configured_users %}
             {% for user in user_order %}
                 {% if user in users_projects %}
                     {% set projects = users_projects[user] %}
@@ -402,7 +407,6 @@
                                 <i class="fas fa-user"></i> {{ user }}
                                 <span class="user-status-indicator {% if projects %}status-active{% else %}status-inactive{% endif %}"></span>
                             </span>
-                            <span class="chain-position">Chain #{{ loop.index }}</span>
                         </h3>
                     </div>
                     <div class="p-3">
@@ -410,10 +414,10 @@
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
-                                        <i class="fas fa-tasks"></i> {{ projects|length }} project{% if projects|length != 1 %}en{% endif %} vandaag
+                                        <i class="fas fa-tasks"></i> <span class="user-project-count">{{ projects|length }}</span> project{% if projects|length != 1 %}en{% endif %}
                                     </small>
                                     <small class="text-muted">
-                                        <i class="fas fa-clock"></i> Gem. tijd: <span class="avg-time">--</span>
+                                        <i class="fas fa-list-ol"></i> Positie #{{ loop.index }}
                                     </small>
                                 </div>
                             </div>
@@ -440,11 +444,16 @@
                                             <td>
                                                 <span class="status-badge status-{{ project.status.lower() }}">
                                                     {% if project.status.lower() == 'open' %}
-                                                        <i class="fas fa-circle"></i>
+                                                        OPEN
+                                                    {% elif project.status.lower() == 'bezig' %}
+                                                        BEZIG
+                                                    {% elif project.status.lower() == 'afgemeld' %}
+                                                        AFGEMELD
+                                                    {% elif project.status.lower() == 'afgerond' %}
+                                                        AFGEROND
                                                     {% else %}
-                                                        <i class="fas fa-check-circle"></i>
+                                                        {{ project.status }}
                                                     {% endif %}
-                                                    {{ project.status }}
                                                 </span>
                                             </td>
                                             <td>
@@ -496,13 +505,34 @@
 <script id="log-data" type="application/json">{{ logs | tojson | safe }}</script>
 <script id="configured-users" type="application/json">{{ configured_users | tojson | safe }}</script>
 <script>
-    // Enhanced JavaScript with more features
+    // Enhanced JavaScript with real statistics
     const logData = JSON.parse(document.getElementById('log-data').textContent);
     const configuredUsers = JSON.parse(document.getElementById('configured-users').textContent);
+    
+    // Initialize work hours data with defaults
+    const workHoursData = {};
+    
+    // Set default work hours for all configured users
+    configuredUsers.forEach(user => {
+        workHoursData[user] = {
+            start_time: '08:00',
+            end_time: '17:00',
+            break_start: '12:00',
+            break_end: '13:00',
+            monday_hours: 8,
+            tuesday_hours: 8,
+            wednesday_hours: 8,
+            thursday_hours: 8,
+            friday_hours: 8,
+            saturday_hours: 0,
+            sunday_hours: 0
+        };
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
-        initializeApp();
+        // Remove the initializeApp call since metrics are now server-side
         generateRecentProjectsList();
+        calculateUserAverageTimes();
         
         // Initialize tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -511,33 +541,180 @@
         });
     });
 
-    function initializeApp() {
-        // Calculate statistics
-        const activeProjects = new Set();
-        const users = new Set();
-        let todayEvents = 0;
-        const today = new Date().toDateString();
+    // Remove the calculateProjectStatistics and calculateTimeStatistics functions
+    // since metrics are now calculated server-side
 
-        logData.forEach(log => {
-            if (log.project) activeProjects.add(log.project);
-            if (log.user) users.add(log.user);
-            if (new Date(log.timestamp).toDateString() === today) todayEvents++;
+    function calculateUserAverageTimes() {
+        // Calculate average processing time per user using work hours
+        const userTimes = {};
+        
+        // Use session data if available (preferred)
+        if (window.sessionData && sessionData.length > 0) {
+            configuredUsers.forEach(user => {
+                const userSessions = sessionData.filter(s => s.user === user);
+                
+                if (userSessions.length > 0) {
+                    const totalWorkMinutes = userSessions.reduce((sum, session) => 
+                        sum + (session.work_duration_minutes || 0), 0);
+                    
+                    const completedSessions = userSessions.filter(s => s.work_duration_minutes > 0);
+                    
+                    if (completedSessions.length > 0) {
+                        const avgMinutes = totalWorkMinutes / completedSessions.length;
+                        
+                        if (avgMinutes < 60) {
+                            userTimes[user] = Math.round(avgMinutes) + 'm';
+                        } else {
+                            const hours = Math.floor(avgMinutes / 60);
+                            const minutes = Math.round(avgMinutes % 60);
+                            userTimes[user] = hours + 'u ' + minutes + 'm';
+                        }
+                    } else {
+                        userTimes[user] = '--';
+                    }
+                } else {
+                    userTimes[user] = '--';
+                }
+            });
+        } else {
+            // Fallback: calculate from logs using work hours
+            configuredUsers.forEach(user => {
+                const userProjects = {};
+                const userWorkHours = workHoursData[user];
+                
+                logData.forEach(log => {
+                    if (log.user !== user || !log.project) return;
+                    
+                    if (!userProjects[log.project]) {
+                        userProjects[log.project] = {
+                            start: null,
+                            end: null
+                        };
+                    }
+                    
+                    if (log.event === 'OPEN') {
+                        userProjects[log.project].start = new Date(log.timestamp);
+                    }
+                    
+                    if (log.event === 'AFGEMELD') {
+                        userProjects[log.project].end = new Date(log.timestamp);
+                    }
+                });
+                
+                // Calculate average time for completed projects
+                const completedProjects = Object.values(userProjects).filter(p => p.start && p.end);
+                
+                if (completedProjects.length > 0 && userWorkHours) {
+                    const totalMinutes = completedProjects.reduce((sum, project) => {
+                        const workMinutes = calculateWorkMinutesWithConfig(
+                            project.start, 
+                            project.end, 
+                            userWorkHours
+                        );
+                        return sum + (workMinutes > 0 && workMinutes < 1440 ? workMinutes : 0);
+                    }, 0);
+                    
+                    const avgMinutes = totalMinutes / completedProjects.length;
+                    
+                    if (avgMinutes > 0) {
+                        if (avgMinutes < 60) {
+                            userTimes[user] = Math.round(avgMinutes) + 'm';
+                        } else {
+                            const hours = Math.floor(avgMinutes / 60);
+                            const minutes = Math.round(avgMinutes % 60);
+                            userTimes[user] = hours + 'u ' + minutes + 'm';
+                        }
+                    } else {
+                        userTimes[user] = '--';
+                    }
+                } else {
+                    userTimes[user] = '--';
+                }
+            });
+        }
+        
+        // Update UI
+        document.querySelectorAll('.avg-time[data-user]').forEach(element => {
+            const user = element.getAttribute('data-user');
+            element.textContent = userTimes[user] || '--';
         });
+    }
 
-        // Update metric cards
-        document.getElementById('total-projects').textContent = activeProjects.size;
-        document.getElementById('completed-today').textContent = Math.floor(todayEvents * 0.7);
-        document.getElementById('avg-time').textContent = '2.5h';
-        document.getElementById('errors-count').textContent = Math.floor(todayEvents * 0.05);
+    // Helper function to calculate work minutes with user config
+    function calculateWorkMinutesWithConfig(startTime, endTime, userConfig) {
+        let totalMinutes = 0;
+        let current = new Date(startTime);
+        let end = new Date(endTime);
+        
+        // Parse work times
+        const [startHour, startMin] = userConfig.start_time.split(':').map(Number);
+        const [endHour, endMin] = userConfig.end_time.split(':').map(Number);
+        const [breakStartHour, breakStartMin] = userConfig.break_start.split(':').map(Number);
+        const [breakEndHour, breakEndMin] = userConfig.break_end.split(':').map(Number);
+        
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        
+        while (current < end) {
+            const dayName = dayNames[current.getDay()];
+            const dayHours = userConfig[`${dayName}_hours`] || 0;
+            
+            // Skip if no work hours for this day
+            if (dayHours === 0) {
+                current = new Date(current);
+                current.setDate(current.getDate() + 1);
+                current.setHours(0, 0, 0, 0);
+                continue;
+            }
+            
+            // Calculate work time for current day
+            const dayStart = new Date(current);
+            dayStart.setHours(startHour, startMin, 0, 0);
+            
+            const dayEnd = new Date(current);
+            dayEnd.setHours(endHour, endMin, 0, 0);
+            
+            const breakStart = new Date(current);
+            breakStart.setHours(breakStartHour, breakStartMin, 0, 0);
+            
+            const breakEnd = new Date(current);
+            breakEnd.setHours(breakEndHour, breakEndMin, 0, 0);
+            
+            // Actual work period
+            const actualStart = current > dayStart ? current : dayStart;
+            const actualEnd = end < dayEnd ? end : dayEnd;
+            
+            if (actualStart < actualEnd) {
+                // Morning session
+                if (actualStart < breakStart) {
+                    const morningEnd = actualEnd < breakStart ? actualEnd : breakStart;
+                    totalMinutes += (morningEnd - actualStart) / 60000;
+                }
+                
+                // Afternoon session
+                if (actualEnd > breakEnd) {
+                    const afternoonStart = actualStart > breakEnd ? actualStart : breakEnd;
+                    totalMinutes += (actualEnd - afternoonStart) / 60000;
+                }
+            }
+            
+            // Move to next day
+            current = new Date(current);
+            current.setDate(current.getDate() + 1);
+            current.setHours(0, 0, 0, 0);
+        }
+        
+        return Math.round(totalMinutes);
     }
 
     function generateRecentProjectsList() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        // Group logs by project
+        // Group logs by project using workflow chain logic
         const projectGroups = {};
+        const workflowOrder = configuredUsers; // Use configured users as workflow order
         
+        // First pass: collect project data
         logData.forEach(log => {
             if (log.project && log.timestamp) {
                 const logDate = new Date(log.timestamp);
@@ -545,25 +722,107 @@
                     if (!projectGroups[log.project]) {
                         projectGroups[log.project] = {
                             code: log.project,
-                            users: {},
                             lastUpdate: logDate,
-                            hasOpen: false,
-                            allCompleted: true
+                            currentStatus: 'OPEN', // Default status
+                            users: new Set(),
+                            openEvents: {},
+                            bezigEvents: {},
+                            afgemeldEvents: {},
+                            latestStatus: null
                         };
                     }
                     
-                    // Track user statuses
-                    if (log.user && log.status) {
-                        projectGroups[log.project].users[log.user] = log.status;
-                        if (log.status === 'OPEN') {
-                            projectGroups[log.project].hasOpen = true;
-                            projectGroups[log.project].allCompleted = false;
+                    // Track users
+                    if (log.user) {
+                        projectGroups[log.project].users.add(log.user);
+                    }
+                    
+                    // Update last update timestamp and track latest status
+                    if (logDate >= projectGroups[log.project].lastUpdate) {
+                        projectGroups[log.project].lastUpdate = logDate;
+                        // Track the latest status from any log entry
+                        if (log.status) {
+                            projectGroups[log.project].latestStatus = log.status;
                         }
                     }
                     
-                    // Update last update time
-                    if (logDate > projectGroups[log.project].lastUpdate) {
-                        projectGroups[log.project].lastUpdate = logDate;
+                    // Track OPEN, BEZIG and AFGEMELD events by user
+                    if (log.user) {
+                        const key = `${log.user}_${log.project}`;
+                        if (log.event === 'OPEN' && log.status === 'OPEN') {
+                            projectGroups[log.project].openEvents[key] = log;
+                        } else if (log.status === 'BEZIG') {
+                            projectGroups[log.project].bezigEvents[key] = log;
+                        } else if (log.event === 'AFGEMELD') {
+                            projectGroups[log.project].afgemeldEvents[key] = log;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Second pass: determine project status using proper workflow logic
+        Object.values(projectGroups).forEach(project => {
+            const involvedUsers = Array.from(project.users).filter(user => workflowOrder.includes(user));
+            const activeWorkflowOrder = workflowOrder.filter(user => involvedUsers.includes(user));
+            
+            // Check if all involved users have completed (AFGEMELD)
+            const allCompleted = activeWorkflowOrder.every(user => {
+                const userKey = `${user}_${project.code}`;
+                return project.afgemeldEvents[userKey] !== undefined;
+            });
+            
+            if (allCompleted && activeWorkflowOrder.length > 0) {
+                project.currentStatus = 'AFGEROND';
+            } else {
+                // Find the current active user based on workflow order
+                let currentActiveUser = null;
+                let lastCompletedIndex = -1;
+                
+                // Find the last completed user in the workflow
+                for (let i = 0; i < activeWorkflowOrder.length; i++) {
+                    const user = activeWorkflowOrder[i];
+                    const userKey = `${user}_${project.code}`;
+                    if (project.afgemeldEvents[userKey]) {
+                        lastCompletedIndex = i;
+                    }
+                }
+                
+                // The current active user is the next one after the last completed
+                const nextUserIndex = lastCompletedIndex + 1;
+                if (nextUserIndex < activeWorkflowOrder.length) {
+                    currentActiveUser = activeWorkflowOrder[nextUserIndex];
+                }
+                
+                // Check current active user's status - BEZIG event = BEZIG, OPEN event = OPEN
+                if (currentActiveUser) {
+                    const userKey = `${currentActiveUser}_${project.code}`;
+                    if (project.bezigEvents[userKey]) {
+                        project.currentStatus = 'BEZIG';
+                    } else if (project.openEvents[userKey]) {
+                        project.currentStatus = 'OPEN';
+                    } else {
+                        project.currentStatus = 'OPEN';
+                    }
+                } else {
+                    // Check for any BEZIG events first
+                    const anyBezig = activeWorkflowOrder.some(user => {
+                        const userKey = `${user}_${project.code}`;
+                        return project.bezigEvents[userKey] !== undefined;
+                    });
+                    
+                    if (anyBezig) {
+                        project.currentStatus = 'BEZIG';
+                    } else {
+                        // Check for any OPEN events
+                        const anyOpen = activeWorkflowOrder.some(user => {
+                            const userKey = `${user}_${project.code}`;
+                            return project.openEvents[userKey] !== undefined;
+                        });
+                        
+                        if (anyOpen) {
+                            project.currentStatus = 'OPEN';
+                        }
                     }
                 }
             }
@@ -584,24 +843,34 @@
         let html = '<div class="project-list-header">Recent bijgewerkte projecten:</div>';
         
         recentProjects.slice(0, 10).forEach(project => {
-            let status = 'OPEN';
             let statusClass = 'status-open';
+            let statusText = 'OPEN';
+            let statusIcon = '';
             
-            // Check if all users have completed
-            const userStatuses = Object.values(project.users);
-            if (userStatuses.length > 0 && userStatuses.every(s => s === 'AFGEMELD' || s === 'CLOSED')) {
-                status = 'AFGEMELD';
+            if (project.currentStatus === 'AFGEMELD') {
                 statusClass = 'status-afgemeld';
+                statusText = 'AFGEMELD';
+                statusIcon = '';
+            } else if (project.currentStatus === 'AFGEROND') {
+                statusClass = 'status-afgerond';
+                statusText = 'AFGEROND';
+                statusIcon = '';
+            } else if (project.currentStatus === 'BEZIG') {
+                statusClass = 'status-bezig';
+                statusText = 'BEZIG';
+                statusIcon = '';
             }
+            
+            const userCount = project.users.size;
+            const userText = userCount > 0 ? ` (${userCount} gebruiker${userCount !== 1 ? 's' : ''})` : '';
             
             html += `
                 <div class="project-item">
                     <a href="/logs_project?project=${project.code}" class="project-code">
-                        <i class="fas fa-folder"></i> ${project.code}
+                        <i class="fas fa-folder"></i> ${project.code}${userText}
                     </a>
                     <span class="status-badge ${statusClass} project-status">
-                        ${status === 'OPEN' ? '<i class="fas fa-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
-                        ${status}
+                        ${statusIcon} ${statusText}
                     </span>
                 </div>
             `;

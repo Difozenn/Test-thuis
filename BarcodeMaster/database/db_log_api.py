@@ -51,6 +51,117 @@ _server_thread = None
 _shutdown_requested = False
 _server = None
 
+# --- Work Hours Configuration ---
+def load_work_hours():
+    """Load work hours from config.json if available, otherwise use defaults"""
+    default_work_hours = {
+        'monday': {'start': 7.5, 'end': 16},      # 07:30-16:00
+        'tuesday': {'start': 7.5, 'end': 16},     # 07:30-16:00
+        'wednesday': {'start': 7.5, 'end': 16},   # 07:30-16:00
+        'thursday': {'start': 7.5, 'end': 16},    # 07:30-16:00
+        'friday': {'start': 7.5, 'end': 15},      # 07:30-15:00
+        'break_start': 12,    # 12:00
+        'break_end': 12.5,    # 12:30
+        'work_days': [0, 1, 2, 3, 4]  # Monday to Friday (0=Monday, 6=Sunday)
+    }
+    
+    try:
+        config_path = get_writable_path('config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                if 'work_hours' in config:
+                    loaded_work_hours = config['work_hours']
+                    logging.info(f"Work hours loaded from config: {loaded_work_hours}")
+                    return loaded_work_hours
+    except Exception as e:
+        logging.error(f"Error loading work hours from config: {e}")
+    
+    logging.info("Using default work hours configuration")
+    return default_work_hours
+
+WORK_HOURS = load_work_hours()
+
+def calculate_work_minutes(start_time, end_time, work_hours=WORK_HOURS):
+    """Calculate actual work minutes between two timestamps, excluding breaks and non-work hours"""
+    if isinstance(start_time, str):
+        start_time = datetime.fromisoformat(start_time)
+    if isinstance(end_time, str):
+        end_time = datetime.fromisoformat(end_time)
+    
+    total_minutes = 0
+    current = start_time
+    
+    # Day name mapping
+    day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    
+    while current < end_time:
+        # Skip weekends
+        if current.weekday() not in work_hours['work_days']:
+            current = current.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+            continue
+        
+        # Get day-specific work hours
+        day_name = day_names[current.weekday()]
+        day_config = work_hours.get(day_name, {'start': 7.5, 'end': 16})  # Default fallback
+        
+        # Calculate work time for current day
+        day_start = current.replace(hour=int(day_config['start']), 
+                                   minute=int((day_config['start'] % 1) * 60), second=0)
+        day_end = current.replace(hour=int(day_config['end']), 
+                                 minute=int((day_config['end'] % 1) * 60), second=0)
+        break_start = current.replace(hour=int(work_hours['break_start']), 
+                                     minute=int((work_hours['break_start'] % 1) * 60), second=0)
+        break_end = current.replace(hour=int(work_hours['break_end']), 
+                                   minute=int((work_hours['break_end'] % 1) * 60), second=0)
+        
+        # Determine actual start and end for this day
+        actual_start = max(current, day_start)
+        actual_end = min(end_time, day_end)
+        
+        if actual_start < actual_end:
+            # Morning session (before break)
+            if actual_start < break_start:
+                morning_end = min(actual_end, break_start)
+                total_minutes += (morning_end - actual_start).total_seconds() / 60
+            
+            # Afternoon session (after break)
+            if actual_end > break_end:
+                afternoon_start = max(actual_start, break_end)
+                total_minutes += (actual_end - afternoon_start).total_seconds() / 60
+        
+        # Move to next day
+        current = current.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    
+    return round(total_minutes, 2)
+
+def get_current_work_status():
+    """Check if current time is within work hours"""
+    now = datetime.now()
+    
+    # Check if it's a work day
+    if now.weekday() not in WORK_HOURS['work_days']:
+        return False, "Weekend - niet in werktijd"
+    
+    # Get day-specific work hours
+    day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    day_name = day_names[now.weekday()]
+    day_config = WORK_HOURS.get(day_name, {'start': 7.5, 'end': 16})
+    
+    # Check time
+    current_hour = now.hour + now.minute / 60
+    
+    if current_hour < day_config['start']:
+        start_time = f"{int(day_config['start'])}:{int((day_config['start'] % 1) * 60):02d}"
+        return False, f"Te vroeg - werk begint om {start_time}"
+    elif current_hour >= day_config['end']:
+        end_time = f"{int(day_config['end'])}:{int((day_config['end'] % 1) * 60):02d}"
+        return False, f"Te laat - werk eindigt om {end_time}"
+    elif WORK_HOURS['break_start'] <= current_hour < WORK_HOURS['break_end']:
+        return False, "Pauze tijd"
+    else:
+        return True, "Binnen werktijd"
+
 def stop_api_server():
     """Stop the running API server."""
     global _shutdown_requested, _server
@@ -111,7 +222,8 @@ def init_db():
     try:
         conn = create_db_connection()  # Use direct connection for init
         c = conn.cursor()
-        # Create table if it doesn't exist
+        
+        # Create logs table if it doesn't exist
         c.execute('''
             CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,10 +236,34 @@ def init_db():
                 base_mo_code TEXT,
                 is_rep_variant INTEGER,
                 file_path TEXT,
-                item_count INTEGER
+                item_count INTEGER,
+                session_id TEXT
             )
         ''')
         
+        # Create work_hours_config table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS work_hours_config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user TEXT NOT NULL UNIQUE,
+                monday_hours REAL DEFAULT 8.0,
+                tuesday_hours REAL DEFAULT 8.0,
+                wednesday_hours REAL DEFAULT 8.0,
+                thursday_hours REAL DEFAULT 8.0,
+                friday_hours REAL DEFAULT 8.0,
+                saturday_hours REAL DEFAULT 0.0,
+                sunday_hours REAL DEFAULT 0.0,
+                start_time TEXT DEFAULT '07:00',
+                end_time TEXT DEFAULT '17:00',
+                break_start TEXT DEFAULT '12:00',
+                break_end TEXT DEFAULT '12:30',
+                efficiency_high_threshold REAL DEFAULT 10.0,
+                efficiency_medium_threshold REAL DEFAULT 5.0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         # Check and add columns if they don't exist
         c.execute("PRAGMA table_info(logs)")
         columns = [column[1] for column in c.fetchall()]
@@ -143,12 +279,73 @@ def init_db():
         if 'item_count' not in columns:
             c.execute('ALTER TABLE logs ADD COLUMN item_count INTEGER')
             logging.info("Added 'item_count' column to logs table.")
+        if 'session_id' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN session_id TEXT')
+            logging.info("Added 'session_id' column to logs table.")
+        
+        # Create sessions table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT UNIQUE,
+                user TEXT NOT NULL,
+                project TEXT,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                status TEXT DEFAULT 'active',
+                item_count INTEGER DEFAULT 0,
+                work_duration_minutes REAL,
+                session_type TEXT DEFAULT 'XLSX_UPDATED',
+                UNIQUE(user, project, start_time)
+            )
+        ''')
+        
+        # Check and add session_type column to sessions table if it doesn't exist
+        c.execute("PRAGMA table_info(sessions)")
+        sessions_columns = [column[1] for column in c.fetchall()]
+        if 'session_type' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT "XLSX_UPDATED"')
+            logging.info("Added 'session_type' column to sessions table.")
+        
+        # Create project_sessions table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS project_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                total_duration_minutes REAL,
+                nesting_duration_minutes REAL,
+                opus_duration_minutes REAL,
+                gannomat_duration_minutes REAL,
+                total_items INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'active',
+                UNIQUE(project)
+            )
+        ''')
+        
+        # Create project_log table for XLSX_UPDATED workflow tracking
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS project_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project TEXT NOT NULL,
+                event TEXT NOT NULL,
+                user TEXT,
+                timestamp TEXT NOT NULL,
+                item_count INTEGER DEFAULT 0
+            )
+        ''')
         
         # Create indexes for better performance
         c.execute('CREATE INDEX IF NOT EXISTS idx_logs_project ON logs(project)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_logs_user ON logs(user)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_logs_status ON logs(status)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_logs_session_id ON logs(session_id)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_project_sessions_project ON project_sessions(project)')
         
         conn.commit()
         logging.info("Database initialization complete.")
@@ -231,92 +428,47 @@ def format_minutes(minutes):
     else:
         return f"{mins}m"
 
-def determine_project_status(project_code, conn):
-    """
-    Determine the overall status of a project based on all user activities.
-    Returns: (status, current_user)
-    """
-    c = conn.cursor()
+
+    for session in active_sessions:
+        if session['user'] in user_states and user_states[session['user']] == 'OPEN':
+            user_states[session['user']] = 'WORKING'
+            last_active_user = session['user']
     
-    # Get all events for this project
-    c.execute("""
-        SELECT user, event, status, timestamp
-        FROM logs
-        WHERE project = ?
-        ORDER BY timestamp ASC
-    """, (project_code,))
+    # Determine overall project status based on involved users only
+    config = get_config()
+    all_configured_users = config.get('scanner_panel_open_event_users', [])
     
-    events = c.fetchall()
+    # Filter to only users involved in this project
+    relevant_users = [u for u in all_configured_users if u in involved_users]
     
-    if not events:
-        return ('UNKNOWN', None)
+    if not relevant_users:
+        return ('UNKNOWN', None, involved_users)
     
-    # Track each user's status
-    user_states = {}
-    last_active_user = None
-    last_timestamp = None
-    
-    for event in events:
-        user = event['user']
-        event_type = event['event']
-        status = event['status']
-        timestamp = event['timestamp']
-        
-        if event_type == 'OPEN':
-            user_states[user] = 'OPEN'
-            last_active_user = user
-            last_timestamp = timestamp
-        elif event_type == 'AFGEMELD':
-            user_states[user] = 'COMPLETED'
-            # Check if there's a next user in the chain
-            config = get_config()
-            configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-            
-            try:
-                current_index = configured_users.index(user)
-                # Check if the next user in chain has started
-                if current_index < len(configured_users) - 1:
-                    next_user = configured_users[current_index + 1]
-                    if next_user in user_states and user_states[next_user] == 'OPEN':
-                        last_active_user = next_user
-            except ValueError:
-                pass
-    
-    # Determine overall project status
-    # Check if all users have completed
-    all_completed = all(state == 'COMPLETED' for state in user_states.values())
+    # Check if all involved users have completed
+    all_completed = all(
+        user_states.get(user) == 'COMPLETED' 
+        for user in relevant_users
+    )
     
     if all_completed:
-        return ('AFGEROND', None)
+        return ('AFGEROND', None, involved_users)
     
-    # Check if any user has an open status
-    has_open = any(state == 'OPEN' for state in user_states.values())
-    
-    if has_open:
-        # Find the current active user (the one with OPEN status who should be working on it)
-        config = get_config()
-        configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
+    # Find the current active user (who should be working)
+    for user in relevant_users:
+        user_state = user_states.get(user, 'PENDING')
         
-        for user in configured_users:
-            if user_states.get(user) == 'OPEN':
-                # Check if all previous users have completed
-                user_index = configured_users.index(user)
-                all_previous_completed = True
-                
-                for i in range(user_index):
-                    prev_user = configured_users[i]
-                    if user_states.get(prev_user) != 'COMPLETED':
-                        all_previous_completed = False
-                        break
-                
-                if all_previous_completed or user_index == 0:
-                    return ('OPEN', user)
-        
-        # If we can't determine the exact user, return the last active one
-        return ('OPEN', last_active_user)
+        if user_state in ['OPEN', 'WORKING']:
+            # Check if all previous users in the chain have completed
+            user_index = relevant_users.index(user)
+            all_previous_completed = all(
+                user_states.get(relevant_users[i]) == 'COMPLETED'
+                for i in range(user_index)
+            )
+            
+            if all_previous_completed or user_index == 0:
+                return ('OPEN', user, involved_users)
     
-    # If no clear status, return UNKNOWN
-    return ('UNKNOWN', last_active_user)
+    return ('IN_PROGRESS', last_active_user, involved_users)
 
 # --- User Statistics Helper Functions ---
 def count_active_projects(user):
@@ -417,6 +569,8 @@ def calculate_efficiency(user):
         logging.error(f"Error calculating efficiency for {user}: {e}")
         return 85
 
+
+
 def get_user_activity_last_7_days(user):
     """Get user activity for last 7 days"""
     try:
@@ -437,6 +591,132 @@ def get_user_activity_last_7_days(user):
     except Exception as e:
         logging.error(f"Error getting activity for {user}: {e}")
         return [0] * 7
+
+def get_user_work_config(user):
+    """Get work hours configuration for a specific user"""
+    cursor = get_db().cursor()
+    cursor.execute("""
+        SELECT * FROM work_hours_config WHERE user = ?
+    """, (user,))
+    
+    config = cursor.fetchone()
+    if not config:
+        # Create default config
+        cursor.execute("""
+            INSERT INTO work_hours_config (user) 
+            VALUES (?)
+        """, (user,))
+        get_db().commit()
+        return get_default_work_config()
+    
+    return dict(config)
+
+def get_default_work_config():
+    """Get default work hours configuration"""
+    return {
+        'user': '',
+        'monday_hours': 8.0,
+        'tuesday_hours': 8.0,
+        'wednesday_hours': 8.0,
+        'thursday_hours': 8.0,
+        'friday_hours': 8.0,
+        'saturday_hours': 0.0,
+        'sunday_hours': 0.0,
+        'start_time': '07:00',
+        'end_time': '17:00',
+        'break_start': '12:00',
+        'break_end': '12:30',
+        'efficiency_high_threshold': 10.0,
+        'efficiency_medium_threshold': 5.0
+    }
+
+def calculate_user_work_minutes(start_time, end_time, user):
+    """Calculate work minutes based on user-specific configuration"""
+    config = get_user_work_config(user)
+    
+    # Convert time strings to hours
+    start_hour = int(config['start_time'].split(':')[0]) + int(config['start_time'].split(':')[1])/60
+    end_hour = int(config['end_time'].split(':')[0]) + int(config['end_time'].split(':')[1])/60
+    break_start_hour = int(config['break_start'].split(':')[0]) + int(config['break_start'].split(':')[1])/60
+    break_end_hour = int(config['break_end'].split(':')[0]) + int(config['break_end'].split(':')[1])/60
+    
+    # Build work hours dict
+    work_hours = {
+        'start': start_hour,
+        'end': end_hour,
+        'break_start': break_start_hour,
+        'break_end': break_end_hour,
+        'work_days': []
+    }
+    
+    # Determine work days based on configured hours > 0
+    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    for i, day in enumerate(days):
+        if config[f'{day}_hours'] > 0:
+            work_hours['work_days'].append(i)
+    
+    # Use existing calculate_work_minutes function with user-specific hours
+    return calculate_work_minutes(start_time, end_time, work_hours)
+
+# Add API endpoints for work hours configuration
+@app.route('/api/work_hours/<user>', methods=['GET'])
+def get_work_hours(user):
+    """Get work hours configuration for a user"""
+    try:
+        config = get_user_work_config(user)
+        return jsonify({
+            'success': True,
+            'work_hours': config
+        })
+    except Exception as e:
+        logging.error(f"Error getting work hours: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/work_hours/<user>', methods=['POST'])
+def update_work_hours(user):
+    """Update work hours configuration for a user"""
+    try:
+        data = request.get_json()
+        cursor = get_db().cursor()
+        
+        # Build update query
+        update_fields = []
+        values = []
+        
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            field = f'{day}_hours'
+            if field in data:
+                update_fields.append(f"{field} = ?")
+                values.append(float(data[field]))
+        
+        for field in ['start_time', 'end_time', 'break_start', 'break_end']:
+            if field in data:
+                update_fields.append(f"{field} = ?")
+                values.append(data[field])
+        
+        for field in ['efficiency_high_threshold', 'efficiency_medium_threshold']:
+            if field in data:
+                update_fields.append(f"{field} = ?")
+                values.append(float(data[field]))
+        
+        if update_fields:
+            update_fields.append("updated_at = CURRENT_TIMESTAMP")
+            values.append(user)
+            
+            query = f"""
+                UPDATE work_hours_config 
+                SET {', '.join(update_fields)}
+                WHERE user = ?
+            """
+            
+            cursor.execute(query, values)
+            get_db().commit()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logging.error(f"Error updating work hours: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # --- API Endpoints ---
 @app.route('/shutdown', methods=['GET', 'POST'])
@@ -459,6 +739,282 @@ def initialize_database_endpoint():
         logging.error(f"[db_log_api] /init_db failed: {e}", exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/session/start', methods=['POST'])
+def start_session():
+    """Start a new work session - with work hours validation"""
+    data = request.get_json(force=True)
+    
+    # Check if within work hours
+    is_work_time, message = get_current_work_status()
+    if not is_work_time:
+        return jsonify({
+            'success': False, 
+            'error': f'Kan geen sessie starten: {message}',
+            'work_time': False
+        }), 400
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    try:
+        # Close any active sessions for this user
+        c.execute("""
+            SELECT start_time FROM sessions 
+            WHERE user = ? AND status = 'active'
+        """, (data['user'],))
+        
+        active_session = c.fetchone()
+        if active_session:
+            work_minutes = calculate_work_minutes(active_session['start_time'], data['timestamp'])
+            c.execute("""
+                UPDATE sessions 
+                SET status = 'completed', 
+                    end_time = ?,
+                    work_duration_minutes = ?
+                WHERE session_id = ? AND status = 'active'
+            """, (data['timestamp'], work_minutes, active_session['session_id']))
+        
+        # Create new session
+        session_type = data.get('session_type', 'SCANNER')  # Default to SCANNER for scanner panel
+        project = data.get('project', '')  # Get project if provided
+        c.execute("""
+            INSERT INTO sessions (session_id, user, project, start_time, status, session_type)
+            VALUES (?, ?, ?, ?, 'active', ?)
+        """, (data['session_id'], data['user'], project, data['timestamp'], session_type))
+        
+        # IMPORTANT: Also log SESSION_START event in logs table for tracking
+        c.execute("""
+            INSERT INTO logs (timestamp, event, user, session_id, details)
+            VALUES (?, 'SESSION_START', ?, ?, ?)
+        """, (data['timestamp'], data['user'], data['session_id'], f"Scanner session started"))
+        
+        conn.commit()
+        logging.info(f"Session started for {data['user']}: {data['session_id']}")
+        return jsonify({'success': True, 'session_id': data['session_id']})
+        
+    except Exception as e:
+        logging.error(f"Error starting session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/end', methods=['POST'])
+def end_session():
+    """End an active session"""
+    data = request.get_json(force=True)
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    try:
+        # Get session start time
+        c.execute("""
+            SELECT start_time FROM sessions 
+            WHERE session_id = ? AND status = 'active'
+        """, (data['session_id'],))
+        
+        session = c.fetchone()
+        if session:
+            work_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
+            
+            c.execute("""
+                UPDATE sessions 
+                SET status = 'completed', 
+                    end_time = ?,
+                    work_duration_minutes = ?
+                WHERE session_id = ? AND status = 'active'
+            """, (data['timestamp'], work_minutes, data['session_id']))
+            
+            conn.commit()
+            logging.info(f"Session ended: {data['session_id']}")
+            
+            # Trigger efficiency update when session ends
+            try:
+                trigger_efficiency_update_on_session_end()
+            except Exception as e:
+                logging.warning(f"Failed to update efficiency on session end: {e}")
+            
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        
+    except Exception as e:
+        logging.error(f"Error ending session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/xlsx_updated', methods=['POST'])
+def xlsx_updated():
+    """Handle XLSX update event - start session for secondary user and change status to BEZIG"""
+    data = request.get_json(force=True)
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    try:
+        # Check if session already exists for this user/project
+        c.execute("""
+            SELECT session_id FROM sessions 
+            WHERE user = ? AND project = ? AND status = 'active'
+        """, (data['user'], data['project']))
+        
+        existing = c.fetchone()
+        if not existing:
+            # Create new ACTIVE session (work is starting now)
+            session_id = f"{data['user']}_{data['project']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            
+            c.execute("""
+                INSERT INTO sessions (session_id, user, project, start_time, status, item_count, session_type)
+                VALUES (?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED')
+            """, (session_id, data['user'], data['project'], data['timestamp']))
+            
+            # Also update project_sessions
+            c.execute("""
+                INSERT OR IGNORE INTO project_sessions (project, start_time, status)
+                VALUES (?, ?, 'active')
+            """, (data['project'], data['timestamp']))
+            
+            # Update project status from OPEN to BEZIG in project_log table (most recent entry)
+            c.execute("""
+                UPDATE project_log 
+                SET event = 'BEZIG', timestamp = ?, user = ?
+                WHERE id = (
+                    SELECT id FROM project_log 
+                    WHERE project = ? AND event = 'OPEN'
+                    ORDER BY id DESC LIMIT 1
+                )
+            """, (data['timestamp'], data['user'], data['project']))
+            
+            # Insert BEZIG event in project_log for tracking
+            c.execute("""
+                INSERT INTO project_log (project, event, user, timestamp, item_count)
+                VALUES (?, 'BEZIG', ?, ?, ?)
+            """, (data['project'], data['user'], data['timestamp'], data.get('item_count', 0)))
+            
+            # Update the corresponding OPEN log to BEZIG status (like PROJECT_START does)
+            c.execute("""
+                UPDATE logs 
+                SET status = 'BEZIG'
+                WHERE event = 'OPEN' AND status = 'OPEN' AND project = ? AND user = ?
+            """, (data['project'], data['user']))
+            
+            if c.rowcount > 0:
+                logging.info(f"Updated {c.rowcount} 'OPEN' log(s) to 'BEZIG' for user '{data['user']}' on project '{data['project']}'.")
+            
+            # ALSO insert PROJECT_START event into logs table so logs_project page can see the activity
+            c.execute("""
+                INSERT INTO logs (timestamp, event, details, project, user, status, session_id)
+                VALUES (?, 'PROJECT_START', ?, ?, ?, 'BEZIG', ?)
+            """, (data['timestamp'], f"XLSX_UPDATED: {data.get('item_count', 0)} items", 
+                  data['project'], data['user'], session_id))
+            
+            conn.commit()
+            logging.info(f"XLSX_UPDATED session started for {data['user']} on project {data['project']} - Status changed to BEZIG")
+            
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logging.error(f"Error handling XLSX update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/manual_start', methods=['POST'])
+def start_manual_session():
+    """Start a manual session for projects without XLSX processing"""
+    try:
+        data = request.get_json()
+        required_fields = ['user', 'project', 'timestamp']
+        
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Generate session ID
+        session_id = f"{data['user']}_{data['project']}_{data['timestamp'].replace(':', '').replace('-', '').replace(' ', '_')}"
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Check if there's already an active session for this user/project
+        c.execute("""
+            SELECT session_id FROM sessions 
+            WHERE user = ? AND project = ? AND status = 'active'
+        """, (data['user'], data['project']))
+        
+        existing_session = c.fetchone()
+        if existing_session:
+            return jsonify({'success': False, 'error': 'Session already active for this project'}), 400
+        
+        # Create new manual session
+        c.execute("""
+            INSERT INTO sessions (session_id, user, project, start_time, status, item_count, session_type)
+            VALUES (?, ?, ?, ?, 'active', 0, 'MANUAL')
+        """, (session_id, data['user'], data['project'], data['timestamp']))
+        
+        # Update project status from OPEN to BEZIG in project_log table (most recent entry)
+        c.execute("""
+            UPDATE project_log 
+            SET event = 'BEZIG', timestamp = ?, user = ?
+            WHERE id = (
+                SELECT id FROM project_log 
+                WHERE project = ? AND event = 'OPEN'
+                ORDER BY id DESC LIMIT 1
+            )
+        """, (data['timestamp'], data['user'], data['project']))
+        
+        conn.commit()
+        conn.close()
+        
+        logging.info(f"Manual session started for {data['user']} on project {data['project']} - Status changed to BEZIG")
+        
+        return jsonify({'success': True, 'session_id': session_id})
+        
+    except Exception as e:
+        logging.error(f"Error starting manual session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/manual_finish', methods=['POST'])
+def finish_manual_session():
+    """Finish a manual session with final item count"""
+    try:
+        data = request.get_json()
+        required_fields = ['user', 'project', 'item_count', 'timestamp']
+        
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Find active manual session
+        c.execute("""
+            SELECT session_id, start_time FROM sessions 
+            WHERE user = ? AND project = ? AND status = 'active' AND session_type = 'MANUAL'
+        """, (data['user'], data['project']))
+        
+        session = c.fetchone()
+        if not session:
+            return jsonify({'success': False, 'error': 'No active manual session found'}), 400
+        
+        # Calculate work duration
+        work_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
+        
+        # Update session with final data
+        c.execute("""
+            UPDATE sessions 
+            SET status = 'completed',
+                end_time = ?,
+                work_duration_minutes = ?,
+                item_count = ?
+            WHERE session_id = ?
+        """, (data['timestamp'], work_minutes, data['item_count'], session['session_id']))
+        
+        conn.commit()
+        conn.close()
+        
+        logging.info(f"Manual session finished for {data['user']} on project {data['project']} with {data['item_count']} items")
+        
+        return jsonify({'success': True, 'work_minutes': work_minutes})
+        
+    except Exception as e:
+        logging.error(f"Error finishing manual session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/log', methods=['POST', 'GET'])
 def log_event():
     data = request.get_json(force=True) if request.method == 'POST' else request.args
@@ -479,7 +1035,8 @@ def log_event():
     is_rep_variant = 1 if data.get('is_rep_variant', False) else 0
     file_path = data.get('file_path', '') # Default to empty string if not provided
     item_count = data.get('item_count', None)  # New field
-    timestamp = datetime.now().isoformat()
+    session_id = data.get('session_id')
+    timestamp = data.get('timestamp', datetime.now().isoformat())
     status = ''
 
     try:
@@ -496,6 +1053,15 @@ def log_event():
                 event_details=details,
                 timestamp=timestamp
             )
+        elif event == 'PROJECT_START':
+            status = 'BEZIG'
+            # Update the corresponding OPEN log to BEZIG status
+            c.execute(
+                'UPDATE logs SET status = ? WHERE event = ? AND status = ? AND lower(project) = ? AND user = ?',
+                ('BEZIG', 'OPEN', 'OPEN', project.lower(), user)
+            )
+            if c.rowcount > 0:
+                logging.info(f"Updated {c.rowcount} 'OPEN' log(s) to 'BEZIG' for user '{user}' on project '{project}'.")
         elif event == 'AFGEMELD':
             status = 'AFGEMELD'
             # Find the corresponding 'OPEN' log and update its status to 'CLOSED'
@@ -505,16 +1071,144 @@ def log_event():
             )
             if c.rowcount > 0:
                 logging.info(f"Closed {c.rowcount} 'OPEN' log(s) for user '{user}' on project '{project}'.")
+            
+            # Handle session completion for AFGEMELD events
+            # SCANNER sessions (batch) should remain active until manually stopped
+            # XLSX_UPDATED/MANUAL sessions should complete on AFGEMELD
+            
+            # Find active sessions for this user/project
+            c.execute("""
+                SELECT session_id, start_time, session_type FROM sessions 
+                WHERE user = ? AND project = ? AND status = 'active'
+            """, (user, project))
+            
+            active_sessions = c.fetchall()
+            for session in active_sessions:
+                session_type = session['session_type']
+                
+                if session_type in ['XLSX_UPDATED', 'MANUAL']:
+                    # Complete individual work sessions on AFGEMELD
+                    work_minutes = calculate_work_minutes(session['start_time'], timestamp)
+                    
+                    c.execute("""
+                        UPDATE sessions 
+                        SET status = 'completed',
+                            end_time = ?,
+                            work_duration_minutes = ?,
+                            item_count = ?
+                        WHERE session_id = ? AND status = 'active'
+                    """, (timestamp, work_minutes, item_count or 0, session['session_id']))
+                    
+                    logging.info(f"Completed {session_type} session {session['session_id']} for {user} on project {project}")
+                
+                elif session_type == 'SCANNER':
+                    # SCANNER sessions remain active - do not complete
+                    logging.info(f"SCANNER session {session['session_id']} remains active for {user} during AFGEMELD on {project}")
+                
+                else:
+                    # Other session types - complete them
+                    work_minutes = calculate_work_minutes(session['start_time'], timestamp)
+                    
+                    c.execute("""
+                        UPDATE sessions 
+                        SET status = 'completed',
+                            end_time = ?,
+                            work_duration_minutes = ?
+                        WHERE session_id = ? AND status = 'active'
+                    """, (timestamp, work_minutes, session['session_id']))
+                    
+                    logging.info(f"Completed {session_type} session {session['session_id']} for {user} on project {project}")
+            
+            # Check if all users have completed for this project
+            c.execute("""
+                SELECT COUNT(*) as active_count 
+                FROM sessions 
+                WHERE project = ? AND status = 'active'
+            """, (project,))
+            
+            result = c.fetchone()
+            active_count = result['active_count'] if result else 0
+            
+            if active_count == 0:
+                # All users done - complete project session
+                c.execute("""
+                    UPDATE project_sessions 
+                    SET status = 'completed',
+                        end_time = ?,
+                        total_duration_minutes = (julianday(?) - julianday(start_time)) * 24 * 60
+                    WHERE project = ? AND status = 'active'
+                """, (timestamp, timestamp, project))
+                
+                # Calculate individual user durations
+                c.execute("""
+                    UPDATE project_sessions 
+                    SET nesting_duration_minutes = (
+                        SELECT SUM(work_duration_minutes) 
+                        FROM sessions 
+                        WHERE project = ? AND user = 'NESTING'
+                    ),
+                    opus_duration_minutes = (
+                        SELECT SUM(work_duration_minutes) 
+                        FROM sessions 
+                        WHERE project = ? AND user = 'OPUS'
+                    ),
+                    gannomat_duration_minutes = (
+                        SELECT SUM(work_duration_minutes) 
+                        FROM sessions 
+                        WHERE project = ? AND user = 'KL GANNOMAT'
+                    ),
+                    total_items = (
+                        SELECT SUM(item_count) 
+                        FROM sessions 
+                        WHERE project = ?
+                    )
+                    WHERE project = ?
+                """, (project, project, project, project, project))
 
         c.execute(
-            'INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count)
+            'INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, session_id)
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Log entry created.'}), 201
     except sqlite3.Error as e:
         logging.error(f"Database error on /log: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
+
+@app.route('/api/project/<project>/sessions', methods=['GET'])
+def get_project_sessions(project):
+    """Get all sessions for a specific project"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT 
+                session_id,
+                user,
+                project,
+                start_time,
+                end_time,
+                status,
+                item_count,
+                work_duration_minutes
+            FROM sessions
+            WHERE project = ?
+            ORDER BY start_time ASC
+        """, (project,))
+        
+        sessions = []
+        for row in c.fetchall():
+            sessions.append(dict(row))
+        
+        return jsonify({
+            'success': True,
+            'sessions': sessions
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting project sessions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/update_file_path', methods=['POST'])
 def update_file_path():
@@ -563,7 +1257,7 @@ def update_file_path():
 
 @app.route('/update_item_count', methods=['POST'])
 def update_item_count():
-    """Update the item_count for an existing OPEN event."""
+    """Update the item_count for an existing OPEN event (logs only, NOT sessions)."""
     data = request.get_json(force=True)
     logging.info(f"[db_log_api] /update_item_count called with data: {data}")
 
@@ -578,7 +1272,8 @@ def update_item_count():
         conn = get_db()
         c = conn.cursor()
         
-        # Update the most recent OPEN event for this user/project combination
+        # Update the most recent OPEN event for this user/project combination (LOGS TABLE ONLY)
+        # DO NOT update sessions.item_count here - that should only happen on session end
         c.execute('''
             UPDATE logs 
             SET item_count = ? 
@@ -702,10 +1397,21 @@ def clear_all_logs():
     try:
         conn = get_db()
         c = conn.cursor()
-        c.execute('DELETE FROM logs')
+        
+        # Clear all project and session data for complete reset
+        tables_to_clear = ['logs', 'sessions', 'project_sessions']
+        
+        for table in tables_to_clear:
+            try:
+                c.execute(f'DELETE FROM {table}')
+                logging.info(f"Cleared table: {table}")
+            except sqlite3.Error as table_error:
+                logging.warning(f"Could not clear table {table}: {table_error}")
+                # Continue with other tables even if one fails
+        
         conn.commit()
-        logging.info(f"DELETE FROM logs statement executed successfully.")
-        return jsonify({'success': True, 'message': 'All logs cleared successfully.'}), 200
+        logging.info("All database tables cleared successfully.")
+        return jsonify({'success': True, 'message': 'All logs and statistics data cleared successfully.'}), 200
     except sqlite3.Error as e:
         logging.error(f"Database error on /clear_logs: {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Database operation failed to clear logs.'}), 500
@@ -720,6 +1426,8 @@ def favicon():
         return '', 204  # No content
 
 # --- HTML Serving Endpoints ---
+# Update the dashboard route in db_log_api.py to calculate metrics server-side
+
 @app.route('/')
 @app.route('/dashboard')
 def dashboard():
@@ -754,11 +1462,11 @@ def dashboard():
         conn = get_db()
         c = conn.cursor()
         
-        # Query all OPEN projects (regardless of date) and today's AFGEMELD projects
+        # Query all OPEN/BEZIG projects (regardless of date) and today's AFGEMELD projects
         c.execute("""
             SELECT * FROM logs 
             WHERE 
-                (status = 'OPEN' AND event = 'OPEN')  -- All open projects regardless of date
+                ((status = 'OPEN' OR status = 'BEZIG') AND event = 'OPEN')  -- All open/active projects regardless of date
                 OR (DATE(timestamp) = ? AND event = 'AFGEMELD')  -- Today's completed projects
             ORDER BY timestamp DESC
         """, (today.isoformat(),))
@@ -821,408 +1529,65 @@ def dashboard():
                 formatted_users_projects[user] = []
                 logging.info(f"Adding empty project list for dashboard user: {user}")
         
-        # Debug logging
-        logging.info(f"Dashboard users: {dashboard_users}")
-        logging.info(f"Users in formatted_users_projects: {list(formatted_users_projects.keys())}")
-        for user in dashboard_users:
-            project_count = len(formatted_users_projects.get(user, []))
-            logging.info(f"User {user}: {project_count} projects")
-        
-        # Get all logs for the recent projects list and JavaScript processing
-        seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
-        c.execute("""
-            SELECT * FROM logs 
-            WHERE timestamp >= ? 
-            ORDER BY timestamp DESC
-        """, (seven_days_ago,))
-        
-        recent_logs = c.fetchall()
-        
-        # Also include ALL logs for JavaScript to process properly
-        # This ensures the client-side has all the data it needs
-        c.execute("""
-            SELECT * FROM logs 
-            WHERE 
-                (status = 'OPEN' AND event = 'OPEN')  -- All open projects
-                OR (timestamp >= ?)  -- Or recent logs
-            ORDER BY timestamp DESC
-            LIMIT 1000
-        """, (seven_days_ago,))
-        
-        all_relevant_logs = c.fetchall()
-        
-        logs_list = []
-        for log in all_relevant_logs:
-            log_dict = dict(log)
-            logs_list.append({
-                'project': log_dict.get('project'),
-                'user': log_dict.get('user'),
-                'status': log_dict.get('status'),
-                'timestamp': log_dict.get('timestamp'),
-                'event': log_dict.get('event')
-            })
-        
-        # Calculate statistics
-        total_projects = len(set(log['project'] for log in logs_list if log['project']))
-        open_projects = len(set(log['project'] for log in logs_list if log['status'] == 'OPEN'))
-        completed_projects = len(set(log['project'] for log in logs_list if log['status'] in ['AFGEMELD', 'CLOSED']))
-        in_progress = total_projects - open_projects - completed_projects
-        
-        return render_template('dashboard.html', 
-                             users_projects=formatted_users_projects,
-                             configured_users=dashboard_users,  # Changed from configured_users
-                             logs=logs_list,
-                             total_projects=total_projects,
-                             open_projects=open_projects,
-                             in_progress=in_progress,
-                             completed_projects=completed_projects,
-                             active_page='dashboard')
-                             
-    except Exception as e:
-        logging.error(f"Dashboard error: {str(e)}", exc_info=True)
-        return render_template('error.html', message=str(e)), 500
-
-@app.route('/logs_project')
-def logs_project():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    project = request.args.get('project', '')
-    if not project:
-        return render_template('error.html', message='Project parameter is missing.'), 400
-
-    logging.info(f"logs_project endpoint called for project: '{project}'")
-    try:
-        conn = get_db()
-        c = conn.cursor()
-
-        c.execute('SELECT * FROM logs WHERE lower(project) = ? ORDER BY id DESC', (project.lower(),))
-        log_entries = [dict(row) for row in c.fetchall()]
-
-        c.execute('''
-            SELECT user, status, MAX(timestamp) as last_updated
-            FROM logs WHERE lower(project) = ? AND user != '' GROUP BY user
-        ''', (project.lower(),))
-        user_status_rows = c.fetchall()
-
-        order = {'NESTING': 0, 'OPUS': 1, 'GANNOMAT': 2}
-        def user_sort_key(row):
-            user = dict(row).get('user', '')
-            return order.get(user, 99), user
-        
-        sorted_user_status = sorted(user_status_rows, key=user_sort_key)
-
-        user_status_html = '<table class="table"><thead><tr><th>User</th><th>Status</th><th>Last Updated</th></tr></thead><tbody>'
-        for row_data in sorted_user_status:
-            row = dict(row_data)
-            status = row.get('status', '')
-            status_class = f"status-{status.lower()}" if status else ""
-            last_updated_str = row.get('last_updated', '')
-            try:
-                dt = datetime.fromisoformat(last_updated_str)
-                last_updated_fmt = dt.strftime('%d-%m %H:%M')
-            except (ValueError, TypeError):
-                last_updated_fmt = last_updated_str or ''
-            user_status_html += f'<tr><td>{row.get("user", "")}</td><td class="{status_class}">{status}</td><td>{last_updated_fmt}</td></tr>'
-        user_status_html += '</tbody></table>'
-
-        # Fetch all unique project codes for the search datalist
-        c.execute("SELECT DISTINCT project FROM logs WHERE project IS NOT NULL AND project != '' ORDER BY project")
-        all_projects = [row['project'] for row in c.fetchall()]
-
-        # Get unique users for filter
-        users = list(set([log['user'] for log in log_entries if log.get('user')]))
-
-        return render_template('logs_project.html', 
-                               project=project, 
-                               log_entries=log_entries, 
-                               configured_users=configured_users,
-                               user_status_html=user_status_html,
-                               all_projects=all_projects,
-                               users=users,
-                               active_page='projects')
-
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}", exc_info=True)
-        return render_template('error.html', message='An error occurred while loading the project.'), 500
-
-@app.route('/projects', methods=['GET'])
-def projects():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    logging.info('projects endpoint was called')
-    try:
-        conn = get_db()
-        c = conn.cursor()
+        # --- SERVER-SIDE METRICS CALCULATION ---
+        # Calculate metrics using the same logic as projects.html
         
         # Get all unique projects
         c.execute("""
             SELECT DISTINCT project
             FROM logs
             WHERE project IS NOT NULL AND project != ''
-            ORDER BY project
         """)
-        
         all_projects = [row['project'] for row in c.fetchall()]
         
-        projects = []
         total_projects = 0
-        open_projects = 0
-        completed_projects = 0
-        in_progress = 0
+        active_projects = 0
+        completed_today = 0
         
         for project_code in all_projects:
             # Determine the project status using the helper function
-            project_status, current_user = determine_project_status(project_code, conn)
-            
-            # Get the latest timestamp for this project
-            c.execute("""
-                SELECT MAX(timestamp) as latest_timestamp
-                FROM logs
-                WHERE project = ?
-            """, (project_code,))
-            
-            latest_timestamp = c.fetchone()['latest_timestamp']
-            
-            # Get event count
-            c.execute("""
-                SELECT COUNT(*) as event_count
-                FROM logs
-                WHERE project = ?
-            """, (project_code,))
-            
-            event_count = c.fetchone()['event_count']
-            
-            # Format timestamp
             try:
-                dt = datetime.fromisoformat(latest_timestamp)
-                formatted_timestamp = dt.strftime('%d-%m-%Y %H:%M')
-            except (ValueError, TypeError):
-                formatted_timestamp = latest_timestamp
+                result = determine_project_status(project_code, conn)
+                if len(result) != 2:
+                    logging.error(f"determine_project_status returned {len(result)} values for project {project_code}: {result}")
+                    continue
+                project_status, current_user = result
+            except ValueError as e:
+                logging.error(f"Error unpacking result for project {project_code}: {e}")
+                continue
             
-            # Create project entry
-            project_dict = {
-                'code': project_code,
-                'user': current_user or 'Onbekend',
-                'status': project_status,
-                'timestamp': formatted_timestamp,
-                'event_count': event_count
-            }
-            
-            # Count statuses
             total_projects += 1
-            if project_status == 'OPEN':
-                open_projects += 1
-            elif project_status == 'AFGEROND':
-                completed_projects += 1
-            else:
-                in_progress += 1
             
-            projects.append(project_dict)
+            if project_status in ['OPEN', 'BEZIG']:
+                active_projects += 1
+            elif project_status in ['AFGEMELD', 'AFGEROND']:
+                # Check if completed today
+                c.execute("""
+                    SELECT MAX(timestamp) as latest_timestamp
+                    FROM logs
+                    WHERE project = ? AND event = 'AFGEMELD'
+                """, (project_code,))
+                
+                result = c.fetchone()
+                if result and result['latest_timestamp']:
+                    try:
+                        dt = datetime.fromisoformat(result['latest_timestamp'])
+                        if dt.date() == today:
+                            completed_today += 1
+                    except:
+                        pass
         
-        # Sort projects by timestamp (most recent first)
-        projects.sort(key=lambda x: x['timestamp'], reverse=True)
-        
-        return render_template('projects.html', 
-                             projects=projects,
-                             configured_users=configured_users,
-                             total_projects=total_projects,
-                             open_projects=open_projects,
-                             completed_projects=completed_projects,
-                             in_progress=in_progress,
-                             active_page='projects')
-    
-    except Exception as e:
-        logging.error(f"Failed to render projects page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not retrieve projects from the database.'), 500
-
-@app.route('/users', methods=['GET'])
-def users():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    logging.info('users endpoint was called')
-    try:
-        # Get real user data from database
-        user_stats = []
-        total_active = 0
-        total_completed = 0
-        efficiency_scores = []
-        processing_times = []
-        
-        for user in configured_users:
-            active = count_active_projects(user)
-            completed = count_completed_today(user)
-            avg_time = calculate_avg_time(user)
-            efficiency = calculate_efficiency(user)
-            activity_data = get_user_activity_last_7_days(user)
-            
-            stats = {
-                'name': user,
-                'role': 'Operator',
-                'initials': ''.join([part[0] for part in user.split()]),
-                'active_projects': active,
-                'completed_today': completed,
-                'avg_time': avg_time,
-                'efficiency': efficiency,
-                'activity_data': activity_data
-            }
-            user_stats.append(stats)
-            
-            # Accumulate totals
-            total_active += active
-            total_completed += completed
-            efficiency_scores.append(efficiency)
-            if avg_time != "--":
-                try:
-                    hours = float(avg_time.replace('h', ''))
-                    processing_times.append(hours)
-                except:
-                    pass
-        
-        # Calculate averages
-        avg_performance = sum(efficiency_scores) / len(efficiency_scores) if efficiency_scores else 85
-        avg_process_time = sum(processing_times) / len(processing_times) if processing_times else 2.5
-        
-        return render_template('users.html',
-                             users=user_stats,
-                             total_users=len(configured_users),
-                             active_users=len([u for u in user_stats if u['active_projects'] > 0]),
-                             avg_performance=f"{int(avg_performance)}%",
-                             avg_process_time=f"{avg_process_time:.1f}h",
-                             active_page='users')
-    
-    except Exception as e:
-        logging.error(f"Failed to render users page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not retrieve users from the database.'), 500
-
-@app.route('/reports', methods=['GET'])
-def reports():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    logging.info('reports endpoint was called')
-    try:
-        return render_template('reports.html', 
-                             configured_users=configured_users,
-                             active_page='reports')
-    
-    except Exception as e:
-        logging.error(f"Failed to render reports page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not load reports page.'), 500
-
-@app.route('/statistics')
-def statistics():
-    """Statistics page view"""
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    try:
-        # Calculate statistics
-        conn = get_db()
-        c = conn.cursor()
-        
-        # Total projects
-        c.execute("SELECT COUNT(DISTINCT project) FROM logs WHERE project IS NOT NULL AND project != ''")
-        total_projects = c.fetchone()[0]
-        
-        # Open projects
-        c.execute("SELECT COUNT(DISTINCT project) FROM logs WHERE status = 'OPEN'")
-        open_projects = c.fetchone()[0]
-        
-        # Completed projects
-        c.execute("SELECT COUNT(DISTINCT project) FROM logs WHERE status IN ('AFGEMELD', 'CLOSED')")
-        completed_projects = c.fetchone()[0]
-        
-        return render_template('statistics.html',
-                             configured_users=configured_users,
-                             total_projects=total_projects,
-                             open_projects=open_projects,
-                             completed_projects=completed_projects,
-                             active_page='statistics')
-    except Exception as e:
-        logging.error(f"Failed to render statistics page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not load statistics page.'), 500
-
-@app.route('/database', methods=['GET'])
-def database():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
-    
-    logging.info('database management page was called')
-    try:
-        # Get today's date
-        today = datetime.now().date()
-        
-        conn = get_db()
-        c = conn.cursor()
-        
-        # Query all OPEN projects (regardless of date) and today's AFGEMELD projects
+        # Calculate daily repairs using is_rep_variant logic
         c.execute("""
-            SELECT * FROM logs 
-            WHERE 
-                (status = 'OPEN' AND event = 'OPEN')  -- All open projects regardless of date
-                OR (DATE(timestamp) = ? AND event = 'AFGEMELD')  -- Today's completed projects
-            ORDER BY timestamp DESC
+            SELECT COUNT(DISTINCT project) as repair_count
+            FROM logs
+            WHERE is_rep_variant = 1 
+            AND event = 'AFGEMELD'
+            AND DATE(timestamp) = ?
         """, (today.isoformat(),))
         
-        logs_for_display = c.fetchall()
-        
-        # Group by user, keeping track of all projects
-        users_projects = {}
-        
-        for log in logs_for_display:
-            log_dict = dict(log)
-            user = log_dict.get('user')
-            project = log_dict.get('project')
-            
-            if user and project:
-                if user not in users_projects:
-                    users_projects[user] = {}
-                
-                # Format timestamp properly
-                timestamp_str = log_dict.get('timestamp', '')
-                try:
-                    dt = datetime.fromisoformat(timestamp_str)
-                    # Show date if not today
-                    if dt.date() != today:
-                        formatted_time = dt.strftime('%d-%m %H:%M')
-                    else:
-                        formatted_time = dt.strftime('%H:%M')
-                except:
-                    formatted_time = '--'
-                
-                # Add or update project info - use the latest status for each project
-                if project not in users_projects[user] or log_dict.get('event') == 'AFGEMELD':
-                    users_projects[user][project] = {
-                        'project_code': project,
-                        'status': log_dict.get('status', ''),
-                        'timestamp': formatted_time,
-                        'user': user,
-                        'raw_timestamp': timestamp_str  # Keep raw timestamp for sorting
-                    }
-        
-        # Convert to format expected by template
-        formatted_users_projects = {}
-        for user, projects in users_projects.items():
-            formatted_users_projects[user] = list(projects.values())
-            # Sort by status (OPEN first) then by timestamp (newest first)
-            formatted_users_projects[user].sort(
-                key=lambda x: (
-                    0 if x['status'] == 'OPEN' else 1,  # OPEN projects first
-                    x['raw_timestamp']  # Then by timestamp
-                ),
-                reverse=True
-            )
-            # Remove raw_timestamp from final output
-            for project in formatted_users_projects[user]:
-                project.pop('raw_timestamp', None)
-        
-        # Make sure all expected users are present (even if no activity)
-        for user in configured_users:
-            if user not in formatted_users_projects:
-                formatted_users_projects[user] = []
+        repair_result = c.fetchone()
+        repairs_today = repair_result['repair_count'] if repair_result else 0
         
         # Get all logs for the recent projects list and JavaScript processing
         seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
@@ -1258,20 +1623,26 @@ def database():
                 'event': log_dict.get('event')
             })
         
-        return render_template('database.html', 
+        return render_template('dashboard.html', 
                              users_projects=formatted_users_projects,
+                             configured_users=dashboard_users,
                              logs=logs_list,
-                             configured_users=configured_users,
-                             active_page='database')
+                             total_projects=total_projects,
+                             active_projects=active_projects,
+                             completed_today=completed_today,
+                             repairs_today=repairs_today,
+                             active_page='dashboard')
+                             
     except Exception as e:
-        logging.error(f"Failed to render database page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not load database management page.'), 500
+        logging.error(f"Dashboard error: {str(e)}", exc_info=True)
+        return render_template('error.html', message=str(e)), 500
+        
 
 # --- API Endpoints ---
 @app.route('/api/configured_users')
 def get_configured_users():
     config = get_config()
-    users = config.get('scanner_panel_open_event_users', ['NESTING', 'OPUS', 'KL GANNOMAT'])
+    users = config.get('scanner_panel_open_event_users', [])
     return jsonify({
         'success': True,
         'users': users
@@ -1556,20 +1927,6 @@ def sync_dashboard_users():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # --- Dashboard Settings Page Route ---
-@app.route('/dashboard-settings')
-def dashboard_settings():
-    """Dashboard settings page"""
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
-    
-    try:
-        return render_template('dashboard_settings.html',
-                             configured_users=configured_users,
-                             active_page='settings')
-    except Exception as e:
-        logging.error(f"Failed to render dashboard settings page: {e}", exc_info=True)
-        return render_template('error.html', message='Could not load dashboard settings page.'), 500
-
 # Backup configuration
 @app.route('/api/backup/config', methods=['POST'])
 def save_backup_config():
@@ -1594,28 +1951,24 @@ def get_project_completion_times():
         conn = get_db()
         c = conn.cursor()
         
-        # Get completion times with moving averages
+        # Get session-based completion times (actual work time)
         query = """
             WITH ProjectCompletions AS (
                 SELECT 
-                    o.user,
-                    o.project,
-                    o.timestamp as start_time,
-                    a.timestamp as end_time,
-                    o.base_mo_code,
-                    o.is_rep_variant,
-                    (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 as completion_minutes,
-                    DATE(o.timestamp) as project_date
-                FROM logs o
-                INNER JOIN logs a ON 
-                    o.project = a.project 
-                    AND o.user = a.user 
-                    AND a.event = 'AFGEMELD' 
-                    AND a.timestamp > o.timestamp
+                    s.user,
+                    s.project,
+                    s.start_time,
+                    s.end_time,
+                    s.work_duration_minutes as completion_minutes,
+                    DATE(s.start_time) as project_date,
+                    s.session_type,
+                    s.item_count
+                FROM sessions s
                 WHERE 
-                    o.event = 'OPEN' 
-                    AND o.user IS NOT NULL 
-                    AND o.user != ''
+                    s.status = 'completed'
+                    AND s.user IS NOT NULL 
+                    AND s.user != ''
+                    AND s.work_duration_minutes > 0
             ),
             UserStats AS (
                 SELECT 
@@ -1672,12 +2025,20 @@ def get_project_completion_times():
             LEFT JOIN RecentTrends r ON u.user = r.user
             ORDER BY 
                 CASE u.user 
-                    WHEN 'NESTING' THEN 1 
-                    WHEN 'OPUS' THEN 2 
-                    WHEN 'KL GANNOMAT' THEN 3 
-                    ELSE 4 
+                    {dynamic_order_cases}
+                    ELSE 999 
                 END
         """
+        
+        # Build dynamic ORDER BY cases based on configured users
+        config = get_config()
+        configured_users = config.get('scanner_panel_open_event_users', [])
+        dynamic_order_cases = ""
+        for i, user in enumerate(configured_users, 1):
+            dynamic_order_cases += f"WHEN '{user}' THEN {i} "
+        
+        # Replace placeholder in query
+        query = query.format(dynamic_order_cases=dynamic_order_cases)
         
         c.execute(query)
         user_metrics = []
@@ -1744,24 +2105,19 @@ def get_user_project_history(user):
         
         query = """
             SELECT 
-                o.project,
-                o.base_mo_code,
-                o.is_rep_variant,
-                o.timestamp as start_time,
-                a.timestamp as end_time,
-                (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 as completion_minutes,
-                DATE(o.timestamp) as project_date
-            FROM logs o
-            LEFT JOIN logs a ON 
-                o.project = a.project 
-                AND o.user = a.user 
-                AND a.event = 'AFGEMELD' 
-                AND a.timestamp > o.timestamp
+                s.project,
+                s.start_time,
+                s.end_time,
+                s.work_duration_minutes as completion_minutes,
+                DATE(s.start_time) as project_date,
+                s.session_type,
+                s.item_count,
+                s.status
+            FROM sessions s
             WHERE 
-                o.event = 'OPEN' 
-                AND o.user = ?
-                AND DATE(o.timestamp) >= date('now', '-' || ? || ' days')
-            ORDER BY o.timestamp DESC
+                s.user = ?
+                AND DATE(s.start_time) >= date('now', '-' || ? || ' days')
+            ORDER BY s.start_time DESC
         """
         
         c.execute(query, (user, days))
@@ -1831,33 +2187,23 @@ def get_expected_completion_time(project):
         user = project_data['user']
         is_rep = project_data['is_rep_variant']
         
-        # Get historical average for this user and project type
+        # Get historical average from sessions (actual work time)
         history_query = """
             SELECT 
-                AVG(completion_minutes) as avg_completion,
+                AVG(work_duration_minutes) as avg_completion,
                 COUNT(*) as sample_size,
-                MIN(completion_minutes) as best_time,
-                MAX(completion_minutes) as worst_time
-            FROM (
-                SELECT 
-                    (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 as completion_minutes
-                FROM logs o
-                INNER JOIN logs a ON 
-                    o.project = a.project 
-                    AND o.user = a.user 
-                    AND a.event = 'AFGEMELD' 
-                    AND a.timestamp > o.timestamp
-                WHERE 
-                    o.event = 'OPEN' 
-                    AND o.user = ?
-                    AND o.is_rep_variant = ?
-                    AND (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 > 0
-                ORDER BY o.timestamp DESC
-                LIMIT 20  -- Use last 20 similar projects
-            )
+                MIN(work_duration_minutes) as best_time,
+                MAX(work_duration_minutes) as worst_time
+            FROM sessions s
+            WHERE 
+                s.user = ?
+                AND s.status = 'completed'
+                AND s.work_duration_minutes > 0
+            ORDER BY s.start_time DESC
+            LIMIT 20  -- Use last 20 sessions
         """
         
-        c.execute(history_query, (user, is_rep))
+        c.execute(history_query, (user,))
         history = c.fetchone()
         
         if history and history['avg_completion']:
@@ -2082,27 +2428,24 @@ def get_performance_analysis():
         
         where_clause = " AND ".join(conditions)
         
-        # Get comprehensive performance metrics
+        # Get comprehensive performance metrics from sessions
+        session_where_clause = where_clause.replace('o.timestamp', 's.start_time').replace('o.user', 's.user')
         query = f"""
             WITH CompletionData AS (
                 SELECT 
-                    o.user,
-                    o.project,
-                    DATE(o.timestamp) as project_date,
-                    o.is_rep_variant,
-                    (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 as completion_minutes,
-                    strftime('%w', o.timestamp) as day_of_week,
-                    strftime('%H', o.timestamp) as hour_of_day
-                FROM logs o
-                INNER JOIN logs a ON 
-                    o.project = a.project 
-                    AND o.user = a.user 
-                    AND a.event = 'AFGEMELD' 
-                    AND a.timestamp > o.timestamp
+                    s.user,
+                    s.project,
+                    DATE(s.start_time) as project_date,
+                    s.session_type,
+                    s.work_duration_minutes as completion_minutes,
+                    strftime('%w', s.start_time) as day_of_week,
+                    strftime('%H', s.start_time) as hour_of_day,
+                    s.item_count
+                FROM sessions s
                 WHERE 
-                    o.event = 'OPEN' 
-                    AND {where_clause}
-                    AND (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 > 0
+                    s.status = 'completed'
+                    AND {session_where_clause}
+                    AND s.work_duration_minutes > 0
             )
             SELECT 
                 user,
@@ -2118,11 +2461,14 @@ def get_performance_analysis():
                         SQRT(AVG(completion_minutes * completion_minutes) - AVG(completion_minutes) * AVG(completion_minutes))
                     ELSE 0 
                 END as std_dev,
-                -- Project type breakdown
-                COUNT(CASE WHEN is_rep_variant = 1 THEN 1 END) as rep_count,
-                COUNT(CASE WHEN is_rep_variant = 0 THEN 1 END) as normal_count,
-                AVG(CASE WHEN is_rep_variant = 1 THEN completion_minutes END) as avg_rep_time,
-                AVG(CASE WHEN is_rep_variant = 0 THEN completion_minutes END) as avg_normal_time
+                -- Session type breakdown
+                COUNT(CASE WHEN session_type = 'SCANNER' THEN 1 END) as scanner_count,
+                COUNT(CASE WHEN session_type = 'XLSX_UPDATED' THEN 1 END) as xlsx_count,
+                COUNT(CASE WHEN session_type = 'MANUAL' THEN 1 END) as manual_count,
+                AVG(CASE WHEN session_type = 'SCANNER' THEN completion_minutes END) as avg_scanner_time,
+                AVG(CASE WHEN session_type = 'XLSX_UPDATED' THEN completion_minutes END) as avg_xlsx_time,
+                AVG(CASE WHEN session_type = 'MANUAL' THEN completion_minutes END) as avg_manual_time,
+                SUM(item_count) as total_items
             FROM CompletionData cd
             GROUP BY user
             ORDER BY user
@@ -2163,22 +2509,18 @@ def get_performance_analysis():
             
             performance_data.append(data)
         
-        # Get time-based patterns
+        # Get time-based patterns from sessions
         pattern_query = f"""
             WITH CompletionData AS (
                 SELECT 
-                    strftime('%w', o.timestamp) as day_of_week,
-                    strftime('%H', o.timestamp) as hour_of_day,
-                    (julianday(a.timestamp) - julianday(o.timestamp)) * 24 * 60 as completion_minutes
-                FROM logs o
-                INNER JOIN logs a ON 
-                    o.project = a.project 
-                    AND o.user = a.user 
-                    AND a.event = 'AFGEMELD' 
-                    AND a.timestamp > o.timestamp
+                    strftime('%w', s.start_time) as day_of_week,
+                    strftime('%H', s.start_time) as hour_of_day,
+                    s.work_duration_minutes as completion_minutes
+                FROM sessions s
                 WHERE 
-                    o.event = 'OPEN' 
-                    AND {where_clause}
+                    s.status = 'completed'
+                    AND {session_where_clause}
+                    AND s.work_duration_minutes > 0
             )
             SELECT 
                 day_of_week,
@@ -2215,6 +2557,7 @@ def get_performance_analysis():
 def run_api_server(host='0.0.0.0', port=5001):
     global _server_thread, _server
     init_db()  # Initialize database once when the server starts
+    initialize_efficiency_tracking()  # Initialize efficiency tracking system
     
     try:
         # Try to use waitress for production
@@ -2396,8 +2739,8 @@ def import_database():
         for row in csv_reader:
             # Insert record (adjust columns as needed)
             c.execute('''
-                INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, session_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 row.get('timestamp'),
                 row.get('event'),
@@ -2408,7 +2751,8 @@ def import_database():
                 row.get('base_mo_code'),
                 row.get('is_rep_variant', 0),
                 row.get('file_path'),
-                row.get('item_count')
+                row.get('item_count'),
+                row.get('session_id')
             ))
             imported_count += 1
         
@@ -2596,3 +2940,2344 @@ def optimize_database():
     except Exception as e:
         logging.error(f"Error optimizing database: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/logs_project')
+def logs_project():
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    project = request.args.get('project', '')
+    if not project:
+        return render_template('error.html', message='Project parameter is missing.'), 400
+
+    logging.info(f"logs_project endpoint called for project: '{project}'")
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('SELECT * FROM logs WHERE lower(project) = ? ORDER BY id DESC', (project.lower(),))
+        log_entries = [dict(row) for row in c.fetchall()]
+
+        c.execute('''
+            SELECT user, status, timestamp as last_updated
+            FROM logs l1
+            WHERE lower(project) = ? AND user != ''
+            AND timestamp = (
+                SELECT MAX(timestamp) 
+                FROM logs l2 
+                WHERE l2.user = l1.user AND lower(l2.project) = lower(l1.project)
+            )
+            GROUP BY user
+        ''', (project.lower(),))
+        user_status_rows = c.fetchall()
+
+        # Build dynamic order based on configured users
+        config = get_config()
+        configured_users = config.get('scanner_panel_open_event_users', [])
+        order = {user: i for i, user in enumerate(configured_users)}
+        
+        def user_sort_key(row):
+            user = dict(row).get('user', '')
+            return order.get(user, 99), user
+        
+        sorted_user_status = sorted(user_status_rows, key=user_sort_key)
+
+        user_status_html = '<table class="table"><thead><tr><th>User</th><th>Status</th><th>Last Updated</th></tr></thead><tbody>'
+        for row_data in sorted_user_status:
+            row = dict(row_data)
+            status = row.get('status', '')
+            status_class = f"status-{status.lower()}" if status else ""
+            last_updated_str = row.get('last_updated', '')
+            try:
+                dt = datetime.fromisoformat(last_updated_str)
+                last_updated_fmt = dt.strftime('%d-%m %H:%M')
+            except (ValueError, TypeError):
+                last_updated_fmt = last_updated_str or ''
+            user_status_html += f'<tr><td>{row.get("user", "")}</td><td class="{status_class}">{status}</td><td>{last_updated_fmt}</td></tr>'
+        user_status_html += '</tbody></table>'
+
+        # Fetch all unique project codes for the search datalist
+        c.execute("SELECT DISTINCT project FROM logs WHERE project IS NOT NULL AND project != '' ORDER BY project")
+        all_projects = [row['project'] for row in c.fetchall()]
+
+        # Get unique users for filter
+        users = list(set([log['user'] for log in log_entries if log.get('user')]))
+
+        # Get work hours configuration
+        work_hours_config = WORK_HOURS.copy()
+        
+        # Get sessions data for this project to provide accurate performance metrics
+        # Include both project-specific sessions AND batch sessions for users who worked on this project
+        c.execute('''
+            SELECT 
+                session_id,
+                user,
+                project,
+                start_time,
+                end_time,
+                status,
+                item_count,
+                work_duration_minutes,
+                session_type
+            FROM sessions 
+            WHERE (
+                lower(project) = ? 
+                OR (
+                    session_type = 'SCANNER' 
+                    AND (project IS NULL OR project = '') 
+                    AND user IN (
+                        SELECT DISTINCT user FROM logs 
+                        WHERE lower(project) = ? 
+                        AND user IS NOT NULL AND user != ''
+                    )
+                )
+            )
+            ORDER BY start_time ASC
+        ''', (project.lower(), project.lower()))
+        sessions_data = [dict(row) for row in c.fetchall()]
+        
+        return render_template('logs_project.html', 
+                               project=project, 
+                               log_entries=log_entries, 
+                               configured_users=configured_users,
+                               user_status_html=user_status_html,
+                               all_projects=all_projects,
+                               users=users,
+                               work_hours=work_hours_config,
+                               sessions_data=sessions_data,
+                               active_page='projects')
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}", exc_info=True)
+        return render_template('error.html', message='An error occurred while loading the project.'), 500
+
+def determine_project_status(project_code, conn):
+    """Determine the current status of a project based on user events.
+    Simple logic: OPEN event = OPEN status, BEZIG event = BEZIG status, AFGEMELD event = AFGEMELD status
+    
+    Args:
+        project_code (str): The project code to check
+        conn: Database connection
+        
+    Returns:
+        tuple: (status, current_user) where status is one of 'OPEN', 'BEZIG', 'AFGEMELD', or 'AFGEROND'
+    """
+    c = conn.cursor()
+    
+    # Get configured users from config
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    # Get all events for this project
+    c.execute("""
+        SELECT timestamp, event, user, status
+        FROM logs
+        WHERE project = ?
+        ORDER BY timestamp DESC
+    """, (project_code,))
+    
+    events = c.fetchall()
+    
+    if not events:
+        return ('ONBEKEND', None)
+    
+    # Get the most recent event
+    latest_event = events[0]
+    
+    # Track user events by type (most recent event per user per type)
+    user_open_events = {}
+    user_bezig_events = {}
+    user_afgemeld_events = {}
+    involved_users = set()
+    
+    for event in events:
+        user = event['user']
+        if not user:
+            continue
+            
+        involved_users.add(user)
+        
+        # Track most recent event of each type per user
+        if event['event'] == 'OPEN' and event['status'] == 'OPEN':
+            if user not in user_open_events:
+                user_open_events[user] = event
+        elif event['status'] == 'BEZIG':
+            if user not in user_bezig_events:
+                user_bezig_events[user] = event
+        elif event['event'] == 'AFGEMELD':
+            if user not in user_afgemeld_events:
+                user_afgemeld_events[user] = event
+    
+    # Get involved users in workflow order
+    active_workflow_order = [user for user in configured_users if user in involved_users]
+    
+    # Check if all involved users have completed (AFGEMELD)
+    all_completed = all(user in user_afgemeld_events for user in active_workflow_order)
+    if all_completed and active_workflow_order:
+        return ('AFGEROND', None)
+    
+    # Priority: BEZIG > OPEN > AFGEMELD
+    # Check for any user with BEZIG status
+    for user in active_workflow_order:
+        if user in user_bezig_events:
+            return ('BEZIG', user)
+    
+    # Check for any user with OPEN status  
+    for user in active_workflow_order:
+        if user in user_open_events:
+            return ('OPEN', user)
+    
+    # If latest event is AFGEMELD, return that
+    if latest_event['event'] == 'AFGEMELD':
+        return ('AFGEMELD', latest_event['user'])
+    
+    # Default fallback
+    return ('OPEN', latest_event['user'])
+
+# Update the projects route in db_log_api.py
+
+@app.route('/projects', methods=['GET'])
+def projects():
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    logging.info('projects endpoint was called')
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all unique projects
+        c.execute("""
+            SELECT DISTINCT project
+            FROM logs
+            WHERE project IS NOT NULL AND project != ''
+            ORDER BY project
+        """)
+        
+        all_projects = [row['project'] for row in c.fetchall()]
+        
+        projects = []
+        total_projects = 0
+        completed_projects = 0
+        in_progress = 0
+        rep_variant_projects = 0  # New metric to replace open_projects
+        
+        for project_code in all_projects:
+            # Determine the project status using the helper function
+            try:
+                result = determine_project_status(project_code, conn)
+                if len(result) != 2:
+                    logging.error(f"determine_project_status returned {len(result)} values for project {project_code}: {result}")
+                    continue
+                project_status, current_user = result
+            except ValueError as e:
+                logging.error(f"Error unpacking result for project {project_code}: {e}")
+                continue
+            
+            # Get the latest timestamp for this project
+            c.execute("""
+                SELECT MAX(timestamp) as latest_timestamp
+                FROM logs
+                WHERE project = ?
+            """, (project_code,))
+            
+            latest_timestamp = c.fetchone()['latest_timestamp']
+            
+            # Get event count
+            c.execute("""
+                SELECT COUNT(*) as event_count
+                FROM logs
+                WHERE project = ?
+            """, (project_code,))
+            
+            event_count = c.fetchone()['event_count']
+            
+            # Format timestamp
+            try:
+                dt = datetime.fromisoformat(latest_timestamp)
+                formatted_timestamp = dt.strftime('%d-%m-%Y %H:%M')
+            except (ValueError, TypeError):
+                formatted_timestamp = latest_timestamp
+            
+            # Check if project is a rep variant
+            c.execute("""
+                SELECT is_rep_variant
+                FROM logs
+                WHERE project = ? AND is_rep_variant IS NOT NULL
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """, (project_code,))
+            
+            rep_result = c.fetchone()
+            is_rep_variant = rep_result and rep_result['is_rep_variant'] == 1
+            
+            # Create project entry
+            project_dict = {
+                'code': project_code,
+                'user': current_user or 'Onbekend',
+                'status': project_status,
+                'timestamp': formatted_timestamp,
+                'event_count': event_count,
+                'is_rep_variant': is_rep_variant
+            }
+            
+            # Count statuses
+            total_projects += 1
+            if project_status in ['AFGEMELD', 'AFGEROND']:
+                completed_projects += 1
+            elif project_status in ['OPEN', 'BEZIG']:
+                in_progress += 1
+            
+            # Count rep variant projects
+            if is_rep_variant:
+                rep_variant_projects += 1
+            
+            projects.append(project_dict)
+        
+        # Sort projects by timestamp (most recent first)
+        projects.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        return render_template('projects.html', 
+                             projects=projects,
+                             configured_users=configured_users,
+                             total_projects=total_projects,
+                             rep_variant_projects=rep_variant_projects,  # New metric
+                             completed_projects=completed_projects,
+                             in_progress=in_progress,
+                             active_page='projects')
+    
+    except Exception as e:
+        logging.error(f"Failed to render projects page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not retrieve projects from the database.'), 500
+        
+
+@app.route('/users', methods=['GET'])
+def users():
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    logging.info('users endpoint was called')
+    try:
+        # Get real user data from database
+        user_stats = []
+        total_active = 0
+        total_completed = 0
+        efficiency_scores = []
+        processing_times = []
+        
+        for user in configured_users:
+            active = count_active_projects(user)
+            completed = count_completed_today(user)
+            avg_time = calculate_avg_time(user)
+            efficiency = calculate_efficiency(user)
+            activity_data = get_user_activity_last_7_days(user)
+            
+            stats = {
+                'name': user,
+                'role': 'Operator',
+                'initials': ''.join([part[0] for part in user.split()]),
+                'active_projects': active,
+                'completed_today': completed,
+                'avg_time': avg_time,
+                'efficiency': efficiency,
+                'activity_data': activity_data
+            }
+            user_stats.append(stats)
+            
+            # Accumulate totals
+            total_active += active
+            total_completed += completed
+            efficiency_scores.append(efficiency)
+            if avg_time != "--":
+                try:
+                    hours = float(avg_time.replace('h', ''))
+                    processing_times.append(hours)
+                except:
+                    pass
+        
+        # Calculate averages
+        avg_performance = sum(efficiency_scores) / len(efficiency_scores) if efficiency_scores else 85
+        avg_process_time = sum(processing_times) / len(processing_times) if processing_times else 2.5
+        
+        return render_template('users.html',
+                             users=user_stats,
+                             total_users=len(configured_users),
+                             active_users=len([u for u in user_stats if u['active_projects'] > 0]),
+                             avg_performance=f"{int(avg_performance)}%",
+                             avg_process_time=f"{avg_process_time:.1f}h",
+                             active_page='users')
+    
+    except Exception as e:
+        logging.error(f"Failed to render users page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not retrieve users from the database.'), 500
+
+@app.route('/reports', methods=['GET'])
+def reports():
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    logging.info('reports endpoint was called')
+    try:
+        return render_template('reports.html', 
+                             configured_users=configured_users,
+                             active_page='reports')
+    
+    except Exception as e:
+        logging.error(f"Failed to render reports page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load reports page.'), 500
+
+@app.route('/statistics')
+def statistics():
+    """Statistics page view with comprehensive analytics"""
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    try:
+        return render_template('statistics.html',
+                             configured_users=configured_users,
+                             work_hours=WORK_HOURS,
+                             active_page='statistics')
+    except Exception as e:
+        logging.error(f"Failed to render statistics page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load statistics page.'), 500
+
+@app.route('/settings')
+def settings():
+    """Settings page for work hours configuration"""
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    try:
+        return render_template('settings.html',
+                             configured_users=configured_users,
+                             active_page='settings')
+    except Exception as e:
+        logging.error(f"Failed to render settings page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load settings page.'), 500
+
+@app.route('/database', methods=['GET'])
+def database():
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    logging.info('database management page was called')
+    try:
+        # Get database stats
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get total records
+        c.execute('SELECT COUNT(*) FROM logs')
+        total_records = c.fetchone()[0]
+        
+        # Get database file size
+        db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+        
+        # Get oldest record
+        c.execute('SELECT MIN(timestamp) FROM logs')
+        oldest_record = c.fetchone()[0]
+        
+        return render_template('database.html',
+                             configured_users=configured_users,
+                             db_size=db_size,
+                             total_records=total_records,
+                             oldest_record=oldest_record,
+                             active_page='database')
+    
+    except Exception as e:
+        logging.error(f"Failed to render database page: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load database management page.'), 500
+
+# === ENTERPRISE STATISTICS ENDPOINTS ===
+
+@app.route('/api/statistics/productivity-metrics', methods=['GET'])
+def get_productivity_metrics():
+    """1. Productivity & Throughput Metrics"""
+    try:
+        # Handle different period types
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(timestamp) BETWEEN '{start_date}' AND '{end_date}'"
+            period_display = f"{start_date} tot {end_date}"
+        elif period_type == 'all':
+            date_filter = ""  # No date filter - all data
+            period_display = "Alle data"
+        else:
+            period = request.args.get('period', '30')  # days
+            date_filter = f"AND timestamp >= datetime('now', '-{period} days')"
+            period_display = f"Laatste {period} dagen"
+            
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Overall productivity: Items per hour (total items / total project time)
+        c.execute(f"""
+            WITH ProjectMetrics AS (
+                SELECT 
+                    ps.project,
+                    ps.total_duration_minutes,
+                    COALESCE(ps.total_items, 0) as total_items
+                FROM project_sessions ps
+                WHERE ps.status = 'completed' {date_filter.replace('timestamp', 'ps.start_time')}
+            )
+            SELECT 
+                ROUND(SUM(total_items) * 60.0 / NULLIF(SUM(total_duration_minutes), 0), 2) as overall_items_per_hour,
+                SUM(total_items) as total_items,
+                ROUND(SUM(total_duration_minutes) / 60.0, 1) as total_hours
+            FROM ProjectMetrics
+        """)
+        
+        result = c.fetchone()
+        overall_items_per_hour = result[0] if result and result[0] else 0
+        total_items = result[1] if result else 0
+        total_hours = result[2] if result else 0
+        
+        # Items per hour per user with proportional time allocation for batch processing
+        c.execute(f"""
+            WITH MainSessions AS (
+                -- Find all main batch sessions (SCANNER sessions without project)
+                SELECT user, session_id, start_time, end_time, work_duration_minutes
+                FROM sessions 
+                WHERE session_type = 'SCANNER' 
+                AND project IS NULL 
+                AND status = 'completed'
+                {date_filter.replace('timestamp', 'start_time')}
+            ),
+            BatchAllocation AS (
+                SELECT 
+                    s.user,
+                    s.project,
+                    s.session_type,
+                    s.item_count,
+                    s.work_duration_minutes as original_duration,
+                    -- For batch processing (SCANNER), calculate proportional time based on batch session
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' AND s.project IS NOT NULL THEN
+                            -- Get project's proportion of total batch items and allocate time proportionally
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2
+                                 JOIN MainSessions ms ON s2.user = ms.user
+                                 WHERE s2.session_type = 'SCANNER'
+                                 AND s2.project IS NOT NULL
+                                 AND s2.status = 'completed'
+                                 AND s2.start_time >= ms.start_time 
+                                 AND s2.start_time <= ms.end_time
+                                 AND ms.user = s.user
+                                 AND s.start_time >= ms.start_time 
+                                 AND s.start_time <= ms.end_time
+                                ), 0
+                            ) * (
+                                SELECT ms.work_duration_minutes
+                                FROM MainSessions ms
+                                WHERE ms.user = s.user
+                                AND s.start_time >= ms.start_time 
+                                AND s.start_time <= ms.end_time
+                                LIMIT 1
+                            )
+                        ELSE 
+                            -- For individual work (XLSX_UPDATED/MANUAL), use actual session time
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE s.status = 'completed' {date_filter.replace('timestamp', 's.start_time')}
+            )
+            SELECT 
+                user,
+                ROUND(SUM(COALESCE(item_count, 0)) * 60.0 / NULLIF(SUM(allocated_duration_minutes), 0), 2) as items_per_hour,
+                SUM(COALESCE(item_count, 0)) as total_items,
+                ROUND(SUM(allocated_duration_minutes) / 60.0, 1) as session_hours,
+                SUM(CASE WHEN session_type = 'MANUAL' THEN COALESCE(item_count, 0) ELSE 0 END) as manual_items,
+                SUM(CASE WHEN session_type = 'XLSX_UPDATED' THEN COALESCE(item_count, 0) ELSE 0 END) as auto_items
+            FROM BatchAllocation
+            GROUP BY user
+            HAVING SUM(allocated_duration_minutes) > 0
+            ORDER BY items_per_hour DESC
+        """)
+        
+        user_productivity = []
+        for row in c.fetchall():
+            user_productivity.append({
+                'user': row[0],
+                'items_per_hour': row[1] or 0,
+                'total_items': row[2] or 0,
+                'session_hours': row[3] or 0,
+                'manual_items': row[4] or 0,
+                'auto_items': row[5] or 0
+            })
+        
+        # Average time per item (global)
+        avg_time_per_item = (total_hours * 60 / total_items) if total_items > 0 else 0
+        
+        # Productivity trend over time (last 7 days)
+        c.execute(f"""
+            SELECT 
+                DATE(ps.start_time) as date,
+                ROUND(SUM(COALESCE(ps.total_items, 0)) * 60.0 / NULLIF(SUM(ps.total_duration_minutes), 0), 2) as daily_items_per_hour,
+                SUM(COALESCE(ps.total_items, 0)) as daily_items
+            FROM project_sessions ps
+            WHERE ps.status = 'completed' 
+            AND ps.start_time >= datetime('now', '-7 days')
+            GROUP BY DATE(ps.start_time)
+            ORDER BY date
+        """)
+        
+        productivity_trend = []
+        for row in c.fetchall():
+            productivity_trend.append({
+                'date': row[0],
+                'items_per_hour': row[1] or 0,
+                'items': row[2] or 0
+            })
+        
+        return jsonify({
+            'success': True,
+            'overall_productivity': {
+                'items_per_hour': overall_items_per_hour,
+                'total_items': total_items,
+                'total_hours': total_hours,
+                'avg_time_per_item_minutes': round(avg_time_per_item, 1)
+            },
+            'user_productivity': user_productivity,
+            'productivity_trend': productivity_trend,
+            'period_display': period_display,
+            'period_type': period_type
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting productivity metrics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'active_sessions': active_sessions,
+                'queue_length': queue_length,
+                'completed_today': completed_today,
+                'avg_completion_time': avg_completion_time,
+                'last_updated': datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting real-time metrics: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/statistics/user-efficiency', methods=['GET'])
+def get_user_efficiency():
+    """2. User Efficiency & Load Distribution"""
+    try:
+        # Handle different period types
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(timestamp) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""  # No date filter - all data
+        else:
+            period = request.args.get('period', '30')  # days
+            date_filter = f"AND timestamp >= datetime('now', '-{period} days')"
+            
+        conn = get_db()
+        c = conn.cursor()
+        
+        # User efficiency metrics
+        c.execute(f"""
+            WITH BatchAllocation AS (
+                SELECT 
+                    s.user,
+                    s.session_type,
+                    s.item_count,
+                    -- For batch processing (SCANNER), calculate proportional time
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2 
+                                 WHERE s2.user = s.user 
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)
+                                ), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes) 
+                                FROM sessions s3 
+                                WHERE s3.user = s.user 
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE 
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE s.status = 'completed' {date_filter.replace('timestamp', 's.start_time')}
+            )
+            SELECT 
+                user,
+                SUM(COALESCE(item_count, 0)) as items_produced,
+                ROUND(SUM(allocated_duration_minutes) / 60.0, 1) as session_hours,
+                ROUND(SUM(COALESCE(item_count, 0)) * 60.0 / NULLIF(SUM(allocated_duration_minutes), 0), 2) as efficiency_score
+            FROM BatchAllocation
+            GROUP BY user
+            ORDER BY efficiency_score DESC
+        """)
+        
+        user_stats = []
+        total_items = 0
+        total_session_time = 0
+        
+        for row in c.fetchall():
+            user_data = {
+                'user': row[0],
+                'items_produced': row[1] or 0,
+                'session_hours': row[2] or 0,
+                'efficiency_score': row[3] or 0
+            }
+            user_stats.append(user_data)
+            total_items += user_data['items_produced']
+            total_session_time += user_data['session_hours']
+        
+        # Calculate contribution percentages
+        for user in user_stats:
+            user['item_contribution_percent'] = round((user['items_produced'] / total_items * 100), 1) if total_items > 0 else 0
+            user['time_contribution_percent'] = round((user['session_hours'] / total_session_time * 100), 1) if total_session_time > 0 else 0
+        
+        # Get scatter plot data (session time vs output)
+        scatter_data = []
+        for user in user_stats:
+            scatter_data.append({
+                'user': user['user'],
+                'x': user['session_hours'],
+                'y': user['items_produced'],
+                'efficiency': user['efficiency_score']
+            })
+        
+        return jsonify({
+            'success': True,
+            'user_efficiency': user_stats,
+            'scatter_data': scatter_data,
+            'totals': {
+                'total_items': total_items,
+                'total_session_hours': round(total_session_time, 1)
+            },
+            'period_type': period_type
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting user efficiency: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/statistics/time-insights', methods=['GET'])
+def get_time_insights():
+    """3. Time-Based Insights"""
+    try:
+        # Handle different period types
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(start_time) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""  # No date filter - all data
+        else:
+            period = request.args.get('period', '30')  # days
+            date_filter = f"AND start_time >= datetime('now', '-{period} days')"
+            
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Total Idle Time Estimate: Total Project Time - Sum of Session Times
+        c.execute(f"""
+            SELECT 
+                ROUND(SUM(ps.total_duration_minutes) / 60.0, 1) as total_project_hours,
+                ROUND(SUM(COALESCE(ps.nesting_duration_minutes, 0) + 
+                         COALESCE(ps.opus_duration_minutes, 0) + 
+                         COALESCE(ps.gannomat_duration_minutes, 0)) / 60.0, 1) as total_session_hours
+            FROM project_sessions ps
+            WHERE ps.status = 'completed' {date_filter}
+        """)
+        
+        result = c.fetchone()
+        total_project_hours = result[0] if result and result[0] else 0
+        total_session_hours = result[1] if result and result[1] else 0
+        idle_time_hours = max(0, total_project_hours - total_session_hours)
+        
+        # Average item time based on active session vs total time
+        c.execute(f"""
+            SELECT 
+                SUM(COALESCE(ps.total_items, 0)) as total_items,
+                ROUND(AVG(ps.total_duration_minutes / NULLIF(ps.total_items, 0)), 1) as avg_time_per_item_total,
+                ROUND(AVG((COALESCE(ps.nesting_duration_minutes, 0) + 
+                          COALESCE(ps.opus_duration_minutes, 0) + 
+                          COALESCE(ps.gannomat_duration_minutes, 0)) / NULLIF(ps.total_items, 0)), 1) as avg_time_per_item_active
+            FROM project_sessions ps
+            WHERE ps.status = 'completed' {date_filter}
+            AND ps.total_items > 0
+        """)
+        
+        time_result = c.fetchone()
+        total_items = time_result[0] if time_result else 0
+        avg_time_per_item_total = time_result[1] if time_result and time_result[1] else 0
+        avg_time_per_item_active = time_result[2] if time_result and time_result[2] else 0
+        
+        # Cumulative session time over time (last 14 days)
+        c.execute(f"""
+            SELECT 
+                DATE(s.start_time) as date,
+                s.user,
+                ROUND(SUM(s.work_duration_minutes) / 60.0, 1) as daily_hours
+            FROM sessions s
+            WHERE s.status = 'completed' 
+            AND s.start_time >= datetime('now', '-14 days')
+            GROUP BY DATE(s.start_time), s.user
+            ORDER BY date, s.user
+        """)
+        
+        cumulative_data = []
+        daily_totals = {}
+        
+        for row in c.fetchall():
+            date = row[0]
+            user = row[1]
+            hours = row[2] or 0
+            
+            if date not in daily_totals:
+                daily_totals[date] = 0
+            daily_totals[date] += hours
+            
+            cumulative_data.append({
+                'date': date,
+                'user': user,
+                'hours': hours
+            })
+        
+        # Convert to cumulative format
+        cumulative_timeline = []
+        running_total = 0
+        for date in sorted(daily_totals.keys()):
+            running_total += daily_totals[date]
+            cumulative_timeline.append({
+                'date': date,
+                'cumulative_hours': round(running_total, 1),
+                'daily_hours': round(daily_totals[date], 1)
+            })
+        
+        # Efficiency breakdown (productive vs idle time)
+        productivity_ratio = (total_session_hours / total_project_hours * 100) if total_project_hours > 0 else 0
+        idle_ratio = 100 - productivity_ratio
+        
+        return jsonify({
+            'success': True,
+            'time_analysis': {
+                'total_project_hours': total_project_hours,
+                'total_session_hours': total_session_hours,
+                'idle_time_hours': round(idle_time_hours, 1),
+                'productivity_ratio': round(productivity_ratio, 1),
+                'idle_ratio': round(idle_ratio, 1)
+            },
+            'item_timing': {
+                'total_items': total_items,
+                'avg_time_per_item_total_minutes': avg_time_per_item_total,
+                'avg_time_per_item_active_minutes': avg_time_per_item_active
+            },
+            'cumulative_timeline': cumulative_timeline,
+            'daily_session_data': cumulative_data,
+            'period_type': period_type
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting time insights: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/statistics/bottleneck-analysis', methods=['GET'])
+def get_bottleneck_analysis():
+    """4. Bottleneck Estimation & Detection with Enhanced Handoff Analysis"""
+    try:
+        # Handle different period types
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(timestamp) BETWEEN '{start_date}' AND '{end_date}'"
+            session_filter = f"AND DATE(start_time) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""  # No date filter - all data
+            session_filter = ""
+        else:
+            period = request.args.get('period', '30')  # days
+            date_filter = f"AND timestamp >= datetime('now', '-{period} days')"
+            session_filter = f"AND start_time >= datetime('now', '-{period} days')"
+            
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Large discrepancy between project time and session time
+        c.execute(f"""
+            SELECT 
+                ps.project,
+                ps.total_duration_minutes / 60.0 as project_hours,
+                (COALESCE(ps.nesting_duration_minutes, 0) + 
+                 COALESCE(ps.opus_duration_minutes, 0) + 
+                 COALESCE(ps.gannomat_duration_minutes, 0)) / 60.0 as session_hours,
+                ps.total_items,
+                ROUND((ps.total_duration_minutes - 
+                      (COALESCE(ps.nesting_duration_minutes, 0) + 
+                       COALESCE(ps.opus_duration_minutes, 0) + 
+                       COALESCE(ps.gannomat_duration_minutes, 0))) / 60.0, 1) as idle_hours
+            FROM project_sessions ps
+            WHERE ps.status = 'completed' {date_filter}
+            AND ps.total_duration_minutes > 0
+            ORDER BY idle_hours DESC
+        """)
+        
+        coordination_delays = []
+        for row in c.fetchall():
+            project_hours = row[1]
+            session_hours = row[2]
+            idle_hours = row[4]
+            efficiency_ratio = (session_hours / project_hours * 100) if project_hours > 0 else 0
+            
+            coordination_delays.append({
+                'project': row[0],
+                'project_hours': round(project_hours, 1),
+                'session_hours': round(session_hours, 1),
+                'idle_hours': idle_hours,
+                'efficiency_ratio': round(efficiency_ratio, 1),
+                'total_items': row[3] or 0
+            })
+        
+        # High session time but low item count (potential inefficiency)
+        c.execute(f"""
+            SELECT 
+                s.user,
+                AVG(s.work_duration_minutes / 60.0) as avg_session_hours,
+                AVG(COALESCE(s.item_count, 0)) as avg_items,
+                ROUND(AVG(COALESCE(s.item_count, 0) * 60.0 / NULLIF(s.work_duration_minutes, 0)), 2) as avg_efficiency
+            FROM sessions s
+            WHERE s.status = 'completed' {date_filter.replace('start_time', 's.start_time')}
+            GROUP BY s.user
+            HAVING AVG(s.work_duration_minutes) > 0
+            ORDER BY avg_efficiency ASC
+        """)
+        
+        user_inefficiencies = []
+        for row in c.fetchall():
+            user_inefficiencies.append({
+                'user': row[0],
+                'avg_session_hours': round(row[1], 1),
+                'avg_items': round(row[2], 1),
+                'avg_efficiency': row[3] or 0
+            })
+        
+        # Variance analysis: Expected vs actual performance based on historical data
+        # Calculate user-specific historical averages
+        c.execute(f"""
+            SELECT 
+                s.user,
+                AVG(COALESCE(s.item_count, 0) * 60.0 / NULLIF(s.work_duration_minutes, 0)) as user_avg_efficiency,
+                COUNT(*) as session_count,
+                STDEV(COALESCE(s.item_count, 0) * 60.0 / NULLIF(s.work_duration_minutes, 0)) as efficiency_stdev
+            FROM sessions s
+            WHERE s.status = 'completed' {session_filter.replace('start_time', 's.start_time')}
+            AND s.work_duration_minutes > 0
+            GROUP BY s.user
+        """)
+        
+        user_historical_data = {}
+        for row in c.fetchall():
+            user_historical_data[row[0]] = {
+                'avg_efficiency': row[1] or 0,
+                'session_count': row[2] or 0,
+                'stdev': row[3] or 0
+            }
+        
+        # Calculate global historical average (weighted by session count)
+        total_weighted_efficiency = sum(data['avg_efficiency'] * data['session_count'] for data in user_historical_data.values())
+        total_sessions = sum(data['session_count'] for data in user_historical_data.values())
+        global_efficiency = total_weighted_efficiency / total_sessions if total_sessions > 0 else 0
+        
+        variance_analysis = []
+        for user in user_inefficiencies:
+            # Use user's own historical average if available, otherwise use global
+            user_hist = user_historical_data.get(user['user'], {})
+            expected_efficiency = user_hist.get('avg_efficiency', global_efficiency)
+            expected_items = user['avg_session_hours'] * expected_efficiency
+            
+            # Calculate variance from historical expectation
+            variance = ((user['avg_items'] - expected_items) / expected_items * 100) if expected_items > 0 else 0
+            
+            # Determine if variance is significant based on historical standard deviation
+            is_significant = abs(variance) > (user_hist.get('stdev', 10) * 2) if user_hist else False
+            
+            variance_analysis.append({
+                'user': user['user'],
+                'expected_items': round(expected_items, 1),
+                'actual_items': user['avg_items'],
+                'variance_percent': round(variance, 1),
+                'historical_efficiency': round(expected_efficiency, 2),
+                'is_significant': is_significant,
+                'session_count': user_hist.get('session_count', 0)
+            })
+        
+        # NEW: Calculate handoff idle times between users using work hours
+        c.execute(f"""
+            SELECT 
+                l1.user as from_user,
+                l2.user as to_user,
+                l1.timestamp as end_timestamp,
+                l2.timestamp as start_timestamp,
+                l1.project
+            FROM logs l1
+            INNER JOIN logs l2 ON l1.project = l2.project
+            WHERE (l1.event = 'AFGEMELD' OR l1.event = 'SESSION_END')
+            AND l2.event = 'SESSION_START'
+            AND l1.user != l2.user
+            AND l2.timestamp > l1.timestamp
+            AND NOT EXISTS (
+                SELECT 1 FROM logs l3 
+                WHERE l3.project = l1.project 
+                AND l3.timestamp > l1.timestamp 
+                AND l3.timestamp < l2.timestamp
+                AND (l3.event = 'AFGEMELD' OR l3.event = 'SESSION_END' OR l3.event = 'SESSION_START')
+            )
+            {date_filter.replace('timestamp', 'l1.timestamp')}
+            ORDER BY l1.user, l2.user, l1.timestamp
+        """)
+        
+        # Process handoffs and calculate work-hour-based idle times
+        handoff_data = {}
+        for row in c.fetchall():
+            from_user = row[0]
+            to_user = row[1]
+            end_timestamp = row[2]
+            start_timestamp = row[3]
+            project = row[4]
+            
+            # Calculate actual work minutes between handoff
+            idle_minutes = calculate_work_minutes(end_timestamp, start_timestamp)
+            
+            key = (from_user, to_user)
+            if key not in handoff_data:
+                handoff_data[key] = []
+            handoff_data[key].append(idle_minutes)
+        
+        # Calculate statistics for each handoff pair
+        handoff_analysis = []
+        total_handoffs = 0
+        total_idle_minutes = 0
+        
+        for (from_user, to_user), idle_times in handoff_data.items():
+            handoff_count = len(idle_times)
+            avg_idle = sum(idle_times) / handoff_count if handoff_count > 0 else 0
+            max_idle = max(idle_times) if idle_times else 0
+            min_idle = min(idle_times) if idle_times else 0
+            
+            total_handoffs += handoff_count
+            total_idle_minutes += avg_idle * handoff_count
+            
+            handoff_analysis.append({
+                'from_user': from_user,
+                'to_user': to_user,
+                'handoff_count': handoff_count,
+                'avg_idle_hours': round(avg_idle / 60, 1),
+                'max_idle_hours': round(max_idle / 60, 1),
+                'min_idle_hours': round(min_idle / 60, 1),
+                'avg_idle_minutes': avg_idle
+            })
+        
+        avg_idle_all_handoffs = total_idle_minutes / total_handoffs if total_handoffs > 0 else 0
+        
+        # Calculate percentile-based severity thresholds from historical data
+        if handoff_analysis:
+            idle_times = [h['avg_idle_minutes'] for h in handoff_analysis]
+            idle_times.sort()
+            
+            # Calculate percentiles for severity classification
+            percentile_50 = idle_times[int(len(idle_times) * 0.5)] if idle_times else 0
+            percentile_75 = idle_times[int(len(idle_times) * 0.75)] if idle_times else 0
+            percentile_90 = idle_times[int(len(idle_times) * 0.9)] if idle_times else 0
+            
+            # Add severity based on historical percentiles
+            for handoff in handoff_analysis:
+                idle = handoff['avg_idle_minutes']
+                if idle >= percentile_90:
+                    handoff['severity'] = 'critical'
+                elif idle >= percentile_75:
+                    handoff['severity'] = 'high'
+                elif idle >= percentile_50:
+                    handoff['severity'] = 'medium'
+                else:
+                    handoff['severity'] = 'low'
+        
+        return jsonify({
+            'success': True,
+            'coordination_delays': coordination_delays[:10],  # Top 10 projects with delays
+            'user_inefficiencies': user_inefficiencies,
+            'variance_analysis': variance_analysis,
+            'handoff_analysis': handoff_analysis[:10],  # Top 10 handoff bottlenecks
+            'handoff_summary': {
+                'total_handoffs': total_handoffs,
+                'avg_idle_hours': round(avg_idle_all_handoffs / 60, 1),
+                'total_idle_days': round(total_idle_minutes / (60 * 8), 1),  # Assuming 8-hour workdays
+                'percentile_thresholds': {
+                    '50th': round(percentile_50 / 60, 1) if 'percentile_50' in locals() else 0,
+                    '75th': round(percentile_75 / 60, 1) if 'percentile_75' in locals() else 0,
+                    '90th': round(percentile_90 / 60, 1) if 'percentile_90' in locals() else 0
+                }
+            },
+            'global_efficiency': round(global_efficiency, 2),
+            'period_type': period_type
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting bottleneck analysis: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/statistics/predictive-analytics', methods=['GET'])
+def get_predictive_analytics():
+    """5. Predictive Time Calculator"""
+    try:
+        target_items = int(request.args.get('target_items', 100))
+        
+        # Handle different period types for historical data
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(start_time) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""  # No date filter - all data
+        else:
+            period = request.args.get('period', '30')  # days for historical data
+            date_filter = f"AND start_time >= datetime('now', '-{period} days')"
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Calculate historical averages with proportional time allocation
+        c.execute(f"""
+            WITH BatchAllocation AS (
+                SELECT 
+                    s.item_count,
+                    -- For batch processing (SCANNER), calculate proportional time
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2 
+                                 WHERE s2.user = s.user 
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)
+                                ), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes) 
+                                FROM sessions s3 
+                                WHERE s3.user = s.user 
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE 
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE s.status = 'completed' 
+                AND s.item_count > 0 {date_filter.replace('start_time', 's.start_time')}
+            )
+            SELECT 
+                ROUND(AVG(allocated_duration_minutes / NULLIF(item_count, 0)), 2) as avg_minutes_per_item,
+                ROUND(AVG(COALESCE(item_count, 0) * 60.0 / NULLIF(allocated_duration_minutes, 0)), 2) as avg_items_per_hour,
+                COUNT(*) as sessions_count,
+                SUM(COALESCE(item_count, 0)) as total_items,
+                SUM(allocated_duration_minutes) / 60.0 as total_hours
+            FROM BatchAllocation
+        """)
+        
+        result = c.fetchone()
+        avg_minutes_per_item = result[0] if result and result[0] else 60  # Default to 1 hour per item
+        avg_items_per_hour = result[1] if result and result[1] else 1
+        sessions_count = result[2] if result else 0
+        historical_total_items = result[3] if result else 0
+        historical_total_hours = result[4] if result else 0
+        
+        # Per-user predictions with proportional time allocation
+        c.execute(f"""
+            WITH BatchAllocation AS (
+                SELECT 
+                    s.user,
+                    s.item_count,
+                    -- For batch processing (SCANNER), calculate proportional time
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2 
+                                 WHERE s2.user = s.user 
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)
+                                ), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes) 
+                                FROM sessions s3 
+                                WHERE s3.user = s.user 
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE 
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE s.status = 'completed' 
+                AND s.item_count > 0 {date_filter.replace('start_time', 's.start_time')}
+            )
+            SELECT 
+                user,
+                ROUND(AVG(allocated_duration_minutes / NULLIF(item_count, 0)), 2) as user_minutes_per_item,
+                ROUND(AVG(COALESCE(item_count, 0) * 60.0 / NULLIF(allocated_duration_minutes, 0)), 2) as user_items_per_hour
+            FROM BatchAllocation
+            GROUP BY user
+            HAVING COUNT(*) >= 3
+        """)
+        
+        user_predictions = []
+        for row in c.fetchall():
+            user_minutes_per_item = row[1] or avg_minutes_per_item
+            user_items_per_hour = row[2] or avg_items_per_hour
+            
+            estimated_hours = target_items / user_items_per_hour
+            estimated_minutes = target_items * user_minutes_per_item
+            
+            user_predictions.append({
+                'user': row[0],
+                'items_per_hour': user_items_per_hour,
+                'minutes_per_item': user_minutes_per_item,
+                'estimated_hours_for_target': round(estimated_hours, 1),
+                'estimated_minutes_for_target': round(estimated_minutes, 0)
+            })
+        
+        # Global predictions
+        global_estimated_hours = target_items / avg_items_per_hour if avg_items_per_hour > 0 else target_items
+        global_estimated_minutes = target_items * avg_minutes_per_item
+        
+        # Confidence intervals based on historical variance with proportional time allocation
+        c.execute(f"""
+            WITH BatchAllocation AS (
+                SELECT 
+                    s.item_count,
+                    -- For batch processing (SCANNER), calculate proportional time
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2 
+                                 WHERE s2.user = s.user 
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)
+                                ), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes) 
+                                FROM sessions s3 
+                                WHERE s3.user = s.user 
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE 
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE s.status = 'completed' 
+                AND s.item_count > 0 {date_filter.replace('start_time', 's.start_time')}
+            )
+            SELECT 
+                MIN(COALESCE(item_count, 0) * 60.0 / NULLIF(allocated_duration_minutes, 0)) as min_efficiency,
+                MAX(COALESCE(item_count, 0) * 60.0 / NULLIF(allocated_duration_minutes, 0)) as max_efficiency
+            FROM BatchAllocation
+        """)
+        
+        efficiency_range = c.fetchone()
+        min_efficiency = efficiency_range[0] if efficiency_range and efficiency_range[0] else avg_items_per_hour * 0.5
+        max_efficiency = efficiency_range[1] if efficiency_range and efficiency_range[1] else avg_items_per_hour * 1.5
+        
+        best_case_hours = target_items / max_efficiency if max_efficiency > 0 else global_estimated_hours * 0.7
+        worst_case_hours = target_items / min_efficiency if min_efficiency > 0 else global_estimated_hours * 1.5
+        
+        return jsonify({
+            'success': True,
+            'target_items': target_items,
+            'global_prediction': {
+                'estimated_hours': round(global_estimated_hours, 1),
+                'estimated_minutes': round(global_estimated_minutes, 0),
+                'avg_items_per_hour': avg_items_per_hour,
+                'avg_minutes_per_item': avg_minutes_per_item,
+                'best_case_hours': round(best_case_hours, 1),
+                'worst_case_hours': round(worst_case_hours, 1)
+            },
+            'user_predictions': user_predictions,
+            'historical_data': {
+                'sessions_analyzed': sessions_count,
+                'total_items': historical_total_items,
+                'total_hours': round(historical_total_hours, 1),
+                'period_type': period_type
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting predictive analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Work Hours Settings API Endpoints
+@app.route('/api/settings/work-hours', methods=['GET'])
+def get_work_hours_settings():
+    """Get current work hours configuration"""
+    try:
+        # Return current WORK_HOURS configuration
+        settings = WORK_HOURS.copy()
+        
+        # Add time string representations for break times
+        break_start_hour = int(settings['break_start'])
+        break_start_min = int((settings['break_start'] % 1) * 60)
+        settings['break_start_time'] = f"{break_start_hour:02d}:{break_start_min:02d}"
+        
+        break_end_hour = int(settings['break_end'])
+        break_end_min = int((settings['break_end'] % 1) * 60)
+        settings['break_end_time'] = f"{break_end_hour:02d}:{break_end_min:02d}"
+        
+        # Add individual day time strings and hours calculation
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        for i, day in enumerate(days):
+            if day in settings and isinstance(settings[day], dict):
+                # Calculate hours for this day
+                day_config = settings[day]
+                daily_hours = day_config['end'] - day_config['start'] - (settings['break_end'] - settings['break_start'])
+                settings[f'{day}_hours'] = daily_hours
+                
+                # Add time strings
+                start_hour = int(day_config['start'])
+                start_min = int((day_config['start'] % 1) * 60)
+                settings[f'{day}_start_time'] = f"{start_hour:02d}:{start_min:02d}"
+                
+                end_hour = int(day_config['end'])
+                end_min = int((day_config['end'] % 1) * 60)
+                settings[f'{day}_end_time'] = f"{end_hour:02d}:{end_min:02d}"
+            else:
+                # Weekend or non-work day
+                settings[f'{day}_hours'] = 0.0
+                settings[f'{day}_start_time'] = "00:00"
+                settings[f'{day}_end_time'] = "00:00"
+        
+        return jsonify({'success': True, 'settings': settings})
+        
+    except Exception as e:
+        logging.error(f"Error getting work hours settings: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/settings/work-hours', methods=['POST'])
+def update_work_hours_settings():
+    """Update work hours configuration"""
+    try:
+        data = request.get_json()
+        
+        # Update global WORK_HOURS configuration
+        global WORK_HOURS
+        
+        # Update per-day work hours
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        for day in days:
+            if f'{day}_start' in data and f'{day}_end' in data:
+                # Convert time strings to float hours
+                start_time = data[f'{day}_start']
+                end_time = data[f'{day}_end']
+                
+                start_hour = float(start_time.split(':')[0]) + float(start_time.split(':')[1]) / 60
+                end_hour = float(end_time.split(':')[0]) + float(end_time.split(':')[1]) / 60
+                
+                WORK_HOURS[day] = {
+                    'start': start_hour,
+                    'end': end_hour
+                }
+        
+        # Update break times
+        if 'break_start_num' in data:
+            WORK_HOURS['break_start'] = data['break_start_num']
+        if 'break_end_num' in data:
+            WORK_HOURS['break_end'] = data['break_end_num']
+        if 'break_start' in data:
+            # Convert time string to float
+            break_start = data['break_start']
+            WORK_HOURS['break_start'] = float(break_start.split(':')[0]) + float(break_start.split(':')[1]) / 60
+        if 'break_end' in data:
+            # Convert time string to float
+            break_end = data['break_end']
+            WORK_HOURS['break_end'] = float(break_end.split(':')[0]) + float(break_end.split(':')[1]) / 60
+        
+        # Update work days
+        if 'work_days' in data:
+            WORK_HOURS['work_days'] = data['work_days']
+        
+        # Log the configuration update
+        logging.info(f"Work hours configuration updated: {WORK_HOURS}")
+        
+        # Save to config.json file for persistence
+        try:
+            config_path = get_writable_path('config.json')
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            
+            # Store work hours in config
+            config['work_hours'] = WORK_HOURS
+            
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=4)
+                
+            logging.info("Work hours configuration saved to config.json")
+        except Exception as e:
+            logging.error(f"Failed to save work hours to config: {e}")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Werkuren succesvol bijgewerkt',
+            'settings': WORK_HOURS
+        })
+        
+    except Exception as e:
+        logging.error(f"Error updating work hours settings: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/debug/sessions/<project>', methods=['GET'])
+def debug_sessions(project):
+    """Debug endpoint to check sessions data for a project"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all sessions for this project
+        c.execute('''
+            SELECT 
+                session_id,
+                user,
+                project,
+                start_time,
+                end_time,
+                status,
+                item_count,
+                work_duration_minutes,
+                session_type
+            FROM sessions 
+            WHERE lower(project) = ? 
+            ORDER BY start_time ASC
+        ''', (project.lower(),))
+        
+        sessions = [dict(row) for row in c.fetchall()]
+        
+        # Get relevant logs for this project
+        c.execute('''
+            SELECT timestamp, event, user, details, item_count
+            FROM logs 
+            WHERE lower(project) = ?
+            ORDER BY timestamp ASC
+        ''', (project.lower(),))
+        
+        logs = [dict(row) for row in c.fetchall()]
+        
+        return jsonify({
+            'success': True,
+            'project': project,
+            'sessions_count': len(sessions),
+            'logs_count': len(logs),
+            'sessions': sessions,
+            'logs': logs
+        })
+        
+    except Exception as e:
+        logging.error(f"Error in debug sessions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/statistics/workflow-efficiency', methods=['GET'])
+def get_workflow_efficiency():
+    """Get comprehensive workflow efficiency metrics including idle time analysis"""
+    try:
+        # Handle period filtering
+        period_type = request.args.get('period_type', 'days')
+        
+        if period_type == 'custom':
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date_filter = f"AND DATE(timestamp) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""
+        else:
+            period = request.args.get('period', '30')
+            date_filter = f"AND timestamp >= datetime('now', '-{period} days')"
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Calculate overall workflow efficiency
+        c.execute(f"""
+            SELECT 
+                COUNT(DISTINCT project) as total_projects,
+                COUNT(DISTINCT user) as active_users,
+                SUM(CASE WHEN event = 'SESSION_START' THEN 1 ELSE 0 END) as total_sessions,
+                SUM(CASE WHEN event = 'AFGEMELD' THEN item_count ELSE 0 END) as total_items
+            FROM logs
+            WHERE 1=1 {date_filter}
+        """)
+        
+        overview = c.fetchone()
+        total_projects = overview[0] or 0
+        active_users = overview[1] or 0
+        total_sessions = overview[2] or 0
+        total_items = overview[3] or 0
+        
+        # Calculate workflow stage times
+        c.execute(f"""
+            SELECT 
+                user,
+                COUNT(DISTINCT project) as projects_handled,
+                AVG(CASE 
+                    WHEN event = 'SESSION_END' OR event = 'AFGEMELD' THEN 
+                        CAST((julianday(timestamp) - julianday(
+                            (SELECT MAX(timestamp) FROM logs l2 
+                             WHERE l2.project = logs.project 
+                             AND l2.user = logs.user 
+                             AND l2.event IN ('SESSION_START', 'OPEN')
+                             AND l2.timestamp < logs.timestamp)
+                        )) * 24 * 60 AS REAL)
+                    ELSE NULL 
+                END) as avg_processing_time,
+                SUM(CASE WHEN event = 'AFGEMELD' THEN item_count ELSE 0 END) as items_completed
+            FROM logs
+            WHERE 1=1 {date_filter}
+            GROUP BY user
+        """)
+        
+        user_metrics = []
+        for row in c.fetchall():
+            user_metrics.append({
+                'user': row[0],
+                'projects': row[1] or 0,
+                'avg_time_hours': round((row[2] or 0) / 60, 1),
+                'items': row[3] or 0
+            })
+        
+        # Calculate historical workflow patterns
+        c.execute(f"""
+            SELECT 
+                strftime('%H', timestamp) as hour,
+                COUNT(*) as event_count,
+                SUM(CASE WHEN event = 'SESSION_START' THEN 1 ELSE 0 END) as sessions_started,
+                SUM(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as work_completed
+            FROM logs
+            WHERE 1=1 {date_filter}
+            GROUP BY hour
+            ORDER BY hour
+        """)
+        
+        hourly_patterns = []
+        for row in c.fetchall():
+            hourly_patterns.append({
+                'hour': int(row[0]),
+                'events': row[1] or 0,
+                'sessions': row[2] or 0,
+                'completions': row[3] or 0
+            })
+        
+        return jsonify({
+            'success': True,
+            'overview': {
+                'total_projects': total_projects,
+                'active_users': active_users,
+                'total_sessions': total_sessions,
+                'total_items': total_items,
+                'avg_items_per_session': round(total_items / total_sessions, 1) if total_sessions > 0 else 0
+            },
+            'user_metrics': user_metrics,
+            'hourly_patterns': hourly_patterns,
+            'period_type': period_type
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting workflow efficiency: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/statistics/quality-metrics')
+def get_quality_metrics():
+    """Get quality metrics including defect rates and rework percentage using rep_variant logic"""
+    try:
+        # Get date filtering parameters
+        period = request.args.get('period', '30')
+        period_type = request.args.get('period_type', 'days')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Build date filter
+        date_filter = ""
+        params = []
+        
+        if period_type == 'custom' and start_date and end_date:
+            date_filter = " AND l.timestamp BETWEEN ? AND ?"
+            params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+        elif period_type == 'all':
+            # No date filter for 'all'
+            pass
+        else:
+            # Default period-based filtering
+            if period_type == 'days':
+                period_int = int(period)
+            else:
+                period_int = 30  # fallback
+            date_filter = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Overall quality metrics
+        quality_query = f"""
+            SELECT 
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
+                COUNT(CASE WHEN l.is_rep_variant = 0 THEN 1 END) as normal_items,
+                ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / COUNT(*)), 2) as defect_rate
+            FROM logs l
+            WHERE l.event = 'AFGEMELD' {date_filter}
+        """
+        
+        c.execute(quality_query, params)
+        overall_metrics = c.fetchone()
+        
+        # Quality metrics by user
+        user_quality_query = f"""
+            SELECT 
+                l.user,
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
+                ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / COUNT(*)), 2) as defect_rate,
+                ROUND(AVG(CASE WHEN l.is_rep_variant = 0 THEN 
+                    (julianday(l.timestamp) - julianday(
+                        (SELECT MIN(l2.timestamp) FROM logs l2 WHERE l2.project = l.project AND l2.user = l.user AND l2.event = 'OPEN')
+                    )) * 24 * 60 END), 2) as avg_normal_minutes,
+                ROUND(AVG(CASE WHEN l.is_rep_variant = 1 THEN 
+                    (julianday(l.timestamp) - julianday(
+                        (SELECT MIN(l2.timestamp) FROM logs l2 WHERE l2.project = l.project AND l2.user = l.user AND l2.event = 'OPEN')
+                    )) * 24 * 60 END), 2) as avg_rework_minutes
+            FROM logs l
+            WHERE l.event = 'AFGEMELD' {date_filter}
+            GROUP BY l.user
+            HAVING COUNT(*) > 0
+            ORDER BY defect_rate DESC
+        """
+        
+        c.execute(user_quality_query, params)
+        user_metrics = c.fetchall()
+        
+        # Quality trends over time (daily)
+        trends_query = f"""
+            SELECT 
+                DATE(l.timestamp) as date,
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
+                ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / COUNT(*)), 2) as defect_rate
+            FROM logs l
+            WHERE l.event = 'AFGEMELD' {date_filter}
+            GROUP BY DATE(l.timestamp)
+            ORDER BY DATE(l.timestamp) DESC
+            LIMIT 30
+        """
+        
+        c.execute(trends_query, params)
+        quality_trends = c.fetchall()
+        
+        # Product type quality metrics (based on project patterns)
+        product_quality_query = f"""
+            SELECT 
+                CASE 
+                    WHEN l.project LIKE '%_Rep_%' THEN 'Reparatie'
+                    WHEN l.project LIKE '%_VL%' THEN 'Vervanging'
+                    WHEN l.project LIKE '%Boekenkast%' THEN 'Boekenkast'
+                    WHEN l.project LIKE '%Kast%' THEN 'Kast'
+                    ELSE 'Overig'
+                END as product_type,
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
+                ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / COUNT(*)), 2) as defect_rate
+            FROM logs l
+            WHERE l.event = 'AFGEMELD' {date_filter}
+            GROUP BY product_type
+            HAVING COUNT(*) > 0
+            ORDER BY defect_rate DESC
+        """
+        
+        c.execute(product_quality_query, params)
+        product_metrics = c.fetchall()
+        
+        conn.close()
+        
+        # Format the response
+        response = {
+            'overall': {
+                'total_items': overall_metrics['total_items'] if overall_metrics else 0,
+                'rework_items': overall_metrics['rework_items'] if overall_metrics else 0,
+                'normal_items': overall_metrics['normal_items'] if overall_metrics else 0,
+                'defect_rate': overall_metrics['defect_rate'] if overall_metrics else 0.0,
+                'quality_rate': round(100 - (overall_metrics['defect_rate'] if overall_metrics else 0), 2)
+            },
+            'user_metrics': [
+                {
+                    'user': row['user'],
+                    'total_items': row['total_items'],
+                    'rework_items': row['rework_items'],
+                    'defect_rate': row['defect_rate'],
+                    'quality_rate': round(100 - row['defect_rate'], 2),
+                    'avg_normal_minutes': row['avg_normal_minutes'] or 0,
+                    'avg_rework_minutes': row['avg_rework_minutes'] or 0
+                } for row in user_metrics
+            ],
+            'trends': [
+                {
+                    'date': row['date'],
+                    'total_items': row['total_items'],
+                    'rework_items': row['rework_items'],
+                    'defect_rate': row['defect_rate'],
+                    'quality_rate': round(100 - row['defect_rate'], 2)
+                } for row in quality_trends
+            ],
+            'product_metrics': [
+                {
+                    'product_type': row['product_type'],
+                    'total_items': row['total_items'],
+                    'rework_items': row['rework_items'],
+                    'defect_rate': row['defect_rate'],
+                    'quality_rate': round(100 - row['defect_rate'], 2)
+                } for row in product_metrics
+            ]
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        logging.error(f"Error getting quality metrics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def create_efficiency_tables():
+    """Create user efficiency tracking tables if they don't exist"""
+    conn = None
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Create user efficiency targets table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS user_efficiency_targets (
+                user TEXT PRIMARY KEY,
+                target_items_per_hour REAL NOT NULL,
+                created_date TEXT NOT NULL,
+                updated_date TEXT NOT NULL
+            )
+        ''')
+        
+        # Create user efficiency history table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS user_efficiency_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user TEXT NOT NULL,
+                date TEXT NOT NULL,
+                actual_items_per_hour REAL NOT NULL,
+                total_items INTEGER NOT NULL,
+                total_minutes INTEGER NOT NULL,
+                UNIQUE(user, date)
+            )
+        ''')
+        
+        conn.commit()
+        logging.info("User efficiency tables created successfully")
+        
+    except Exception as e:
+        logging.error(f"Error creating efficiency tables: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/settings/efficiency-targets', methods=['GET'])
+def get_efficiency_targets():
+    """Get user efficiency targets from config.json"""
+    try:
+        config_path = get_writable_path('config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                
+                # Get efficiency targets from config
+                efficiency_targets = config.get('efficiency_targets', {})
+                
+                # Convert to expected format for compatibility
+                targets = {}
+                for user, target_value in efficiency_targets.items():
+                    targets[user] = {
+                        'target_items_per_hour': target_value,
+                        'created_date': config.get('efficiency_targets_created', datetime.now().isoformat()),
+                        'updated_date': config.get('efficiency_targets_updated', datetime.now().isoformat())
+                    }
+                
+                return jsonify({'targets': targets})
+        else:
+            return jsonify({'targets': {}})
+            
+    except Exception as e:
+        logging.error(f"Error getting efficiency targets from config: {e}")
+        return jsonify({'targets': {}})
+
+@app.route('/api/settings/efficiency-targets', methods=['POST'])
+def update_efficiency_targets():
+    """Update user efficiency targets in config.json"""
+    try:
+        data = request.get_json()
+        if not data or 'targets' not in data:
+            return jsonify({'error': 'No targets data provided'}), 400
+        
+        # Validate targets data
+        for user, target_value in data['targets'].items():
+            if not isinstance(target_value, (int, float)) or target_value < 0:
+                return jsonify({'error': f'Invalid target value for user {user}'}), 400
+        
+        # Load existing config or create new one
+        config_path = get_writable_path('config.json')
+        config = {}
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+        
+        # Update efficiency targets in config
+        config['efficiency_targets'] = data['targets']
+        config['efficiency_targets_updated'] = datetime.now().isoformat()
+        
+        # Set created date if not exists
+        if 'efficiency_targets_created' not in config:
+            config['efficiency_targets_created'] = datetime.now().isoformat()
+        
+        # Save config
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        logging.info(f"Efficiency targets updated in config: {data['targets']}")
+        return jsonify({'success': True, 'message': 'Efficiency targets updated successfully'})
+        
+    except Exception as e:
+        logging.error(f"Error updating efficiency targets: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/efficiency/daily-update', methods=['POST'])
+def update_daily_efficiency():
+    """Update daily efficiency for all users based on current session data"""
+    conn = None
+    try:
+        conn = create_db_connection()  # Use direct connection
+        c = conn.cursor()
+        
+        # Ensure tables exist
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS user_efficiency_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user TEXT NOT NULL,
+                date TEXT NOT NULL,
+                actual_items_per_hour REAL NOT NULL,
+                total_items INTEGER NOT NULL,
+                total_minutes INTEGER NOT NULL,
+                UNIQUE(user, date)
+            )
+        ''')
+        
+        # Get today's date
+        today = datetime.now().date().isoformat()
+        
+        # Calculate today's efficiency for each user from sessions
+        c.execute('''
+            WITH BatchAllocation AS (
+                SELECT 
+                    s.user,
+                    s.item_count,
+                    -- For batch processing (SCANNER), calculate proportional time
+                    CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
+                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
+                                 FROM sessions s2 
+                                 WHERE s2.user = s.user 
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)
+                                ), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes) 
+                                FROM sessions s3 
+                                WHERE s3.user = s.user 
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE 
+                            s.work_duration_minutes
+                    END as allocated_duration_minutes
+                FROM sessions s
+                WHERE DATE(s.start_time) = ? 
+                AND s.status = 'completed'
+                AND s.user IS NOT NULL
+            )
+            SELECT 
+                user,
+                SUM(COALESCE(item_count, 0)) as total_items,
+                SUM(COALESCE(allocated_duration_minutes, 0)) as total_minutes,
+                CASE 
+                    WHEN SUM(COALESCE(allocated_duration_minutes, 0)) > 0 
+                    THEN ROUND((SUM(COALESCE(item_count, 0)) * 60.0) / SUM(COALESCE(allocated_duration_minutes, 0)), 2)
+                    ELSE 0 
+                END as items_per_hour
+            FROM BatchAllocation
+            GROUP BY user
+            HAVING total_minutes > 0
+        ''', (today,))
+        
+        updated_users = []
+        for row in c.fetchall():
+            user = row['user']
+            total_items = row['total_items']
+            total_minutes = row['total_minutes']
+            items_per_hour = row['items_per_hour']
+            
+            # Insert or update daily efficiency
+            c.execute('''
+                INSERT OR REPLACE INTO user_efficiency_history 
+                (user, date, actual_items_per_hour, total_items, total_minutes)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user, today, items_per_hour, total_items, total_minutes))
+            
+            updated_users.append({
+                'user': user,
+                'items_per_hour': items_per_hour,
+                'total_items': total_items,
+                'total_minutes': total_minutes
+            })
+        
+        conn.commit()
+        
+        logging.info(f"Daily efficiency updated for {len(updated_users)} users")
+        return jsonify({'success': True, 'updated_users': updated_users})
+        
+    except Exception as e:
+        logging.error(f"Error updating daily efficiency: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/efficiency/history/<user>')
+def get_user_efficiency_history(user):
+    """Get efficiency history for a specific user"""
+    conn = None
+    try:
+        days = request.args.get('days', 30, type=int)
+        
+        conn = create_db_connection()  # Use direct connection
+        c = conn.cursor()
+        
+        c.execute('''
+            SELECT date, actual_items_per_hour, total_items, total_minutes
+            FROM user_efficiency_history
+            WHERE user = ?
+            AND date >= date('now', '-' || ? || ' days')
+            ORDER BY date DESC
+        ''', (user, days))
+        
+        history = []
+        for row in c.fetchall():
+            history.append({
+                'date': row['date'],
+                'items_per_hour': row['actual_items_per_hour'],
+                'total_items': row['total_items'],
+                'total_minutes': row['total_minutes']
+            })
+        
+        return jsonify({'user': user, 'history': history})
+        
+    except Exception as e:
+        logging.error(f"Error getting efficiency history for {user}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/project/<project>/productivity-metrics', methods=['GET'])
+def get_project_productivity_metrics(project):
+    """Get productivity metrics for a specific project using proportional time allocation"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get project productivity metrics with proper batch session handling
+        # First get all users who worked on this project
+        c.execute("""
+            SELECT DISTINCT user FROM logs 
+            WHERE LOWER(project) = LOWER(?) 
+            AND user IS NOT NULL AND user != ''
+        """, (project,))
+        
+        project_users = [row[0] for row in c.fetchall()]
+        
+        if not project_users:
+            return jsonify({
+                'success': True,
+                'project': project,
+                'user_productivity': []
+            })
+        
+        user_productivity = []
+        
+        for user in project_users:
+            # Get item count for this user/project from logs
+            c.execute("""
+                SELECT MAX(COALESCE(item_count, 0)) as project_items
+                FROM logs
+                WHERE user = ? AND LOWER(project) = LOWER(?)
+                AND item_count > 0
+            """, (user, project))
+            
+            result = c.fetchone()
+            project_items = result[0] if result and result[0] else 0
+            
+            # Check for active batch session (project can be NULL or empty string)
+            c.execute("""
+                SELECT session_id, start_time, work_duration_minutes
+                FROM sessions 
+                WHERE user = ? AND session_type = 'SCANNER' 
+                AND (project IS NULL OR project = '') AND status = 'active'
+                ORDER BY start_time DESC
+                LIMIT 1
+            """, (user,))
+            
+            active_batch = c.fetchone()
+            
+            # Check for completed batch sessions that included this project
+            c.execute("""
+                SELECT 
+                    s.session_id,
+                    s.start_time,
+                    s.end_time,
+                    s.work_duration_minutes
+                FROM sessions s
+                WHERE s.user = ? 
+                AND s.session_type = 'SCANNER' 
+                AND (s.project IS NULL OR s.project = '') 
+                AND s.status = 'completed'
+                AND EXISTS (
+                    -- Check if this batch session processed this project
+                    SELECT 1 FROM logs l
+                    WHERE l.user = s.user
+                    AND LOWER(l.project) = LOWER(?)
+                    AND l.timestamp BETWEEN s.start_time AND s.end_time
+                )
+                ORDER BY s.end_time DESC
+            """, (user, project))
+            
+            completed_batches = c.fetchall()
+            
+            # Get individual sessions (XLSX_UPDATED, MANUAL) - both active and completed
+            c.execute("""
+                SELECT 
+                    session_type,
+                    work_duration_minutes,
+                    item_count,
+                    status
+                FROM sessions 
+                WHERE user = ? AND LOWER(project) = LOWER(?)
+                AND session_type IN ('XLSX_UPDATED', 'MANUAL')
+                AND status IN ('completed', 'active')
+            """, (user, project))
+            
+            individual_sessions = c.fetchall()
+            
+            # Calculate metrics
+            total_items = project_items
+            manual_items = 0
+            auto_items = 0
+            total_duration_minutes = 0
+            status = 'COMPLETED'
+            
+            # Process individual sessions (only completed ones count toward time/items)
+            for session in individual_sessions:
+                if session['status'] == 'completed':
+                    if session['session_type'] == 'MANUAL':
+                        manual_items += session['item_count'] or 0
+                    elif session['session_type'] == 'XLSX_UPDATED':
+                        auto_items += session['item_count'] or 0
+                    total_duration_minutes += session['work_duration_minutes'] or 0
+            
+            # Process batch sessions with proportional allocation
+            if completed_batches:
+                for batch in completed_batches:
+                    if batch['work_duration_minutes'] and batch['work_duration_minutes'] > 0:
+                        # Get total items in this batch
+                        c.execute("""
+                            SELECT SUM(COALESCE(item_count, 0)) as batch_total
+                            FROM logs
+                            WHERE user = ?
+                            AND timestamp BETWEEN ? AND ?
+                            AND item_count > 0
+                        """, (user, batch['start_time'], batch['end_time']))
+                        
+                        batch_result = c.fetchone()
+                        batch_total_items = batch_result[0] if batch_result and batch_result[0] else 0
+                        
+                        # Calculate proportional time for this project
+                        if batch_total_items > 0 and project_items > 0:
+                            proportion = project_items / batch_total_items
+                            allocated_minutes = batch['work_duration_minutes'] * proportion
+                            total_duration_minutes += allocated_minutes
+            
+            # Check if active batch has processed this project
+            active_batch_processed_project = False
+            if active_batch:
+                c.execute("""
+                    SELECT COUNT(*) FROM logs l
+                    WHERE l.user = ? AND LOWER(l.project) = LOWER(?) 
+                    AND l.timestamp >= ?
+                """, (user, project, active_batch[1]))  # active_batch[1] is start_time
+                
+                active_batch_logs = c.fetchone()[0]
+                active_batch_processed_project = active_batch_logs > 0
+            
+            # Determine status: show user if they have OPEN event, but only show data if they have work sessions
+            if individual_sessions:
+                # User has individual work (XLSX_UPDATED/MANUAL) for this project - always COMPLETED
+                status = 'COMPLETED'
+            elif completed_batches:
+                # User has completed batch work for this project (SCANNER user only)
+                status = 'COMPLETED'  
+            elif active_batch and active_batch_processed_project:
+                # User has active batch session that is processing this project
+                status = 'IN_PROGRESS'
+            else:
+                # User has OPEN event but no work sessions yet - show blank data
+                status = 'WAITING'
+                total_items = 0
+                total_duration_minutes = 0
+                manual_items = 0
+                auto_items = 0
+            
+            # Calculate productivity
+            if status == 'WAITING':
+                # User has OPEN event but no work sessions - show blank
+                items_per_hour = '--'
+                session_hours = '--'
+            elif total_duration_minutes > 0 and total_items > 0:
+                items_per_hour = round((total_items * 60.0) / total_duration_minutes, 2)
+                session_hours = round(total_duration_minutes / 60.0, 2)
+            else:
+                items_per_hour = 'IN_PROGRESS' if status == 'IN_PROGRESS' else 0
+                session_hours = 'IN_PROGRESS' if status == 'IN_PROGRESS' else 0
+            
+            user_productivity.append({
+                'user': user,
+                'items_per_hour': items_per_hour,
+                'total_items': total_items,
+                'session_hours': session_hours,
+                'manual_items': manual_items,
+                'auto_items': auto_items,
+                'status': status
+            })
+        
+        # Sort by items per hour (IN_PROGRESS last)
+        user_productivity.sort(key=lambda x: (
+            1 if x['items_per_hour'] == 'IN_PROGRESS' else 0,
+            -(x['items_per_hour'] if isinstance(x['items_per_hour'], (int, float)) else 0)
+        ))
+        
+        return jsonify({
+            'success': True,
+            'project': project,
+            'user_productivity': user_productivity
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting project productivity metrics for {project}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+# Scheduled efficiency tracking
+import threading
+import time
+
+def schedule_daily_efficiency_updates():
+    """Schedule daily efficiency updates to run automatically"""
+    def run_daily_updates():
+        while True:
+            try:
+                # Wait 24 hours between updates (86400 seconds)
+                time.sleep(86400)
+                
+                # Update daily efficiency for all users
+                with app.app_context():
+                    logging.info("Running scheduled daily efficiency update")
+                    update_daily_efficiency()
+                    
+            except Exception as e:
+                logging.error(f"Error in scheduled efficiency update: {e}")
+                # Continue running even if one update fails
+                
+    # Start the background thread
+    scheduler_thread = threading.Thread(target=run_daily_updates, daemon=True)
+    scheduler_thread.start()
+    logging.info("Daily efficiency update scheduler started")
+
+def trigger_efficiency_update_on_session_end():
+    """Trigger efficiency update when sessions are completed"""
+    try:
+        with app.app_context():
+            # Call the daily update endpoint to refresh today's data
+            response = update_daily_efficiency()
+            if hasattr(response, 'json'):
+                result = response.json
+                logging.info(f"Efficiency update triggered: {result}")
+    except Exception as e:
+        logging.error(f"Error triggering efficiency update: {e}")
+
+# User Configuration Management API endpoints
+@app.route('/api/settings/user-config', methods=['GET'])
+def get_user_config():
+    """Get user configuration from config.json, converting from existing arrays if needed"""
+    try:
+        config_path = get_writable_path('config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                
+                # Check if new user format exists
+                if 'users' in config:
+                    return jsonify({'success': True, 'users': config['users']})
+                
+                # Convert from existing arrays to new format
+                scanner_users = config.get('scanner_panel_open_event_users', [])
+                dashboard_users = config.get('dashboard_display_users', [])
+                processing_map = config.get('scanner_user_to_processing_type_map', {})
+                
+                # Create user objects from existing config
+                users = []
+                all_users = list(set(scanner_users + dashboard_users))
+                
+                for user_name in all_users:
+                    user = {
+                        'name': user_name,
+                        'active': True,
+                        'type': processing_map.get(user_name, 'GEEN_PROCESSING'),
+                        'roles': []
+                    }
+                    
+                    if user_name in scanner_users:
+                        user['roles'].append('scanner')
+                    if user_name in dashboard_users:
+                        user['roles'].append('dashboard')
+                    
+                    users.append(user)
+                
+                return jsonify({'success': True, 'users': users})
+        else:
+            return jsonify({'success': True, 'users': []})
+    except Exception as e:
+        logging.error(f"Error loading user configuration: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/user-config', methods=['POST'])
+def save_user_config():
+    """Save user configuration to config.json, updating both new and legacy formats"""
+    try:
+        data = request.get_json()
+        if not data or 'users' not in data:
+            return jsonify({'error': 'Users data is required'}), 400
+        
+        users = data['users']
+        
+        # Validate users data
+        valid_processing_types = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING']
+        for user in users:
+            if not isinstance(user, dict):
+                return jsonify({'error': 'Each user must be an object'}), 400
+            if 'name' not in user or not user['name'].strip():
+                return jsonify({'error': 'Each user must have a name'}), 400
+            if 'active' not in user or not isinstance(user['active'], bool):
+                return jsonify({'error': 'Each user must have an active boolean field'}), 400
+            if 'type' not in user or user['type'] not in valid_processing_types:
+                return jsonify({'error': f'Each user must have a valid processing type: {valid_processing_types}'}), 400
+        
+        # Load existing config or create new one
+        config_path = get_writable_path('config.json')
+        config = {}
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+        
+        # Save new user format
+        config['users'] = users
+        
+        # Update legacy arrays for backward compatibility
+        scanner_users = []
+        dashboard_users = []
+        processing_map = {}
+        
+        for user in users:
+            if user['active']:
+                user_name = user['name']
+                roles = user.get('roles', ['scanner', 'dashboard'])  # Default to both if not specified
+                
+                if 'scanner' in roles:
+                    scanner_users.append(user_name)
+                if 'dashboard' in roles:
+                    dashboard_users.append(user_name)
+                
+                # Only add to processing map if not GEEN_PROCESSING (default)
+                if user['type'] != 'GEEN_PROCESSING':
+                    processing_map[user_name] = user['type']
+        
+        # Update legacy config arrays
+        config['scanner_panel_open_event_users'] = scanner_users
+        config['dashboard_display_users'] = dashboard_users
+        config['scanner_user_to_processing_type_map'] = processing_map
+        
+        # Save config
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        logging.info(f"User configuration updated: {len(users)} users saved")
+        return jsonify({'success': True, 'message': 'User configuration updated successfully'})
+        
+    except Exception as e:
+        logging.error(f"Error saving user configuration: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Initialize efficiency tracking on startup
+def initialize_efficiency_tracking():
+    """Initialize efficiency tracking system"""
+    try:
+        create_efficiency_tables()
+        # Start the daily scheduler
+        schedule_daily_efficiency_updates()
+        # Do an initial update for today
+        trigger_efficiency_update_on_session_end()
+        logging.info("Efficiency tracking system initialized")
+    except Exception as e:
+        logging.error(f"Error initializing efficiency tracking: {e}")

@@ -315,8 +315,9 @@
             <select class="form-select" id="statusFilter">
                 <option value="all">Alle Statussen</option>
                 <option value="open">Open</option>
+                <option value="bezig">Bezig</option>
                 <option value="afgemeld">Afgemeld</option>
-                <option value="in-progress">In Behandeling</option>
+                <option value="afgerond">Afgerond</option>
             </select>
         </div>
     </div>
@@ -688,7 +689,7 @@ function updateSummaryStats(data) {
         
         // Calculate other stats based on report type
         if (selectedReportType === 'workflow') {
-            const completedProjects = data.filter(p => p.final_status === 'AFGEMELD').length;
+            const completedProjects = data.filter(p => p.final_status === 'AFGEMELD' || p.final_status === 'AFGEROND').length;
             const activeProjects = data.length - completedProjects;
             
             document.getElementById('activeProjects').textContent = activeProjects;

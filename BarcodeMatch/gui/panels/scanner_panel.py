@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, font as tkfont # Added font import as tkfont
+from tkinter import ttk, filedialog, messagebox, font as tkfont
 import pandas as pd
 import threading
 import time
@@ -8,10 +8,9 @@ import serial
 import serial.tools.list_ports
 import os
 import re
-import re
-import requests # Added for API calls
-import os
+import requests
 import json
+from datetime import datetime
 from config_utils import get_config_path, load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
@@ -38,6 +37,11 @@ class ScannerPanel(ttk.Frame):
         self.barcode_buffer = []
         self.last_key_time = 0
         self._pending_config_updates = {} # For staging config changes
+        
+        # --- Session Tracking ---
+        self.current_session_id = None
+        self.session_start_time = None
+        self.session_item_count = 0
 
         # --- Initialization ---
         self.build_tab()
@@ -209,19 +213,91 @@ class ScannerPanel(ttk.Frame):
         else:
             self._log("Geen configuratiewijzigingen om op te slaan.")
 
-    def _log(self, message):
-        """Adds a message to the log viewer with a timestamp."""
+    def _log(self, message, level="info", show_timestamp=True):
+        """Enterprise-grade logging with professional formatting."""
         # This check prevents errors if logging is called during shutdown
         if not self.winfo_exists():
             return
+            
+        # Filter out technical noise - keep only user-relevant messages
+        formatted_message = self._format_user_message(message)
+        if not formatted_message:
+            return
+            
         def _do_log():
             if self.log_text.winfo_exists():
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = datetime.now().strftime("%H:%M:%S") if show_timestamp else ""
+                full_message = f"[{timestamp}] {formatted_message}" if timestamp else formatted_message
                 self.log_text.config(state='normal')
-                self.log_text.insert(tk.END, f"{timestamp} - {message}\n")
+                self.log_text.insert(tk.END, f"{full_message}\n")
                 self.log_text.config(state='disabled')
                 self.log_text.see(tk.END)
         self.after(0, _do_log)
+    
+    def _format_user_message(self, message):
+        """Convert technical messages to clean, professional Dutch messages."""
+        # Skip technical noise
+        skip_patterns = [
+            "Debug:", "DEBUG", "_extract_", "Effectief Excel-bestand laden:",
+            "Background task", "API call", "non-blocking", "Laden van origineel bestand:",
+            "Laden van bijgewerkte versie:", "Session started for", "Session ended:",
+            "Failed to start session", "Failed to end session", "failed with status:"
+        ]
+        
+        if any(pattern in message for pattern in skip_patterns):
+            return None
+            
+        # Convert technical messages to user-friendly messages with icons
+        conversions = {
+            # File operations
+            "Barcode controleren:": None,  # Too technical
+            "Exacte match niet gevonden. Poging tot een meer flexibele match...": None,  # Too technical
+            
+            # Success messages
+            "items geladen uit": lambda m: f"✓ Excel bestand geladen: {m.split('items geladen uit')[0].strip()} items uit {m.split('items geladen uit')[1].strip()}",
+            "Flexibele match gevonden!": lambda m: f"✓ Barcode gevonden (flexibele matching)",
+            "[OK] Barcode": lambda m: f"✓ Item gescand: {m.split('komt overeen')[0].replace('[OK] Barcode ', '').strip()}",
+            "handmatig gemarkeerd als OK": lambda m: f"✓ Item handmatig gemarkeerd: {m.split('Item')[1].split('handmatig')[0].strip()}",
+            "[VOLTOOID] Alle items zijn nu OK!": "🎉 Scan voltooid - alle items gescand!",
+            "Excel-bestand opgeslagen als:": lambda m: f"✓ Voortgang opgeslagen: {m.split('als:')[1].strip()}",
+            
+            # Warning messages  
+            "[WAARSCHUWING] Item": lambda m: f"⚠️ Dubbele scan: {m.split('Item')[1].split('is al')[0].strip().strip(chr(39))} al gescand",
+            "[WARN]": lambda m: f"⚠️ {m.split('[WARN]')[1].strip()}",
+            
+            # Error messages
+            "[NIET GEVONDEN] Barcode": lambda m: f"❌ Barcode niet gevonden: {m.split('Barcode')[1].split('niet in')[0].strip()}",
+            "[FOUT]": lambda m: f"❌ {m.split('[FOUT]')[1].strip()}",
+            "Geen toestemming om bestand te overschrijven": "❌ Geen schrijfrechten voor bestand",
+            
+            # Info messages
+            "Scannertype gewijzigd naar": lambda m: f"ℹ️ Scanner: {m.split('naar')[1].strip()}",
+            "Scannerpaneel geïnitialiseerd": "ℹ️ Scanner panel gereed",
+            "Configuratie opgeslagen": "ℹ️ Instellingen opgeslagen",
+            "USB-luisteraar gestart": "ℹ️ USB scanner actief",
+            "USB-luisteraar gestopt": "ℹ️ USB scanner gestopt",
+            "COM-poort verbonden": lambda m: f"ℹ️ Scanner verbonden: {m.split('op')[1].strip() if 'op' in m else 'COM poort'}",
+            "COM-poort verbroken": "ℹ️ Scanner verbinding verbroken"
+        }
+        
+        # Apply conversions
+        for pattern, replacement in conversions.items():
+            if pattern in message:
+                if replacement is None:
+                    return None
+                elif callable(replacement):
+                    return replacement(message)
+                else:
+                    return replacement
+        
+        # For messages that don't match patterns, apply basic cleanup
+        cleaned = message.strip()
+        
+        # Skip empty or very technical messages
+        if not cleaned or len(cleaned) < 3:
+            return None
+            
+        return cleaned
 
     def _on_scanner_type_change(self, *args):
         """Verwerkt UI-wijzigingen wanneer het scannertype wordt gewijzigd."""
@@ -276,6 +352,9 @@ class ScannerPanel(ttk.Frame):
     def _load_excel_data(self, file_path, update_config_path=True):
         """Laadt gegevens uit het geselecteerde Excel-bestand en vult de treeview."""
         try:
+            # Start a new session when loading Excel data
+            self._start_session()
+            
             path_to_load = file_path
             potential_updated_path = self._generate_updated_path(file_path)
             if potential_updated_path and os.path.exists(potential_updated_path):
@@ -290,7 +369,7 @@ class ScannerPanel(ttk.Frame):
             # Updated column check: 'Item' is required.
             if 'Item' not in df.columns:
                 messagebox.showerror("Fout", "Excel-bestand moet de kolom 'Item' bevatten.")
-                self._log("[FOUT] Excel-bestand mist vereiste kolom 'Item'.")
+                self._log("[FOUT] Excel-bestand mist vereiste kolom 'Item'.", "error")
                 return
 
             self.barcode_data.clear()
@@ -303,7 +382,7 @@ class ScannerPanel(ttk.Frame):
                 # --- Start of new logic for status handling ---
                 raw_status_from_excel = row.get('Status', pd.NA) # Use pd.NA for missing/empty
 
-                display_status_for_treeview = ""  # Value for Treeview display
+                display_status_for_treeview = ""  # Value for Treeview display (default empty)
                 internal_status = 'NIET OK'       # Value for internal logic and saving
                 tree_tag = 'NOT_OK'               # Default tag for Treeview
 
@@ -320,18 +399,15 @@ class ScannerPanel(ttk.Frame):
                         display_status_for_treeview = 'OK'
                         internal_status = 'OK'
                         tree_tag = 'OK'
-                    elif processed_status_str == 'DUPLICAAT':
-                        display_status_for_treeview = 'DUPLICAAT'
-                        internal_status = 'DUPLICAAT'
-                        tree_tag = 'DUPLICATE'
-                    elif processed_status_str == 'NIET OK':
-                        display_status_for_treeview = 'NIET OK'
-                        internal_status = 'NIET OK'
+                    elif processed_status_str == 'DUPLICAAT' or processed_status_str == 'NIET OK' or processed_status_str == 'DUPLICATE':
+                        # For DUPLICAAT or NIET OK, show empty in treeview but keep internal status
+                        display_status_for_treeview = "" 
+                        internal_status = processed_status_str
                         tree_tag = 'NOT_OK'
                     else:
                         # Unrecognized string in Status column
-                        self._log(f"[WARN] Ongeldige status '{processed_status_str}' (origineel: '{raw_status_from_excel}') voor item '{barcode_val}' in Excel. Standaard naar 'NIET OK'.")
-                        display_status_for_treeview = 'NIET OK' # Display 'NIET OK' for unrecognized strings
+                        self._log(f"[WARN] Ongeldige status '{processed_status_str}' (origineel: '{raw_status_from_excel}') voor item '{barcode_val}' in Excel. Standaard naar leeg in treeview.", "warning")
+                        display_status_for_treeview = "" # Display empty for unrecognized strings
                         internal_status = 'NIET OK' # Treat as 'NIET OK'
                         tree_tag = 'NOT_OK'
                 # --- End of new logic for status handling ---
@@ -358,10 +434,89 @@ class ScannerPanel(ttk.Frame):
             # self._save_updated_excel() # Consider if initial save is needed or only on change.
         except FileNotFoundError:
             messagebox.showerror("Fout", f"Bestand niet gevonden: {file_path}")
-            self._log(f"[FOUT] Bestand niet gevonden: {file_path}")
+            self._log(f"[FOUT] Bestand niet gevonden: {file_path}", "error")
         except Exception as e:
             messagebox.showerror("Fout", f"Lezen van Excel-bestand mislukt: {e}")
-            self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}")
+            self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}", "error")
+
+    def _start_session(self):
+        """Start a new session for the current user (NESTING)"""
+        try:
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    config = json.load(f)
+                    
+                api_url = config.get('api_url', '')
+                current_user = config.get('user', 'NESTING')  # Primary scanner is usually NESTING
+                
+                if api_url:
+                    # Generate session ID
+                    self.session_start_time = datetime.now()
+                    self.current_session_id = f"{current_user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                    self.session_item_count = 0
+                    
+                    # Send session start event
+                    data = {
+                        'session_id': self.current_session_id,
+                        'user': current_user,
+                        'timestamp': self.session_start_time.isoformat()
+                    }
+                    
+                    # Make API call in background thread to avoid blocking UI
+                    def start_session_api():
+                        try:
+                            response = requests.post(api_url.replace('/log', '/session/start'), 
+                                                   json=data, timeout=1)  # Reduced timeout
+                            if response.ok:
+                                self._log(f"Session started for {current_user}: {self.current_session_id}")
+                        except Exception as e:
+                            self._log(f"Failed to start session (non-blocking): {e}")
+                    
+                    threading.Thread(target=start_session_api, daemon=True).start()
+                        
+        except Exception as e:
+            self._log(f"Error starting session: {e}")
+
+    def _end_session(self):
+        """End the current session"""
+        if not self.current_session_id:
+            return
+            
+        try:
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    config = json.load(f)
+                    
+                api_url = config.get('api_url', '')
+                
+                if api_url:
+                    # Send session end event
+                    data = {
+                        'session_id': self.current_session_id,
+                        'timestamp': datetime.now().isoformat(),
+                        'item_count': self.session_item_count
+                    }
+                    
+                    # Make API call in background thread to avoid blocking UI
+                    def end_session_api():
+                        try:
+                            response = requests.post(api_url.replace('/log', '/session/end'), 
+                                                   json=data, timeout=1)  # Reduced timeout
+                            if response.ok:
+                                self._log(f"Session ended: {self.current_session_id}")
+                        except Exception as e:
+                            self._log(f"Failed to end session (non-blocking): {e}")
+                    
+                    threading.Thread(target=end_session_api, daemon=True).start()
+                        
+            self.current_session_id = None
+            self.session_start_time = None
+            self.session_item_count = 0
+                        
+        except Exception as e:
+            self._log(f"Error ending session: {e}")
 
     def _check_barcode(self, barcode):
         """Controleert de gescande barcode aan de hand van de geladen gegevens en werkt de UI bij."""
@@ -385,7 +540,7 @@ class ScannerPanel(ttk.Frame):
                     break # Stop after finding the first match
 
         if not item:
-            self._log(f"[NIET GEVONDEN] Barcode {barcode} niet in de lijst.")
+            self._log(f"[NIET GEVONDEN] Barcode {barcode} niet in de lijst.", "error")
             # Overweeg een optische/auditieve feedback voor niet gevonden barcodes
             return
 
@@ -396,420 +551,35 @@ class ScannerPanel(ttk.Frame):
         log_barcode = original_barcode_from_excel
 
         if current_status == 'OK':
-            self._log(f"[WAARSCHUWING] Item '{log_barcode}' is al gescand en gemarkeerd als OK. Dubbele scan genegeerd.")
+            # Item already scanned - just log a message
+            self._log(f"[WAARSCHUWING] Item '{log_barcode}' is al gescand. Dubbele scan gedetecteerd.", "warning")
             # No change to item['status'], no _update_treeview, item remains OK
-        elif current_status == 'DUPLICAAT':
-            self._log(f"[WAARSCHUWING] Item '{log_barcode}' is al eerder als DUPLICAAT gescand. Verdere scan genegeerd.")
-            # No change to item['status'], no _update_treeview, item remains DUPLICATE
-        else: # This implies current_status is 'NIET OK' or similar (e.g., empty from Excel)
-            self._log(f"[OK] Barcode {log_barcode} komt overeen en is nu gemarkeerd als OK.")
+        else: # This implies current_status is anything other than 'OK'
+            self._log(f"[OK] Barcode {log_barcode} komt overeen en is nu gemarkeerd als OK.", "success")
             item['status'] = 'OK'
             self._update_treeview(item_id, 'OK')
             self._save_updated_excel() # Save changes
+            self.session_item_count += 1  # Increment session item count
             self._all_items_ok_check()
-
 
     def _all_items_ok_check(self):
-        """Checks if all items are OK, then triggers completion actions and optional archiving."""
+        """Checks if all items are OK, then triggers completion actions."""
         if not self.barcode_data:
             return
 
-        all_ok = all(item['status'] in ['OK', 'DUPLICATE'] for item in self.barcode_data.values())
+        all_ok = all(item['status'] == 'OK' for item in self.barcode_data.values())
 
         if all_ok:
-            self._log("Alle items zijn OK. Voltooiingsacties worden gestart.")
+            self._log("[VOLTOOID] Alle items zijn nu OK!", "success")
             
-            # Perform the main completion actions (DB, email, etc.).
-            # This function will show its own completion message.
+            # End the current session before completion actions
+            self._end_session()
+            
+            # Perform the completion actions
             self._perform_completion_actions()
-
-            # Now, handle archiving.
-            config = {}
-            config_file_path = get_config_path()
-            if os.path.exists(config_file_path):
-                with open(config_file_path, 'r') as f:
-                    try:
-                        config = json.load(f)
-                    except json.JSONDecodeError:
-                        self._log(f"[FOUT] Kon configuratiebestand niet lezen (JSON decode error): {config_file_path}")
-                        messagebox.showerror("Configuratie Fout", f"Fout bij het lezen van het configuratiebestand.\nControleer of {config_file_path} een valide JSON-bestand is.")
-                        return # Stop if config is corrupt
-            else:
-                self._log(f"[WAARSCHUWING] Configuratiebestand niet gevonden: {config_file_path}")
-                # Allow to proceed with defaults if config file is missing, api_url will be empty
-
-            archive_enabled = config.get('archive_on_all_ok', False)
-
-            if archive_enabled:
-                self._log("Archivering is ingeschakeld. Starten met archiveren.")
-                # Use 'after' to avoid blocking the UI thread for the archiving process.
-                # _archive_files will show its own message and then clear the panel.
-                self.after(100, self._archive_files)
-            else:
-                self._log("Archivering is uitgeschakeld. Paneel wordt gereset om een nieuwe batch te starten.")
-                # If not archiving, we still need to clear the panel to start a new batch.
-                self._clear_panel_state()
-
-    def _archive_files(self):
-        """Archives the original and updated Excel files to an 'Archief' subfolder."""
-        original_path = self.excel_file_path_var.get()
-        if not original_path:
-            self._log("[FOUT] Kan niet archiveren: geen Excel-bestandspad beschikbaar.")
-            messagebox.showerror("Archiveringsfout", "Kan niet archiveren: geen Excel-bestandspad beschikbaar.")
-            return
-
-        updated_path = self._generate_updated_path(original_path)
-        
-        try:
-            directory = os.path.dirname(original_path)
-            archive_dir = os.path.join(directory, "Archief")
             
-            if not os.path.exists(archive_dir):
-                os.makedirs(archive_dir)
-                self._log(f"Archiefmap aangemaakt: {archive_dir}")
-
-            files_to_move = []
-            if os.path.exists(original_path):
-                files_to_move.append(original_path)
-            if updated_path and os.path.exists(updated_path):
-                files_to_move.append(updated_path)
-
-            if not files_to_move:
-                self._log("Geen bestanden gevonden om te archiveren.")
-                messagebox.showwarning("Archiveren", "Kon de Excel-bestanden niet vinden om te archiveren.")
-                return
-
-            for file_path in files_to_move:
-                filename = os.path.basename(file_path)
-                destination = os.path.join(archive_dir, filename)
-                
-                if os.path.exists(destination):
-                    name, ext = os.path.splitext(filename)
-                    timestamp = time.strftime("%Y%m%d-%H%M%S")
-                    new_filename = f"{name}_{timestamp}{ext}"
-                    destination = os.path.join(archive_dir, new_filename)
-                    self._log(f"[WAARSCHUWING] Bestemming '{filename}' bestaat al. Hernoemen naar '{new_filename}'.")
-
-                os.rename(file_path, destination)
-                self._log(f"'{filename}' gearchiveerd naar '{destination}'")
-
-            messagebox.showinfo("Archivering Voltooid", 
-                                "Alle items zijn OK. De bestanden zijn gearchiveerd in de map 'Archief'.")
-            
-            self._clear_panel_state()
-
-        except Exception as e:
-            self._log(f"[FOUT] Fout tijdens archiveren: {e}")
-            messagebox.showerror("Archiveringsfout", f"Er is een fout opgetreden tijdens het archiveren van de bestanden:\n{e}")
-
-    def _clear_panel_state(self):
-        """Resets the panel to its initial state after completion and/or archiving."""
-        self.tree.delete(*self.tree.get_children())
-        self.barcode_data.clear()
-        self.excel_file_path_var.set("")
-        self._log("Paneel gereset.")
-        self._set_config_setting('Paths', 'last_excel_file', '')
-        self.save_config()
-
-    def _update_com_ports(self):
-        """Updates the list of available COM ports."""
-        try:
-            ports = [port.device for port in serial.tools.list_ports.comports()]
-            self.com_port_combo['values'] = ports
-            if ports:
-                # If current selection is not in new list, or nothing is selected, select first port
-                if self.com_port_var.get() not in ports or not self.com_port_var.get():
-                    self.com_port_var.set(ports[0])
-            else:
-                self.com_port_var.set('') # No ports available
-            self._log(f"Beschikbare COM-poorten bijgewerkt: {ports if ports else 'Geen'}")
-        except Exception as e:
-            self._log(f"[FOUT] Kon COM-poorten niet oplijsten: {e}")
-            messagebox.showerror("COM Fout", f"Fout bij het oplijsten van COM-poorten: {e}")
-            self.com_port_combo['values'] = []
-            self.com_port_var.set('')
-
-    def _connect_com_port(self):
-        """Connects to or disconnects from the selected COM port."""
-        if self.ser and self.ser.is_open:
-            self._disconnect_com_port()
-            return
-        port = self.com_port_var.get()
-        if not port:
-            messagebox.showerror("Fout", "Geen COM-poort geselecteerd.")
-            self._log("[FOUT] Verbindingspoging mislukt: Geen COM-poort geselecteerd.")
-            return
-        try:
-            self.ser = serial.Serial(port=port, baudrate=int(self.baud_rate_var.get()), timeout=1)
-            self.is_reading_com = True
-            self.com_read_thread = threading.Thread(target=self._read_com_port, daemon=True)
-            self.com_read_thread.start()
-            self.connect_button.config(text="Verbinding verbreken")
-            self._log(f"Verbonden met {port}.")
-            self.com_port_combo.config(state='disabled')
-            self.refresh_com_button.config(state='disabled')
-        except serial.SerialException as e:
-            messagebox.showerror("Verbindingsfout", f"Verbinden met {port} mislukt: {e}")
-            self._log(f"[FOUT] Verbinden met {port} mislukt: {e}")
-            self.ser = None
-
-    def _disconnect_com_port(self):
-        """Disconnects from the serial port."""
-        self.is_reading_com = False
-        if self.com_read_thread and self.com_read_thread.is_alive():
-            self.com_read_thread.join(timeout=1)
-        if self.ser and self.ser.is_open:
-            port_name = self.ser.port
-            self.ser.close()
-            self._log(f"Verbinding verbroken met {port_name}.")
-        self.ser = None
-        if self.winfo_exists():
-            self.connect_button.config(text="Verbinden")
-            self.com_port_combo.config(state='readonly')
-            self.refresh_com_button.config(state='normal')
-
-    def _read_com_port(self):
-        """Leest gegevens van de seriële poort in een aparte thread."""
-        port_name = self.ser.port # Store before thread potentially outlives self.ser validity
-        self._log(f"COM-poort leesthread gestart voor {port_name}.")
-        while self.is_reading_com and self.ser and self.ser.is_open:
-            try:
-                if self.ser.in_waiting > 0:
-                    line = self.ser.readline().decode('utf-8').strip()
-                    if line:
-                        self._log(f"COM-gegevens ontvangen: {line}")
-                        self.after(0, self._check_barcode, line)
-            except serial.SerialException as e:
-                self._log(f"[FOUT] Seriële fout: {e}")
-                break # Exit thread on serial error
-            except Exception as e:
-                self._log(f"[FOUT] Een onverwachte fout is opgetreden in de COM-leeslus: {e}")
-                break # Exit thread on other critical error
-            time.sleep(0.1)
-        self._log(f"COM-poort leesthread voor {port_name} beëindigd.")
-
-    def _start_usb_listener(self):
-        """Starts the USB keyboard listener thread."""
-        if self.scanner_type_var.get() != "USB":
-            return
-        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
-            return
-        self._stop_usb_listener_event.clear()
-        self._usb_listener_thread = threading.Thread(target=self._usb_listener_loop, daemon=True)
-        self._usb_listener_thread.start()
-
-    def _stop_usb_listener(self):
-        """Stops the USB keyboard listener thread."""
-        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
-            self._stop_usb_listener_event.set()
-            self._usb_listener_thread.join(timeout=1)
-            self._usb_listener_thread = None
-            self._log("USB listener stop signal sent.")
-
-    def _usb_listener_loop(self):
-        """De lus die luistert naar toetsenbordgebeurtenissen."""
-        self._log("USB-luisterthread gestart.")
-        keyboard.on_press(self._on_key_press)
-        self._stop_usb_listener_event.wait()
-        keyboard.unhook_all()
-        self._log("USB-luisterthread gestopt.")
-
-    def _on_key_press(self, event):
-        """Callback for the keyboard listener."""
-        if self._stop_usb_listener_event.is_set():
-            return
-        self.after(0, self._process_key_event, event)
-
-    def _process_key_event(self, event):
-        """Process the key event in the main thread."""
-        if not self.winfo_exists():
-            return
-        current_time = time.time()
-        if current_time - self.last_key_time > 0.1: # Timeout to reset buffer
-            self.barcode_buffer.clear()
-
-        self.last_key_time = current_time
-
-        if event.name == 'enter':
-            if self.barcode_buffer:
-                barcode = "".join(self.barcode_buffer)
-                self._log(f"USB-scan gedetecteerd: {barcode}")
-                self._check_barcode(barcode)
-                self.barcode_buffer.clear()
-        elif len(event.name) == 1:
-            self.barcode_buffer.append(event.name)
-
-    def _update_treeview(self, item_id, status_tag, display_override=None):
-        """Updates a single item in the treeview with a new status and tag."""
-        original_barcode_val = None
-        for barcode_key, data_dict in self.barcode_data.items():
-            if data_dict.get('id') == item_id:
-                original_barcode_val = data_dict.get('item_value', barcode_key)
-                break
-        
-        if original_barcode_val is None:
-            try:
-                current_values = self.tree.item(item_id, 'values')
-                if current_values and len(current_values) > 1:
-                    original_barcode_val = current_values[1] # Item is at index 1
-                else:
-                    self._log(f"[FOUT] Kon originele itemwaarde niet vinden voor treeview-update (ID: {item_id}) en tree-item-waarden zijn ongeldig.")
-                    return # Return if we can't get the barcode value
-            except tk.TclError:
-                 self._log(f"[FOUT] Kon originele itemwaarde niet vinden voor treeview-update (ID: {item_id}) en tree-item niet toegankelijk.")
-                 return # Return if tree item is not accessible
-
-        new_status_text = ''
-        if display_override is not None:
-            new_status_text = display_override
-        elif status_tag == 'OK':
-            new_status_text = 'OK'
-        elif status_tag == 'DUPLICATE':
-            new_status_text = 'DUPLICAAT'
-        elif status_tag == 'NOT_OK':
-            # If it's 'NOT_OK' and no override, it implies 'NIET OK' unless cleared
-            # The previous logic in _load_excel_data already handles setting blank for initial load if status is NaN
-            # For manual clearing, display_override="" is used.
-            # For marking as 'NIET OK' explicitly (if that was still a feature), it would be 'NIET OK'.
-            new_status_text = 'NIET OK' 
-        else:
-            # Fallback if an unexpected tag is passed
-            new_status_text = status_tag 
-            self._log(f"[WARN] Onverwachte status_tag '{status_tag}' ontvangen in _update_treeview zonder display_override.")
-
-        try:
-            self.tree.item(item_id, values=(new_status_text, original_barcode_val), tags=(status_tag,))
-            self.tree.see(item_id) # Scroll to the updated item
-        except tk.TclError as e:
-            self._log(f"[FOUT] Kon item {item_id} niet bijwerken in de treeview: {e}")
-
-    def _on_tree_select(self, event):
-        """Handle item selection in the treeview to store the selected item ID."""
-        selected_items = self.tree.selection()
-        if selected_items:
-            self.selected_item_id = selected_items[0]
-
-    def _show_context_menu(self, event):
-        """Display the context menu at the cursor's position."""
-        item_id = self.tree.identify_row(event.y)
-        if item_id:
-            self.tree.selection_set(item_id)
-            self.selected_item_id = item_id
-            self.context_menu.post(event.x_root, event.y_root)
-
-    def _clear_item_status(self):
-        """Clears the status of the selected item in the treeview and data."""
-        if not self.selected_item_id:
-            self._log("[WARN] Poging om status te wissen zonder selectie.")
-            return
-
-        # Find the item in barcode_data using the tree item_id
-        item_to_update = None
-        barcode_key_of_item = None
-        for key, value in self.barcode_data.items():
-            if value.get('id') == self.selected_item_id:
-                item_to_update = value
-                barcode_key_of_item = key
-                break
-
-        if item_to_update:
-            self._log(f"Status wissen voor item: {item_to_update.get('item_value', barcode_key_of_item)}")
-            item_to_update['status'] = None  # Set internal status to None for blank Excel cell
-            # Update Treeview: display blank, use 'NOT_OK' tag for white background
-            self._update_treeview(self.selected_item_id, 'NOT_OK', display_override="") 
-            self._save_updated_excel() # Save changes
-        else:
-            self._log(f"[FOUT] Kon item met ID {self.selected_item_id} niet vinden in barcode_data om status te wissen.")
-
-    def _mark_item_ok(self):
-        """Manually mark the selected item as OK."""
-        if not self.selected_item_id:
-            self._log("[INFO] Geen item geselecteerd om als OK te markeren.")
-            return
-        
-        # Treeview columns are ('Status', 'Item'). 'Item' (barcode value) is at index 1.
-        try:
-            selected_values = self.tree.item(self.selected_item_id, 'values')
-            if not selected_values or len(selected_values) < 2:
-                self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als OK: ongeldige item-waarden.")
-                return
-            barcode = selected_values[1]
-        except tk.TclError:
-            self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als OK: treeview-fout bij ophalen waarden.")
-            return
-
-        if barcode in self.barcode_data:
-            self.barcode_data[barcode]['status'] = 'OK'
-            self._update_treeview(self.selected_item_id, 'OK')
-            self._log(f"{barcode} handmatig gemarkeerd als OK.")
-            self._save_updated_excel() # Save changes
-            self._all_items_ok_check()
-
-    def _mark_item_not_ok(self):
-        """Manually mark the selected item as NOT OK."""
-        if not self.selected_item_id:
-            self._log("[INFO] Geen item geselecteerd om als NIET OK te markeren.")
-            return
-        
-        # Treeview columns are ('Status', 'Item'). 'Item' (barcode value) is at index 1.
-        try:
-            selected_values = self.tree.item(self.selected_item_id, 'values')
-            if not selected_values or len(selected_values) < 2:
-                self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als NIET OK: ongeldige item-waarden.")
-                return
-            barcode = selected_values[1]
-        except tk.TclError:
-            self._log(f"[FOUT] Kon item {self.selected_item_id} niet markeren als NIET OK: treeview-fout bij ophalen waarden.")
-            return
-
-        if barcode in self.barcode_data:
-            self.barcode_data[barcode]['status'] = 'NIET OK'
-            self._update_treeview(self.selected_item_id, 'NOT_OK') # Use tag for consistency
-            self._log(f"{barcode} handmatig gemarkeerd als NIET OK.")
-            self._save_updated_excel() # Save changes
-
-    def _save_updated_excel(self):
-        """Saves the current state of barcode_data to a new Excel file with '_updated' suffix.
-           Ensures that None status is written as a blank cell.
-        """
-        original_path = self.excel_file_path_var.get()
-        if not original_path:
-            self._log("[WARN] Kan status niet opslaan: geen Excel-bestandspad ingesteld.")
-            return
-
-        save_path = self._generate_updated_path(original_path)
-        if not save_path:
-            self._log("[FOUT] Kan geen geldig opslagpad genereren voor bijgewerkt Excel-bestand.")
-            return
-
-        if not self.barcode_data:
-            self._log("[INFO] Geen data om op te slaan in bijgewerkt Excel-bestand.")
-            # Optionally, if an _updated file exists, we might want to delete it or leave it.
-            # For now, do nothing if no data.
-            return
-
-        try:
-            data_to_save = []
-            for barcode_val, item_data in self.barcode_data.items():
-                data_to_save.append({
-                    'Item': item_data.get('item_value', barcode_val),
-                    'Status': item_data.get('status'), # Ensure None is preserved for blank cell
-                    'Omschrijving': item_data.get('description', '')
-                })
-            
-            df = pd.DataFrame(data_to_save)
-            # Ensure column order, especially if Omschrijving might be missing in some items
-            columns_ordered = ['Item', 'Status']
-            if any('Omschrijving' in d for d in data_to_save):
-                 if not df['Omschrijving'].isnull().all(): # only add if there's actual data
-                    columns_ordered.append('Omschrijving')
-            df = df[columns_ordered]
-
-            df.to_excel(save_path, index=False)
-            self._log(f"Status succesvol opgeslagen in {os.path.basename(save_path)}.")
-        except Exception as e:
-            self._log(f"[FOUT] Opslaan van bijgewerkt Excel-bestand {save_path} mislukt: {e}")
-            messagebox.showerror("Opslaan Mislukt", f"Kon status niet opslaan naar {os.path.basename(save_path)}: {e}")
+            # Show completion message
+            messagebox.showinfo("Scan Voltooid", "Alle items zijn nu gescand en gemarkeerd als OK!")
 
     def _extract_project_codes_from_filename_base(self, filename_base):
         """
@@ -820,8 +590,6 @@ class ScannerPanel(ttk.Frame):
                  "0618_MO07834_Boekenkast_Rep_VL5" -> ("MO07834", "MO07834_Boekenkast_Rep_VL5")
         Returns (base_mo_code, full_project_code)
         """
-        # re is imported at the module level
-
         full_project_code = filename_base
         base_mo_code = ""
 
@@ -830,10 +598,8 @@ class ScannerPanel(ttk.Frame):
         if mo_match:
             base_mo_code = mo_match.group(0).upper()
         else:
-            # Fallback for ACCURA style 5-6 digit codes if MO not found
-            accura_match = re.search(r'(\d{5,6})', full_project_code)
-            if accura_match:
-                base_mo_code = accura_match.group(0)
+            # Use full project name when no MO code found
+            base_mo_code = full_project_code
 
         # If a base_mo_code was found and the full_project_code is potentially prefixed
         if base_mo_code and len(full_project_code) > len(base_mo_code):
@@ -894,13 +660,16 @@ class ScannerPanel(ttk.Frame):
         api_url = config.get('api_url', '') # Reads 'api_url' from the root of the config
         current_user = config.get('user', 'BarcodeMatchUser') # Reads 'user' from the root of the config
         
+        # Include session_id in AFGEMELD event
         db_panel = self.main_app.get_panel_by_name("Database")
         if db_panel is not None:
             try:
                 if db_panel.database_enabled_var.get():
                     self._log(f"Database logging ingeschakeld. Project '{full_project_code}' wordt als gesloten gelogd.")
                     is_rep_variant = '_REP_' in full_project_code.upper()
-                    db_panel.log_project_closed(full_project_code, base_mo_code=base_mo_code, is_rep_variant=is_rep_variant)
+                    # Pass session_id if available
+                    db_panel.log_project_closed(full_project_code, base_mo_code=base_mo_code, 
+                                              is_rep_variant=is_rep_variant)
                 else:
                     self._log("Database logging is niet ingeschakeld.")
             except AttributeError:
@@ -919,7 +688,7 @@ class ScannerPanel(ttk.Frame):
 
                 if email_is_enabled and email_mode_is_per_scan:
                     self._log(f"Email-notificatie voorbereiden voor project '{full_project_code}' (emails ingeschakeld, modus 'per_scan').")
-                    email_panel.send_project_complete_email(full_project_code, excel_path)
+                    email_panel.send_project_complete_email(full_project_code, excel_full_path)
                 elif not email_is_enabled:
                     self._log(f"Email notificatie overgeslagen voor project '{full_project_code}': emails zijn niet ingeschakeld in Email paneel.")
                 elif not email_mode_is_per_scan:
@@ -930,10 +699,293 @@ class ScannerPanel(ttk.Frame):
             except Exception as e:
                 self._log(f"[FOUT] Fout bij verwerken email notificatie voor project '{full_project_code}': {e}")
 
-    def on_close(self):
-        """Verwerkt opschoning wanneer het paneel wordt gesloten."""
-        self._log("Scannerpaneel sluiten...")
-        self.save_config()
+    def _update_treeview(self, item_id, new_status):
+        """Werkt de status van een item in de treeview bij.
+        Toont alleen 'OK' of leeg in de treeview."""
+        # Map internal status to display status and tag
+        if new_status == 'OK':
+            display_status = 'OK'
+            tag = 'OK'
+        else:
+            # For all other statuses (DUPLICAAT, NIET OK, etc.), show blank in treeview
+            display_status = ''
+            tag = 'NOT_OK'
+        
+        current_values = self.tree.item(item_id)['values']
+        if current_values:
+            new_values = (display_status, current_values[1])  # Update only the status column
+            self.tree.item(item_id, values=new_values, tags=(tag,))
+
+    def _save_updated_excel(self):
+        """Modified to send XLSX_UPDATED event for session tracking"""
+        original_file_path = self.excel_file_path_var.get()
+        if not original_file_path:
+            self._log("[FOUT] Geen Excel-bestand geladen om op te slaan.")
+            return
+
+        updated_file_path = self._generate_updated_path(original_file_path)
+        if not updated_file_path:
+            self._log("[FOUT] Kon bijgewerkt bestandspad niet genereren.")
+            return
+            
+        save_successful = False
+        save_path = ""
+        
+        try:
+            # Read the original file again to preserve all columns
+            df = pd.read_excel(original_file_path)
+            
+            # Update the status column with the in-memory data
+            for barcode, data in self.barcode_data.items():
+                mask = df['Item'] == barcode
+                if mask.any():
+                    # Map internal status to Excel status
+                    if data['status'] == 'OK':
+                        excel_status = 'OK'
+                    elif data['status'] == 'DUPLICAAT':
+                        excel_status = 'DUPLICAAT'
+                    elif data['status'] == 'NIET OK':
+                        excel_status = 'NIET OK'
+                    else:
+                        excel_status = 'NIET OK'  # Default for unknown
+                    
+                    df.loc[mask, 'Status'] = excel_status
+
+            # Save to the updated file
+            df.to_excel(updated_file_path, index=False)
+            self._log(f"Excel-bestand opgeslagen als: {os.path.basename(updated_file_path)}")
+            
+            save_successful = True
+            save_path = updated_file_path
+            
+            if save_successful:  # After successful save
+                # Use the SAME extraction logic as _perform_completion_actions
+                filename_with_ext = os.path.basename(original_file_path)
+                filename_base, _ = os.path.splitext(filename_with_ext)
+                base_mo_code, full_project_code = self._extract_project_codes_from_filename_base(filename_base)
+                
+                # Send XLSX_UPDATED event
+                config_file_path = get_config_path()
+                if os.path.exists(config_file_path):
+                    with open(config_file_path, 'r') as f:
+                        config = json.load(f)
+                        
+                    api_url = config.get('api_url', '')
+                    if api_url:
+                        # Determine which user this is for based on file path
+                        user = self._determine_user_from_path(save_path)
+                        
+                        if user and full_project_code:
+                            data = {
+                                'event': 'XLSX_UPDATED',
+                                'user': user,
+                                'project': full_project_code,  # Use the FULL project code
+                                'file_path': save_path,
+                                'item_count': len(self.barcode_data),
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            
+                            # Make API call in background thread to avoid blocking UI
+                            def send_api_call():
+                                try:
+                                    response = requests.post(api_url.replace('/log', '/session/xlsx_updated'), 
+                                                           json=data, timeout=1)  # Reduced timeout
+                                    if response.ok:
+                                        self._log(f"Session started for {user} via XLSX update")
+                                    else:
+                                        self._log(f"API call failed with status: {response.status_code}")
+                                except Exception as e:
+                                    self._log(f"API call failed (non-blocking): {e}")
+                            
+                            # Run API call in background thread so it doesn't block scanning
+                            threading.Thread(target=send_api_call, daemon=True).start()
+            
+        except PermissionError:
+            self._log(f"[FOUT] Geen toestemming om bestand te overschrijven: {updated_file_path}")
+            messagebox.showerror("Opslagfout", f"Geen toestemming om bestand te overschrijven:\n{updated_file_path}")
+        except Exception as e:
+            self._log(f"[FOUT] Fout bij opslaan: {e}")
+            messagebox.showerror("Opslagfout", f"Kon Excel-bestand niet opslaan:\n{e}")
+
+    def _determine_user_from_path(self, file_path):
+        """Determine which user based on file path"""
+        # Logic to determine if this is OPUS or GANNOMAT based on path
+        # This is a simplified version - adjust based on your actual path structure
+        if 'OPUS' in file_path.upper():
+            return 'OPUS'
+        elif 'GANNOMAT' in file_path.upper():
+            return 'KL GANNOMAT'
+        return None
+
+    def _extract_project_from_path(self, file_path):
+        """Extract project code from file path"""
+        # Look for patterns like MO123456 in the path
+        import re
+        
+        # Try to find MO code
+        mo_match = re.search(r'(MO\d{4,6})', file_path, re.IGNORECASE)
+        if mo_match:
+            return mo_match.group(0).upper()
+        
+        # Try to find numeric code
+        accura_match = re.search(r'(\d{5,6})', file_path)
+        if accura_match:
+            return accura_match.group(0)
+        
+        return None
+
+    def _show_context_menu(self, event):
+        """Toont het contextmenu bij rechtermuisklik."""
+        # Select the item under the cursor
+        item_id = self.tree.identify_row(event.y)
+        if item_id:
+            self.tree.selection_set(item_id)
+            self.selected_item_id = item_id
+            self.context_menu.post(event.x_root, event.y_root)
+
+    def _on_tree_select(self, event):
+        """Behandelt de selectie van een item in de treeview."""
+        selection = self.tree.selection()
+        if selection:
+            self.selected_item_id = selection[0]
+
+    def _mark_item_ok(self):
+        """Markeert het geselecteerde item als OK."""
+        if self.selected_item_id:
+            barcode = self.tree.item(self.selected_item_id)['values'][1]  # Item column
+            if barcode in self.barcode_data:
+                self.barcode_data[barcode]['status'] = 'OK'
+                self._update_treeview(self.selected_item_id, 'OK')
+                self._save_updated_excel()
+                self._log(f"Item '{barcode}' handmatig gemarkeerd als OK.")
+                self.session_item_count += 1  # Increment session item count
+                self._all_items_ok_check()
+
+    def _clear_item_status(self):
+        """Clears the status of the selected item (sets to NIET OK)."""
+        if self.selected_item_id:
+            barcode = self.tree.item(self.selected_item_id)['values'][1]  # Item column
+            if barcode in self.barcode_data:
+                self.barcode_data[barcode]['status'] = 'NIET OK'
+                self._update_treeview(self.selected_item_id, 'NIET OK')
+                self._save_updated_excel()
+                self._log(f"Status gewist voor item '{barcode}'.")
+
+    def _start_usb_listener(self):
+        """Start luisteren naar USB-toetsenbordscans."""
+        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
+            self._log("USB-luisteraar is al actief.")
+            return
+        
+        self._stop_usb_listener_event.clear()
+        self._usb_listener_thread = threading.Thread(target=self._usb_listener_worker, daemon=True)
+        self._usb_listener_thread.start()
+        self._log("USB-luisteraar gestart.")
+
+    def _stop_usb_listener(self):
+        """Stop luisteren naar USB-toetsenbordscans."""
+        if self._usb_listener_thread and self._usb_listener_thread.is_alive():
+            self._stop_usb_listener_event.set()
+            keyboard.unhook_all()  # Remove all keyboard hooks
+            self._usb_listener_thread.join(timeout=2)
+            self._log("USB-luisteraar gestopt.")
+
+    def _usb_listener_worker(self):
+        """Worker thread voor USB-toetsenbordscans."""
+        def on_key_event(e):
+            if e.event_type == keyboard.KEY_DOWN:
+                current_time = time.time()
+                
+                # Reset buffer if too much time has passed
+                if current_time - self.last_key_time > 0.5:  # 500ms timeout
+                    self.barcode_buffer.clear()
+                
+                self.last_key_time = current_time
+                
+                if e.name == 'enter':
+                    if self.barcode_buffer:
+                        barcode = ''.join(self.barcode_buffer)
+                        self.barcode_buffer.clear()
+                        # Schedule the barcode check in the main thread
+                        self.after(0, self._check_barcode, barcode)
+                elif len(e.name) == 1:  # Single character
+                    self.barcode_buffer.append(e.name)
+        
+        keyboard.hook(on_key_event)
+        
+        # Keep the thread alive
+        while not self._stop_usb_listener_event.is_set():
+            time.sleep(0.1)
+
+    def _update_com_ports(self):
+        """Vernieuwt de lijst met beschikbare COM-poorten."""
+        ports = [port.device for port in serial.tools.list_ports.comports()]
+        self.com_port_combo['values'] = ports
+        if ports and not self.com_port_var.get():
+            self.com_port_var.set(ports[0])
+        self._log(f"COM-poorten vernieuwd: {ports}")
+
+    def _connect_com_port(self):
+        """Verbindt met de geselecteerde COM-poort."""
+        if self.ser and self.ser.is_open:
+            self._log("COM-poort is al verbonden.")
+            return
+        
+        port = self.com_port_var.get()
+        baud_rate = int(self.baud_rate_var.get())
+        
+        try:
+            self.ser = serial.Serial(port, baud_rate, timeout=0.1)
+            self.is_reading_com = True
+            self.com_read_thread = threading.Thread(target=self._read_com_port, daemon=True)
+            self.com_read_thread.start()
+            self._log(f"Verbonden met {port} op {baud_rate} baud.")
+            self.connect_button.config(text="Verbreken", command=self._disconnect_com_port)
+        except Exception as e:
+            messagebox.showerror("Verbindingsfout", f"Kon niet verbinden met {port}:\n{e}")
+            self._log(f"[FOUT] Kon niet verbinden met {port}: {e}")
+
+    def _disconnect_com_port(self):
+        """Verbreekt de verbinding met de COM-poort."""
+        self.is_reading_com = False
+        if self.com_read_thread and self.com_read_thread.is_alive():
+            self.com_read_thread.join(timeout=2)
+        
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+            self._log("COM-poort verbinding verbroken.")
+        
+        self.connect_button.config(text="Verbinden", command=self._connect_com_port)
+
+    def _read_com_port(self):
+        """Leest gegevens van de COM-poort."""
+        buffer = ""
+        while self.is_reading_com and self.ser and self.ser.is_open:
+            try:
+                if self.ser.in_waiting:
+                    data = self.ser.read(self.ser.in_waiting).decode('utf-8', errors='ignore')
+                    buffer += data
+                    
+                    # Check for line endings
+                    while '\r\n' in buffer or '\n' in buffer:
+                        if '\r\n' in buffer:
+                            line, buffer = buffer.split('\r\n', 1)
+                        else:
+                            line, buffer = buffer.split('\n', 1)
+                        
+                        line = line.strip()
+                        if line:
+                            # Schedule the barcode check in the main thread
+                            self.after(0, self._check_barcode, line)
+                
+                time.sleep(0.01)  # Small delay to prevent high CPU usage
+            except Exception as e:
+                self._log(f"[FOUT] Fout bij lezen van COM-poort: {e}")
+                break
+
+    def shutdown(self):
+        """Ruimt resources op bij het afsluiten van de applicatie."""
         self._stop_usb_listener()
         self._disconnect_com_port()
-        self._log("Scannerpaneel gesloten.")
+        self._end_session()  # End any active session
+        self._log("Scannerpaneel afgesloten.")

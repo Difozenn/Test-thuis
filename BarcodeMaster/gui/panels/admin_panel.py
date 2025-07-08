@@ -265,7 +265,7 @@ class AdminPanel(tk.Frame):
 
         try:
             # Check if API is running first
-            api_status_str = self.app.service_status.db_api_status.upper() if self.app.service_status else "UNKNOWN"
+            api_status_str = self.app.service_status.db_api_status.upper() if (self.app.service_status and self.app.service_status.db_api_status and self.app.service_status.db_api_status is not None) else "UNKNOWN"
             if "RUNNING" not in api_status_str and "ACTIEF" not in api_status_str and "STARTING" not in api_status_str:
                 messagebox.showerror("Fout", "De Database API is niet actief. Kan logboek niet wissen.")
                 return

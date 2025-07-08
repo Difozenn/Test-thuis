@@ -181,11 +181,11 @@
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
-            <i class="fas fa-folder-open"></i>
+        <div class="stat-icon" style="background-color: rgba(156, 39, 176, 0.1); color: #9c27b0;">
+            <i class="fas fa-repeat"></i>
         </div>
-        <div class="stat-value" id="open-projects">{{ open_projects|default(0) }}</div>
-        <div class="stat-label">Open Projecten</div>
+        <div class="stat-value" id="rep-projects">{{ rep_variant_projects|default(0) }}</div>
+        <div class="stat-label">REP Projecten</div>
     </div>
     
     <div class="stat-card">
@@ -228,6 +228,9 @@
                 <div>
                     <div class="project-code">
                         <i class="fas fa-folder"></i> {{ project.code }}
+                        {% if project.is_rep_variant %}
+                        <span class="badge bg-primary ms-2" title="Repetitie Variant">REP</span>
+                        {% endif %}
                     </div>
                     <div class="project-info">
                         <div class="project-stat">

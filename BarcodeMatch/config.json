@@ -15,7 +15,7 @@
     "email_enabled": false,
     "email_send_mode": "daily",
     "Paths": {
-        "last_excel_file": "C:/OPUS/KORPUS\\0618_MO07834_Boekenkast_Rep_VL5\\0618_MO07834_Boekenkast_Rep_VL5.xlsx"
+        "last_excel_file": "C:/GANNOMAT\\0618_MO07834_Boekenkast.xlsx"
     },
     "Scanner": {
         "type": "USB",

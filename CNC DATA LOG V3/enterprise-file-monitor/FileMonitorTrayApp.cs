@@ -14,6 +14,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace FileMonitorTray
 {
@@ -27,16 +28,16 @@ namespace FileMonitorTray
         private bool authenticated = false;
         private string currentUser = "";
         private bool monitoringActive = false;
-        private Timer statusTimer;
+        private System.Windows.Forms.Timer statusTimer;
         private List<FileSystemWatcher> fileWatchers = new List<FileSystemWatcher>();
         private Dictionary<FileSystemWatcher, MonitoredPathInfo> watcherInfoMap = new Dictionary<FileSystemWatcher, MonitoredPathInfo>();
         
-        // Enhanced caching for duplicate prevention
-        private static readonly ConcurrentDictionary<string, DateTime> recentEvents = new ConcurrentDictionary<string, DateTime>();
-        private static readonly ConcurrentDictionary<string, long> fileChangeSizes = new ConcurrentDictionary<string, long>();
-        private static readonly ConcurrentDictionary<string, string> fileContentHashes = new ConcurrentDictionary<string, string>();
-        private static readonly ConcurrentDictionary<string, int> fileCategoryCache = new ConcurrentDictionary<string, int>();
-        private static readonly TimeSpan eventCooldown = TimeSpan.FromSeconds(10); // Increased to 10 seconds
+        // Aggressive deduplication fields
+        private readonly ConcurrentDictionary<string, DateTime> processedEvents = new ConcurrentDictionary<string, DateTime>();
+        private readonly ConcurrentDictionary<string, FileChangeInfo> pendingChanges = new ConcurrentDictionary<string, FileChangeInfo>();
+        private readonly ConcurrentDictionary<string, object> processingLocks = new ConcurrentDictionary<string, object>();
+        private System.Windows.Forms.Timer processTimer;
+        private readonly object processLock = new object();
         
         private const string APP_NAME = "CNC DATALOG";
         private const string CONFIG_FILE = "tray_config.json";
@@ -82,6 +83,17 @@ namespace FileMonitorTray
             public string color { get; set; }
             public List<string> keywords { get; set; }
             public List<string> file_patterns { get; set; }
+        }
+
+        // Class for tracking file changes
+        public class FileChangeInfo
+        {
+            public string FullPath { get; set; }
+            public string ChangeType { get; set; }
+            public MonitoredPathInfo PathInfo { get; set; }
+            public DateTime FirstSeen { get; set; }
+            public DateTime LastSeen { get; set; }
+            public int EventCount { get; set; }
         }
 
         private AppConfig config;
@@ -216,35 +228,34 @@ namespace FileMonitorTray
                 ShowLoginDialog();
             }
 
+            // Initialize the processing timer with a longer interval
+            processTimer = new System.Windows.Forms.Timer();
+            processTimer.Interval = 3000; // Process pending changes every 3 seconds
+            processTimer.Tick += ProcessPendingChanges;
+            processTimer.Start();
+
             // Start status checking timer
-            statusTimer = new Timer();
+            statusTimer = new System.Windows.Forms.Timer();
             statusTimer.Interval = 30000; // Check every 30 seconds
             statusTimer.Tick += async (s, e) => 
             {
                 await UpdateTrayIcon();
                 
-                // Clean up caches every 30 seconds
-                var cutoffTime = DateTime.UtcNow.AddMinutes(-10);
-                
-                // Clean file size cache
-                var oldSizeKeys = fileChangeSizes.Where(kvp => !File.Exists(kvp.Key.Replace(":size", ""))).Select(kvp => kvp.Key).ToList();
-                foreach (var key in oldSizeKeys)
+                // Clean up old processed events
+                if (processedEvents.Count > 500)
                 {
-                    fileChangeSizes.TryRemove(key, out _);
+                    var cutoff = DateTime.UtcNow.AddMinutes(-15);
+                    var oldKeys = processedEvents.Where(kvp => kvp.Value < cutoff).Select(kvp => kvp.Key).ToList();
+                    foreach (var key in oldKeys)
+                    {
+                        processedEvents.TryRemove(key, out _);
+                    }
                 }
                 
-                // Clean content hash cache
-                var oldHashKeys = fileContentHashes.Where(kvp => !File.Exists(kvp.Key.Replace(":hash", ""))).Select(kvp => kvp.Key).ToList();
-                foreach (var key in oldHashKeys)
+                // Clean up old locks
+                if (processingLocks.Count > 100)
                 {
-                    fileContentHashes.TryRemove(key, out _);
-                }
-                
-                // Clean category cache
-                var oldCategoryKeys = fileCategoryCache.Where(kvp => !File.Exists(kvp.Key)).Select(kvp => kvp.Key).ToList();
-                foreach (var key in oldCategoryKeys)
-                {
-                    fileCategoryCache.TryRemove(key, out _);
+                    processingLocks.Clear();
                 }
             };
             statusTimer.Start();
@@ -688,12 +699,16 @@ namespace FileMonitorTray
                 MessageBox.Show(localization.T("please_login"), "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            
             string statusMessage = $@"User: {currentUser}
 Server: {webAppUrl}
 Monitoring: {(monitoringActive ? "Active" : "Inactive")}
 Watching: {fileWatchers.Count} paths
+Pending Changes: {pendingChanges.Count}
+Processed Events: {processedEvents.Count}
 Content Scanning: {(config.ScanFileContents ? "Enabled" : "Disabled")}
 Max Scan Size: {config.MaxFileSizeMB} MB";
+            
             MessageBox.Show(statusMessage, "Application Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -711,6 +726,11 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
         private void QuitApplication()
         {
             StopMonitoring();
+            if (processTimer != null)
+            {
+                processTimer.Stop();
+                processTimer.Dispose();
+            }
             if (trayIcon != null) trayIcon.Visible = false;
             Application.Exit();
         }
@@ -802,6 +822,9 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
             fileWatchers.Clear();
             watcherInfoMap.Clear();
             monitoringActive = false;
+            
+            // Clear pending changes
+            pendingChanges.Clear();
         }
 
         private void OnFileSystemEvent(object sender, FileSystemEventArgs e)
@@ -815,8 +838,8 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
             
             if (watcherInfoMap.TryGetValue((FileSystemWatcher)sender, out var pathInfo))
             {
-                // Add a small delay to batch rapid events
-                Task.Delay(100).ContinueWith(_ => LogFileChangeAsync(pathInfo, e.ChangeType.ToString(), e.FullPath));
+                // Queue the change instead of processing immediately
+                QueueFileChange(pathInfo, e.ChangeType.ToString(), e.FullPath);
             }
         }
 
@@ -824,107 +847,165 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
         {
             if (watcherInfoMap.TryGetValue((FileSystemWatcher)sender, out var pathInfo))
             {
-                LogFileChangeAsync(pathInfo, "deleted", e.OldFullPath);
-                LogFileChangeAsync(pathInfo, "created", e.FullPath);
+                QueueFileChange(pathInfo, "deleted", e.OldFullPath);
+                QueueFileChange(pathInfo, "created", e.FullPath);
             }
         }
 
-        private async void LogFileChangeAsync(MonitoredPathInfo pathInfo, string changeType, string fullPath)
+        private void QueueFileChange(MonitoredPathInfo pathInfo, string changeType, string fullPath)
         {
-            // Enhanced debounce logic with file content hash checking
+            // Create a simpler key without change type - this will merge all change types for the same file
+            var key = fullPath.ToLower();
             var now = DateTime.UtcNow;
-            string eventKey = $"{fullPath}:{changeType}";
             
-            // Check if we've processed this event recently
-            if (recentEvents.TryGetValue(eventKey, out var lastEventTime))
-            {
-                var timeSinceLastEvent = now - lastEventTime;
-                if (timeSinceLastEvent < eventCooldown)
+            pendingChanges.AddOrUpdate(key, 
+                // Add new entry
+                k => new FileChangeInfo
                 {
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Debounced event for {Path.GetFileName(fullPath)} ({changeType}) - {timeSinceLastEvent.TotalSeconds:F1}s since last event");
-                    return;
+                    FullPath = fullPath,
+                    ChangeType = changeType.ToLower(),
+                    PathInfo = pathInfo,
+                    FirstSeen = now,
+                    LastSeen = now,
+                    EventCount = 1
+                },
+                // Update existing entry - always keep the first change type seen
+                (k, existing) =>
+                {
+                    existing.LastSeen = now;
+                    existing.EventCount++;
+                    // Don't update change type - keep the first one
+                    return existing;
+                });
+            
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Queued {changeType} event for {Path.GetFileName(fullPath)} (queue size: {pendingChanges.Count})");
+        }
+
+        private async void ProcessPendingChanges(object sender, EventArgs e)
+        {
+            if (!Monitor.TryEnter(processLock))
+            {
+                return;
+            }
+            
+            try
+            {
+                var now = DateTime.UtcNow;
+                var changesToProcess = new List<KeyValuePair<string, FileChangeInfo>>();
+                
+                // Wait 10 seconds for file stability
+                foreach (var kvp in pendingChanges)
+                {
+                    var timeSinceLastSeen = now - kvp.Value.LastSeen;
+                    if (timeSinceLastSeen.TotalSeconds >= 10.0)
+                    {
+                        changesToProcess.Add(kvp);
+                    }
+                }
+                
+                // Process stable changes
+                foreach (var kvp in changesToProcess)
+                {
+                    if (pendingChanges.TryRemove(kvp.Key, out var changeInfo))
+                    {
+                        // Get or create a lock specific to this file
+                        var fileLock = processingLocks.GetOrAdd(changeInfo.FullPath.ToLower(), new object());
+                        
+                        // Use the file-specific lock to ensure only one thread processes this file
+                        lock (fileLock)
+                        {
+                            // Double-check if this file was already processed very recently
+                            var recentKey = $"recent:{changeInfo.FullPath.ToLower()}";
+                            if (processedEvents.TryGetValue(recentKey, out var lastProcessed))
+                            {
+                                var timeSince = DateTime.UtcNow - lastProcessed;
+                                if (timeSince.TotalSeconds < 30) // 30 second minimum between processing same file
+                                {
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Skipping {Path.GetFileName(changeInfo.FullPath)} - processed {timeSince.TotalSeconds:F0}s ago");
+                                    continue;
+                                }
+                            }
+                            
+                            // Mark as recently processed immediately
+                            processedEvents[recentKey] = DateTime.UtcNow;
+                            
+                            // Process the file change asynchronously but wait for completion
+                            Task.Run(async () => await ProcessFileChange(changeInfo)).Wait();
+                        }
+                    }
+                }
+                
+                // Clean up old entries
+                var staleEntries = pendingChanges.Where(kvp => (now - kvp.Value.FirstSeen).TotalMinutes > 5).ToList();
+                foreach (var entry in staleEntries)
+                {
+                    pendingChanges.TryRemove(entry.Key, out _);
+                }
+                
+                // Clean up old locks
+                if (processingLocks.Count > 100)
+                {
+                    processingLocks.Clear();
                 }
             }
+            finally
+            {
+                Monitor.Exit(processLock);
+            }
+        }
+
+        private async Task ProcessFileChange(FileChangeInfo changeInfo)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Processing {changeInfo.ChangeType} for {Path.GetFileName(changeInfo.FullPath)} (events: {changeInfo.EventCount})");
             
-            // Update the last event time immediately to prevent concurrent processing
-            recentEvents[eventKey] = now;
-
-            // Clean up old entries from the debounce cache
-            if (recentEvents.Count > 1000)
-            {
-                var cleanupTime = now.AddMinutes(-5); // Keep entries for 5 minutes
-                var oldKeys = recentEvents.Where(kvp => kvp.Value < cleanupTime).Select(kvp => kvp.Key).ToList();
-                foreach (var key in oldKeys)
-                {
-                    recentEvents.TryRemove(key, out _);
-                }
-            }
-
-            // For 'changed' events, add a longer delay to ensure file is fully written
-            if (changeType.ToLower() == "changed")
-            {
-                await Task.Delay(1000); // Wait 1 full second for file to stabilize
-            }
-
             long? fileSize = null;
             CategoryInfo matchedCategory = null;
             string matchedKeyword = null;
+            string contentHash = "no-content";
             
             try
             {
                 // Get categories for matching
                 var categories = await GetCategories();
                 
-                if (File.Exists(fullPath))
+                if (File.Exists(changeInfo.FullPath))
                 {
-                    var fileInfo = new FileInfo(fullPath);
+                    // Add a small delay to ensure file is fully written
+                    await Task.Delay(500);
+                    
+                    var fileInfo = new FileInfo(changeInfo.FullPath);
                     fileSize = fileInfo.Length;
                     
-                    // Check if file has actually changed by comparing size
-                    string sizeKey = $"{fullPath}:size";
-                    if (fileChangeSizes.TryGetValue(sizeKey, out var lastSize) && lastSize == fileSize)
-                    {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] File size unchanged for {Path.GetFileName(fullPath)}, skipping content scan");
-                        return;
-                    }
-                    fileChangeSizes[sizeKey] = fileSize.Value;
+                    string filename = Path.GetFileName(changeInfo.FullPath).ToLower();
+                    string fileExtension = Path.GetExtension(changeInfo.FullPath).ToLower();
                     
-                    string filename = Path.GetFileName(fullPath).ToLower();
-                    string fileExtension = Path.GetExtension(fullPath).ToLower();
+                    // Calculate a simple hash based on file size and last write time
+                    var lastWriteTime = fileInfo.LastWriteTimeUtc;
+                    var fileIdentifier = $"{fileSize}:{lastWriteTime.Ticks}";
+                    contentHash = CalculateSimpleHash(fileIdentifier);
                     
                     // Check if we should scan file contents
                     if (config.ScanFileContents && 
                         SCANNABLE_EXTENSIONS.Contains(fileExtension) &&
                         fileSize < config.MaxFileSizeMB * 1024 * 1024)
                     {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Scanning file content: {Path.GetFileName(fullPath)}");
                         try
                         {
-                            // Read file content with improved error handling
-                            string content = await ReadFileContentAsync(fullPath);
+                            // Read file content
+                            string content = await ReadFileContentAsync(changeInfo.FullPath);
                             
                             if (!string.IsNullOrEmpty(content))
                             {
-                                // Calculate content hash to detect duplicate scans
-                                string contentHash = CalculateContentHash(content);
-                                string hashKey = $"{fullPath}:hash";
+                                // Calculate content hash
+                                contentHash = CalculateContentHash(content);
                                 
-                                if (fileContentHashes.TryGetValue(hashKey, out var lastHash) && lastHash == contentHash)
-                                {
-                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Content unchanged for {Path.GetFileName(fullPath)}, skipping duplicate event");
-                                    // Content hasn't changed, so don't create a new event
-                                    return;
-                                }
-                                fileContentHashes[hashKey] = contentHash;
-                                
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Content changed or new, scanning {content.Length} characters");
+                                // Scan for keywords
                                 string contentLower = content.ToLower();
-                                
-                                // IMPORTANT: Stop after finding the FIRST matching category
                                 bool foundMatch = false;
+                                
                                 foreach (var category in categories)
                                 {
-                                    if (foundMatch) break; // Stop if we already found a match
+                                    if (foundMatch) break;
                                     
                                     if (category.keywords != null)
                                     {
@@ -935,7 +1016,7 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                                                 matchedCategory = category;
                                                 matchedKeyword = $"Content: {keyword}";
                                                 
-                                                // Find the line containing the keyword for better context
+                                                // Find the line containing the keyword
                                                 var lines = content.Split('\n');
                                                 for (int i = 0; i < lines.Length; i++)
                                                 {
@@ -947,30 +1028,15 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                                                             contextLine = contextLine.Substring(0, 47) + "...";
                                                         }
                                                         matchedKeyword = $"Content: {keyword} (Line {i + 1}: {contextLine})";
-                                                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Found '{keyword}' at line {i + 1} -> {category.name}");
                                                         break;
                                                     }
                                                 }
-                                                foundMatch = true; // Mark that we found a match
-                                                break; // Stop checking keywords for this category
+                                                foundMatch = true;
+                                                break;
                                             }
                                         }
                                     }
                                 }
-                                
-                                // Cache the category for this file
-                                if (matchedCategory != null)
-                                {
-                                    fileCategoryCache[fullPath] = matchedCategory.id;
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No keywords found in content");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Could not read file content (empty or locked)");
                             }
                         }
                         catch (Exception ex)
@@ -978,30 +1044,48 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error scanning file content: {ex.Message}");
                         }
                     }
-                    
-                    SendEvent:
-                    // Log final categorization
-                    if (matchedCategory != null)
-                    {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Final category: {matchedCategory.name} ({matchedKeyword ?? "cached"})");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No category matched, will use default (Allerlei)");
-                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error processing file {Path.GetFileName(fullPath)}: {ex.Message}");
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error processing file: {ex.Message}");
             }
 
-            // Only send ONE event per file change
+            // Create a unique key for this specific event
+            string eventKey = $"{changeInfo.FullPath.ToLower()}|{contentHash}|{matchedCategory?.id ?? 0}|{fileSize ?? 0}";
+            
+            // Check if we've already sent this exact event recently
+            if (processedEvents.TryGetValue(eventKey, out var lastProcessed))
+            {
+                var timeSinceLastProcessed = DateTime.UtcNow - lastProcessed;
+                if (timeSinceLastProcessed.TotalMinutes < 10) // 10 minute window
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] DUPLICATE BLOCKED: Exact same event already sent {timeSinceLastProcessed.TotalSeconds:F0}s ago");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Event key: {eventKey}");
+                    return;
+                }
+            }
+            
+            // Mark this exact event as processed
+            processedEvents[eventKey] = DateTime.UtcNow;
+            
+            // Clean up old entries (keep dictionary size manageable)
+            if (processedEvents.Count > 500)
+            {
+                var cutoff = DateTime.UtcNow.AddMinutes(-15);
+                var oldKeys = processedEvents.Where(kvp => kvp.Value < cutoff).Select(kvp => kvp.Key).ToList();
+                foreach (var key in oldKeys)
+                {
+                    processedEvents.TryRemove(key, out _);
+                }
+            }
+
+            // Send the event
             var payload = new
             {
-                path_id = pathInfo.id,
-                change_type = changeType.ToLower(),
-                file_path = fullPath,
+                path_id = changeInfo.PathInfo.id,
+                change_type = changeInfo.ChangeType,
+                file_path = changeInfo.FullPath,
                 timestamp_utc = DateTime.UtcNow.ToString("o"),
                 new_size = fileSize,
                 computer_name = Environment.MachineName,
@@ -1021,7 +1105,7 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 }
                 else
                 {
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Event logged successfully for {Path.GetFileName(fullPath)} -> {matchedCategory?.name ?? "Allerlei"}");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ✓ Event logged successfully for {Path.GetFileName(changeInfo.FullPath)} -> {matchedCategory?.name ?? "Allerlei"}");
                 }
             }
             catch (Exception ex)
@@ -1132,6 +1216,16 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 byte[] bytes = Encoding.UTF8.GetBytes(content);
                 byte[] hash = sha256.ComputeHash(bytes);
                 return Convert.ToBase64String(hash);
+            }
+        }
+
+        private string CalculateSimpleHash(string input)
+        {
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
         }
         #endregion

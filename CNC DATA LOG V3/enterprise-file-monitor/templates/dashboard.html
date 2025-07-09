@@ -819,12 +819,12 @@ function initializeCharts() {
                     },
                     tooltip: {
                         callbacks: {
-                            afterLabel: function(context) {
-                                const dayData = weeklyData[context.dataIndex];
-                                if (context.datasetIndex === 0) { // Events dataset
-                                    return `{{ t("work_hours") }}: ${dayData.work_hours}h\n{{ t("events_per_hour") }}: ${dayData.work_hours > 0 ? (dayData.events / dayData.work_hours).toFixed(1) : '0'}\n{{ t("efficiency") }}: ${dayData.efficiency}`;
-                                }
-                                return '';
+                            footer: function(tooltipItems) {
+                                // Get the day data for this index
+                                const dayData = weeklyData[tooltipItems[0].dataIndex];
+                                
+                                // Show efficiency only once in the footer
+                                return `{{ t("efficiency") }}: ${dayData.efficiency}`;
                             }
                         }
                     }

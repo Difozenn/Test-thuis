@@ -374,6 +374,8 @@ TRANSLATIONS = {
         'restoring_database': 'Restoring database...',
         'restore_successful': 'Database restored successfully!',
         'confirm_restore_upload_warning': 'Are you sure? This will replace all current database data with the uploaded file!',
+        'no_file_selected': 'No file selected',
+        'invalid_file_format': 'Invalid file format. Only .db, .zip, and .sql files are allowed',
         'confirm_cleanup_warning': 'Are you sure you want to delete these events? This action cannot be undone.',
         'confirm_reset_database': 'Are you sure you want to reset the database? All events will be deleted!',
         'confirm_reset_database_final': 'This is your final warning! All events will be permanently deleted. Continue?',
@@ -396,7 +398,8 @@ TRANSLATIONS = {
         'old_events': 'old events',
         'database_optimized': 'Database optimized successfully',
         'optimization_failed': 'Optimization failed',
-        'backup_schedule_updated': 'Backup schedule updated'
+        'backup_schedule_updated': 'Backup schedule updated',
+        'error_updating_schedule': 'Error updating backup schedule'
     },
     'nl': {
         # Dutch translations (keeping key ones and updating as needed)
@@ -628,6 +631,8 @@ TRANSLATIONS = {
         'restoring_database': 'Database herstellen...',
         'restore_successful': 'Database succesvol hersteld!',
         'confirm_restore_upload_warning': 'Weet je het zeker? Dit zal alle huidige database data vervangen met het geüploade bestand!',
+        'no_file_selected': 'Geen bestand geselecteerd',
+        'invalid_file_format': 'Ongeldig bestandsformaat. Alleen .db, .zip en .sql bestanden zijn toegestaan',
         'confirm_cleanup_warning': 'Weet je zeker dat je deze gebeurtenissen wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
         'confirm_reset_database': 'Weet je zeker dat je de database wilt resetten? Alle gebeurtenissen worden verwijderd!',
         'confirm_reset_database_final': 'Dit is je laatste waarschuwing! Alle gebeurtenissen worden permanent verwijderd. Doorgaan?',
@@ -651,6 +656,7 @@ TRANSLATIONS = {
         'database_optimized': 'Database succesvol geoptimaliseerd',
         'optimization_failed': 'Optimalisatie mislukt',
         'backup_schedule_updated': 'Backup schema bijgewerkt',
+        'error_updating_schedule': 'Fout bij bijwerken backup schema',
         
         # Missing Dutch translations - added 2025-06-24
         'access_patterns': 'Toegangspatronen',

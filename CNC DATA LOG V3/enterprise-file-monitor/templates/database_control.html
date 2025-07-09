@@ -349,31 +349,15 @@
     </div>
 </div>
 
-<!-- Data Cleanup Section -->
+<!-- Database Optimization Section -->
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="mb-0">
-            <i class="fas fa-broom"></i> {{ t('data_cleanup') }}
+            <i class="fas fa-tachometer-alt"></i> {{ t('database_optimization') }}
         </h5>
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="col-md-6">
-                <h6>{{ t('remove_old_events') }}</h6>
-                <form method="POST" action="{{ url_for('main.cleanup_events') }}" class="d-flex gap-2">
-                    <select name="cleanup_period" class="form-select">
-                        <option value="30">{{ t('older_than_30_days') }}</option>
-                        <option value="60">{{ t('older_than_60_days') }}</option>
-                        <option value="90">{{ t('older_than_90_days') }}</option>
-                        <option value="180">{{ t('older_than_180_days') }}</option>
-                        <option value="365">{{ t('older_than_1_year') }}</option>
-                    </select>
-                    <button type="submit" class="btn btn-warning" onclick="return confirmCleanup()">
-                        <i class="fas fa-trash"></i> {{ t('cleanup') }}
-                    </button>
-                </form>
-                <small class="text-muted">{{ t('events_to_delete') }}: <span id="events-count">-</span></small>
-            </div>
             <div class="col-md-6">
                 <h6>{{ t('optimize_database') }}</h6>
                 <p class="text-muted">{{ t('optimize_description') }}</p>
@@ -382,6 +366,20 @@
                         <i class="fas fa-tachometer-alt"></i> {{ t('optimize_now') }}
                     </button>
                 </form>
+            </div>
+            <div class="col-md-6">
+                <h6>{{ t('database_info') }}</h6>
+                <p class="text-muted">{{ t('current_database_statistics') }}</p>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-primary">{{ stats.total_events }}</h5>
+                        <small class="text-muted">{{ t('total_events') }}</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-info">{{ stats.db_size }}</h5>
+                        <small class="text-muted">{{ t('database_size') }}</small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -442,13 +440,28 @@
             </div>
         </form>
         
-        {% if scheduled_backup.last_run %}
         <div class="mt-3">
-            <small class="text-muted">
-                {{ t('last_backup') }}: {{ format_local_time(scheduled_backup.last_run, '%Y-%m-%d %H:%M') }}
-            </small>
+            <div class="row">
+                {% if scheduled_backup.last_run %}
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>{{ t('last_backup') }}:</strong> {{ format_local_time(scheduled_backup.last_run, '%Y-%m-%d %H:%M') }}
+                    </small>
+                </div>
+                {% endif %}
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>{{ t('next_backup') }}:</strong> <span id="next-backup-time">
+                        {% if scheduled_backup.enabled %}
+                            {{ t('calculating') }}...
+                        {% else %}
+                            {{ t('disabled') }}
+                        {% endif %}
+                        </span>
+                    </small>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -542,9 +555,6 @@ function confirmRestoreUpload() {
     return confirm('{{ t("confirm_restore_upload_warning") }}');
 }
 
-function confirmCleanup() {
-    return confirm('{{ t("confirm_cleanup_warning") }}');
-}
 
 function confirmResetDatabase() {
     if (confirm('{{ t("confirm_reset_database") }}')) {
@@ -602,19 +612,49 @@ function hideProgress() {
     if (modal) modal.hide();
 }
 
-// Update cleanup count on selection change
-document.querySelector('select[name="cleanup_period"]').addEventListener('change', function() {
-    const days = this.value;
-    fetch(`/api/database/cleanup_count?days=${days}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('events-count').textContent = data.count;
-        });
+// Initialize backup schedule display
+document.addEventListener('DOMContentLoaded', function() {
+    updateNextBackupTime();
 });
 
-// Load initial cleanup count
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('select[name="cleanup_period"]').dispatchEvent(new Event('change'));
-});
+function updateNextBackupTime() {
+    // Update the next backup time display based on current settings
+    const enabled = document.getElementById('enable_scheduled').checked;
+    const frequency = document.querySelector('select[name="backup_frequency"]').value;
+    const time = document.querySelector('input[name="backup_time"]').value;
+    
+    if (enabled && time) {
+        const nextBackup = calculateNextBackupTime(frequency, time);
+        const nextBackupElement = document.getElementById('next-backup-time');
+        if (nextBackupElement) {
+            nextBackupElement.textContent = nextBackup;
+        }
+    }
+}
+
+function calculateNextBackupTime(frequency, time) {
+    const now = new Date();
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    const nextRun = new Date();
+    nextRun.setHours(hours, minutes, 0, 0);
+    
+    // If the time has passed today, move to next occurrence
+    if (nextRun <= now) {
+        switch (frequency) {
+            case 'daily':
+                nextRun.setDate(nextRun.getDate() + 1);
+                break;
+            case 'weekly':
+                nextRun.setDate(nextRun.getDate() + 7);
+                break;
+            case 'monthly':
+                nextRun.setMonth(nextRun.getMonth() + 1);
+                break;
+        }
+    }
+    
+    return nextRun.toLocaleString();
+}
 </script>
 {% endblock %}

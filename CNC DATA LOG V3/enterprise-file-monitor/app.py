@@ -25,6 +25,9 @@ from functools import wraps
 from sqlalchemy import func, and_, or_, text
 from sqlalchemy.exc import OperationalError
 import pytz
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import atexit
 # Import our translation module
 from translations import get_translation, setup_translations, get_available_languages
 
@@ -119,6 +122,168 @@ def create_app():
 
 # Create app instance
 app = create_app()
+
+# Initialize Background Scheduler for automated backups
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+# Cleanup scheduler on app exit
+atexit.register(lambda: scheduler.shutdown())
+
+def perform_scheduled_backup():
+    """Perform automated backup based on schedule"""
+    with app.app_context():
+        try:
+            print("Starting scheduled backup...")
+            
+            # Get scheduled backup settings
+            scheduled_backup = ScheduledBackupSettings.query.first()
+            if not scheduled_backup or not scheduled_backup.enabled:
+                print("Scheduled backup is disabled or not configured")
+                return
+            
+            # Create backup directory
+            backup_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'backups')
+            os.makedirs(backup_dir, exist_ok=True)
+            
+            # Generate backup filename with timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'scheduled_backup_{timestamp}.db'
+            backup_path = os.path.join(backup_dir, filename)
+            
+            # Copy database file
+            db_path = 'file_monitor.db'
+            if os.path.exists(db_path):
+                shutil.copy2(db_path, backup_path)
+                
+                # Get file size
+                size_bytes = os.path.getsize(backup_path)
+                size_mb = round(size_bytes / (1024 * 1024), 2)
+                
+                # Create backup record
+                backup_record = DatabaseBackup(
+                    filename=filename,
+                    type='scheduled_full',
+                    size_mb=size_mb,
+                    note=f'Automated {scheduled_backup.frequency} backup',
+                    created_by_id=1  # System user
+                )
+                db.session.add(backup_record)
+                
+                # Update last run time
+                scheduled_backup.last_run = datetime.now(timezone.utc)
+                scheduled_backup.next_run = calculate_next_backup_time(scheduled_backup)
+                
+                db.session.commit()
+                
+                # Clean up old backups based on retention policy
+                cleanup_old_backups(scheduled_backup.retention_days)
+                
+                print(f"Scheduled backup completed: {filename} ({size_mb}MB)")
+                
+            else:
+                print("Database file not found for backup")
+                
+        except Exception as e:
+            print(f"Scheduled backup failed: {str(e)}")
+            db.session.rollback()
+
+def calculate_next_backup_time(scheduled_backup):
+    """Calculate the next backup time based on frequency"""
+    now = datetime.now(timezone.utc)
+    time_parts = scheduled_backup.time.split(':')
+    hour = int(time_parts[0])
+    minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+    
+    # Create next run time
+    next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    
+    # If time has passed today, move to next occurrence
+    if next_run <= now:
+        if scheduled_backup.frequency == 'daily':
+            next_run = next_run + timedelta(days=1)
+        elif scheduled_backup.frequency == 'weekly':
+            next_run = next_run + timedelta(days=7)
+        elif scheduled_backup.frequency == 'monthly':
+            # Move to next month
+            if next_run.month == 12:
+                next_run = next_run.replace(year=next_run.year + 1, month=1)
+            else:
+                next_run = next_run.replace(month=next_run.month + 1)
+    
+    return next_run
+
+def cleanup_old_backups(retention_days):
+    """Clean up old scheduled backups based on retention policy"""
+    try:
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        
+        # Find old scheduled backups
+        old_backups = DatabaseBackup.query.filter(
+            DatabaseBackup.type == 'scheduled_full',
+            DatabaseBackup.created_at < cutoff_date
+        ).all()
+        
+        backup_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'backups')
+        
+        for backup in old_backups:
+            # Delete file
+            backup_path = os.path.join(backup_dir, backup.filename)
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+                print(f"Deleted old backup: {backup.filename}")
+            
+            # Delete database record
+            db.session.delete(backup)
+        
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"Error cleaning up old backups: {str(e)}")
+        db.session.rollback()
+
+def update_backup_schedule_job():
+    """Update the scheduled backup job based on current settings"""
+    with app.app_context():
+        try:
+            # Remove existing job if it exists
+            if scheduler.get_job('scheduled_backup'):
+                scheduler.remove_job('scheduled_backup')
+            
+            # Get current settings
+            scheduled_backup = ScheduledBackupSettings.query.first()
+            if scheduled_backup and scheduled_backup.enabled:
+                time_parts = scheduled_backup.time.split(':')
+                hour = int(time_parts[0])
+                minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+                
+                # Create cron trigger based on frequency
+                if scheduled_backup.frequency == 'daily':
+                    trigger = CronTrigger(hour=hour, minute=minute)
+                elif scheduled_backup.frequency == 'weekly':
+                    trigger = CronTrigger(day_of_week=0, hour=hour, minute=minute)  # Monday
+                elif scheduled_backup.frequency == 'monthly':
+                    trigger = CronTrigger(day=1, hour=hour, minute=minute)  # First day of month
+                else:
+                    return
+                
+                # Add the job
+                scheduler.add_job(
+                    func=perform_scheduled_backup,
+                    trigger=trigger,
+                    id='scheduled_backup',
+                    name='Scheduled Database Backup',
+                    replace_existing=True
+                )
+                
+                # Calculate and save next run time
+                scheduled_backup.next_run = calculate_next_backup_time(scheduled_backup)
+                db.session.commit()
+                
+                print(f"Scheduled backup job updated: {scheduled_backup.frequency} at {scheduled_backup.time}")
+                
+        except Exception as e:
+            print(f"Error updating backup schedule: {str(e)}")
 
 # Add timezone context processor
 @app.context_processor
@@ -526,6 +691,93 @@ def get_categories():
         'keywords': c.get_keywords(),
         'file_patterns': c.get_patterns()
     } for c in categories])
+
+@api_bp.route('/monitored_paths')
+@login_required
+def get_monitored_paths():
+    """Get monitored paths for current user"""
+    if current_user.role == 'admin':
+        # Admin can see all paths
+        paths = MonitoredPath.query.filter_by(is_active=True).order_by(MonitoredPath.path).all()
+    else:
+        # Regular users see only their own paths
+        paths = MonitoredPath.query.filter_by(user_id=current_user.id, is_active=True).order_by(MonitoredPath.path).all()
+    
+    return jsonify([{
+        'id': path.id,
+        'path': path.path,
+        'description': path.description or os.path.basename(path.path),
+        'is_directory': path.is_directory
+    } for path in paths])
+
+@api_bp.route('/manual_entry', methods=['POST'])
+@login_required
+def api_manual_entry():
+    """API endpoint for manual entry from C# app"""
+    try:
+        data = request.get_json()
+        
+        description = data.get('description', '').strip()
+        category = data.get('category', '').strip()
+        amount = data.get('amount', 1)
+        path_id = data.get('path_id')
+        
+        # Find category by name
+        category_obj = Category.query.filter_by(name=category).first()
+        if not category_obj:
+            return jsonify({'error': 'Category not found'}), 400
+        
+        # Validate amount
+        if not (1 <= amount <= 100):
+            return jsonify({'error': 'Amount must be between 1 and 100'}), 400
+        
+        # Get the monitored path if provided
+        path_info = ""
+        if path_id:
+            monitored_path = MonitoredPath.query.get(path_id)
+            if monitored_path and (monitored_path.user_id == current_user.id or current_user.role == 'admin'):
+                path_info = monitored_path.path
+            else:
+                path_info = "Manual Entry"
+        else:
+            path_info = "Manual Entry"
+        
+        # Create events
+        events_created = 0
+        for i in range(amount):
+            # Create a unique identifier for each entry if amount > 1
+            if amount > 1:
+                entry_description = f"{description} (Entry {i+1}/{amount})"
+            else:
+                entry_description = description
+            
+            # Format file path with optional monitored path
+            if path_info != "Manual Entry":
+                file_path = f"{path_info}: {entry_description}"
+            else:
+                file_path = f"Manual Entry: {entry_description}"
+            
+            event = Event(
+                file_path=file_path,
+                category_id=category_obj.id,
+                computer_name=socket.gethostname(),
+                user_id=current_user.id,
+                event_type='manual'
+            )
+            db.session.add(event)
+            events_created += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'events_created': events_created,
+            'message': f'Successfully created {events_created} event(s)'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/log_event', methods=['POST'])
 @login_required
@@ -963,6 +1215,11 @@ def dashboard():
                 and_(
                     MonitoredPath.is_directory == True,
                     Event.file_path.like(func.concat(MonitoredPath.path, '%'))
+                ),
+                # Match manual entries that start with the monitored path followed by ":"
+                and_(
+                    Event.event_type == 'manual',
+                    Event.file_path.like(func.concat(MonitoredPath.path, ':%'))
                 )
             ),
             Event.user_id == MonitoredPath.user_id  # Events must belong to path owner
@@ -996,21 +1253,22 @@ def dashboard():
     } if path_stats else None
     
     # Hourly timeline for today
-    hourly_stats = db.session.query(
-        func.extract('hour', Event.timestamp).label('hour'),
-        func.count(Event.id).label('count')
-    ).filter(
+    # Get all events for today and process in Python to handle timezone conversion
+    hourly_events = Event.query.filter(
         Event.timestamp >= today_start_utc
     )
     
     if user_filter:
-        hourly_stats = hourly_stats.filter(Event.user_id == user_filter)
+        hourly_events = hourly_events.filter(Event.user_id == user_filter)
     
-    hourly_stats = hourly_stats.group_by('hour').all()
+    hourly_events = hourly_events.all()
     
+    # Convert timestamps to local time and count by hour
     hourly_data = {h: 0 for h in range(24)}
-    for stat in hourly_stats:
-        hourly_data[stat.hour] = stat.count
+    for event in hourly_events:
+        local_time = utc_to_local(event.timestamp)
+        hour = local_time.hour
+        hourly_data[hour] += 1
     
     hourly_timeline_data = {
         'labels': [f"{h}:00" for h in range(24)],
@@ -1132,8 +1390,20 @@ def manual_entry():
         category_id = request.form.get('category_id', type=int)
         matched_keyword = request.form.get('matched_keyword', '').strip()
         amount = request.form.get('amount', type=int)
+        monitored_path_id = request.form.get('monitored_path_id', type=int)
         
         if description and category_id and amount and 1 <= amount <= 100:
+            # Get the monitored path if selected
+            path_info = ""
+            if monitored_path_id:
+                monitored_path = MonitoredPath.query.get(monitored_path_id)
+                if monitored_path and (monitored_path.user_id == current_user.id or current_user.role == 'admin'):
+                    path_info = monitored_path.path
+                else:
+                    path_info = "Manual Entry"
+            else:
+                path_info = "Manual Entry"
+            
             # Create multiple events based on amount
             events_created = 0
             for i in range(amount):
@@ -1143,8 +1413,14 @@ def manual_entry():
                 else:
                     entry_description = description
                 
+                # Format file path with optional monitored path
+                if path_info != "Manual Entry":
+                    file_path = f"{path_info}: {entry_description}"
+                else:
+                    file_path = f"Manual Entry: {entry_description}"
+                
                 event = Event(
-                    file_path=f"Manual Entry: {entry_description}",
+                    file_path=file_path,
                     category_id=category_id,
                     matched_keyword=matched_keyword if matched_keyword else None,
                     computer_name=socket.gethostname(),
@@ -1165,8 +1441,33 @@ def manual_entry():
         else:
             flash('Please provide valid description, category, and amount (1-100)', 'danger')
     
+    # Get categories and monitored paths for the form
     categories = Category.query.all()
-    return render_template('manual_entry.html', categories=categories)
+    
+    # Get monitored paths based on user role
+    if current_user.role == 'admin':
+        monitored_paths = MonitoredPath.query.filter_by(is_active=True).order_by(MonitoredPath.path).all()
+    else:
+        monitored_paths = MonitoredPath.query.filter_by(user_id=current_user.id, is_active=True).order_by(MonitoredPath.path).all()
+    
+    return render_template('manual_entry.html', categories=categories, monitored_paths=monitored_paths)
+
+@main_bp.route('/delete_event/<int:event_id>', methods=['POST'])
+@login_required
+def delete_event(event_id):
+    """Delete an event (admin only)"""
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        event = Event.query.get_or_404(event_id)
+        db.session.delete(event)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Event deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/reports')
 @login_required
@@ -1777,6 +2078,54 @@ def backup_database():
         
         return send_file(backup_path, as_attachment=True, download_name=backup_filename)
     
+    elif backup_type == 'structure_only':
+        # Export database structure only (schema)
+        backup_filename = f"backup_structure_{timestamp}.sql"
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # Generate SQL schema export
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            f.write("-- Database Structure Export\n")
+            f.write("-- Generated on: {}\n\n".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            
+            # Get schema from SQLAlchemy metadata
+            from sqlalchemy import create_engine, MetaData
+            engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+            metadata = MetaData()
+            metadata.reflect(bind=engine)
+            
+            # Write CREATE TABLE statements
+            for table in metadata.sorted_tables:
+                f.write(f"-- Table: {table.name}\n")
+                f.write(f"DROP TABLE IF EXISTS {table.name};\n")
+                f.write(f"{str(table.create(engine)).compile(engine)};\n\n")
+        
+        if compress:
+            zip_filename = f"backup_structure_{timestamp}.zip"
+            zip_path = os.path.join(backup_dir, zip_filename)
+            
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                zipf.write(backup_path, backup_filename)
+            
+            os.remove(backup_path)
+            backup_filename = zip_filename
+            backup_path = zip_path
+        
+        size_mb = os.path.getsize(backup_path) / (1024 * 1024)
+        
+        backup_record = DatabaseBackup(
+            filename=backup_filename,
+            type=backup_type,
+            size_mb=round(size_mb, 2),
+            note=note,
+            created_by_id=current_user.id
+        )
+        db.session.add(backup_record)
+        db.session.commit()
+        
+        flash(get_translation('backup_created_successfully'), 'success')
+        return send_file(backup_path, as_attachment=True, download_name=backup_filename)
+    
     return redirect(url_for('main.database_control'))
 
 # Add these missing routes to your app.py file after the backup_database route (around line 1650)
@@ -1785,10 +2134,92 @@ def backup_database():
 @login_required
 @admin_required
 def restore_database():
-    """Restore database from backup"""
-    # This is a placeholder - implement actual restore logic as needed
-    flash('Database restore functionality not yet implemented', 'warning')
-    return redirect(url_for('main.database_control'))
+    """Restore database from uploaded backup file"""
+    try:
+        # Check if a file was uploaded
+        if 'backup_file' not in request.files:
+            flash(get_translation('no_file_selected'), 'error')
+            return redirect(url_for('main.database_control'))
+        
+        file = request.files['backup_file']
+        
+        # Check if file is selected
+        if file.filename == '':
+            flash(get_translation('no_file_selected'), 'error')
+            return redirect(url_for('main.database_control'))
+        
+        # Validate file extension
+        allowed_extensions = {'.db', '.zip', '.sql'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            flash(get_translation('invalid_file_format'), 'error')
+            return redirect(url_for('main.database_control'))
+        
+        # Save uploaded file temporarily
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, file.filename)
+        file.save(temp_path)
+        
+        # Create safety backup of current database
+        current_db_path = 'file_monitor.db'
+        safety_backup_path = f"{current_db_path}.safety_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        shutil.copy2(current_db_path, safety_backup_path)
+        
+        try:
+            # Close all database connections
+            db.session.remove()
+            db.engine.dispose()
+            
+            if file_ext == '.zip':
+                # Extract and restore from zip
+                with zipfile.ZipFile(temp_path, 'r') as zip_ref:
+                    # Find the .db file in the zip
+                    db_files = [f for f in zip_ref.namelist() if f.endswith('.db')]
+                    if not db_files:
+                        raise ValueError("No database file found in zip")
+                    
+                    # Extract to temp location
+                    zip_ref.extract(db_files[0], temp_dir)
+                    extracted_db = os.path.join(temp_dir, db_files[0])
+                    
+                    # Replace current database
+                    shutil.copy2(extracted_db, current_db_path)
+                    
+            elif file_ext == '.db':
+                # Direct database file replacement
+                shutil.copy2(temp_path, current_db_path)
+                
+            elif file_ext == '.sql':
+                # SQL file restoration (not implemented yet)
+                raise NotImplementedError("SQL file restoration not yet implemented")
+            
+            # Clean up safety backup if successful
+            os.remove(safety_backup_path)
+            
+            # Clean up temp files
+            shutil.rmtree(temp_dir)
+            
+            flash(get_translation('restore_successful'), 'success')
+            
+            # Force app restart or reconnect to database
+            return redirect(url_for('main.database_control'))
+            
+        except Exception as e:
+            # Restore from safety backup if something went wrong
+            if os.path.exists(safety_backup_path):
+                shutil.copy2(safety_backup_path, current_db_path)
+                os.remove(safety_backup_path)
+            
+            # Clean up temp files
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+            
+            flash(f"{get_translation('restore_failed')}: {str(e)}", 'error')
+            return redirect(url_for('main.database_control'))
+            
+    except Exception as e:
+        flash(f"{get_translation('restore_failed')}: {str(e)}", 'error')
+        return redirect(url_for('main.database_control'))
 
 @main_bp.route('/database/cleanup_events', methods=['POST'])
 @login_required
@@ -1826,8 +2257,39 @@ def optimize_database():
 @admin_required
 def update_backup_schedule():
     """Update scheduled backup settings"""
-    # Placeholder implementation
-    flash('Backup schedule updated', 'success')
+    try:
+        # Get form data
+        enabled = request.form.get('enable_scheduled') == 'on'
+        frequency = request.form.get('backup_frequency', 'daily')
+        backup_time = request.form.get('backup_time', '02:00')
+        retention_days = int(request.form.get('retention_days', 30))
+        
+        # Get or create scheduled backup settings
+        scheduled_backup = ScheduledBackupSettings.query.first()
+        if not scheduled_backup:
+            scheduled_backup = ScheduledBackupSettings()
+            db.session.add(scheduled_backup)
+        
+        # Update settings
+        scheduled_backup.enabled = enabled
+        scheduled_backup.frequency = frequency
+        scheduled_backup.time = backup_time
+        scheduled_backup.retention_days = retention_days
+        
+        # Calculate next run time if enabled
+        if enabled:
+            scheduled_backup.next_run = calculate_next_backup_time(scheduled_backup)
+        
+        db.session.commit()
+        
+        # Update the scheduler job
+        update_backup_schedule_job()
+        
+        flash(get_translation('backup_schedule_updated'), 'success')
+    except Exception as e:
+        print(f"Error updating backup schedule: {str(e)}")
+        flash(get_translation('error_updating_schedule'), 'error')
+    
     return redirect(url_for('main.database_control'))
 
 # API routes for database control
@@ -2393,6 +2855,14 @@ if __name__ == '__main__':
             exit(1)
         
         create_default_categories()
+        
+        # Initialize scheduled backup job if enabled
+        with app.app_context():
+            try:
+                update_backup_schedule_job()
+                print("✓ Scheduled backup job initialized")
+            except Exception as e:
+                print(f"Warning: Failed to initialize scheduled backup job: {e}")
         
         if not os.environ.get('WERKZEUG_RUN_MAIN'):
             print("="*50)

@@ -19,9 +19,23 @@ namespace FileMonitorTray
 
         private NumericUpDown amountNumeric;
         private ComboBox categoryComboBox;
+        private ComboBox pathComboBox;
         private TextBox descriptionTextBox;
         private Button submitButton;
         private Button cancelButton;
+        
+        private class PathItem
+        {
+            public int Id { get; set; }
+            public string Path { get; set; }
+            public string Description { get; set; }
+            public bool IsDirectory { get; set; }
+            
+            public override string ToString()
+            {
+                return string.IsNullOrEmpty(Description) ? Path : $"{Description} ({Path})";
+            }
+        }
 
         public ManualEntryForm(HttpClient httpClient, string webAppUrl, string currentUser, LocalizationManager localization)
         {
@@ -33,12 +47,13 @@ namespace FileMonitorTray
             InitializeComponent();
             InitializeControls();
             LoadCategories();
+            LoadMonitoredPaths();
         }
 
         private void InitializeComponent()
         {
             this.Text = localization.T("manual_entry_title");
-            this.Size = new Size(550, 350);
+            this.Size = new Size(550, 400);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -54,7 +69,7 @@ namespace FileMonitorTray
             {
                 Dock = DockStyle.Fill,
                 Padding = new Padding(20),
-                RowCount = 6,
+                RowCount = 7,
                 ColumnCount = 3
             };
 
@@ -64,6 +79,7 @@ namespace FileMonitorTray
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Description
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Amount
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Category
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Path
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
 
             // Configure columns
@@ -139,6 +155,25 @@ namespace FileMonitorTray
             mainPanel.Controls.Add(categoryComboBox, 1, 4);
             mainPanel.SetColumnSpan(categoryComboBox, 2);
 
+            // Monitored Path
+            var pathLabel = new Label
+            {
+                Text = "Monitored Path (Optional):",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 8, 10, 0)
+            };
+            mainPanel.Controls.Add(pathLabel, 0, 5);
+
+            pathComboBox = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 5, 0, 5)
+            };
+            mainPanel.Controls.Add(pathComboBox, 1, 5);
+            mainPanel.SetColumnSpan(pathComboBox, 2);
+
             // Buttons
             var buttonPanel = new FlowLayoutPanel
             {
@@ -166,7 +201,7 @@ namespace FileMonitorTray
             buttonPanel.Controls.Add(cancelButton);
             buttonPanel.Controls.Add(submitButton);
 
-            mainPanel.Controls.Add(buttonPanel, 0, 5);
+            mainPanel.Controls.Add(buttonPanel, 0, 6);
             mainPanel.SetColumnSpan(buttonPanel, 3);
 
             this.Controls.Add(mainPanel);
@@ -196,6 +231,14 @@ namespace FileMonitorTray
             };
 
             categoryComboBox.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    pathComboBox.Focus();
+                }
+            };
+
+            pathComboBox.KeyDown += (s, e) =>
             {
                 if (e.KeyCode == Keys.Enter)
                 {
@@ -256,6 +299,64 @@ namespace FileMonitorTray
             }
         }
 
+        private async void LoadMonitoredPaths()
+        {
+            try
+            {
+                var response = await httpClient.GetAsync($"{webAppUrl}/api/monitored_paths");
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    
+                    // Check if response is actually JSON and not HTML error page
+                    if (string.IsNullOrWhiteSpace(json) || json.TrimStart().StartsWith("<"))
+                    {
+                        throw new InvalidOperationException("Server returned HTML instead of JSON. Check if you're logged in and the server is running properly.");
+                    }
+                    
+                    var paths = JsonSerializer.Deserialize<JsonElement[]>(json);
+
+                    pathComboBox.Items.Clear();
+                    
+                    // Add default "None" option
+                    pathComboBox.Items.Add(new PathItem { Id = 0, Path = "None - Manual Entry", Description = "" });
+                    
+                    foreach (var path in paths)
+                    {
+                        var pathItem = new PathItem
+                        {
+                            Id = path.GetProperty("id").GetInt32(),
+                            Path = path.GetProperty("path").GetString(),
+                            Description = path.GetProperty("description").GetString(),
+                            IsDirectory = path.GetProperty("is_directory").GetBoolean()
+                        };
+                        pathComboBox.Items.Add(pathItem);
+                    }
+
+                    pathComboBox.SelectedIndex = 0;
+                }
+                else
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error loading monitored paths: {response.StatusCode} - {response.ReasonPhrase}");
+                    
+                    // Just add the default option if loading fails
+                    pathComboBox.Items.Clear();
+                    pathComboBox.Items.Add(new PathItem { Id = 0, Path = "None - Manual Entry", Description = "" });
+                    pathComboBox.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading monitored paths: {ex.Message}");
+                
+                // Just add the default option if loading fails
+                pathComboBox.Items.Clear();
+                pathComboBox.Items.Add(new PathItem { Id = 0, Path = "None - Manual Entry", Description = "" });
+                pathComboBox.SelectedIndex = 0;
+            }
+        }
+
         private async void SubmitButton_Click(object sender, EventArgs e)
         {
             // Validation - only category is required
@@ -271,6 +372,13 @@ namespace FileMonitorTray
             var description = descriptionTextBox.Text.Trim();
             var category = categoryComboBox.SelectedItem.ToString();
             var amount = (int)amountNumeric.Value;
+            
+            // Get selected path
+            int? pathId = null;
+            if (pathComboBox.SelectedItem is PathItem selectedPath && selectedPath.Id > 0)
+            {
+                pathId = selectedPath.Id;
+            }
 
             // Close form immediately
             this.DialogResult = DialogResult.OK;
@@ -285,7 +393,8 @@ namespace FileMonitorTray
                     {
                         description = description,
                         category = category,
-                        amount = amount
+                        amount = amount,
+                        path_id = pathId
                     };
 
                     string json = JsonSerializer.Serialize(data);

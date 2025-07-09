@@ -68,6 +68,9 @@
                         <th>{{ t('user') }}</th>
                         <th>{{ t('type') }}</th>
                         <th>{{ t('keyword') }}</th>
+                        {% if current_user.role == 'admin' %}
+                        <th>{{ t('actions') }}</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -92,10 +95,18 @@
                             <span class="badge bg-info">{{ event.event_type }}</span>
                         </td>
                         <td>{{ event.matched_keyword or '-' }}</td>
+                        {% if current_user.role == 'admin' %}
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent({{ event.id }})" 
+                                    title="Delete Event">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        {% endif %}
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted">{{ t('no_events_found') }}</td>
+                        <td colspan="{% if current_user.role == 'admin' %}8{% else %}7{% endif %}" class="text-center text-muted">{{ t('no_events_found') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -126,4 +137,72 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if current_user.role == 'admin' %}
+<script>
+function deleteEvent(eventId) {
+    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        fetch(`/delete_event/${eventId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table
+                const row = document.querySelector(`button[onclick="deleteEvent(${eventId})"]`).closest('tr');
+                row.remove();
+                
+                // Show success message
+                showAlert('Event deleted successfully', 'success');
+            } else {
+                showAlert(data.error || 'Failed to delete event', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while deleting the event', 'danger');
+        });
+    }
+}
+
+function getCsrfToken() {
+    // Try to get CSRF token from meta tag or form
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    return '';
+}
+
+function showAlert(message, type) {
+    // Create and show a Bootstrap alert
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Insert at the top of the page content
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+        pageHeader.insertAdjacentHTML('afterend', alertHtml);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            const alert = document.querySelector(`.alert-${type}`);
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+}
+</script>
+{% endif %}
 {% endblock %}

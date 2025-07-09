@@ -29,6 +29,23 @@
             </div>
             
             <div class="mb-3">
+                <label for="monitored_path_id" class="form-label">{{ t('monitored_path') }} (Optional)</label>
+                <select class="form-select" id="monitored_path_id" name="monitored_path_id">
+                    <option value="">None - Manual Entry</option>
+                    {% for path in monitored_paths %}
+                    <option value="{{ path.id }}">
+                        {% if path.description %}
+                            {{ path.description }} ({{ path.path }})
+                        {% else %}
+                            {{ path.path }}
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Optionally associate this entry with a monitored path</div>
+            </div>
+            
+            <div class="mb-3">
                 <label for="amount" class="form-label">{{ t('amount') }}</label>
                 <input type="number" class="form-control" id="amount" name="amount" min="1" max="100" value="1" required>
                 <div class="form-text">Number of entries to add for this category (1-100)</div>

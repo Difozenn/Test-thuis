@@ -1,7 +1,5 @@
 {
   "Username": "OPUS",
   "WebAppUrl": "http://192.168.244.160:5002",
-  "Language": "nl",
-  "ScanFileContents": true,
-  "MaxFileSizeMB": 10
+  "Language": "nl"
 }

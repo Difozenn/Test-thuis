@@ -140,13 +140,13 @@
 <!-- Page Header with Blue Underline -->
 <div class="page-header">
     <h1>{{ t('dashboard') }}</h1>
-    <p>{{ local_now().strftime('%A, %d %B %Y %H:%M') }}</p>
+    <p>{{ format_date_localized(local_now(), 'full') }}</p>
 </div>
 
 <!-- Filter Section -->
 <div class="filter-section">
     <div class="row align-items-center">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label mb-0">{{ t('filter_by_user') }}</label>
             <select class="form-select" id="user-filter" onchange="filterDashboard()">
                 {% if current_user.role == 'admin' %}
@@ -161,19 +161,11 @@
                 {% endif %}
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label mb-0">{{ t('date_range') }}</label>
-            <select class="form-select" id="date-filter" onchange="filterDashboard()">
-                <option value="today" {% if date_range == 'today' %}selected{% endif %}>{{ t('today') }}</option>
-                <option value="week" {% if date_range == 'week' %}selected{% endif %}>{{ t('this_week') }}</option>
-                <option value="month" {% if date_range == 'month' %}selected{% endif %}>{{ t('this_month') }}</option>
-            </select>
-        </div>
-        <div class="col-md-6 text-end">
-            {% if work_hours %}
+        <div class="col-md-8 text-end">
+            {% if work_calendar_summary.total_weekly_hours > 0 %}
             <div class="d-inline-block me-3">
                 <small class="text-muted">{{ t('work_hours') }}: </small>
-                <strong>{{ work_hours.get_total_weekly_hours() }}h/week ({{ work_hours.get_working_days() }} days)</strong>
+                <strong>{{ work_calendar_summary.total_weekly_hours }}h/week ({{ work_calendar_summary.working_days }} days)</strong>
             </div>
             {% endif %}
             <button class="btn btn-sm btn-primary" onclick="refreshDashboard()">
@@ -184,33 +176,37 @@
 </div>
 
 <!-- Work Hours Overview Card -->
-{% if work_hours %}
+{% if work_calendar_summary.total_weekly_hours > 0 %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card work-hours-card">
             <div class="row align-items-center">
                 <div class="col-md-3">
                     <div class="text-center">
-                        <h3 class="mb-0">{{ work_hours.get_total_weekly_hours() }}h</h3>
+                        <h3 class="mb-0">{{ work_calendar_summary.total_weekly_hours }}h</h3>
                         <small>{{ t('total_weekly_hours') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-center">
-                        <h3 class="mb-0">{{ work_hours.get_working_days() }}</h3>
+                        <h3 class="mb-0">{{ work_calendar_summary.working_days }}</h3>
                         <small>{{ t('working_days') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-center">
-                        <h3 class="mb-0">{{ "%.1f"|format(work_hours.get_average_daily_hours()) }}h</h3>
+                        <h3 class="mb-0">{{ "%.1f"|format(work_calendar_summary.average_daily_hours) }}h</h3>
                         <small>{{ t('average_daily_hours') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-center">
                         <h3 class="mb-0">{{ today_events }}</h3>
-                        <small>{{ t('todays_events') }} ({{ work_hours.get_hours_for_day(local_now().weekday()) }}h day)</small>
+                        <small>{{ t('todays_events') }} 
+                            {% if work_calendar_summary.today_hours > 0 %}
+                                ({{ work_calendar_summary.today_hours }}h day)
+                            {% endif %}
+                        </small>
                     </div>
                 </div>
             </div>
@@ -220,18 +216,18 @@
                 <h6>{{ t('daily_schedule') }}</h6>
                 <div class="row">
                     {% set days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
-                    {% set day_hours = [
-                        work_hours.monday_hours, work_hours.tuesday_hours, work_hours.wednesday_hours,
-                        work_hours.thursday_hours, work_hours.friday_hours, work_hours.saturday_hours, work_hours.sunday_hours
-                    ] %}
                     {% for i in range(7) %}
                     <div class="col">
                         <div class="card border-0 {% if i == local_now().weekday() %}bg-warning text-dark{% else %}bg-light{% endif %} text-center day-card">
                             <div class="card-body py-2">
                                 <div class="small">{{ t(days[i]) }}</div>
                                 <div class="h6 mb-0">
-                                    {% if day_hours[i] > 0 %}
-                                        {{ day_hours[i] }}h
+                                    {% if weekly_activity and weekly_activity[i] %}
+                                        {% if weekly_activity[i].work_hours > 0 %}
+                                            {{ weekly_activity[i].work_hours }}h
+                                        {% else %}
+                                            <i class="fas fa-times text-muted"></i>
+                                        {% endif %}
                                     {% else %}
                                         <i class="fas fa-times text-muted"></i>
                                     {% endif %}
@@ -421,9 +417,9 @@
     </div>
     <div class="col-md-6">
         <div class="chart-container">
-            <h5 class="mb-3"><i class="fas fa-calendar-day"></i> {{ t('daily_activity') }}</h5>
+            <h5 class="mb-3"><i class="fas fa-cog"></i> {{ t('machine_time_vs_work_hours') }}</h5>
             <div class="chart-wrapper">
-                <canvas id="dailyActivityChart"></canvas>
+                <canvas id="machineTimeChart"></canvas>
             </div>
         </div>
     </div>
@@ -443,9 +439,6 @@
         <div class="chart-container">
             <h5 class="mb-3">
                 <i class="fas fa-chart-area"></i> {{ t('hourly_activity_today') }}
-                <button class="btn btn-sm btn-outline-primary float-end" onclick="exportChart('hourlyTimelineChart')">
-                    <i class="fas fa-download"></i> {{ t('export') }}
-                </button>
             </h5>
             <div class="chart-wrapper">
                 <canvas id="hourlyTimelineChart"></canvas>
@@ -519,7 +512,7 @@
 // Dashboard data passed from backend
 const dashboardData = {
     categoryData: {{ category_chart_data|safe if category_chart_data else 'null' }},
-    dailyActivity: {{ daily_activity_data|safe if daily_activity_data else 'null' }},
+    machineTimeVsWorkHours: {{ machine_time_vs_work_hours_data|safe if machine_time_vs_work_hours_data else 'null' }},
     pathDistribution: {{ path_distribution_data|safe if path_distribution_data else 'null' }},
     hourlyTimeline: {{ hourly_timeline_data|safe if hourly_timeline_data else 'null' }}
 };
@@ -578,20 +571,33 @@ function initializeCharts() {
         document.getElementById('categoryChart').parentElement.innerHTML = '<p class="text-center text-muted">No category data available</p>';
     }
     
-    // Daily Activity Chart
-    if (dashboardData.dailyActivity && dashboardData.dailyActivity.labels && dashboardData.dailyActivity.labels.length > 0) {
-        const dailyCtx = document.getElementById('dailyActivityChart').getContext('2d');
-        charts.dailyChart = new Chart(dailyCtx, {
+    // Machine Time vs Work Hours Chart
+    if (dashboardData.machineTimeVsWorkHours && dashboardData.machineTimeVsWorkHours.labels && dashboardData.machineTimeVsWorkHours.labels.length > 0) {
+        const machineTimeCtx = document.getElementById('machineTimeChart').getContext('2d');
+        charts.machineTimeChart = new Chart(machineTimeCtx, {
             type: 'bar',
             data: {
-                labels: dashboardData.dailyActivity.labels,
-                datasets: [{
-                    label: '{{ t("events") }}',
-                    data: dashboardData.dailyActivity.values,
-                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 2
-                }]
+                labels: dashboardData.machineTimeVsWorkHours.labels,
+                datasets: [
+                    {
+                        label: '{{ t("machine_time_hours") }}',
+                        data: dashboardData.machineTimeVsWorkHours.machine_time,
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '{{ t("work_hours") }}',
+                        data: dashboardData.machineTimeVsWorkHours.work_hours,
+                        type: 'line',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y'
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -599,21 +605,30 @@ function initializeCharts() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
+                        title: {
+                            display: true,
+                            text: '{{ t("hours") }}'
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + 'h';
+                            }
+                        }
                     }
                 }
             }
         });
     } else {
-        document.getElementById('dailyActivityChart').style.display = 'none';
-        document.getElementById('dailyActivityChart').parentElement.innerHTML = '<p class="text-center text-muted">No daily activity data available</p>';
+        document.getElementById('machineTimeChart').style.display = 'none';
+        document.getElementById('machineTimeChart').parentElement.innerHTML = '<p class="text-center text-muted">No machine time data available</p>';
     }
     
     // Path Distribution Chart
@@ -837,13 +852,11 @@ function initializeCharts() {
 
 function filterDashboard() {
     const userId = document.getElementById('user-filter').value;
-    const dateRange = document.getElementById('date-filter').value;
     
     let url = '{{ url_for("main.dashboard") }}';
     const params = new URLSearchParams();
     
     if (userId) params.append('user_id', userId);
-    if (dateRange && dateRange !== 'today') params.append('range', dateRange);
     
     if (params.toString()) {
         url += '?' + params.toString();

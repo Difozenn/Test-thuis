@@ -11,250 +11,41 @@
 
 </div>
 
-<!-- Monitor Status Card -->
+
+<!-- Work Calendar Configuration -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">{{ t('monitor_status') }}</h5>
+        <h5 class="mb-0">{{ t('work_calendar_configuration') }}</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <div id="monitor-status" class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                        <span class="visually-hidden">{{ t('loading') }}</span>
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-calendar-alt fa-2x text-primary"></i>
                     </div>
-                    <span>{{ t('loading') }}...</span>
+                    <div>
+                        <h6 class="mb-1">{{ t('yearly_work_calendar') }}</h6>
+                        <p class="text-muted mb-0">{{ t('manage_detailed_work_schedule') }}</p>
+                    </div>
                 </div>
             </div>
-            {% if current_user.role == 'admin' %}
             <div class="col-md-6 text-end">
-                <button class="btn btn-success" onclick="startMonitor()">
-                    <i class="fas fa-play"></i> Start Monitor
-                </button>
+                <a href="{{ url_for('main.work_calendar') }}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus"></i> {{ t('open_work_calendar') }}
+                </a>
             </div>
-            {% endif %}
+        </div>
+        
+        <div class="mt-3">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                {{ t('work_calendar_description') }}
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Work Hours Configuration (All users can set their own work hours) -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">{{ t('work_hours_configuration') }}</h5>
-    </div>
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('main.update_work_hours') }}">
-            <div class="row mb-3">
-                <div class="col-12">
-                    <p class="text-muted">
-                        <i class="fas fa-info-circle"></i> 
-                        {{ t('work_hours_description') }}
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Days of the week configuration -->
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="mb-3">{{ t('hours_per_day') }}</h6>
-                    
-                    <!-- Monday -->
-                    <div class="mb-3">
-                        <label for="monday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-primary"></i> {{ t('monday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="monday_hours" name="monday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.monday_hours if work_hours else 8.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Tuesday -->
-                    <div class="mb-3">
-                        <label for="tuesday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-primary"></i> {{ t('tuesday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="tuesday_hours" name="tuesday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.tuesday_hours if work_hours else 8.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Wednesday -->
-                    <div class="mb-3">
-                        <label for="wednesday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-primary"></i> {{ t('wednesday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="wednesday_hours" name="wednesday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.wednesday_hours if work_hours else 8.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Thursday -->
-                    <div class="mb-3">
-                        <label for="thursday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-primary"></i> {{ t('thursday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="thursday_hours" name="thursday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.thursday_hours if work_hours else 8.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <h6 class="mb-3">&nbsp;</h6> <!-- Spacer for alignment -->
-                    
-                    <!-- Friday -->
-                    <div class="mb-3">
-                        <label for="friday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-success"></i> {{ t('friday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="friday_hours" name="friday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.friday_hours if work_hours else 8.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Saturday -->
-                    <div class="mb-3">
-                        <label for="saturday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-warning"></i> {{ t('saturday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="saturday_hours" name="saturday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.saturday_hours if work_hours else 0.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Sunday -->
-                    <div class="mb-3">
-                        <label for="sunday_hours" class="form-label">
-                            <i class="fas fa-calendar-day text-danger"></i> {{ t('sunday') }}
-                        </label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" id="sunday_hours" name="sunday_hours" 
-                                   min="0" max="24" step="0.5" 
-                                   value="{{ work_hours.sunday_hours if work_hours else 0.0 }}"
-                                   onchange="updateSummary()">
-                            <span class="input-group-text">hours</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Show current efficiency thresholds for operators (read-only) -->
-            {% if current_user.role == 'operator' and work_hours %}
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        <h6 class="alert-heading">
-                            <i class="fas fa-chart-line"></i> Your {{ t('efficiency') }} Thresholds (Set by Administrator):
-                        </h6>
-                        <ul class="mb-0">
-                            <li><span class="badge bg-success">{{ t('high') }}</span> ≥ {{ work_hours.efficiency_high_threshold if work_hours else 5.0 }} items/hour</li>
-                            <li><span class="badge bg-warning">{{ t('medium') }}</span> ≥ {{ work_hours.efficiency_medium_threshold if work_hours else 2.0 }} items/hour</li>
-                            <li><span class="badge bg-secondary">{{ t('low') }}</span> < {{ work_hours.efficiency_medium_threshold if work_hours else 2.0 }} items/hour</li>
-                            <li><span class="badge bg-light text-dark">{{ t('off') }}</span> Non-working days (0 hours configured)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Summary Statistics -->
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h6 class="card-title">{{ t('work_hours') }} Summary</h6>
-                            <div class="row text-center">
-                                <div class="col-md-3">
-                                    <div class="h4 text-primary" id="total-hours">
-                                        {{ work_hours.get_total_weekly_hours() if work_hours else 40.0 }}
-                                    </div>
-                                    <small class="text-muted">{{ t('total_weekly_hours') }}</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="h4 text-success" id="working-days">
-                                        {{ work_hours.get_working_days() if work_hours else 5 }}
-                                    </div>
-                                    <small class="text-muted">{{ t('working_days') }}</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="h4 text-info" id="average-hours">
-                                        {{ "%.1f"|format(work_hours.get_average_daily_hours()) if work_hours else "8.0" }}
-                                    </div>
-                                    <small class="text-muted">{{ t('average_daily_hours') }}</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="h4 text-warning" id="non-working-days">
-                                        {{ 7 - work_hours.get_working_days() if work_hours else 2 }}
-                                    </div>
-                                    <small class="text-muted">{{ t('non_working_days') }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Quick Presets -->
-            <div class="row mt-3">
-                <div class="col-12">
-                    <h6>Quick Presets:</h6>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('standard')">
-                            Standard (Mon-Fri 8h)
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('reduced_friday')">
-                            Reduced Friday (Mon-Thu 8h, Fri 6h)
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('four_day')">
-                            4-Day Week (Mon-Thu 10h)
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('flexible')">
-                            Flexible (Mon-Fri 7.5h)
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setPreset('weekend_work')">
-                            Weekend Work (Mon-Sat 6.5h)
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> {{ t('save_work_hours') }}
-                    </button>
-                    <button type="button" class="btn btn-secondary ms-2" onclick="resetToDefault()">
-                        <i class="fas fa-undo"></i> Reset to Default
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
 <!-- Operator Efficiency Configuration (Admin Only) -->
 {% if current_user.role == 'admin' %}
@@ -515,50 +306,6 @@
 
 {% block extra_js %}
 <script>
-// Work hours management functions
-function updateSummary() {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    let totalHours = 0;
-    let workingDays = 0;
-    
-    days.forEach(day => {
-        const hours = parseFloat(document.getElementById(day + '_hours').value) || 0;
-        totalHours += hours;
-        if (hours > 0) workingDays++;
-    });
-    
-    const averageHours = workingDays > 0 ? totalHours / workingDays : 0;
-    const nonWorkingDays = 7 - workingDays;
-    
-    document.getElementById('total-hours').textContent = totalHours.toFixed(1);
-    document.getElementById('working-days').textContent = workingDays;
-    document.getElementById('average-hours').textContent = averageHours.toFixed(1);
-    document.getElementById('non-working-days').textContent = nonWorkingDays;
-}
-
-function setPreset(preset) {
-    const presets = {
-        'standard': [8, 8, 8, 8, 8, 0, 0],           // Mon-Fri 8h
-        'reduced_friday': [8, 8, 8, 8, 6, 0, 0],      // Mon-Thu 8h, Fri 6h
-        'four_day': [10, 10, 10, 10, 0, 0, 0],        // Mon-Thu 10h
-        'flexible': [7.5, 7.5, 7.5, 7.5, 7.5, 0, 0], // Mon-Fri 7.5h
-        'weekend_work': [6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 0] // Mon-Sat 6.5h
-    };
-    
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const values = presets[preset];
-    
-    if (values) {
-        days.forEach((day, index) => {
-            document.getElementById(day + '_hours').value = values[index];
-        });
-        updateSummary();
-    }
-}
-
-function resetToDefault() {
-    setPreset('standard');
-}
 
 {% if current_user.role == 'admin' %}
 // Admin functions for editing operator efficiency
@@ -573,42 +320,6 @@ function editOperatorEfficiency(operatorId, operatorName, highThreshold, mediumT
 }
 {% endif %}
 
-// Monitor status
-function checkMonitorStatus() {
-    fetch('/api/monitor/status')
-        .then(response => response.json())
-        .then(data => {
-            const statusDiv = document.getElementById('monitor-status');
-            const isRunning = data.running;
-            
-            statusDiv.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="status-indicator me-2">
-                        <i class="fas fa-circle text-${isRunning ? 'success' : 'danger'}"></i>
-                    </div>
-                    <div>
-                        <strong>${isRunning ? '{{ t("running") }}' : '{{ t("stopped") }}'}</strong><br>
-                        <small class="text-muted">
-                            ${data.paths} paths (${data.files} files, ${data.directories} directories)
-                        </small>
-                    </div>
-                </div>
-            `;
-        })
-        .catch(error => {
-            console.error('Error fetching monitor status:', error);
-            document.getElementById('monitor-status').innerHTML = 
-                '<span class="text-danger">Error loading status</span>';
-        });
-}
-
-function startMonitor() {
-    fetch('/api/monitor/start', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            setTimeout(checkMonitorStatus, 1000);
-        });
-}
 
 function validatePath() {
     const path = document.getElementById('validate-path').value;
@@ -682,13 +393,7 @@ document.getElementById('path').addEventListener('input', function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    checkMonitorStatus();
-    setInterval(checkMonitorStatus, 10000); // Update every 10 seconds
-    
-    // Initialize summary if work hours form exists
-    if (document.getElementById('monday_hours')) {
-        updateSummary();
-    }
+    // Initialization code can be added here if needed
 });
 </script>
 {% endblock %}

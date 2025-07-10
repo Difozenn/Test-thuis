@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -16,6 +17,7 @@ namespace FileMonitorTray
         private readonly string webAppUrl;
         private readonly string currentUser;
         private readonly LocalizationManager localization;
+        private readonly GCodeAnalyzer gCodeAnalyzer;
 
         private NumericUpDown amountNumeric;
         private ComboBox categoryComboBox;
@@ -23,6 +25,19 @@ namespace FileMonitorTray
         private TextBox descriptionTextBox;
         private Button submitButton;
         private Button cancelButton;
+        private ComboBox cncFileComboBox;
+        private Button browseCNCButton;
+        private Button analyzeCNCButton;
+        private TextBox cncAnalysisTextBox;
+        private Label cncAnalysisLabel;
+        private bool cncAnalysisEnabled = true;
+        private CNCAnalysis currentCNCAnalysis = null;
+        
+        // CNC file extensions
+        private readonly HashSet<string> CNC_EXTENSIONS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".nc", ".gcode", ".tap", ".mpf", ".ptp", ".cls", ".lst", ".prg", ".sub", ".cnc"
+        };
         
         private class PathItem
         {
@@ -43,17 +58,18 @@ namespace FileMonitorTray
             this.webAppUrl = webAppUrl;
             this.currentUser = currentUser;
             this.localization = localization;
+            this.gCodeAnalyzer = new GCodeAnalyzer();
             
             InitializeComponent();
             InitializeControls();
             LoadCategories();
-            LoadMonitoredPaths();
+            _ = LoadMonitoredPaths();
         }
 
         private void InitializeComponent()
         {
             this.Text = localization.T("manual_entry_title");
-            this.Size = new Size(550, 400);
+            this.Size = new Size(550, 650); // Increased height for CNC analysis
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -69,7 +85,7 @@ namespace FileMonitorTray
             {
                 Dock = DockStyle.Fill,
                 Padding = new Padding(20),
-                RowCount = 7,
+                RowCount = 11,
                 ColumnCount = 3
             };
 
@@ -80,6 +96,10 @@ namespace FileMonitorTray
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Amount
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Category
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Path
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 15)); // Spacer
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // CNC File
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // CNC Analysis button
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // CNC Analysis results
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
 
             // Configure columns
@@ -171,8 +191,75 @@ namespace FileMonitorTray
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0, 5, 0, 5)
             };
+            pathComboBox.SelectedIndexChanged += PathComboBox_SelectedIndexChanged;
             mainPanel.Controls.Add(pathComboBox, 1, 5);
             mainPanel.SetColumnSpan(pathComboBox, 2);
+
+            // CNC File Selection
+            var cncFileLabel = new Label
+            {
+                Text = "CNC File (Optional):",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, 8, 10, 0)
+            };
+            mainPanel.Controls.Add(cncFileLabel, 0, 7);
+
+            cncFileComboBox = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 5, 0, 5),
+                Enabled = false
+            };
+            cncFileComboBox.SelectedIndexChanged += CncFileComboBox_SelectedIndexChanged;
+            mainPanel.Controls.Add(cncFileComboBox, 1, 7);
+
+            browseCNCButton = new Button
+            {
+                Text = "Browse...",
+                Width = 80,
+                Margin = new Padding(5, 5, 0, 5)
+            };
+            browseCNCButton.Click += BrowseCNCButton_Click;
+            mainPanel.Controls.Add(browseCNCButton, 2, 7);
+
+            // CNC Analysis Button
+            analyzeCNCButton = new Button
+            {
+                Text = "Analyze CNC File",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 5, 0, 5),
+                Enabled = false,
+                Visible = cncAnalysisEnabled
+            };
+            analyzeCNCButton.Click += AnalyzeCNCButton_Click;
+            mainPanel.Controls.Add(analyzeCNCButton, 1, 8);
+            mainPanel.SetColumnSpan(analyzeCNCButton, 2);
+
+            // CNC Analysis Results
+            cncAnalysisLabel = new Label
+            {
+                Text = "CNC Analysis Results:",
+                AutoSize = true,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top,
+                Margin = new Padding(0, 8, 10, 0),
+                Visible = cncAnalysisEnabled
+            };
+            mainPanel.Controls.Add(cncAnalysisLabel, 0, 9);
+
+            cncAnalysisTextBox = new TextBox
+            {
+                Multiline = true,
+                ReadOnly = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 5, 0, 5),
+                ScrollBars = ScrollBars.Vertical,
+                BackColor = Color.White,
+                Visible = cncAnalysisEnabled
+            };
+            mainPanel.Controls.Add(cncAnalysisTextBox, 1, 9);
+            mainPanel.SetColumnSpan(cncAnalysisTextBox, 2);
 
             // Buttons
             var buttonPanel = new FlowLayoutPanel
@@ -201,7 +288,7 @@ namespace FileMonitorTray
             buttonPanel.Controls.Add(cancelButton);
             buttonPanel.Controls.Add(submitButton);
 
-            mainPanel.Controls.Add(buttonPanel, 0, 6);
+            mainPanel.Controls.Add(buttonPanel, 0, 10);
             mainPanel.SetColumnSpan(buttonPanel, 3);
 
             this.Controls.Add(mainPanel);
@@ -299,7 +386,7 @@ namespace FileMonitorTray
             }
         }
 
-        private async void LoadMonitoredPaths()
+        private async Task LoadMonitoredPaths()
         {
             try
             {
@@ -385,7 +472,7 @@ namespace FileMonitorTray
             this.Close();
 
             // Submit in background using Task.Run
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
@@ -394,7 +481,8 @@ namespace FileMonitorTray
                         description = description,
                         category = category,
                         amount = amount,
-                        path_id = pathId
+                        path_id = pathId,
+                        cnc_analysis = currentCNCAnalysis
                     };
 
                     string json = JsonSerializer.Serialize(data);
@@ -440,6 +528,165 @@ namespace FileMonitorTray
                     });
                 }
             });
+        }
+
+        private void PathComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Clear CNC file selection when path changes
+            cncFileComboBox.Items.Clear();
+            cncFileComboBox.Enabled = false;
+            analyzeCNCButton.Enabled = false;
+            cncAnalysisTextBox.Clear();
+            currentCNCAnalysis = null;
+
+            // Load CNC files from selected path
+            if (pathComboBox.SelectedItem is PathItem selectedPath && selectedPath.Id > 0)
+            {
+                LoadCNCFilesFromPath(selectedPath.Path);
+            }
+        }
+
+        private void CncFileComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Enable analyze button when a valid file is selected
+            analyzeCNCButton.Enabled = cncFileComboBox.SelectedIndex > 0;
+            
+            // Clear previous analysis
+            cncAnalysisTextBox.Clear();
+            currentCNCAnalysis = null;
+        }
+
+        private void LoadCNCFilesFromPath(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    var cncFiles = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories)
+                        .Where(f => CNC_EXTENSIONS.Contains(Path.GetExtension(f)))
+                        .OrderByDescending(f => new FileInfo(f).LastWriteTime)
+                        .Take(20) // Limit to 20 most recent files
+                        .ToList();
+
+                    if (cncFiles.Any())
+                    {
+                        cncFileComboBox.Items.Clear();
+                        cncFileComboBox.Items.Add("Select CNC File...");
+                        
+                        foreach (var file in cncFiles)
+                        {
+                            cncFileComboBox.Items.Add(new FileInfo(file).Name + " - " + file);
+                        }
+                        
+                        cncFileComboBox.SelectedIndex = 0;
+                        cncFileComboBox.Enabled = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading CNC files from path: {ex.Message}");
+            }
+        }
+
+        private void BrowseCNCButton_Click(object sender, EventArgs e)
+        {
+            using (var openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "CNC Files (*.nc;*.gcode;*.tap;*.mpf;*.ptp;*.cls;*.lst;*.prg;*.sub;*.cnc)|*.nc;*.gcode;*.tap;*.mpf;*.ptp;*.cls;*.lst;*.prg;*.sub;*.cnc|All Files (*.*)|*.*";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    var fileName = Path.GetFileName(openFileDialog.FileName);
+                    cncFileComboBox.Items.Clear();
+                    cncFileComboBox.Items.Add(fileName + " - " + openFileDialog.FileName);
+                    cncFileComboBox.SelectedIndex = 0;
+                    cncFileComboBox.Enabled = true;
+                    analyzeCNCButton.Enabled = true;
+                }
+            }
+        }
+
+        private async void AnalyzeCNCButton_Click(object sender, EventArgs e)
+        {
+            if (cncFileComboBox.SelectedItem == null || cncFileComboBox.SelectedIndex == 0)
+            {
+                MessageBox.Show("Please select a CNC file first", "No File Selected", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var selectedItem = cncFileComboBox.SelectedItem.ToString();
+            var filePath = selectedItem.Split(new[] { " - " }, StringSplitOptions.None).LastOrDefault();
+
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                MessageBox.Show("Selected file does not exist", "File Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Disable button during analysis
+            analyzeCNCButton.Enabled = false;
+            analyzeCNCButton.Text = "Analyzing...";
+            cncAnalysisTextBox.Text = "Analyzing CNC file, please wait...";
+
+            try
+            {
+                var analysis = await gCodeAnalyzer.AnalyzeFileAsync(filePath);
+                
+                if (analysis.AnalysisSuccessful)
+                {
+                    currentCNCAnalysis = analysis;
+                    
+                    var result = new StringBuilder();
+                    result.AppendLine($"File: {analysis.Filename}");
+                    result.AppendLine($"Lines: {analysis.LineCount:N0}");
+                    result.AppendLine($"Total Time: {analysis.TotalTime:F2} minutes");
+                    result.AppendLine($"Cutting Time: {analysis.CuttingTime:F2} minutes");
+                    result.AppendLine($"Rapid Time: {analysis.RapidTime:F2} minutes");
+                    result.AppendLine($"Machine Time: {analysis.MachineTime:F2} minutes");
+                    result.AppendLine($"Tool Changes: {analysis.ToolChanges}");
+                    result.AppendLine($"Processes: {analysis.ProcessesCount}");
+                    
+                    if (analysis.MovementStats.Any())
+                    {
+                        result.AppendLine("\nMovement Statistics:");
+                        foreach (var stat in analysis.MovementStats)
+                        {
+                            result.AppendLine($"  {stat.Key}: {stat.Value:N0}");
+                        }
+                    }
+                    
+                    if (analysis.ProcessesUsed.Any())
+                    {
+                        result.AppendLine($"\nProcesses Used: {string.Join(", ", analysis.ProcessesUsed)}");
+                    }
+                    
+                    cncAnalysisTextBox.Text = result.ToString();
+                    
+                    // Auto-suggest amount based on machine time (e.g., 1 item per minute)
+                    var suggestedAmount = Math.Max(1, (int)Math.Round(analysis.MachineTime));
+                    amountNumeric.Value = Math.Min(suggestedAmount, amountNumeric.Maximum);
+                }
+                else
+                {
+                    cncAnalysisTextBox.Text = $"Analysis failed: {analysis.ErrorMessage}";
+                    currentCNCAnalysis = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                cncAnalysisTextBox.Text = $"Error during analysis: {ex.Message}";
+                currentCNCAnalysis = null;
+            }
+            finally
+            {
+                analyzeCNCButton.Enabled = true;
+                analyzeCNCButton.Text = "Analyze CNC File";
+            }
         }
     }
 }

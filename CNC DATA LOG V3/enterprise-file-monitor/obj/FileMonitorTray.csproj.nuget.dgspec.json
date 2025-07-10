@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {}
+    "C:\\Users\\opususer\\Desktop\\Test-thuis-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {
+    "C:\\Users\\opususer\\Desktop\\Test-thuis-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
+        "projectUniqueName": "C:\\Users\\opususer\\Desktop\\Test-thuis-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
         "projectName": "CNC DATALOG",
-        "projectPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
-        "packagesPath": "C:\\Users\\Rob_v\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\CNC DATA LOG V3\\enterprise-file-monitor\\obj\\",
+        "projectPath": "C:\\Users\\opususer\\Desktop\\Test-thuis-main\\CNC DATA LOG V3\\enterprise-file-monitor\\FileMonitorTray.csproj",
+        "packagesPath": "C:\\Users\\opususer\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\opususer\\Desktop\\Test-thuis-main\\CNC DATA LOG V3\\enterprise-file-monitor\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Rob_v\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+          "C:\\Users\\opususer\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0-windows"
@@ -41,8 +37,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net6.0-windows7.0": {
@@ -90,7 +85,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.411\\RuntimeIdentifierGraph.json"
         }
       }
     }

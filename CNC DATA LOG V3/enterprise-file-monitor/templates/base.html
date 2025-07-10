@@ -466,9 +466,9 @@
                            href="{{ url_for('main.manual_entry') }}">
                             <i class="fas fa-plus-circle"></i> {{ t('manual_entry') }}
                         </a>
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.reports' }}" 
-                           href="{{ url_for('main.reports') }}">
-                            <i class="fas fa-file-alt"></i> {{ t('reports') }}
+                        <a class="nav-link {{ 'active' if request.endpoint == 'main.statistics' }}" 
+                           href="{{ url_for('main.statistics') }}">
+                            <i class="fas fa-chart-line"></i> {{ t('statistics') }}
                         </a>
                         
                         {% if current_user.role == 'admin' %}

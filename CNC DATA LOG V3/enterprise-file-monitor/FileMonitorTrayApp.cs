@@ -18,6 +18,444 @@ using System.Threading;
 
 namespace FileMonitorTray
 {
+    // CNC Analysis Classes
+    public class CNCAnalysis
+    {
+        public string Filename { get; set; }
+        public int LineCount { get; set; }
+        public double TotalTime { get; set; }
+        public double CuttingTime { get; set; }
+        public double RapidTime { get; set; }
+        public double MachineTime { get; set; }
+        public int ToolChanges { get; set; }
+        public int ProcessesCount { get; set; }
+        public Dictionary<string, int> MovementStats { get; set; }
+        public List<string> ProcessesUsed { get; set; }
+        public DateTime AnalyzedAt { get; set; }
+        public bool AnalysisSuccessful { get; set; }
+        public string ErrorMessage { get; set; }
+
+        public CNCAnalysis()
+        {
+            MovementStats = new Dictionary<string, int>();
+            ProcessesUsed = new List<string>();
+            AnalyzedAt = DateTime.UtcNow;
+            AnalysisSuccessful = false;
+        }
+
+        public string GetFormattedTime()
+        {
+            // Format total time as MM:SS
+            int totalSeconds = (int)(TotalTime * 60);
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            return $"{minutes}:{seconds:D2}";
+        }
+    }
+
+    public class CNCMovement
+    {
+        public string Code { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        public double Feedrate { get; set; }
+        public double Distance { get; set; }
+        public double Time { get; set; }
+    }
+
+    public class GCodeAnalyzer
+    {
+        // Machine timing configuration (matching Python postprocessor EXACTLY)
+        private const double RAPID_SPEED = 20000; // mm/min
+        private const double TOOL_CHANGE_TIME = 20; // seconds
+        private const double SPINDLE_START_TIME = 2; // seconds
+        private const double SPINDLE_STOP_TIME = 1.5; // seconds
+        private const double TCP_ON_TIME = 0.5; // seconds
+        private const double TCP_OFF_TIME = 0.3; // seconds
+        private const double CONTOUR_START_TIME = 0.5; // seconds
+        private const double CONTOUR_END_TIME = 0.3; // seconds
+        private const double DYNAMIC_SETUP_TIME = 0.5; // seconds
+        private const double FLUSH_WAIT_TIME = 1.0; // seconds
+        private const double COORDINATE_SETUP_TIME = 0.2; // seconds
+        private const double GENERAL_CYCLE_TIME = 0.1; // seconds
+
+        // Machine operation counters
+        private class MachineOperations
+        {
+            public int ToolChanges { get; set; }
+            public int SpindleStarts { get; set; }
+            public int SpindleStops { get; set; }
+            public int TcpOn { get; set; }
+            public int TcpOff { get; set; }
+            public int ContourStarts { get; set; }
+            public int ContourEnds { get; set; }
+            public int DynamicSetups { get; set; }
+            public int FlushWaits { get; set; }
+            public int CoordinateSetups { get; set; }
+            public int OtherCycles { get; set; }
+        }
+
+        // Movement tracking
+        private double _currentX = 0;
+        private double _currentY = 0;
+        private double _currentZ = 0;
+        private double _currentFeedrate = 0;
+        private const double DEFAULT_CUTTING_FEEDRATE = 3000; // Default feedrate if none specified
+
+        public async Task<CNCAnalysis> AnalyzeFileAsync(string filePath)
+        {
+            var analysis = new CNCAnalysis
+            {
+                Filename = Path.GetFileName(filePath)
+            };
+
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    analysis.ErrorMessage = "File not found";
+                    return analysis;
+                }
+
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.Length > 50 * 1024 * 1024) // 50MB limit
+                {
+                    analysis.ErrorMessage = "File too large for analysis";
+                    return analysis;
+                }
+
+                var lines = await File.ReadAllLinesAsync(filePath);
+                analysis.LineCount = lines.Length;
+
+                var machineOps = new MachineOperations();
+                var movements = new List<CNCMovement>();
+                
+                // Reset position tracking
+                _currentX = 0; _currentY = 0; _currentZ = 0; _currentFeedrate = 0;
+
+                foreach (var line in lines)
+                {
+                    var cleanLine = CleanGCodeLine(line);
+                    if (string.IsNullOrEmpty(cleanLine)) continue;
+
+                    // Count machine operations (matching Python logic)
+                    CountMachineOperations(cleanLine, machineOps);
+
+                    // Extract feedrate
+                    var feedMatch = Regex.Match(cleanLine, @"F(\d+\.?\d*)");
+                    if (feedMatch.Success && double.TryParse(feedMatch.Groups[1].Value, out double feed))
+                    {
+                        _currentFeedrate = feed;
+                    }
+
+                    // Process movements
+                    var movement = ProcessMovement(cleanLine, analysis);
+                    if (movement != null)
+                    {
+                        movements.Add(movement);
+                    }
+                }
+
+                // Calculate machine operation time
+                double machineOperationTime = CalculateMachineOperationTime(machineOps);
+
+                // Calculate movement times (in minutes from movements)
+                analysis.RapidTime = movements.Where(m => m.Code == "G0").Sum(m => m.Time);
+                analysis.CuttingTime = movements.Where(m => m.Code == "G1" || m.Code == "G2" || m.Code == "G3").Sum(m => m.Time);
+                
+                
+                // Set tool changes from machine operations
+                analysis.ToolChanges = machineOps.ToolChanges;
+                analysis.ProcessesCount = analysis.ProcessesUsed.Count;
+
+                // Total cycle time = machine operations (seconds) + cutting time (converted to seconds) + rapid time (converted to seconds)
+                double totalCycleTimeSeconds = machineOperationTime + (analysis.CuttingTime * 60) + (analysis.RapidTime * 60);
+                
+                // Store times in minutes for consistency with Python output
+                analysis.TotalTime = totalCycleTimeSeconds / 60.0;  // Total time in minutes
+                analysis.MachineTime = totalCycleTimeSeconds / 60.0;  // Machine time in minutes (same as total)
+                
+                analysis.AnalysisSuccessful = true;
+                return analysis;
+            }
+            catch (Exception ex)
+            {
+                analysis.ErrorMessage = $"Analysis failed: {ex.Message}";
+                return analysis;
+            }
+        }
+
+        private string CleanGCodeLine(string line)
+        {
+            // Remove comments
+            var commentIndex = line.IndexOf('(');
+            if (commentIndex >= 0)
+            {
+                line = line.Substring(0, commentIndex);
+            }
+
+            commentIndex = line.IndexOf(';');
+            if (commentIndex >= 0)
+            {
+                line = line.Substring(0, commentIndex);
+            }
+
+            return line.Trim().ToUpper();
+        }
+
+        private void CountMachineOperations(string line, MachineOperations ops)
+        {
+            // Count machine operations that add to cycle time (matching Python logic)
+            if (line.Contains("CH_TOOLCHANGE.NC"))
+                ops.ToolChanges++;
+            else if (line.Contains("CH_SPINDEL.NC"))
+            {
+                // Determine if start or stop based on parameters
+                if (line.Contains("@P2=1")) // Spindle start
+                    ops.SpindleStarts++;
+                else if (line.Contains("@P2=0")) // Spindle stop
+                    ops.SpindleStops++;
+            }
+            else if (line.Contains("CH_TCP_ON.NC"))
+                ops.TcpOn++;
+            else if (line.Contains("CH_TCP_OFF.NC"))
+                ops.TcpOff++;
+            else if (line.Contains("CH_CONTOUR_START.NC"))
+                ops.ContourStarts++;
+            else if (line.Contains("CH_CONTOUR_END.NC"))
+                ops.ContourEnds++;
+            else if (line.Contains("CH_DYNAMIC.NC"))
+                ops.DynamicSetups++;
+            else if (line.Contains("#FLUSH WAIT"))
+                ops.FlushWaits++;
+            else if (line.Contains("#CS ON") || line.Contains("#CS OFF") || 
+                     line.Contains("#MCS ON") || line.Contains("#MCS OFF"))
+                ops.CoordinateSetups++;
+            else if (line.Contains("L CYCLE") && !line.Contains("CH_TOOLCHANGE") && 
+                     !line.Contains("CH_SPINDEL") && !line.Contains("CH_TCP_") && 
+                     !line.Contains("CH_CONTOUR_") && !line.Contains("CH_DYNAMIC") && 
+                     !line.Contains("CH_CHECK_TOOL"))
+                ops.OtherCycles++;
+        }
+
+        private CNCMovement ProcessMovement(string line, CNCAnalysis analysis)
+        {
+            CNCMovement movement = null;
+
+            // G0 - Rapid moves
+            if (Regex.IsMatch(line, @"\bG0\b|\bG00\b"))
+            {
+                movement = CalculateMoveTime(line, RAPID_SPEED, "G0");
+                if (movement != null && analysis.MovementStats.ContainsKey("G0"))
+                    analysis.MovementStats["G0"]++;
+                else if (movement != null)
+                    analysis.MovementStats["G0"] = 1;
+                    
+                if (!analysis.ProcessesUsed.Contains("RAPID"))
+                    analysis.ProcessesUsed.Add("RAPID");
+            }
+            // G1 - Linear cutting moves
+            else if (Regex.IsMatch(line, @"\bG1\b|\bG01\b"))
+            {
+                // Use current feedrate, or default if none set yet
+                double feedrateToUse = _currentFeedrate > 0 ? _currentFeedrate : DEFAULT_CUTTING_FEEDRATE;
+                
+                movement = CalculateMoveTime(line, feedrateToUse, "G1");
+                if (movement != null && analysis.MovementStats.ContainsKey("G1"))
+                    analysis.MovementStats["G1"]++;
+                else if (movement != null)
+                    analysis.MovementStats["G1"] = 1;
+                    
+                if (!analysis.ProcessesUsed.Contains("CUTTING"))
+                    analysis.ProcessesUsed.Add("CUTTING");
+                    
+            }
+            // G2/G3 - Arc moves
+            else if (Regex.IsMatch(line, @"\bG[0]?[23]\b"))
+            {
+                // Use current feedrate, or default if none set yet
+                double feedrateToUse = _currentFeedrate > 0 ? _currentFeedrate : DEFAULT_CUTTING_FEEDRATE;
+                
+                var code = Regex.IsMatch(line, @"\bG[0]?2\b") ? "G2" : "G3";
+                movement = CalculateArcMoveTime(line, feedrateToUse, code);
+                if (movement != null && analysis.MovementStats.ContainsKey(code))
+                    analysis.MovementStats[code]++;
+                else if (movement != null)
+                    analysis.MovementStats[code] = 1;
+                    
+                if (!analysis.ProcessesUsed.Contains("CUTTING"))
+                    analysis.ProcessesUsed.Add("CUTTING");
+                    
+            }
+
+            if (movement != null)
+            {
+                UpdatePosition(line);
+            }
+
+            return movement;
+        }
+
+        private CNCMovement CalculateMoveTime(string line, double feedRate, string code)
+        {
+            var newX = _currentX;
+            var newY = _currentY;
+            var newZ = _currentZ;
+
+            // Extract coordinates
+            var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+                newX = x;
+
+            var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+                newY = y;
+
+            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+                newZ = z;
+
+            // Calculate distance
+            var distance = Math.Sqrt(
+                Math.Pow(newX - _currentX, 2) +
+                Math.Pow(newY - _currentY, 2) +
+                Math.Pow(newZ - _currentZ, 2)
+            );
+
+            // Calculate time in minutes
+            var time = feedRate > 0 ? distance / feedRate : 0;
+            
+
+            return new CNCMovement
+            {
+                Code = code,
+                X = newX,
+                Y = newY,
+                Z = newZ,
+                Feedrate = feedRate,
+                Distance = distance,
+                Time = time
+            };
+        }
+
+        private CNCMovement CalculateArcMoveTime(string line, double feedRate, string code)
+        {
+            var newX = _currentX;
+            var newY = _currentY;
+            var newZ = _currentZ;
+
+            // Extract coordinates
+            var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+                newX = x;
+
+            var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+                newY = y;
+
+            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+                newZ = z;
+
+            double distance;
+            
+            // Extract radius
+            var rMatch = Regex.Match(line, @"R=([-+]?\d*\.?\d+)");
+            if (rMatch.Success && double.TryParse(rMatch.Groups[1].Value, out double radius))
+            {
+                var dx = newX - _currentX;
+                var dy = newY - _currentY;
+                var dz = newZ - _currentZ;
+                var chordLength = Math.Sqrt(dx * dx + dy * dy + dz * dz);
+
+                // Calculate arc length
+                if (chordLength < 0.001 && Math.Abs(radius) > 0)
+                {
+                    // Full circle
+                    distance = 2 * Math.PI * Math.Abs(radius);
+                }
+                else if (chordLength > 0 && Math.Abs(radius) > 0)
+                {
+                    if (chordLength > 2 * Math.Abs(radius))
+                    {
+                        distance = chordLength; // Fallback to chord
+                    }
+                    else
+                    {
+                        var centralAngle = 2 * Math.Asin(Math.Min(chordLength / (2 * Math.Abs(radius)), 1.0));
+                        distance = Math.Abs(radius) * centralAngle;
+                    }
+                }
+                else
+                {
+                    distance = chordLength;
+                }
+
+                // Add helical component
+                if (Math.Abs(dz) > 0.001)
+                {
+                    distance = Math.Sqrt(distance * distance + dz * dz);
+                }
+            }
+            else
+            {
+                // No radius, calculate as straight line
+                distance = Math.Sqrt(
+                    Math.Pow(newX - _currentX, 2) +
+                    Math.Pow(newY - _currentY, 2) +
+                    Math.Pow(newZ - _currentZ, 2)
+                );
+            }
+
+            // Calculate time in minutes
+            var time = feedRate > 0 ? distance / feedRate : 0;
+            
+
+            return new CNCMovement
+            {
+                Code = code,
+                X = newX,
+                Y = newY,
+                Z = newZ,
+                Feedrate = feedRate,
+                Distance = distance,
+                Time = time
+            };
+        }
+
+        private void UpdatePosition(string line)
+        {
+            var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+                _currentX = x;
+
+            var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+                _currentY = y;
+
+            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+                _currentZ = z;
+        }
+
+        private double CalculateMachineOperationTime(MachineOperations ops)
+        {
+            // Calculate total machine operation time in seconds (matching Python logic)
+            return ops.ToolChanges * TOOL_CHANGE_TIME +
+                   ops.SpindleStarts * SPINDLE_START_TIME +
+                   ops.SpindleStops * SPINDLE_STOP_TIME +
+                   ops.TcpOn * TCP_ON_TIME +
+                   ops.TcpOff * TCP_OFF_TIME +
+                   ops.ContourStarts * CONTOUR_START_TIME +
+                   ops.ContourEnds * CONTOUR_END_TIME +
+                   ops.DynamicSetups * DYNAMIC_SETUP_TIME +
+                   ops.FlushWaits * FLUSH_WAIT_TIME +
+                   ops.CoordinateSetups * COORDINATE_SETUP_TIME +
+                   ops.OtherCycles * GENERAL_CYCLE_TIME;
+        }
+    }
+
     public partial class FileMonitorTrayApp : Form
     {
         private NotifyIcon trayIcon;
@@ -55,6 +493,12 @@ namespace FileMonitorTray
             ".nc", ".gcode", ".tap", ".mpf", ".ptp", ".cls", ".lst", ".prg", ".sub", ".cnc"
         };
 
+        // CNC file extensions for analysis
+        private readonly HashSet<string> CNC_EXTENSIONS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".nc", ".gcode", ".tap", ".mpf", ".ptp", ".cls", ".lst", ".prg", ".sub", ".cnc"
+        };
+
         // Configuration class
         public class AppConfig
         {
@@ -62,6 +506,7 @@ namespace FileMonitorTray
             public string WebAppUrl { get; set; } = "http://localhost:5002";
             public string Language { get; set; } = "en";
             public bool ScanFileContents { get; set; } = true;
+            public bool EnableCNCAnalysis { get; set; } = true;
             public int MaxFileSizeMB { get; set; } = 10; // Max file size to scan in MB
         }
 
@@ -98,6 +543,7 @@ namespace FileMonitorTray
 
         private AppConfig config;
         private LocalizationManager localization;
+        private GCodeAnalyzer gCodeAnalyzer;
 
         public FileMonitorTrayApp()
         {
@@ -106,6 +552,9 @@ namespace FileMonitorTray
             InitializeLocalization();
             InitializeHttpClient();
             CreateTrayIcon();
+            
+            // Initialize CNC analyzer
+            gCodeAnalyzer = new GCodeAnalyzer();
             
             // Hide the form initially
             this.WindowState = FormWindowState.Minimized;
@@ -519,6 +968,13 @@ namespace FileMonitorTray
                 };
                 trayMenu.Items.Add(scanContentItem);
                 
+                // Add CNC analysis toggle
+                var cncAnalysisItem = new ToolStripMenuItem("CNC Analysis", null, (s, e) => ToggleCNCAnalysis())
+                {
+                    Checked = config.EnableCNCAnalysis
+                };
+                trayMenu.Items.Add(cncAnalysisItem);
+                
                 trayMenu.Items.Add(localization.T("show_status"), null, async (s, e) => await ShowStatus());
                 var monitoringItem = new ToolStripMenuItem(localization.T("toggle_monitoring"), null, async (s, e) => await ToggleMonitoring()) 
                 { 
@@ -557,6 +1013,12 @@ namespace FileMonitorTray
         private void ToggleScanContent()
         {
             config.ScanFileContents = !config.ScanFileContents;
+            SaveConfiguration();
+        }
+
+        private void ToggleCNCAnalysis()
+        {
+            config.EnableCNCAnalysis = !config.EnableCNCAnalysis;
             SaveConfiguration();
         }
 
@@ -1080,6 +1542,35 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 }
             }
 
+            // CNC Analysis
+            CNCAnalysis cncAnalysis = null;
+            if (config.EnableCNCAnalysis && File.Exists(changeInfo.FullPath))
+            {
+                string fileExtension = Path.GetExtension(changeInfo.FullPath).ToLower();
+                if (CNC_EXTENSIONS.Contains(fileExtension))
+                {
+                    try
+                    {
+                        // Wait a bit to ensure file is fully written
+                        await Task.Delay(500);
+                        
+                        cncAnalysis = await gCodeAnalyzer.AnalyzeFileAsync(changeInfo.FullPath);
+                        if (cncAnalysis.AnalysisSuccessful)
+                        {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis completed for {Path.GetFileName(changeInfo.FullPath)} - Total Time: {cncAnalysis.GetFormattedTime()} ({cncAnalysis.TotalTime:F2} min)");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis failed: {cncAnalysis.ErrorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error during CNC analysis: {ex.Message}");
+                    }
+                }
+            }
+
             // Send the event
             var payload = new
             {
@@ -1090,7 +1581,8 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 new_size = fileSize,
                 computer_name = Environment.MachineName,
                 category_id = matchedCategory?.id,
-                matched_keyword = matchedKeyword
+                matched_keyword = matchedKeyword,
+                cnc_analysis = cncAnalysis
             };
 
             try

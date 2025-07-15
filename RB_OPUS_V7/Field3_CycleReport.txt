@@ -1,0 +1,33 @@
+CNC Cycle Time Analysis Report
+Generated: 2025-07-14 20:01:17
+NC File: Field3.nc
+
+=== CYCLE TIME BREAKDOWN ===
+Movement Time:     2.6 sec
+Tool Change Time:  15.0 sec
+Spindle Time:      9.0 sec
+Cycle Overhead:    23.0 sec
+
+TOTAL CYCLE TIME:  49.6 sec
+
+=== OPERATION STATISTICS ===
+Total Distance:    2196.9 mm
+Cutting Distance:  0.0 mm
+Rapid Distance:    2196.9 mm
+Total Moves:       33
+Tool Changes:      1
+Spindle Starts:    3
+Cycle Calls:       23
+
+=== MACHINE CONFIGURATION ===
+Rapid Feedrate:    50000 mm/min
+Tool Change Time:  15.0 sec
+Spindle Start Time: 3.0 sec
+Pin Change Time:   1.0 sec
+
+=== PRODUCTION ESTIMATES ===
+Single Part:       49.6 sec
+10 Parts:          8.3 min (496 sec)
+100 Parts:         1.4 hr 23 min (4964 sec)
+Parts per Hour:    72.5
+Parts per Day:     580 (8 hour shift)

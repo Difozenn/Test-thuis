@@ -1,0 +1,6 @@
+; Simple test file
+G0 X0 Y0 Z0
+F3000
+G1 X100 Y100
+G1 X200 Y200
+G1 X300 Y300

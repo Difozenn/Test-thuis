@@ -143,6 +143,7 @@ class MainApp(tk.Frame):
         if self.panel_instances:
             self.switch_panel(0)
 
+
     def switch_panel(self, idx):
         if idx >= len(self.panel_instances):
             return

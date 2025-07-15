@@ -1,0 +1,57 @@
+CNC EFFICIENCY ANALYSIS REPORT
+==================================================
+Program: Field33.nc
+Analysis Date: 2025-07-14 21:28:13
+
+📊 OVERALL EFFICIENCY CLASSIFICATION
+Overall Grade: 🔴 POOR (38.8/100)
+
+📈 DETAILED METRICS
+Cycle Time Analysis:
+  Total Cycle Time:     3.9 min (233 sec)
+  Cutting Time:         0.7 min (41 sec)
+  Rapid Time:          0.3 min (16 sec)
+  Tool Change Time:    0.8 min (45 sec)
+  Overhead Time:       3.2 min (192 sec)
+
+Distance Analysis:
+  Total Distance:      17181 mm
+  Cutting Distance:    3617 mm
+  Rapid Distance:      13564 mm
+
+Operations Count:
+  Tool Changes:        3
+  Spindle Starts:      3
+  Cycle Calls:         122
+
+🎯 EFFICIENCY CLASSIFICATIONS
+Cutting Efficiency:      🔴 POOR (17.4%)
+  Target: >70% cutting time | Current: 17.4%
+
+Tool Change Efficiency:  🟢 EXCELLENT (0.77 changes/min)
+  Target: <1.5 changes/min | Current: 0.77
+
+Spindle Efficiency:      🔴 POOR (3.9%)
+  Target: >80% utilization | Current: 3.9%
+
+✅ STRENGTHS
+  • Optimized tool usage - minimal tool changes
+
+⚠️  AREAS FOR IMPROVEMENT
+  • Low cutting efficiency - excessive overhead time
+  • Poor spindle utilization
+  • Excessive rapid traverse distance
+
+💡 OPTIMIZATION RECOMMENDATIONS
+  • Reduce tool changes by combining operations
+  • Optimize rapid traverse paths
+  • Review cycle selection - consider more efficient cycles
+  • Reduce spindle start/stop cycles
+  • Group cutting operations to maintain spindle running
+  • Optimize feed rates for continuous cutting
+  • Optimize part positioning and clamping
+  • Review operation sequence for better path planning
+  • Consider different approach angles
+  • Consider CAM strategy review for better efficiency
+  • Analyze part setup for reduced non-cutting time
+  • Review postprocessor settings for optimization

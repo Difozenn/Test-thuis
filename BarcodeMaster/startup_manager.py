@@ -108,7 +108,7 @@ class StartupManager:
         
         # Add logo or text
         try:
-            from BarcodeMaster.path_utils import get_resource_path
+            from path_utils import get_resource_path
             logo_path = get_resource_path("assets/logo.png")
             
             if os.path.exists(logo_path):
@@ -161,9 +161,9 @@ class StartupManager:
             self.update_splash_status("Loading configuration...")
             
             # Import application modules
-            from BarcodeMaster.gui.app import run as run_main_app, ServiceStatus
-            from BarcodeMaster.config_utils import get_config
-            from BarcodeMaster.database.db_log_api import run_api_server
+            from gui.app import run as run_main_app, ServiceStatus
+            from config_utils import get_config
+            from database.db_log_api import run_api_server
             
             self.update_splash_status("Starting database API...")
             

@@ -143,10 +143,15 @@ namespace FileMonitorTray
                     CountMachineOperations(cleanLine, machineOps);
 
                     // Extract feedrate
-                    var feedMatch = Regex.Match(cleanLine, @"F(\d+\.?\d*)");
-                    if (feedMatch.Success && double.TryParse(feedMatch.Groups[1].Value, out double feed))
+                    var feedMatch = Regex.Match(cleanLine, @"F([-+]?\d+\.?\d*)");
+                    if (feedMatch.Success)
                     {
-                        _currentFeedrate = feed;
+                        // Replace comma with period if needed
+                        string feedValue = feedMatch.Groups[1].Value.Replace(',', '.');
+                        if (double.TryParse(feedValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double feed))
+                        {
+                            _currentFeedrate = feed;
+                        }
                     }
 
                     // Process movements
@@ -174,7 +179,7 @@ namespace FileMonitorTray
                 
                 // Store times in minutes for consistency with Python output
                 analysis.TotalTime = totalCycleTimeSeconds / 60.0;  // Total time in minutes
-                analysis.MachineTime = totalCycleTimeSeconds / 60.0;  // Machine time in minutes (same as total)
+                analysis.MachineTime = machineOperationTime / 60.0;  // Machine operation time in minutes
                 
                 analysis.AnalysisSuccessful = true;
                 return analysis;
@@ -258,35 +263,58 @@ namespace FileMonitorTray
             // G1 - Linear cutting moves
             else if (Regex.IsMatch(line, @"\bG1\b|\bG01\b"))
             {
-                // Use current feedrate, or default if none set yet
-                double feedrateToUse = _currentFeedrate > 0 ? _currentFeedrate : DEFAULT_CUTTING_FEEDRATE;
-                
-                movement = CalculateMoveTime(line, feedrateToUse, "G1");
-                if (movement != null && analysis.MovementStats.ContainsKey("G1"))
-                    analysis.MovementStats["G1"]++;
-                else if (movement != null)
-                    analysis.MovementStats["G1"] = 1;
+                // IMPORTANT: Match Python behavior - only process if feedrate is set
+                if (_currentFeedrate > 0)
+                {
+                    movement = CalculateMoveTime(line, _currentFeedrate, "G1");
+                    if (movement != null && analysis.MovementStats.ContainsKey("G1"))
+                        analysis.MovementStats["G1"]++;
+                    else if (movement != null)
+                        analysis.MovementStats["G1"] = 1;
+                        
+                    if (!analysis.ProcessesUsed.Contains("CUTTING"))
+                        analysis.ProcessesUsed.Add("CUTTING");
+                }
+                else
+                {
+                    // Just update movement count but no time calculation (matching Python)
+                    if (analysis.MovementStats.ContainsKey("G1"))
+                        analysis.MovementStats["G1"]++;
+                    else
+                        analysis.MovementStats["G1"] = 1;
                     
-                if (!analysis.ProcessesUsed.Contains("CUTTING"))
-                    analysis.ProcessesUsed.Add("CUTTING");
-                    
+                    // Still need to update position for this line
+                    UpdatePosition(line);
+                }
             }
             // G2/G3 - Arc moves
             else if (Regex.IsMatch(line, @"\bG[0]?[23]\b"))
             {
-                // Use current feedrate, or default if none set yet
-                double feedrateToUse = _currentFeedrate > 0 ? _currentFeedrate : DEFAULT_CUTTING_FEEDRATE;
-                
                 var code = Regex.IsMatch(line, @"\bG[0]?2\b") ? "G2" : "G3";
-                movement = CalculateArcMoveTime(line, feedrateToUse, code);
-                if (movement != null && analysis.MovementStats.ContainsKey(code))
-                    analysis.MovementStats[code]++;
-                else if (movement != null)
-                    analysis.MovementStats[code] = 1;
+                
+                // IMPORTANT: Match Python behavior - only process if feedrate is set
+                if (_currentFeedrate > 0)
+                {
+                    movement = CalculateArcMoveTime(line, _currentFeedrate, code);
+                    if (movement != null && analysis.MovementStats.ContainsKey(code))
+                        analysis.MovementStats[code]++;
+                    else if (movement != null)
+                        analysis.MovementStats[code] = 1;
+                        
+                    if (!analysis.ProcessesUsed.Contains("CUTTING"))
+                        analysis.ProcessesUsed.Add("CUTTING");
+                }
+                else
+                {
+                    // Just update movement count but no time calculation (matching Python)
+                    if (analysis.MovementStats.ContainsKey(code))
+                        analysis.MovementStats[code]++;
+                    else
+                        analysis.MovementStats[code] = 1;
                     
-                if (!analysis.ProcessesUsed.Contains("CUTTING"))
-                    analysis.ProcessesUsed.Add("CUTTING");
-                    
+                    // Still need to update position for this line
+                    UpdatePosition(line);
+                }
             }
 
             if (movement != null)
@@ -305,15 +333,15 @@ namespace FileMonitorTray
 
             // Extract coordinates
             var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
-            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double x))
                 newX = x;
 
             var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
-            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 newY = y;
 
             var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
-            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 newZ = z;
 
             // Calculate distance
@@ -325,7 +353,6 @@ namespace FileMonitorTray
 
             // Calculate time in minutes
             var time = feedRate > 0 ? distance / feedRate : 0;
-            
 
             return new CNCMovement
             {
@@ -347,70 +374,27 @@ namespace FileMonitorTray
 
             // Extract coordinates
             var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
-            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double x))
                 newX = x;
 
             var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
-            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 newY = y;
 
             var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
-            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 newZ = z;
 
-            double distance;
-            
-            // Extract radius
-            var rMatch = Regex.Match(line, @"R=([-+]?\d*\.?\d+)");
-            if (rMatch.Success && double.TryParse(rMatch.Groups[1].Value, out double radius))
-            {
-                var dx = newX - _currentX;
-                var dy = newY - _currentY;
-                var dz = newZ - _currentZ;
-                var chordLength = Math.Sqrt(dx * dx + dy * dy + dz * dz);
-
-                // Calculate arc length
-                if (chordLength < 0.001 && Math.Abs(radius) > 0)
-                {
-                    // Full circle
-                    distance = 2 * Math.PI * Math.Abs(radius);
-                }
-                else if (chordLength > 0 && Math.Abs(radius) > 0)
-                {
-                    if (chordLength > 2 * Math.Abs(radius))
-                    {
-                        distance = chordLength; // Fallback to chord
-                    }
-                    else
-                    {
-                        var centralAngle = 2 * Math.Asin(Math.Min(chordLength / (2 * Math.Abs(radius)), 1.0));
-                        distance = Math.Abs(radius) * centralAngle;
-                    }
-                }
-                else
-                {
-                    distance = chordLength;
-                }
-
-                // Add helical component
-                if (Math.Abs(dz) > 0.001)
-                {
-                    distance = Math.Sqrt(distance * distance + dz * dz);
-                }
-            }
-            else
-            {
-                // No radius, calculate as straight line
-                distance = Math.Sqrt(
-                    Math.Pow(newX - _currentX, 2) +
-                    Math.Pow(newY - _currentY, 2) +
-                    Math.Pow(newZ - _currentZ, 2)
-                );
-            }
+            // IMPORTANT: To match Python behavior exactly, always use straight-line distance
+            // The Python regex for radius is broken, so it always falls back to straight-line calculation
+            double distance = Math.Sqrt(
+                Math.Pow(newX - _currentX, 2) +
+                Math.Pow(newY - _currentY, 2) +
+                Math.Pow(newZ - _currentZ, 2)
+            );
 
             // Calculate time in minutes
             var time = feedRate > 0 ? distance / feedRate : 0;
-            
 
             return new CNCMovement
             {
@@ -427,15 +411,15 @@ namespace FileMonitorTray
         private void UpdatePosition(string line)
         {
             var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
-            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double x))
                 _currentX = x;
 
             var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
-            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 _currentY = y;
 
             var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
-            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, out double z))
+            if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 _currentZ = z;
         }
 
@@ -481,6 +465,12 @@ namespace FileMonitorTray
         private const string CONFIG_FILE = "tray_config.json";
         private const string STARTUP_KEY_PATH = @"Software\Microsoft\Windows\CurrentVersion\Run";
         
+        // Login retry mechanism
+        private System.Windows.Forms.Timer loginRetryTimer;
+        private int loginRetryCount = 0;
+        private const int MAX_LOGIN_RETRIES = 5;
+        private const int LOGIN_RETRY_INTERVAL_MS = 60000; // 1 minute
+        
         // Cache for categories to avoid frequent API calls
         private List<CategoryInfo> cachedCategories = new List<CategoryInfo>();
         private DateTime categoriesCacheTime = DateTime.MinValue;
@@ -508,6 +498,7 @@ namespace FileMonitorTray
             public bool ScanFileContents { get; set; } = true;
             public bool EnableCNCAnalysis { get; set; } = true;
             public int MaxFileSizeMB { get; set; } = 10; // Max file size to scan in MB
+            public bool MonitoringEnabled { get; set; } = true; // Remember monitoring state
         }
 
         // Class to hold path info from the server
@@ -670,11 +661,29 @@ namespace FileMonitorTray
             // Try auto-login
             if (await AutoLogin())
             {
-                await StartMonitoringOnStartup();
+                // Start monitoring if it was enabled in config
+                if (config.MonitoringEnabled)
+                {
+                    await StartMonitoring();
+                }
             }
             else if (!string.IsNullOrEmpty(config.Username))
             {
-                ShowLoginDialog();
+                // Start login retry timer if we have stored credentials
+                if (!string.IsNullOrEmpty(GetStoredPassword(config.Username)))
+                {
+                    StartLoginRetryTimer();
+                    
+                    // Try to start monitoring anyway if it was enabled
+                    if (config.MonitoringEnabled)
+                    {
+                        await StartMonitoring();
+                    }
+                }
+                else
+                {
+                    ShowLoginDialog();
+                }
             }
 
             // Initialize the processing timer with a longer interval
@@ -785,6 +794,9 @@ namespace FileMonitorTray
                         SaveConfiguration();
                         StorePassword(username, password);
                         
+                        // Stop login retry timer if it's running
+                        StopLoginRetryTimer();
+                        
                         await UpdateTrayIcon();
                         
                         // Load categories after successful login
@@ -816,7 +828,7 @@ namespace FileMonitorTray
             }
             catch { }
 
-            StopMonitoring(); // Stop file watchers on logout
+            // Don't stop monitoring on logout - keep it running
             authenticated = false;
             currentUser = "";
             
@@ -932,7 +944,7 @@ namespace FileMonitorTray
             
             try
             {
-                trayIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                trayIcon.Icon = CreateOverlayIcon("error"); // Red dot when not connected
             }
             catch
             {
@@ -1041,16 +1053,16 @@ namespace FileMonitorTray
                         currentUser = usernameProp.GetString() ?? currentUser;
                     }
                     trayIcon.Text = $@"{APP_NAME} - {currentUser} - {(monitoringActive ? localization.T("monitoring_active") : localization.T("monitoring_inactive"))}";
-                    trayIcon.Icon = monitoringActive ? CreateOverlayIcon("play") : CreateDefaultIcon();
+                    trayIcon.Icon = monitoringActive ? CreateOverlayIcon("play") : CreateOverlayIcon("connected");
                 }
                 else
                 {
                     // Server is reachable but returned an error (e.g., 401 Unauthorized after session expired)
                     authenticated = false;
                     currentUser = "";
-                    StopMonitoring(); // Stop monitoring if session is lost
-                    trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_not_logged_in")}";
-                    trayIcon.Icon = CreateOverlayIcon("error");
+                    // Keep monitoring running even if session is lost
+                    trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_not_logged_in")} - {(monitoringActive ? localization.T("monitoring_active") : localization.T("monitoring_inactive"))}";
+                    trayIcon.Icon = monitoringActive ? CreateOverlayIcon("play") : CreateOverlayIcon("error");
                 }
             }
             catch
@@ -1058,9 +1070,9 @@ namespace FileMonitorTray
                 // Server is unreachable
                 authenticated = false;
                 currentUser = "";
-                StopMonitoring(); // Stop monitoring if server is down
-                trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_server_unreachable")}";
-                trayIcon.Icon = CreateOverlayIcon("error");
+                // Keep monitoring running even if server is down
+                trayIcon.Text = $@"{APP_NAME} - {localization.T("tooltip_server_unreachable")} - {(monitoringActive ? localization.T("monitoring_active") : localization.T("monitoring_inactive"))}";
+                trayIcon.Icon = monitoringActive ? CreateOverlayIcon("play") : CreateOverlayIcon("error");
             }
         }
 
@@ -1193,9 +1205,111 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 processTimer.Stop();
                 processTimer.Dispose();
             }
+            if (loginRetryTimer != null)
+            {
+                loginRetryTimer.Stop();
+                loginRetryTimer.Dispose();
+            }
             if (trayIcon != null) trayIcon.Visible = false;
             Application.Exit();
         }
+
+        #region Login Retry
+        private void StartLoginRetryTimer()
+        {
+            if (loginRetryTimer == null)
+            {
+                loginRetryTimer = new System.Windows.Forms.Timer();
+                loginRetryTimer.Interval = LOGIN_RETRY_INTERVAL_MS;
+                loginRetryTimer.Tick += async (s, e) => await LoginRetryTimerTick();
+            }
+            
+            loginRetryCount = 0;
+            loginRetryTimer.Start();
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Login retry timer started. Will retry every {LOGIN_RETRY_INTERVAL_MS / 1000} seconds.");
+        }
+
+        private void StopLoginRetryTimer()
+        {
+            if (loginRetryTimer != null)
+            {
+                loginRetryTimer.Stop();
+                loginRetryCount = 0;
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Login retry timer stopped.");
+            }
+        }
+
+        private async Task LoginRetryTimerTick()
+        {
+            if (authenticated)
+            {
+                StopLoginRetryTimer();
+                return;
+            }
+
+            if (loginRetryCount >= MAX_LOGIN_RETRIES)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Max login retries reached ({MAX_LOGIN_RETRIES}). Stopping retry timer.");
+                StopLoginRetryTimer();
+                
+                // Show notification that auto-login failed
+                trayIcon.ShowBalloonTip(5000, "Login Failed", 
+                    $"Failed to login after {MAX_LOGIN_RETRIES} attempts. Please login manually.", 
+                    ToolTipIcon.Warning);
+                return;
+            }
+
+            loginRetryCount++;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Login retry attempt {loginRetryCount}/{MAX_LOGIN_RETRIES}...");
+
+            // Check if we still have stored credentials
+            if (!string.IsNullOrEmpty(config.Username))
+            {
+                string password = GetStoredPassword(config.Username);
+                if (!string.IsNullOrEmpty(password))
+                {
+                    // Check server connection first
+                    if (await CheckServerConnection())
+                    {
+                        if (await Login(config.Username, password))
+                        {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Login retry successful!");
+                            StopLoginRetryTimer();
+                            
+                            // Start monitoring if it was enabled in config
+                            if (config.MonitoringEnabled && !monitoringActive)
+                            {
+                                await StartMonitoring();
+                            }
+                            
+                            // Show success notification
+                            trayIcon.ShowBalloonTip(3000, "Login Successful", 
+                                $"Successfully logged in as {config.Username}", 
+                                ToolTipIcon.Info);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Login retry failed. Will try again in {LOGIN_RETRY_INTERVAL_MS / 1000} seconds.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Server unreachable. Will try again in {LOGIN_RETRY_INTERVAL_MS / 1000} seconds.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No stored password found. Stopping retry timer.");
+                    StopLoginRetryTimer();
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No username configured. Stopping retry timer.");
+                StopLoginRetryTimer();
+            }
+        }
+        #endregion
 
         #region File Monitoring
         private async Task StartMonitoringOnStartup()
@@ -1207,7 +1321,24 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
         {
             if (monitoringActive)
             {
-                StopMonitoring();
+                // Show confirmation dialog before stopping monitoring
+                var result = MessageBox.Show(
+                    "Are you sure you want to stop file monitoring?\n\nThis will stop tracking all file changes until you manually restart monitoring.",
+                    "Confirm Stop Monitoring",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2); // Default to "No"
+                
+                if (result == DialogResult.Yes)
+                {
+                    StopMonitoring();
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Monitoring stopped by user confirmation.");
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] User cancelled stop monitoring request.");
+                    return; // Don't stop monitoring
+                }
             }
             else
             {
@@ -1218,17 +1349,42 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
 
         private async Task StartMonitoring()
         {
-            if (!authenticated) return;
+            // Allow monitoring to start even without authentication
+            // This enables monitoring to continue working during network issues
 
-            StopMonitoring(); 
+            // Only stop existing monitoring if we're already monitoring
+            // This prevents unnecessary restarts
+            if (monitoringActive)
+            {
+                StopMonitoring();
+            } 
 
             try
             {
-                var response = await httpClient.GetAsync($@"{webAppUrl}/api/paths");
-                if (!response.IsSuccessStatusCode) return;
-
-                string jsonResponse = await response.Content.ReadAsStringAsync();
-                var pathsToMonitor = JsonSerializer.Deserialize<List<MonitoredPathInfo>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                List<MonitoredPathInfo> pathsToMonitor = null;
+                
+                // Try to get paths from server if authenticated
+                if (authenticated)
+                {
+                    var response = await httpClient.GetAsync($@"{webAppUrl}/api/paths");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string jsonResponse = await response.Content.ReadAsStringAsync();
+                        pathsToMonitor = JsonSerializer.Deserialize<List<MonitoredPathInfo>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+                }
+                
+                // If we couldn't get paths or not authenticated, use cached paths if available
+                if (pathsToMonitor == null || pathsToMonitor.Count == 0)
+                {
+                    // For now, we'll just return if we can't get paths
+                    // In a future update, we could cache the paths locally
+                    if (!authenticated)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Cannot start monitoring without authentication and cached paths.");
+                        return;
+                    }
+                }
 
                 if (pathsToMonitor == null) return;
 
@@ -1267,10 +1423,21 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                     }
                 }
                 monitoringActive = fileWatchers.Count > 0;
+                
+                // Save monitoring state to config
+                config.MonitoringEnabled = monitoringActive;
+                SaveConfiguration();
+                
+                if (monitoringActive)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Monitoring started successfully. Watching {fileWatchers.Count} paths.");
+                }
             }
             catch
             {
                 monitoringActive = false;
+                config.MonitoringEnabled = false;
+                SaveConfiguration();
             }
         }
 
@@ -1285,8 +1452,14 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
             watcherInfoMap.Clear();
             monitoringActive = false;
             
+            // Save monitoring state to config
+            config.MonitoringEnabled = false;
+            SaveConfiguration();
+            
             // Clear pending changes
             pendingChanges.Clear();
+            
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Monitoring stopped.");
         }
 
         private void OnFileSystemEvent(object sender, FileSystemEventArgs e)
@@ -1805,6 +1978,9 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                         break;
                     case "error":
                         brush = Brushes.Red;
+                        break;
+                    case "connected":
+                        brush = Brushes.Blue;
                         break;
                     default:
                         return baseIcon;

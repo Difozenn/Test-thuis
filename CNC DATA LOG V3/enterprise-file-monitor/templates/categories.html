@@ -9,11 +9,22 @@
     <h1>{{ t('categories') }}</h1>
 </div>
 
-<!-- Action Button -->
-<div class="mb-4">
+<!-- Action Button and Sort Dropdown -->
+<div class="mb-4 d-flex justify-content-between align-items-center">
     <a href="{{ url_for('main.add_category') }}" class="btn btn-primary">
         <i class="fas fa-plus"></i> {{ t('add_category') }}
     </a>
+    
+    {% if current_user.role == 'admin' and users %}
+    <div class="dropdown">
+        <select class="form-select" id="userSortDropdown" onchange="sortByUser()" style="min-width: 200px;">
+            <option value="all" {% if current_sort == 'all' %}selected{% endif %}>{{ t('all_users') if t('all_users') else 'All Users' }}</option>
+            {% for user in users %}
+            <option value="{{ user.username }}" {% if current_sort == user.username %}selected{% endif %}>{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
 </div>
 
 <div class="row">
@@ -22,6 +33,9 @@
         <div class="card">
             <div class="card-header" style="background-color: {{ category.color }}; color: white;">
                 <h5 class="mb-0">{{ category.name }}</h5>
+                {% if current_user.role == 'admin' %}
+                <small class="d-block">{{ t('user') }}: {{ category.user.username }}</small>
+                {% endif %}
             </div>
             <div class="card-body">
                 <h6>{{ t('keywords') }}:</h6>
@@ -63,4 +77,20 @@
     </div>
     {% endfor %}
 </div>
+
+<script>
+function sortByUser() {
+    const dropdown = document.getElementById('userSortDropdown');
+    const selectedUser = dropdown.value;
+    const currentUrl = new URL(window.location);
+    
+    if (selectedUser === 'all') {
+        currentUrl.searchParams.delete('sort');
+    } else {
+        currentUrl.searchParams.set('sort', selectedUser);
+    }
+    
+    window.location.href = currentUrl.toString();
+}
+</script>
 {% endblock %}

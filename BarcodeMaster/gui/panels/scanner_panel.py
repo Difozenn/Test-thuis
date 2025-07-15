@@ -78,10 +78,8 @@ class ScannerPanel(tk.Frame):
         self.com_status_label = tk.Label(self.com_frame, text="Niet verbonden", fg="red", bg="#f0f0f0")
         self.com_status_label.grid(row=2, column=2, padx=5, pady=10, sticky='w')
 
-        # --- Event Type Selection ---
-        event_type = config.get('scanner_panel_event_type', 'OPEN')
-        self.event_type_var = tk.StringVar(value=event_type)
-        self.event_frame = tk.LabelFrame(self, text="Event Type", bg="#f0f0f0", padx=10, pady=5)
+        # --- User Configuration ---
+        self.event_frame = tk.LabelFrame(self, text="Gebruiker Configuratie", bg="#f0f0f0", padx=10, pady=5)
         self.event_frame.pack(pady=(0, 10), fill='x', padx=20)
         
         # Add START button frame after event type frame
@@ -110,19 +108,8 @@ class ScannerPanel(tk.Frame):
         self.log_text.tag_config("error", foreground="red")
         self.log_text.tag_config("debug", foreground="gray")
 
-        # Frame for radio buttons and lock button
-        self.radio_lock_frame = tk.Frame(self.event_frame, bg="#f0f0f0")
-        self.radio_lock_frame.pack(fill='x', anchor='nw')
-
         # Frame for user-specific path settings
         self.user_paths_frame = tk.Frame(self.event_frame, bg="#f0f0f0")
-
-        self.event_type_locked = config.get('scanner_panel_event_type_locked', False)
-        self.open_radio = tk.Radiobutton(self.radio_lock_frame, text="OPEN", variable=self.event_type_var, value="OPEN", bg="#f0f0f0", command=self._on_event_type_radio_change)
-        self.closed_radio = tk.Radiobutton(self.radio_lock_frame, text="AFGEMELD", variable=self.event_type_var, value="AFGEMELD", bg="#f0f0f0", command=self._on_event_type_radio_change)
-        self.open_radio.pack(side='left', padx=10, pady=(0,5))
-        self.closed_radio.pack(side='left', padx=10, pady=(0,5))
-        self.lock_btn = tk.Button(self.radio_lock_frame, text="Lock" if not self.event_type_locked else "Unlock", command=self.toggle_event_type_lock, width=7)
 
         # Load user-specific paths from config
         self.user_specific_paths_vars = {}
@@ -152,8 +139,9 @@ class ScannerPanel(tk.Frame):
             self._update_admin_dependent_ui()
 
         self.update_frame_visibility()
-        self.apply_event_type_lock_ui()
-        self._update_open_event_ui_visibility()
+        # Always show user configuration UI
+        self._build_open_event_user_paths_ui()
+        self.user_paths_frame.pack(fill='x', padx=5, pady=(5,0))
 
         self._previous_scanner_type = self.scanner_type_var.get()
 
@@ -459,9 +447,29 @@ class ScannerPanel(tk.Frame):
         try:
             response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=3)
             if response.ok:
-                self.log_message(f"✓ Werk sessie gestart voor {current_user}", "success")
-                self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
-                self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                # Also create global project session for production time tracking
+                project_session_data = {
+                    'event': 'PROJECT_SESSION_START',
+                    'user': current_user,
+                    'session_id': self.current_session_id,
+                    'timestamp': self.session_start_time.isoformat(),
+                    'details': 'Global project session started'
+                }
+                
+                try:
+                    project_response = requests.post(api_url.replace('/log', '/project_session/start'), json=project_session_data, timeout=3)
+                    if project_response.ok:
+                        self.log_message(f"✓ Werk sessie gestart voor {current_user}", "success")
+                        self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
+                        self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                    else:
+                        self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
+                        self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
+                        self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                except Exception as pe:
+                    self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
+                    self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
+                    self.start_button.config(text="STOP SESSIE", bg="#f44336")
             else:
                 self.log_message("❌ Kon sessie niet starten", "error")
                 self.current_session_id = None
@@ -472,16 +480,51 @@ class ScannerPanel(tk.Frame):
             self.session_start_time = None
 
     def close_current_session(self):
-        """Close the current active session"""
+        """Close the current active session and AFGEMELD all open projects"""
         if not self.current_session_id:
             return
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        timestamp = datetime.now().isoformat()
         
+        # First, AFGEMELD all open projects for this user
+        if self.open_projects:
+            self.log_message(f"🔄 Afsluiten van {len(self.open_projects)} open projecten...", "info")
+            
+            for project in list(self.open_projects):  # Copy to avoid modification during iteration
+                # Ask for item count for each project
+                item_count = 0
+                item_dialog_result = self.get_item_count_dialog(f"Project {project}")
+                if item_dialog_result and item_dialog_result['confirmed']:
+                    item_count = item_dialog_result['count']
+                
+                # Send AFGEMELD for this project
+                data_afgemeld = {
+                    'event': 'AFGEMELD',
+                    'details': f"Auto-close on session end",
+                    'project': project,
+                    'user': current_user,
+                    'item_count': item_count,
+                    'session_id': self.current_session_id,
+                    'timestamp': timestamp
+                }
+                
+                try:
+                    response = requests.post(api_url, json=data_afgemeld, timeout=3)
+                    if response.ok:
+                        self.log_message(f"✓ Project {project} afgesloten", "success")
+                        self.open_projects.discard(project)
+                    else:
+                        self.log_message(f"⚠️ Fout bij afsluiten project {project}", "warning")
+                except Exception as e:
+                    self.log_message(f"⚠️ Netwerkfout bij afsluiten project {project}: {e}", "warning")
+        
+        # Then close the session
         data = {
             'session_id': self.current_session_id,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': timestamp
         }
         
         try:
@@ -574,7 +617,12 @@ class ScannerPanel(tk.Frame):
 
     def log_message_from_service(self, message):
         """Handle log messages from background service with special formatting."""
-        if "BACKGROUND_PROJECT_OPENED:" in message:
+        if "BACKGROUND_PROCESSING_STARTED:" in message:
+            parts = message.split(":")
+            if len(parts) >= 2:
+                project = parts[1]
+                self.log_message(f"🔄 Project {project} wordt verwerkt voor alle gebruikers...", "info")
+        elif "BACKGROUND_PROJECT_OPENED:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
                 project = parts[1]
@@ -678,12 +726,6 @@ class ScannerPanel(tk.Frame):
         elif self.winfo_exists():
             self.lock_button_frame.pack_forget()
 
-    def set_config_lock_visibility(self, visible):
-        """Shows or hides the event type lock button based on admin lock state."""
-        if visible and self.winfo_exists():
-            self.lock_btn.pack(side=tk.RIGHT, padx=(5,0))
-        elif self.winfo_exists():
-            self.lock_btn.pack_forget()
 
     def update_frame_visibility(self):
         if self.scanner_type_var.get() == 'COM':
@@ -698,11 +740,10 @@ class ScannerPanel(tk.Frame):
         self.scanner_type_var.set(config.get('scanner_panel_type', 'COM'))
         self.com_port_var.set(config.get('scanner_panel_com_port', ''))
         self.baud_rate_var.set(config.get('scanner_panel_baud_rate', '9600'))
-        self.event_type_var.set(config.get('scanner_panel_event_type', 'AFGEMELD'))
         self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
         self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
         self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {})
-        self.available_processing_types = ["GEEN_PROCESSING", "MDB_PROCESSING", "HOPS_PROCESSING"]
+        self.available_processing_types = ["GEEN_PROCESSING", "MDB_PROCESSING", "HOPS_PROCESSING", "NESTING_PROCESSING", "ACCURA_PROCESSING", "BOERE_PROCESSING"]
 
     def on_scanner_type_change(self):
         """Handles scanner type changes without auto-connecting/disconnecting."""
@@ -713,35 +754,6 @@ class ScannerPanel(tk.Frame):
     def save_scanner_type(self):
         save_config({'scanner_panel_type': self.scanner_type_var.get()})
 
-    def save_event_type(self):
-        save_config({'scanner_panel_event_type': self.event_type_var.get()})
-
-    def toggle_event_type_lock(self):
-        self.event_type_locked = not self.event_type_locked
-        save_config({'scanner_panel_event_type_locked': self.event_type_locked})
-        self.apply_event_type_lock_ui()
-
-    def apply_event_type_lock_ui(self):
-        if self.event_type_locked:
-            self.open_radio.config(fg='#888888', state='disabled')
-            self.closed_radio.config(fg='#888888', state='disabled')
-            self.lock_btn.config(text='Unlock')
-        else:
-            self.open_radio.config(fg='black', state='normal')
-            self.closed_radio.config(fg='black', state='normal')
-            self.lock_btn.config(text='Lock')
-        self._apply_event_type_lock_to_user_controls()
-
-    def _on_event_type_radio_change(self):
-        save_config({'scanner_panel_event_type': self.event_type_var.get()})
-        self._update_open_event_ui_visibility()
-
-    def _update_open_event_ui_visibility(self):
-        if self.event_type_var.get() == 'OPEN':
-            self._build_open_event_user_paths_ui()
-            self.user_paths_frame.pack(fill='x', padx=5, pady=(5,0), after=self.radio_lock_frame)
-        else:
-            self.user_paths_frame.pack_forget()
 
     def _save_user_logic_active_state(self, username, is_active):
         config_data = get_config()
@@ -813,12 +825,25 @@ class ScannerPanel(tk.Frame):
             processing_type = self.scanner_user_to_processing_type_map.get(username, "N/A")
             processing_type_label = tk.Label(user_frame, text=f"Type: {processing_type}", width=20, anchor='w', bg="#f0f0f0")
 
+            # Arrow buttons for reordering
+            user_index = open_users.index(username)
+            arrow_frame = tk.Frame(user_frame, bg="#f0f0f0")
+            
+            up_button = tk.Button(arrow_frame, text="↑", command=lambda u=username: self._move_user_up(u), 
+                                width=2, state='normal' if user_index > 0 else 'disabled')
+            down_button = tk.Button(arrow_frame, text="↓", command=lambda u=username: self._move_user_down(u), 
+                                  width=2, state='normal' if user_index < len(open_users)-1 else 'disabled')
+            
+            up_button.pack(side='top')
+            down_button.pack(side='top')
+
             remove_button = tk.Button(user_frame, text="Verwijderen", command=lambda u=username: self._remove_user_config(u), bg="#ffdddd", fg="#990000")
             self.remove_user_buttons.append(remove_button)
 
             logic_checkbox.pack(side='left', padx=(0, 2))
             user_label.pack(side='left', padx=(0, 5)) 
             processing_type_label.pack(side='left', padx=(0,10)) 
+            arrow_frame.pack(side='left', padx=(0, 5))
             path_display_entry.pack(side='left', expand=True, fill='x', padx=(0,5))
             browse_button.pack(side='left', padx=(0, 2))
             remove_button.pack(side='left', padx=(0,0)) 
@@ -830,7 +855,6 @@ class ScannerPanel(tk.Frame):
                 path_var.set("Niet ingesteld")
 
         self._update_admin_dependent_ui()
-        self._apply_event_type_lock_to_user_controls()
 
         self.add_user_frame_widget = tk.Frame(self.user_paths_frame, bg="#e0e0e0", pady=10)
 
@@ -939,6 +963,38 @@ class ScannerPanel(tk.Frame):
         self._build_open_event_user_paths_ui()
         self._update_admin_dependent_ui()
 
+    def _move_user_up(self, username):
+        """Move user up in the order"""
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        
+        if username not in users:
+            return
+            
+        current_index = users.index(username)
+        if current_index > 0:
+            # Swap with previous user
+            users[current_index], users[current_index - 1] = users[current_index - 1], users[current_index]
+            save_config({'scanner_panel_open_event_users': users})
+            self.log_message(f"Gebruiker '{username}' omhoog verplaatst", "info")
+            self._build_open_event_user_paths_ui()
+
+    def _move_user_down(self, username):
+        """Move user down in the order"""
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        
+        if username not in users:
+            return
+            
+        current_index = users.index(username)
+        if current_index < len(users) - 1:
+            # Swap with next user
+            users[current_index], users[current_index + 1] = users[current_index + 1], users[current_index]
+            save_config({'scanner_panel_open_event_users': users})
+            self.log_message(f"Gebruiker '{username}' omlaag verplaatst", "info")
+            self._build_open_event_user_paths_ui()
+
     def _update_admin_dependent_ui(self, *args):
         is_locked = True
         if hasattr(self.app, 'admin_config_locked_var') and isinstance(self.app.admin_config_locked_var, tk.BooleanVar):
@@ -966,14 +1022,8 @@ class ScannerPanel(tk.Frame):
             if not self.add_user_frame_widget.winfo_manager():
                  self.add_user_frame_widget.pack(fill='x', side='bottom', pady=(10,0), ipady=5)
 
-    def _apply_event_type_lock_to_user_controls(self):
-        event_locked = self.event_type_locked
-        open_users = sorted(self.scanner_panel_open_event_user_paths.keys())
-
-        for checkbox in self.user_logic_checkboxes:
-            if checkbox.winfo_exists():
-                checkbox.config(state=tk.DISABLED if event_locked else tk.NORMAL)
-        
+    def _update_browse_button_states(self):
+        """Update browse button states based on checkbox state"""
         open_users = sorted(self.scanner_panel_open_event_user_paths.keys())
         for i, browse_btn in enumerate(self.user_browse_buttons):
             if browse_btn.winfo_exists():
@@ -985,13 +1035,10 @@ class ScannerPanel(tk.Frame):
                     
                     if username_for_logic_check and username_for_logic_check in self.user_logic_active_vars:
                         logic_var = self.user_logic_active_vars[username_for_logic_check]
-                        if self.user_logic_checkboxes[i].cget('state') != tk.DISABLED and logic_var.get():
+                        if logic_var.get():
                             is_corresponding_logic_active = True
 
-                if event_locked:
-                    browse_btn.config(state=tk.DISABLED)
-                else:
-                    browse_btn.config(state=tk.NORMAL if is_corresponding_logic_active else tk.DISABLED)
+                browse_btn.config(state=tk.NORMAL if is_corresponding_logic_active else tk.DISABLED)
 
     def get_item_count_dialog(self, project_name):
         """Show dialog to get item count for a project"""
@@ -1067,18 +1114,13 @@ class ScannerPanel(tk.Frame):
         import traceback
         import re
 
-        event_type = self.event_type_var.get()
+        event_type = 'OPEN'  # Always use OPEN event type
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
 
         base_project_code, full_project_code = self._extract_project_code(code)
         project_code_to_log = full_project_code
 
-        if event_type == 'OPEN' and project_code_to_log and project_code_to_log in self.open_projects:
-            self.log_message(f"ℹ️ Project {project_code_to_log} is al geopend", "warning")
-            self.usb_entry.config(bg='light green')
-            self.after(2000, lambda: self.usb_entry.config(bg='white'))
-            return
 
         if not api_url:
             self.log_message("❌ API URL niet geconfigureerd", "error")
@@ -1094,94 +1136,59 @@ class ScannerPanel(tk.Frame):
         if self.current_session_id:
             session_data['session_id'] = self.current_session_id
 
-        if event_type == 'OPEN':
-            # First send automatic AFGEMELD to close existing project
-            # Ask for item count for automatic AFGEMELD only if session is active
-            auto_afgemeld_item_count = 0
-            if self.current_session_id:
-                item_dialog_result = self.get_item_count_dialog(f"Project {project_code_to_log}")
-                if item_dialog_result:
-                    auto_afgemeld_item_count = item_dialog_result['count']
-            
-            data_afgemeld = {
-                'event': 'AFGEMELD',
-                'details': code,
-                'project': project_code_to_log,
-                'base_mo_code': base_project_code,
-                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
-                'user': current_user,
-                'item_count': auto_afgemeld_item_count,
-                **session_data
-            }
-            try:
-                resp_afgemeld = requests.post(api_url, json=data_afgemeld, timeout=3)
-                if resp_afgemeld.ok:
-                    if project_code_to_log:
-                        self.open_projects.discard(project_code_to_log)
-                else:
-                    all_ok = False
-            except Exception:
-                self.log_message(f"⚠️ Kon bestaand project niet sluiten", "warning")
-                all_ok = False
+        # Check if project is already open
+        if project_code_to_log in self.open_projects:
+            self.log_message(f"ℹ️ Project {project_code_to_log} is al geopend", "warning")
+            self.usb_entry.config(bg='light green')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+            return
 
-            self.log_message(f"🔄 Project {project_code_to_log} wordt verwerkt voor alle gebruikers...", "info")
-            
-            # Use session start time if available, otherwise current time
-            scan_timestamp = self.session_start_time.isoformat() if self.session_start_time else None
-            
-            # Trigger background service for other users
-            self.background_import_service.process_scan_for_open_event_async(
-                project_code_to_log=project_code_to_log,
-                base_project_code=base_project_code,
-                scanned_code=code,
-                current_user_scanner=current_user,
-                api_url=api_url,
-                config_data=config,
-                timestamp=scan_timestamp
-            )
-            
-            if all_ok:
-                self.open_projects.add(project_code_to_log)
-                self.usb_entry.config(bg='light green')
-            else:
-                self.usb_entry.config(bg='red')
-            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+        # Use session start time if available, otherwise current time
+        scan_timestamp = self.session_start_time.isoformat() if self.session_start_time else None
+        
+        # Now send OPEN event for the current user
+        data_open = {
+            'event': 'OPEN',
+            'details': code,
+            'project': project_code_to_log,
+            'base_mo_code': base_project_code,
+            'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
+            'user': current_user,
+            **session_data
+        }
+        
+        # Add timestamp if available
+        if scan_timestamp:
+            data_open['timestamp'] = scan_timestamp
+        
+        try:
+            resp_open = requests.post(api_url, json=data_open, timeout=3)
+            if not resp_open.ok:
+                all_ok = False
+                self.log_message(f"❌ Fout bij openen project voor {current_user}", "error")
+        except Exception:
+            self.log_message(f"❌ Netwerkfout bij openen project", "error")
+            all_ok = False
+
+        self.log_message(f"🔄 Project {project_code_to_log} wordt verwerkt voor alle gebruikers...", "info")
+        
+        # Trigger background service for other users
+        self.background_import_service.process_scan_for_open_event_async(
+            project_code_to_log=project_code_to_log,
+            base_project_code=base_project_code,
+            scanned_code=code,
+            current_user_scanner=current_user,
+            api_url=api_url,
+            config_data=config,
+            timestamp=scan_timestamp
+        )
+        
+        if all_ok:
+            self.open_projects.add(project_code_to_log)
+            self.usb_entry.config(bg='light green')
         else:
-            # AFGEMELD event type - prompt for item count and send AFGEMELD event
-            # Get item count from user dialog
-            item_count_result = self.get_item_count_dialog(project_code_to_log)
-            if item_count_result and item_count_result['confirmed']:
-                item_count = item_count_result['count']
-            else:
-                # User cancelled or no session, default to 0
-                item_count = 0
-                self.log_message(f"⚠️ Geen items opgegeven voor {project_code_to_log}", "warning")
-            
-            data = {
-                'event': 'AFGEMELD',
-                'details': code,
-                'project': project_code_to_log,
-                'base_mo_code': base_project_code,
-                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
-                'user': current_user,
-                'item_count': item_count,
-                **session_data
-            }
-            
-            try:
-                response = requests.post(api_url, json=data, timeout=3)
-                if response.ok:
-                    if project_code_to_log:
-                        self.open_projects.discard(project_code_to_log)
-                        self.log_message(f"✓ Project {project_code_to_log} afgesloten", "success")
-                    self.usb_entry.config(bg='light green')
-                else:
-                    self.log_message(f"❌ Fout bij afsluiten project", "error")
-                    self.usb_entry.config(bg='red')
-            except Exception as e:
-                self.log_message(f"❌ Netwerkfout bij afsluiten", "error")
-                self.usb_entry.config(bg='red')
-            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+            self.usb_entry.config(bg='red')
+        self.after(2000, lambda: self.usb_entry.config(bg='white'))
 
     def _extract_full_project_name(self, scan_data):
         """
@@ -1406,11 +1413,8 @@ class ScannerPanel(tk.Frame):
     def process_com_data(self, data):
         """Process data received from COM port. Runs in main Tkinter thread."""
         print(f"[ScannerPanel] Verwerken van COM data: {data}")
-        event_type = self.event_type_var.get()
-        if event_type == 'OPEN':
-            self.log_message(f"📋 Project {data} wordt geopend...", "info")
-        else:
-            self.log_message(f"📋 Project {data} wordt afgesloten...", "info")
+        event_type = 'OPEN'  # Always use OPEN event type
+        self.log_message(f"📋 Project {data} wordt geopend...", "info")
         
         import threading
         threading.Thread(target=self.log_scan_event, args=(data,), daemon=True).start()
@@ -1420,11 +1424,8 @@ class ScannerPanel(tk.Frame):
         if code:
             self.usb_code_var.set('')
             
-            event_type = self.event_type_var.get()
-            if event_type == 'OPEN':
-                self.log_message(f"📋 Project {code} wordt geopend...", "info")
-            else:
-                self.log_message(f"📋 Project {code} wordt afgesloten...", "info")
+            event_type = 'OPEN'  # Always use OPEN event type
+            self.log_message(f"📋 Project {code} wordt geopend...", "info")
             
             import threading
             threading.Thread(target=self.log_scan_event, args=(code,), daemon=True).start()

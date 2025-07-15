@@ -671,7 +671,13 @@
             </div>
             <div>
                 <h3 class="mb-0" style="color: var(--dark-blue); font-weight: 600;">{{ project }}</h3>
-                <p class="mb-0 text-muted">Project Code</p>
+                <p class="mb-0 text-muted">
+                    {% if so_number %}
+                        Sales Order: {{ so_number }} | Manufacturing Order
+                    {% else %}
+                        Project Code
+                    {% endif %}
+                </p>
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
@@ -854,6 +860,10 @@
                                 <th onclick="sortTable('details')">Details <span class="sort-icon">▼</span></th>
                                 <th onclick="sortTable('status')">Status <span class="sort-icon">▼</span></th>
                                 <th onclick="sortTable('item_count')">Items <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('nesting_count')">Nesting <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('opdeelzaag_count')">Opdeelzaag <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('aantal_items')">Aantal Items <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('aantal_sides')">Aantal Sides <span class="sort-icon">▼</span></th>
                             </tr>
                         </thead>
                         <tbody id="log-table-body">
@@ -936,6 +946,33 @@ const itemsPerPage = 20;
 let efficiencyTargets = {};
 
 // Helper Functions
+let userProcessingTypes = {}; // Will be loaded from config
+
+async function loadUserProcessingTypes() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        userProcessingTypes = config.scanner_user_to_processing_type_map || {};
+        console.log('Loaded user processing types:', userProcessingTypes);
+    } catch (error) {
+        console.error('Failed to load user processing types:', error);
+    }
+}
+
+function getItemCountForLog(log) {
+    // Different processing types use different count fields
+    const processingType = userProcessingTypes[log.user] || 'DEFAULT';
+    
+    if (processingType === 'NESTING_PROCESSING' && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) {
+        return (log.nesting_count || 0) + (log.opdeelzaag_count || 0);
+    } else if (processingType === 'ACCURA_PROCESSING' && log.aantal_items > 0) {
+        return log.aantal_items || 0;
+    } else {
+        // BOERE_PROCESSING, HOPS_PROCESSING, MDB_PROCESSING and others use regular item_count
+        return log.item_count || 0;
+    }
+}
+
 function formatTimestamp(timestamp) {
     if (!timestamp) return '-';
     try {
@@ -1026,6 +1063,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializePage() {
     console.log('Initializing Logs Project Page');
+    
+    // Load user processing types first
+    await loadUserProcessingTypes();
     console.log('Log entries:', logData ? logData.length : 0);
     console.log('Sessions:', sessionsData ? sessionsData.length : 0);
     console.log('Users:', configuredUsers);
@@ -1070,19 +1110,34 @@ function populateUserFilter() {
     const userFilter = document.getElementById('userFilter');
     if (!userFilter) return;
     
-    const users = [...new Set(logData.map(log => log.user).filter(Boolean))];
+    // Use configured users in the order from config
+    const configuredOrder = configuredUsers || [];
+    const dataUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
     
-    users.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user;
-        option.textContent = user;
-        userFilter.appendChild(option);
+    // First add users in configured order
+    configuredOrder.forEach(user => {
+        if (dataUsers.includes(user)) {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user;
+            userFilter.appendChild(option);
+        }
+    });
+    
+    // Then add any users that are in data but not in config (shouldn't happen normally)
+    dataUsers.forEach(user => {
+        if (!configuredOrder.includes(user)) {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user + ' (*)'; // Mark as unconfigured
+            userFilter.appendChild(option);
+        }
     });
 }
 
 function updateMetrics() {
-    // Total items
-    const totalItems = logData.reduce((sum, log) => sum + (log.item_count || 0), 0);
+    // Total items - use helper function to get correct count for each user type
+    const totalItems = logData.reduce((sum, log) => sum + getItemCountForLog(log), 0);
     document.getElementById('total-items').textContent = totalItems;
     
     // Today's logs
@@ -1232,6 +1287,10 @@ function renderTableView() {
             <td>${log.details || 'N/A'}</td>
             <td><span class="status-badge status-${getStatusClass(log.status)}">${log.status || 'N/A'}</span></td>
             <td>${log.item_count || 0}</td>
+            <td>${log.nesting_count || 0}</td>
+            <td>${log.opdeelzaag_count || 0}</td>
+            <td>${log.aantal_items || 0}</td>
+            <td>${log.aantal_sides || 0}</td>
         </tr>
     `).join('');
 }
@@ -1260,6 +1319,10 @@ function renderCardsView() {
                         <i class="fas fa-user"></i> ${log.user || 'N/A'} • 
                         <i class="far fa-clock"></i> ${formatTimestamp(log.timestamp)}
                         ${log.item_count ? ` • <i class="fas fa-box"></i> ${log.item_count} items` : ''}
+                        ${log.nesting_count ? ` • <i class="fas fa-layer-group"></i> ${log.nesting_count} nesting` : ''}
+                        ${log.opdeelzaag_count ? ` • <i class="fas fa-cut"></i> ${log.opdeelzaag_count} opdeelzaag` : ''}
+                        ${log.aantal_items ? ` • <i class="fas fa-clipboard-check"></i> ${log.aantal_items} aantal items` : ''}
+                        ${log.aantal_sides ? ` • <i class="fas fa-shapes"></i> ${log.aantal_sides} aantal sides` : ''}
                     </small>
                 </div>
             </div>
@@ -1284,6 +1347,10 @@ function renderTimelineView() {
             <small class="text-muted">
                 ${log.user || 'N/A'} • ${formatTimestamp(log.timestamp)}
                 ${log.item_count ? ` • ${log.item_count} items` : ''}
+                ${log.nesting_count ? ` • ${log.nesting_count} nesting` : ''}
+                ${log.opdeelzaag_count ? ` • ${log.opdeelzaag_count} opdeelzaag` : ''}
+                ${log.aantal_items ? ` • ${log.aantal_items} aantal items` : ''}
+                ${log.aantal_sides ? ` • ${log.aantal_sides} aantal sides` : ''}
             </small>
         </div>
     `).join('');
@@ -1752,9 +1819,9 @@ async function updatePerformanceMetrics() {
             const userSessions = sessionsData.filter(session => session.user === user);
             console.log(`Fallback calculation for ${user}:`, userSessions);
             
-            // Get project items from logs
-            const userProjectLogs = logData.filter(log => log.user === user && log.item_count > 0);
-            const projectItems = userProjectLogs.length > 0 ? Math.max(...userProjectLogs.map(log => log.item_count || 0)) : 0;
+            // Get project items from logs - use helper to get correct count
+            const userProjectLogs = logData.filter(log => log.user === user && getItemCountForLog(log) > 0);
+            const projectItems = userProjectLogs.length > 0 ? Math.max(...userProjectLogs.map(log => getItemCountForLog(log))) : 0;
             
             let userSessionMinutes = 0;
             
@@ -1765,11 +1832,11 @@ async function updatePerformanceMetrics() {
                         // Calculate total items in this batch from ALL user's logs during session time
                         const batchLogs = logData.filter(log => 
                             log.user === user && 
-                            log.item_count > 0 &&
+                            getItemCountForLog(log) > 0 &&
                             new Date(log.timestamp) >= new Date(session.start_time) &&
                             new Date(log.timestamp) <= new Date(session.end_time)
                         );
-                        const batchTotalItems = batchLogs.reduce((sum, log) => sum + (log.item_count || 0), 0);
+                        const batchTotalItems = batchLogs.reduce((sum, log) => sum + getItemCountForLog(log), 0);
                         
                         if (batchTotalItems > 0 && projectItems > 0) {
                             const proportion = projectItems / batchTotalItems;
@@ -2004,7 +2071,21 @@ async function updateUserPerformanceCards(userStats) {
     
     let html = '';
     
-    Object.entries(userStats).forEach(([user, stats]) => {
+    // Sort users by configured order
+    const orderedUsers = Object.keys(userStats).sort((a, b) => {
+        const indexA = configuredUsers.indexOf(a);
+        const indexB = configuredUsers.indexOf(b);
+        // If both are in config, use that order
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        // If only one is in config, it comes first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        // Otherwise alphabetical
+        return a.localeCompare(b);
+    });
+    
+    orderedUsers.forEach(user => {
+        const stats = userStats[user];
         // Handle WAITING status (OPEN event but no work sessions yet)
         const isWaiting = stats.status === 'WAITING' || stats.itemsPerHour === '--';
         

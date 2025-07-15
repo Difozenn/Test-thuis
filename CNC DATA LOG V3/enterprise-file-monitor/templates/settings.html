@@ -12,12 +12,48 @@
 </div>
 
 
-<!-- Work Calendar Configuration -->
+<!-- Work Schedule Configuration -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">{{ t('work_calendar_configuration') }}</h5>
+        <h5 class="mb-0">{{ t('work_schedule_configuration') }}</h5>
     </div>
     <div class="card-body">
+        <!-- Quick Work Hours Settings -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="mb-3"><i class="fas fa-clock"></i> {{ t('default_work_hours') }}</h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">{{ t('start_time') }}</label>
+                        <input type="time" class="form-control" id="default-start-time" value="08:00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ t('end_time') }}</label>
+                        <input type="time" class="form-control" id="default-end-time" value="17:00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ t('lunch_start') }}</label>
+                        <input type="time" class="form-control" id="default-lunch-start" value="12:00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ t('lunch_duration') }} ({{ t('hours') }})</label>
+                        <input type="number" class="form-control" id="default-lunch-duration" value="1" min="0" max="4" step="0.25">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="applyDefaultWorkHours()">
+                        <i class="fas fa-save"></i> {{ t('apply_to_all_workdays') }}
+                    </button>
+                    <span class="ms-3 text-muted">
+                        <i class="fas fa-info-circle"></i> {{ t('applies_to_all_future_workdays') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <!-- Calendar Link -->
         <div class="row">
             <div class="col-md-6">
                 <div class="d-flex align-items-center">
@@ -31,16 +67,9 @@
                 </div>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('main.work_calendar') }}" class="btn btn-primary">
+                <a href="{{ url_for('main.work_calendar') }}" class="btn btn-outline-primary">
                     <i class="fas fa-calendar-plus"></i> {{ t('open_work_calendar') }}
                 </a>
-            </div>
-        </div>
-        
-        <div class="mt-3">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> 
-                {{ t('work_calendar_description') }}
             </div>
         </div>
     </div>
@@ -306,6 +335,50 @@
 
 {% block extra_js %}
 <script>
+// Function to apply default work hours to all workdays
+function applyDefaultWorkHours() {
+    const startTime = document.getElementById('default-start-time').value;
+    const endTime = document.getElementById('default-end-time').value;
+    const lunchStart = document.getElementById('default-lunch-start').value;
+    const lunchDuration = parseFloat(document.getElementById('default-lunch-duration').value);
+    
+    // Convert time format to decimal
+    function timeToDecimal(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours + (minutes / 60);
+    }
+    
+    // Show confirmation
+    if (!confirm('{{ t("apply_work_hours_confirmation") }}')) {
+        return;
+    }
+    
+    // Send request to update all workdays
+    fetch('/api/work_calendar/bulk_update_hours', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            start_time: timeToDecimal(startTime),
+            end_time: timeToDecimal(endTime),
+            lunch_start: timeToDecimal(lunchStart),
+            lunch_duration: lunchDuration,
+            apply_to: 'all_workdays'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('{{ t("work_hours_updated") }}', 'success');
+        } else {
+            showAlert(data.error || '{{ t("error_updating_hours") }}', 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('{{ t("error_updating_hours") }}', 'danger');
+    });
+}
 
 {% if current_user.role == 'admin' %}
 // Admin functions for editing operator efficiency

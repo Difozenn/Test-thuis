@@ -1,0 +1,54 @@
+{
+  "program": "Field1.nc",
+  "analysis_timestamp": "2025-07-14T21:26:35.197077",
+  "metrics": {
+    "total_cycle_time": 0.0,
+    "cutting_time": 0.0,
+    "rapid_time": 0.0,
+    "tool_change_time": 0.0,
+    "spindle_time": 0.0,
+    "overhead_time": 0.0,
+    "total_distance": 0.0,
+    "cutting_distance": 0.0,
+    "rapid_distance": 0.0,
+    "tool_changes": 0,
+    "spindle_starts": 0,
+    "cycle_calls": 0,
+    "cutting_efficiency": 0.0,
+    "tool_change_efficiency": 0.0,
+    "spindle_efficiency": 0.0,
+    "program_efficiency_score": 30.0
+  },
+  "classification": {
+    "overall_grade": "\ud83d\udd34 POOR",
+    "cutting_grade": "\ud83d\udd34 POOR",
+    "tool_grade": "\ud83d\udfe2 EXCELLENT",
+    "spindle_grade": "\ud83d\udd34 POOR",
+    "overall_score": 30.0,
+    "strengths": [
+      "Optimized tool usage - minimal tool changes"
+    ],
+    "weaknesses": [
+      "Low cutting efficiency - excessive overhead time",
+      "Poor spindle utilization"
+    ],
+    "recommendations": [
+      "Reduce tool changes by combining operations",
+      "Optimize rapid traverse paths",
+      "Review cycle selection - consider more efficient cycles",
+      "Reduce spindle start/stop cycles",
+      "Group cutting operations to maintain spindle running",
+      "Optimize feed rates for continuous cutting",
+      "Consider CAM strategy review for better efficiency",
+      "Analyze part setup for reduced non-cutting time",
+      "Review postprocessor settings for optimization"
+    ]
+  },
+  "machine_config": {
+    "rapid_feedrate": 50000.0,
+    "tool_change_time": 15.0,
+    "spindle_start_time": 3.0,
+    "pin_change_time": 1.0,
+    "cycle_overhead_time": 1.0
+  }
+}

@@ -461,6 +461,10 @@
                      data-hours="{{ day.work_hours }}"
                      data-type="{{ day.day_type }}"
                      data-notes="{{ day.notes }}"
+                     data-start-time="{{ day.start_time or 8.0 }}"
+                     data-end-time="{{ day.end_time or 17.0 }}"
+                     data-lunch-start="{{ day.lunch_start or 12.0 }}"
+                     data-lunch-duration="{{ day.lunch_duration or 1.0 }}"
                      onclick="selectDay(this)"
                      title="{{ day.date.strftime('%Y-%m-%d') }} - {{ day.work_hours }}h {{ day.notes }}">
                     {{ day.day }}
@@ -484,6 +488,31 @@
         <label class="form-label">{{ t('work_hours') }}</label>
         <input type="number" class="form-control" id="editHours" min="0" max="24" step="0.5">
     </div>
+    
+    <!-- Work Schedule Times -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">{{ t('start_time') }}</label>
+            <input type="time" class="form-control" id="editStartTime">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">{{ t('end_time') }}</label>
+            <input type="time" class="form-control" id="editEndTime">
+        </div>
+    </div>
+    
+    <!-- Lunch Break -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">{{ t('lunch_start') }}</label>
+            <input type="time" class="form-control" id="editLunchStart">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">{{ t('lunch_duration') }} ({{ t('hours') }})</label>
+            <input type="number" class="form-control" id="editLunchDuration" min="0" max="4" step="0.25" placeholder="1.0">
+        </div>
+    </div>
+    
     <div class="mb-3">
         <label class="form-label">{{ t('day_type') }}</label>
         <select class="form-select" id="editDayType">
@@ -523,8 +552,27 @@ function openQuickEdit(element) {
     document.getElementById('editDayType').value = element.dataset.type;
     document.getElementById('editNotes').value = element.dataset.notes || '';
     
+    // Set schedule times with defaults
+    document.getElementById('editStartTime').value = decimalToTime(parseFloat(element.dataset.startTime || 8.0));
+    document.getElementById('editEndTime').value = decimalToTime(parseFloat(element.dataset.endTime || 17.0));
+    document.getElementById('editLunchStart').value = decimalToTime(parseFloat(element.dataset.lunchStart || 12.0));
+    document.getElementById('editLunchDuration').value = element.dataset.lunchDuration || 1.0;
+    
     document.getElementById('overlay').style.display = 'block';
     document.getElementById('quickEditPanel').style.display = 'block';
+}
+
+// Helper functions for time conversion
+function decimalToTime(decimal) {
+    const hours = Math.floor(decimal);
+    const minutes = Math.round((decimal - hours) * 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+function timeToDecimal(timeString) {
+    if (!timeString) return 0;
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours + (minutes / 60);
 }
 
 function closeQuickEdit() {
@@ -537,6 +585,10 @@ function saveDayEdit() {
     const hours = document.getElementById('editHours').value;
     const dayType = document.getElementById('editDayType').value;
     const notes = document.getElementById('editNotes').value;
+    const startTime = document.getElementById('editStartTime').value;
+    const endTime = document.getElementById('editEndTime').value;
+    const lunchStart = document.getElementById('editLunchStart').value;
+    const lunchDuration = document.getElementById('editLunchDuration').value;
     
     fetch('/settings/work_calendar/update_day', {
         method: 'POST',
@@ -547,7 +599,11 @@ function saveDayEdit() {
             date: currentEditingDate,
             work_hours: parseFloat(hours),
             day_type: dayType,
-            notes: notes
+            notes: notes,
+            start_time: timeToDecimal(startTime),
+            end_time: timeToDecimal(endTime),
+            lunch_start: timeToDecimal(lunchStart),
+            lunch_duration: parseFloat(lunchDuration)
         })
     })
     .then(response => response.json())

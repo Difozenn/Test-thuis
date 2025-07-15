@@ -8,36 +8,42 @@
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
         "NESTING",
+        "ACCURA",
         "OPUS",
-        "KL GANNOMAT"
+        "KL GANNOMAT",
+        "BOERE"
     ],
     "scanner_user_to_processing_type_map": {
+        "NESTING": "NESTING_PROCESSING",
         "OPUS": "HOPS_PROCESSING",
-        "KL GANNOMAT": "MDB_PROCESSING"
+        "KL GANNOMAT": "MDB_PROCESSING",
+        "ACCURA": "ACCURA_PROCESSING",
+        "BOERE": "BOERE_PROCESSING"
     },
     "scanner_panel_event_type": "OPEN",
     "scanner_panel_event_type_locked": true,
     "database_panel_api_config_locked": false,
     "scanner_panel_open_event_user_logic_active": {
+        "NESTING": true,
         "OPUS": true,
-        "KL GANNOMAT": true
+        "KL GANNOMAT": true,
+        "ACCURA": true,
+        "BOERE": true
     },
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,
     "scanner_panel_open_event_user_paths": {
+        "NESTING": "C:/Rapporten",
         "OPUS": "C:/OPUS/KORPUS",
-        "KL GANNOMAT": "C:/GANNOMAT"
+        "KL GANNOMAT": "C:/GANNOMAT",
+        "ACCURA": "C:/Rapporten",
+        "BOERE": "C:/Rapporten"
     },
     "master_background_service_active": true,
     "backup_enabled": true,
     "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
     "last_backup_status": "Succesvol gebackupt naar C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups\\central_logging_backup.sqlite op 2025-06-29 21:47:06",
-    "dashboard_display_users": [
-        "NESTING",
-        "OPUS",
-        "KL GANNOMAT"
-    ],
     "work_hours": {
         "monday": {
             "start": 7.5,
@@ -57,7 +63,7 @@
         },
         "friday": {
             "start": 7.5,
-            "end": 15.0
+            "end": 23.983333333333334
         },
         "break_start": 12.0,
         "break_end": 12.5,
@@ -77,7 +83,9 @@
     "efficiency_targets": {
         "OPUS": 15,
         "NESTING": 25,
-        "KL GANNOMAT": 15
+        "KL GANNOMAT": 15,
+        "ACCURA": 20,
+        "BOERE": 18
     },
     "efficiency_targets_updated": "2025-07-06T14:34:24.492524",
     "efficiency_targets_created": "2025-07-06T14:34:24.492524"

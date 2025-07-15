@@ -210,6 +210,115 @@ def check_and_migrate_database():
         else:
             print("📝 Migration 3: cnc_analysis table doesn't exist yet - will be created by SQLAlchemy")
         
+        # Migration 4: User-bound categories
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='category'")
+        category_table_exists = cursor.fetchone() is not None
+        
+        if category_table_exists:
+            cursor.execute("PRAGMA table_info(category)")
+            category_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'user_id' not in category_columns:
+                print("📝 Migration 4: Adding user_id to categories...")
+                
+                # Add user_id column to category table
+                cursor.execute("""
+                    ALTER TABLE category 
+                    ADD COLUMN user_id INTEGER
+                """)
+                
+                # Get the first admin user ID for existing categories
+                cursor.execute("SELECT id FROM user WHERE role='admin' ORDER BY id LIMIT 1")
+                admin_user = cursor.fetchone()
+                if admin_user:
+                    admin_id = admin_user[0]
+                    # Assign existing categories to the first admin user
+                    cursor.execute("""
+                        UPDATE category 
+                        SET user_id = ?
+                        WHERE user_id IS NULL
+                    """, (admin_id,))
+                    print(f"✅ Assigned existing categories to admin user {admin_id}")
+                
+                # Make user_id NOT NULL after setting values
+                cursor.execute("""
+                    CREATE TABLE category_new (
+                        id INTEGER PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        keywords TEXT,
+                        file_patterns TEXT,
+                        color VARCHAR(7) DEFAULT '#007bff',
+                        created_at DATETIME,
+                        user_id INTEGER NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES user (id),
+                        UNIQUE (name, user_id)
+                    )
+                """)
+                
+                cursor.execute("""
+                    INSERT INTO category_new (id, name, keywords, file_patterns, color, created_at, user_id)
+                    SELECT id, name, keywords, file_patterns, color, created_at, user_id
+                    FROM category
+                """)
+                
+                cursor.execute("DROP TABLE category")
+                cursor.execute("ALTER TABLE category_new RENAME TO category")
+                
+                print("✅ Migration 4: User-bound categories completed")
+                conn.commit()
+            else:
+                print("📝 Migration 4: User-bound categories already applied")
+        else:
+            print("📝 Migration 4: Category table doesn't exist yet - will be created by SQLAlchemy")
+        
+        # Migration 5: Add schedule time columns to work_calendar
+        if work_calendar_exists:
+            cursor.execute("PRAGMA table_info(work_calendar)")
+            wc_columns = [column[1] for column in cursor.fetchall()]
+            
+            schedule_columns_needed = []
+            if 'start_time' not in wc_columns:
+                schedule_columns_needed.append('start_time')
+            if 'end_time' not in wc_columns:
+                schedule_columns_needed.append('end_time')
+            if 'lunch_start' not in wc_columns:
+                schedule_columns_needed.append('lunch_start')
+            if 'lunch_duration' not in wc_columns:
+                schedule_columns_needed.append('lunch_duration')
+            
+            if schedule_columns_needed:
+                print("📝 Migration 5: Adding work schedule time columns...")
+                
+                for column in schedule_columns_needed:
+                    if column == 'start_time':
+                        cursor.execute("ALTER TABLE work_calendar ADD COLUMN start_time REAL DEFAULT 8.0")
+                        print("✅ Added start_time column")
+                    elif column == 'end_time':
+                        cursor.execute("ALTER TABLE work_calendar ADD COLUMN end_time REAL DEFAULT 17.0")
+                        print("✅ Added end_time column")
+                    elif column == 'lunch_start':
+                        cursor.execute("ALTER TABLE work_calendar ADD COLUMN lunch_start REAL DEFAULT 12.0")
+                        print("✅ Added lunch_start column")
+                    elif column == 'lunch_duration':
+                        cursor.execute("ALTER TABLE work_calendar ADD COLUMN lunch_duration REAL DEFAULT 1.0")
+                        print("✅ Added lunch_duration column")
+                
+                # Update existing records with default values
+                cursor.execute("""
+                    UPDATE work_calendar 
+                    SET start_time = COALESCE(start_time, 8.0),
+                        end_time = COALESCE(end_time, 17.0),
+                        lunch_start = COALESCE(lunch_start, 12.0),
+                        lunch_duration = COALESCE(lunch_duration, 1.0)
+                """)
+                
+                print("✅ Migration 5: Work schedule columns completed")
+                conn.commit()
+            else:
+                print("📝 Migration 5: Work schedule columns already exist")
+        else:
+            print("📝 Migration 5: work_calendar table doesn't exist yet - will be created by SQLAlchemy")
+        
         print("✅ All database migrations completed successfully!")
         
         conn.close()
@@ -508,19 +617,65 @@ class User(db.Model):
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     keywords = db.Column(db.Text)
     file_patterns = db.Column(db.Text)
     color = db.Column(db.String(7), default='#007bff')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
+    # Unique constraint on name per user
+    __table_args__ = (db.UniqueConstraint('name', 'user_id', name='_name_user_uc'),)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('categories', lazy='dynamic'))
     events = db.relationship('Event', backref='category', lazy='dynamic')
     
     def get_keywords(self):
-        return json.loads(self.keywords) if self.keywords else []
+        try:
+            return json.loads(self.keywords) if self.keywords else []
+        except json.JSONDecodeError:
+            # Handle old data that might not be valid JSON
+            if self.keywords:
+                # Try to parse as comma-separated values
+                return [k.strip() for k in self.keywords.split(',') if k.strip()]
+            return []
     
     def get_patterns(self):
-        return json.loads(self.file_patterns) if self.file_patterns else []
+        try:
+            return json.loads(self.file_patterns) if self.file_patterns else []
+        except json.JSONDecodeError:
+            # Handle old data that might not be valid JSON
+            if self.file_patterns:
+                # Try to parse as comma-separated values
+                return [p.strip() for p in self.file_patterns.split(',') if p.strip()]
+            return []
+
+def has_user_id_column():
+    """Check if category table has user_id column"""
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('category')]
+        return 'user_id' in columns
+    except:
+        return False
+
+def get_categories_for_user(user_id=None):
+    """Get categories for a user, with fallback for pre-migration"""
+    try:
+        if has_user_id_column() and user_id:
+            # Post-migration: filter by user
+            return db.session.execute(
+                db.text("SELECT * FROM category WHERE user_id = :user_id"),
+                {"user_id": user_id}
+            ).fetchall()
+        else:
+            # Pre-migration: return all categories
+            return Category.query.all()
+    except Exception as e:
+        print(f"Error getting categories: {e}")
+        return []
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -692,24 +847,24 @@ class ScheduledBackupSettings(db.Model):
 
 # Work Calendar Models
 class WorkCalendar(db.Model):
-    """Yearly work calendar with daily granularity"""
+    """Company-wide yearly work calendar with daily granularity"""
     __tablename__ = 'work_calendar'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
+    date = db.Column(db.Date, nullable=False, unique=True)  # One entry per date company-wide
     work_hours = db.Column(db.Float, default=8.0)
+    start_time = db.Column(db.Float, default=8.0)  # Start time in decimal hours (8.0 = 8:00 AM)
+    end_time = db.Column(db.Float, default=17.0)   # End time in decimal hours (17.0 = 5:00 PM)
+    lunch_start = db.Column(db.Float, default=12.0)  # Lunch start in decimal hours (12.0 = 12:00 PM)
+    lunch_duration = db.Column(db.Float, default=1.0)  # Lunch duration in hours
     day_type = db.Column(db.String(20), default='workday')  # workday, holiday, vacation, sick, maintenance
     notes = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
-    user = db.relationship('User', backref='work_calendar')
-    
     # Indexes for performance
     __table_args__ = (
-        db.Index('idx_work_calendar_user_date', 'user_id', 'date'),
-        db.UniqueConstraint('user_id', 'date', name='unique_user_date'),
+        db.Index('idx_work_calendar_date', 'date'),
     )
 
 class WorkScheduleTemplate(db.Model):
@@ -747,8 +902,8 @@ class HolidayTemplate(db.Model):
     description = db.Column(db.String(255))
 
 # Work Calendar Helper Functions
-def initialize_year_calendar(user_id, year=None):
-    """Initialize calendar for entire year with default template"""
+def initialize_year_calendar(year=None):
+    """Initialize company-wide calendar for entire year with default template"""
     from datetime import date
     if year is None:
         year = datetime.now().year
@@ -779,13 +934,11 @@ def initialize_year_calendar(user_id, year=None):
         
         # Check if entry already exists
         existing = WorkCalendar.query.filter_by(
-            user_id=user_id, 
             date=current_date
         ).first()
         
         if not existing:
             calendar_entry = WorkCalendar(
-                user_id=user_id,
                 date=current_date,
                 work_hours=hours,
                 day_type='workday' if hours > 0 else 'weekend'
@@ -798,18 +951,17 @@ def initialize_year_calendar(user_id, year=None):
     db.session.add_all(calendar_entries)
     
     # Apply holidays
-    apply_holidays(user_id, year)
+    apply_holidays(year)
     
     db.session.commit()
     return len(calendar_entries)
 
-def apply_holidays(user_id, year):
-    """Apply national holidays to calendar"""
+def apply_holidays(year):
+    """Apply national holidays to company-wide calendar"""
     holidays = get_belgian_holidays(year)
     
     for holiday in holidays:
         calendar_entry = WorkCalendar.query.filter_by(
-            user_id=user_id,
             date=holiday['date']
         ).first()
         
@@ -867,8 +1019,8 @@ def calculate_easter(year):
     p = (h + l - 7 * m + 114) % 31
     return date(year, n, p + 1)
 
-def get_calendar_data(user_id, year=None):
-    """Get calendar data for display"""
+def get_calendar_data(year=None):
+    """Get company-wide calendar data for display"""
     from datetime import date
     if year is None:
         year = datetime.now().year
@@ -877,7 +1029,6 @@ def get_calendar_data(user_id, year=None):
     end_date = date(year, 12, 31)
     
     calendar_entries = WorkCalendar.query.filter(
-        WorkCalendar.user_id == user_id,
         WorkCalendar.date >= start_date,
         WorkCalendar.date <= end_date
     ).order_by(WorkCalendar.date).all()
@@ -903,22 +1054,14 @@ def get_calendar_data(user_id, year=None):
     
     return monthly_data
 
-def get_work_hours_for_date(user_id, target_date):
-    """Get work hours for specific date"""
+def get_work_hours_for_date(target_date):
+    """Get work hours for specific date from company-wide calendar"""
     calendar_entry = WorkCalendar.query.filter_by(
-        user_id=user_id,
         date=target_date
     ).first()
     
-    if calendar_entry:
-        return calendar_entry.work_hours
-    
-    # Fallback to weekly pattern if calendar not set up
-    work_hours = WeeklyWorkHours.query.filter_by(user_id=user_id).first()
-    if work_hours:
-        return work_hours.get_hours_for_day(target_date.weekday())
-    
-    return 8.0  # Default fallback
+    # Return calendar hours if available, otherwise 0 (no fallback)
+    return calendar_entry.work_hours if calendar_entry else 0.0
 
 # Helper function to get user's work hours with error handling
 def get_user_work_hours(user_id=None):
@@ -1059,7 +1202,7 @@ def get_paths():
 @login_required
 def get_categories():
     """Get all categories with keywords and patterns"""
-    categories = Category.query.all()
+    categories = Category.query.filter_by(user_id=current_user.id).all()
     
     return jsonify([{
         'id': c.id,
@@ -1099,8 +1242,8 @@ def api_manual_entry():
         amount = data.get('amount', 1)
         path_id = data.get('path_id')
         
-        # Find category by name
-        category_obj = Category.query.filter_by(name=category).first()
+        # Find category by name for current user
+        category_obj = Category.query.filter_by(name=category, user_id=current_user.id).first()
         if not category_obj:
             return jsonify({'error': 'Category not found'}), 400
         
@@ -1189,15 +1332,15 @@ def log_event():
         else:
             timestamp = datetime.now(timezone.utc)
         
-        # If category_id is provided by client, use it
+        # If category_id is provided by client, use it (but verify it belongs to the user)
         if category_id:
-            category = Category.query.get(category_id)
+            category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
         else:
             # Otherwise, do server-side matching (fallback for older clients)
             category = None
             
-            # Get all categories
-            categories = Category.query.all()
+            # Get all categories for the current user
+            categories = Category.query.filter_by(user_id=current_user.id).all()
             
             # Check each category for a match
             for cat in categories:
@@ -1226,12 +1369,13 @@ def log_event():
                 if category:
                     break
         
-        # If no category matched, use "Allerlei" or create it
+        # If no category matched, use "Allerlei" or create it for the user
         if not category:
-            category = Category.query.filter_by(name='Allerlei').first()
+            category = Category.query.filter_by(name='Allerlei', user_id=current_user.id).first()
             if not category:
                 category = Category(
                     name='Allerlei',
+                    user_id=current_user.id,
                     keywords='[]',
                     file_patterns='[]',
                     color='#6c757d'
@@ -1258,20 +1402,17 @@ def log_event():
         if cnc_analysis_data:
             try:
                 # Map C# field names to database field names
-                # MachineTime is the total cycle time (machine ops + movements) in minutes
+                # TotalTime is the complete cycle time (machine ops + movements) in minutes
+                total_time_minutes = cnc_analysis_data.get('TotalTime', 0.0)
                 machine_time_minutes = cnc_analysis_data.get('MachineTime', 0.0)
-                cycle_time_seconds = machine_time_minutes * 60  # Convert minutes to seconds
+                cycle_time_seconds = total_time_minutes * 60  # Convert total time to seconds
                 
                 # Debug output
-                machine_time_seconds = machine_time_minutes * 60
-                minutes = int(machine_time_seconds // 60)
-                seconds = int(machine_time_seconds % 60)
                 print(f"[DEBUG] CNC Analysis data received:")
                 print(f"  TotalTime: {cnc_analysis_data.get('TotalTime', 0.0)} min")
                 print(f"  MachineTime: {cnc_analysis_data.get('MachineTime', 0.0)} min")
                 print(f"  Storing cycle_time_seconds: {cycle_time_seconds} sec")
                 print(f"  Storing machine_time_minutes: {machine_time_minutes} min")
-                print(f"  Converted to human time: {minutes}:{seconds:02d}")
                 
                 cnc_analysis = CNCAnalysis(
                     event_id=event.id,
@@ -1334,8 +1475,8 @@ def manual_entry_api():
         if not (1 <= amount <= 100):
             return jsonify({'error': 'Amount must be between 1 and 100'}), 400
         
-        # Find category by name
-        category = Category.query.filter_by(name=category_name).first()
+        # Find category by name for current user
+        category = Category.query.filter_by(name=category_name, user_id=current_user.id).first()
         if not category:
             return jsonify({'error': f'Category "{category_name}" not found'}), 404
         
@@ -1446,14 +1587,99 @@ def change_language():
     
     return redirect(request.referrer or url_for('main.dashboard'))
 
+def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
+    """Calculate CNC efficiency metrics for today with woodworking-optimized scoring"""
+    
+    # Get today's CNC analysis data
+    cnc_query = db.session.query(
+        CNCAnalysis.cycle_time_seconds,
+        CNCAnalysis.machine_time_minutes,
+        CNCAnalysis.tool_changes,
+        CNCAnalysis.file_path
+    ).join(Event).filter(
+        Event.timestamp >= today_start_utc
+    )
+    
+    if user_filter:
+        cnc_query = cnc_query.filter(Event.user_id == user_filter)
+    
+    cnc_analyses = cnc_query.all()
+    
+    if not cnc_analyses:
+        return {
+            'total_programs': 0,
+            'avg_efficiency': 0,
+            'efficiency_distribution': {'excellent': 0, 'good': 0, 'poor': 0},
+            'programs': []
+        }
+    
+    programs = []
+    efficiency_counts = {'excellent': 0, 'good': 0, 'poor': 0}
+    
+    for analysis in cnc_analyses:
+        cycle_time_seconds, machine_time_minutes, tool_changes, file_path = analysis
+        
+        if not cycle_time_seconds or cycle_time_seconds <= 0:
+            continue
+            
+        # Calculate metrics - use total cycle time as "total machine time"
+        total_machine_time_minutes = cycle_time_seconds / 60
+        overhead_time_minutes = machine_time_minutes or 0
+        cutting_time_minutes = total_machine_time_minutes - overhead_time_minutes
+        
+        # Woodworking efficiency formula
+        efficiency_score = (cutting_time_minutes / total_machine_time_minutes) * 100 if total_machine_time_minutes > 0 else 0
+        
+        # Tool efficiency with woodworking penalties
+        tool_changes_per_minute = (tool_changes or 0) / total_machine_time_minutes if total_machine_time_minutes > 0 else 0
+        tool_efficiency = max(0, 100 - (tool_changes_per_minute * 25))
+        
+        # Overall score (60% cutting efficiency, 40% tool efficiency)
+        overall_score = (efficiency_score * 0.6) + (tool_efficiency * 0.4)
+        
+        # Classify efficiency
+        if overall_score >= 65:
+            efficiency_class = 'excellent'
+        elif overall_score >= 40:
+            efficiency_class = 'good'
+        else:
+            efficiency_class = 'poor'
+            
+        efficiency_counts[efficiency_class] += 1
+        
+        programs.append({
+            'file_name': os.path.basename(file_path) if file_path else 'Unknown',
+            'total_machine_time': total_machine_time_minutes,
+            'cutting_time': cutting_time_minutes,
+            'overhead_time': overhead_time_minutes,
+            'tool_changes': tool_changes or 0,
+            'efficiency_score': efficiency_score,
+            'tool_efficiency': tool_efficiency,
+            'overall_score': overall_score,
+            'efficiency_class': efficiency_class
+        })
+    
+    # Calculate averages
+    avg_efficiency = sum(p['overall_score'] for p in programs) / len(programs) if programs else 0
+    
+    return {
+        'total_programs': len(programs),
+        'avg_efficiency': round(avg_efficiency, 1),
+        'efficiency_distribution': efficiency_counts,
+        'programs': programs
+    }
+
 # Routes - Main Blueprint
 @main_bp.route('/')
 @login_required
 def dashboard():
     user_filter = request.args.get('user_id', type=int)
     
+    # Determine which user's data we're displaying
+    target_user_id = user_filter if user_filter else current_user.id
+    
     # Get work hours for calculations (legacy support)
-    work_hours = get_user_work_hours(current_user.id)
+    work_hours = get_user_work_hours(target_user_id)
     
     # Get current week's work calendar data
     now = datetime.now()
@@ -1468,7 +1694,11 @@ def dashboard():
     # Calculate current week summary from work calendar
     for i in range(7):
         day_date = (week_start + timedelta(days=i)).date()
-        day_hours = get_work_hours_for_date(current_user.id, day_date)
+        # Use company-wide calendar
+        calendar_entry = WorkCalendar.query.filter_by(
+            date=day_date
+        ).first()
+        day_hours = calendar_entry.work_hours if calendar_entry else 0.0
         
         if day_hours and day_hours > 0:
             work_calendar_summary['total_weekly_hours'] += day_hours
@@ -1483,7 +1713,10 @@ def dashboard():
         work_calendar_summary['average_daily_hours'] = work_calendar_summary['total_weekly_hours'] / work_calendar_summary['working_days']
     
     # Get operators list (exclude admin users)
-    operators = User.query.filter_by(is_active=True, role='operator').order_by(User.username).all()
+    operators = User.query.filter(
+        User.is_active == True,
+        User.role != 'admin'
+    ).order_by(User.username).all()
     
     # Date range setup - Always show today's data
     local_tz = get_local_timezone()
@@ -1539,37 +1772,101 @@ def dashboard():
         Event.timestamp < yesterday_end_utc
     ).count()
     
-    # Calculate hourly average using today's configured work hours
-    # Try to get work hours from calendar first, fallback to weekly configuration
-    try:
-        calendar_today_hours = get_work_hours_for_date(
-            user_filter if user_filter else current_user.id, 
-            now.date()
-        )
-        today_work_hours = calendar_today_hours if calendar_today_hours is not None else (
-            work_hours_for_stats.get_hours_for_day(now.weekday()) if work_hours_for_stats else 8.0
-        )
-    except Exception:
-        # Fallback to weekly configuration if calendar system is not available
-        today_work_hours = work_hours_for_stats.get_hours_for_day(now.weekday()) if work_hours_for_stats else 8.0
+    # Calculate hourly average using today's configured work hours from company-wide calendar
+    calendar_entry = WorkCalendar.query.filter_by(
+        date=now.date()
+    ).first()
     
-    if today_work_hours > 0:
-        # Calculate how many work hours have passed today
-        hours_passed = min(now.hour + now.minute/60, today_work_hours)
-        work_hour_events = today_events  # All events today (could be filtered by work time)
-        hourly_average = work_hour_events / max(hours_passed, 0.1)
+    # Use calendar hours if available, otherwise assume 0 (non-working day)
+    today_work_hours = calendar_entry.work_hours if calendar_entry else 0.0
+    
+    if today_work_hours > 0 and calendar_entry:
+        # Use actual calendar schedule (with fallback defaults)
+        work_start = calendar_entry.start_time if calendar_entry.start_time else 8.0
+        work_end = calendar_entry.end_time if calendar_entry.end_time else 17.0
+        lunch_start = calendar_entry.lunch_start if calendar_entry.lunch_start else 12.0
+        lunch_duration = calendar_entry.lunch_duration if calendar_entry.lunch_duration else 1.0
+        
+        # Convert current time to decimal hours
+        current_time = now.hour + now.minute/60
+        
+        # Calculate elapsed work hours considering work schedule
+        if current_time < work_start:
+            # Before work starts
+            hours_passed = 0
+        elif current_time > work_end:
+            # After work ends - use full work day
+            hours_passed = today_work_hours
+        else:
+            # During work hours
+            hours_passed = current_time - work_start
+            # Account for lunch break
+            if current_time > lunch_start + lunch_duration:
+                # Past lunch, subtract lunch duration
+                hours_passed -= lunch_duration
+            elif current_time > lunch_start:
+                # During lunch, count up to lunch start
+                hours_passed = lunch_start - work_start
+        
+        # Filter events to only those during work hours
+        work_hour_events = 0
+        
+        # Define today's boundaries in local time
+        today_start_local = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end_local = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Convert to UTC for database query (events are stored in UTC)
+        today_start_utc = today_start_local.astimezone(pytz.UTC)
+        today_end_utc = today_end_local.astimezone(pytz.UTC)
+        
+        for event in Event.query.filter(
+            Event.user_id == target_user_id,
+            Event.timestamp >= today_start_utc,
+            Event.timestamp < today_end_utc
+        ).all():
+            # Convert event time to local hour
+            event_local = event.timestamp.astimezone(pytz.timezone('Europe/Brussels'))
+            event_hour = event_local.hour + event_local.minute/60
+            
+            # Check if event is during work hours
+            if work_start <= event_hour <= work_end:
+                # Check if not during lunch
+                lunch_end = lunch_start + lunch_duration
+                if not (lunch_start <= event_hour < lunch_end):
+                    work_hour_events += 1
+        
+        # Calculate real-time average
+        hourly_average = work_hour_events / max(hours_passed, 0.1) if hours_passed > 0 else 0
     else:
         hourly_average = 0  # Non-working day
+        work_hour_events = 0
     
     # Active paths and categories
     active_paths = paths_query.count()
     total_files = paths_query.filter_by(is_directory=False).count()
     total_dirs = paths_query.filter_by(is_directory=True).count()
     
-    active_categories = db.session.query(Category.id).join(Event).filter(
+    # Count active categories (categories that have events in the date range)
+    active_categories_query = db.session.query(Category.id).join(Event).filter(
         Event.timestamp >= start_date_utc
-    ).distinct().count()
-    total_categories = Category.query.count()
+    )
+    
+    # Filter by user if not admin or if user_filter is specified
+    if current_user.role != 'admin':
+        active_categories_query = active_categories_query.filter(Category.user_id == current_user.id)
+    elif user_filter:
+        active_categories_query = active_categories_query.filter(Category.user_id == user_filter)
+    
+    active_categories = active_categories_query.distinct().count()
+    # Count total categories based on user role
+    # Count total categories based on user role
+    if current_user.role == 'admin':
+        if user_filter:
+            total_categories = Category.query.filter_by(user_id=user_filter).count()
+        else:
+            total_categories = Category.query.count()
+    else:
+        total_categories = Category.query.filter_by(user_id=current_user.id).count()
     
     # Recent activity (last 50 events)
     recent_events = date_filtered_events.order_by(Event.timestamp.desc()).limit(50).all()
@@ -1584,8 +1881,17 @@ def dashboard():
         Event.timestamp <= end_date_utc
     )
     
-    if user_filter:
-        category_stats = category_stats.filter(Event.user_id == user_filter)
+    # Filter by user role
+    if current_user.role != 'admin':
+        category_stats = category_stats.filter(
+            Event.user_id == current_user.id,
+            Category.user_id == current_user.id
+        )
+    elif user_filter:
+        category_stats = category_stats.filter(
+            Event.user_id == user_filter,
+            Category.user_id == user_filter
+        )
     
     category_stats = category_stats.group_by(Category.id).order_by(func.count(Event.id).desc()).all()
     
@@ -1598,7 +1904,7 @@ def dashboard():
     # Machine Time vs Work Hours for the date range
     machine_time_stats = db.session.query(
         func.date(Event.timestamp).label('date'),
-        func.sum(CNCAnalysis.machine_time_minutes).label('machine_time'),
+        func.sum(CNCAnalysis.cycle_time_seconds).label('cycle_time'),  # Use cycle_time_seconds (total time)
         func.count(Event.id).label('event_count')
     ).join(
         CNCAnalysis, Event.id == CNCAnalysis.event_id
@@ -1622,13 +1928,17 @@ def dashboard():
         date_key = current_date.strftime('%Y-%m-%d')
         machine_time_data[date_key] = 0
         
-        # Calculate work hours for this day
-        day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
-        if work_hours:
-            work_hours_for_day = work_hours.get_hours_for_day(day_of_week)
-            work_hours_data[date_key] = work_hours_for_day
+        # Get work hours from calendar for this day
+        if current_date == now.date():
+            # For today, use elapsed work hours instead of full day
+            if calendar_entry and hours_passed > 0:
+                work_hours_data[date_key] = hours_passed
+            else:
+                work_hours_data[date_key] = 0
         else:
-            work_hours_data[date_key] = 8  # Default 8 hours
+            # For other days, use full work hours
+            work_hours_for_day = get_work_hours_for_date(current_date)
+            work_hours_data[date_key] = work_hours_for_day
         
         current_date += timedelta(days=1)
     
@@ -1638,7 +1948,7 @@ def dashboard():
             date_key = stat.date
         else:
             date_key = stat.date.strftime('%Y-%m-%d')
-        machine_time_data[date_key] = float(stat.machine_time or 0) / 60  # Convert minutes to hours
+        machine_time_data[date_key] = float(stat.cycle_time or 0) / 3600  # Convert seconds to hours
     
     machine_time_vs_work_hours_data = {
         'labels': list(machine_time_data.keys())[-7:],  # Last 7 days
@@ -1659,18 +1969,8 @@ def dashboard():
             Event.timestamp < day_end_utc
         ).count()
         
-        # Try to get work hours from calendar first, fallback to weekly configuration
-        try:
-            calendar_hours = get_work_hours_for_date(
-                user_filter if user_filter else current_user.id, 
-                day_start.date()
-            )
-            day_work_hours = calendar_hours if calendar_hours is not None else (
-                work_hours_for_stats.get_hours_for_day(i) if work_hours_for_stats else 8.0
-            )
-        except Exception:
-            # Fallback to weekly configuration if calendar system is not available
-            day_work_hours = work_hours_for_stats.get_hours_for_day(i) if work_hours_for_stats else 8.0
+        # Get work hours from calendar ONLY (no fallback)
+        day_work_hours = get_work_hours_for_date(day_start.date())
         events_per_hour = day_events / max(day_work_hours, 0.1) if day_work_hours > 0 else 0
         
         # Calculate efficiency using configurable thresholds for the viewed user
@@ -1805,6 +2105,9 @@ def dashboard():
             func.count(Event.id).desc()
         ).limit(5).all()
     
+    # CNC Efficiency Analysis for Today
+    cnc_efficiency_data = calculate_daily_cnc_efficiency(today_start_utc, user_filter)
+    
     return render_template('dashboard.html',
                          # Filters
                          operators=operators,
@@ -1816,8 +2119,11 @@ def dashboard():
                          work_hours_for_stats=work_hours_for_stats,
                          # KPIs
                          today_events=today_events,
+                         # CNC Efficiency
+                         cnc_efficiency=cnc_efficiency_data,
                          yesterday_events=yesterday_events,
                          hourly_average=hourly_average,
+                         work_hour_events=work_hour_events,
                          active_paths=active_paths,
                          total_files=total_files,
                          total_dirs=total_dirs,
@@ -1871,8 +2177,8 @@ def events():
         page=page, per_page=per_page, error_out=False
     )
     
-    categories = Category.query.all()
-    users = User.query.all() if current_user.role == 'admin' else None
+    categories = Category.query.filter_by(user_id=current_user.id).all()
+    users = User.query.filter(User.role != 'admin').all() if current_user.role == 'admin' else None
     
     return render_template('events.html', 
                          events=events, 
@@ -1890,6 +2196,12 @@ def manual_entry():
         monitored_path_id = request.form.get('monitored_path_id', type=int)
         
         if description and category_id and amount and 1 <= amount <= 100:
+            # Validate that the category belongs to the current user
+            category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
+            if not category:
+                flash('Invalid category selected', 'danger')
+                return redirect(url_for('main.manual_entry'))
+            
             # Get the monitored path if selected
             path_info = ""
             if monitored_path_id:
@@ -1939,7 +2251,7 @@ def manual_entry():
             flash('Please provide valid description, category, and amount (1-100)', 'danger')
     
     # Get categories and monitored paths for the form
-    categories = Category.query.all()
+    categories = Category.query.filter_by(user_id=current_user.id).all()
     
     # Get monitored paths based on user role
     if current_user.role == 'admin':
@@ -1971,24 +2283,99 @@ def delete_event(event_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-def calculate_work_minutes_in_range(start_date, end_date, work_hours):
-    """Calculate total work minutes in a date range"""
+def calculate_work_minutes_in_range_calendar(start_date, end_date):
+    """Calculate total work minutes in a date range using company-wide calendar"""
     total_minutes = 0
-    current = start_date
+    current = start_date.date() if hasattr(start_date, 'date') else start_date
+    end = end_date.date() if hasattr(end_date, 'date') else end_date
     
-    while current < end_date:
-        # Check if it's a work day
-        if current.weekday() in [0, 1, 2, 3, 4]:  # Monday to Friday
-            # For each work day, add the configured hours
-            if hasattr(work_hours, 'get_hours_for_day'):
-                day_hours = work_hours.get_hours_for_day(current.weekday())
-            else:
-                day_hours = 8  # Default 8 hours
-            total_minutes += day_hours * 60
+    while current <= end:
+        # Get calendar entry for this specific date
+        calendar_entry = WorkCalendar.query.filter_by(
+            date=current
+        ).first()
+        
+        # Only count hours if there's a calendar entry
+        if calendar_entry and calendar_entry.work_hours > 0:
+            total_minutes += calendar_entry.work_hours * 60
         
         current = current + timedelta(days=1)
     
     return total_minutes
+
+def migrate_to_company_calendar():
+    """
+    Migration function to consolidate user-specific calendars into company-wide calendar.
+    This should be run once when upgrading to the new system.
+    """
+    print("Starting migration to company-wide calendar...")
+    
+    # Get all existing calendar entries grouped by date
+    from sqlalchemy import text
+    
+    # First, backup existing data
+    try:
+        # Create consolidated calendar entries by taking the most common work hours for each date
+        # or use the first user's data if all users have the same schedule
+        dates_query = db.session.execute(text("""
+            SELECT date, work_hours, day_type, notes, 
+                   COUNT(*) as user_count,
+                   GROUP_CONCAT(user_id) as user_ids
+            FROM work_calendar 
+            GROUP BY date, work_hours, day_type
+            ORDER BY date, user_count DESC
+        """)).fetchall()
+        
+        consolidated_entries = {}
+        for row in dates_query:
+            date_key = row[0]
+            if date_key not in consolidated_entries:
+                # Take the most common configuration for this date
+                consolidated_entries[date_key] = {
+                    'date': row[0],
+                    'work_hours': row[1],
+                    'day_type': row[2],
+                    'notes': row[3] or ''
+                }
+        
+        # Clear existing calendar entries
+        db.session.execute(text("DELETE FROM work_calendar"))
+        
+        # Insert consolidated entries
+        for entry_data in consolidated_entries.values():
+            new_entry = WorkCalendar(
+                date=entry_data['date'],
+                work_hours=entry_data['work_hours'],
+                day_type=entry_data['day_type'],
+                notes=entry_data['notes']
+            )
+            db.session.add(new_entry)
+        
+        db.session.commit()
+        
+        print(f"Migration completed successfully. Consolidated {len(consolidated_entries)} calendar entries.")
+        return True
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Migration failed: {str(e)}")
+        return False
+
+@main_bp.route('/settings/migrate_calendar', methods=['POST'])
+@login_required
+def run_calendar_migration():
+    """Admin route to run calendar migration"""
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Admin access required'}), 403
+    
+    try:
+        success = migrate_to_company_calendar()
+        if success:
+            return jsonify({'success': True, 'message': 'Calendar migration completed successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Migration failed'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @main_bp.route('/statistics')
 @login_required
@@ -2000,8 +2387,11 @@ def statistics():
     custom_start = request.args.get('start_date')
     custom_end = request.args.get('end_date')
     
-    # Get operators list for filter
-    operators = User.query.filter_by(is_active=True, role='operator').order_by(User.username).all()
+    # Get operators list for filter (exclude admin users)
+    operators = User.query.filter(
+        User.is_active == True,
+        User.role != 'admin'
+    ).order_by(User.username).all()
     
     # Calculate date range
     local_tz = get_local_timezone()
@@ -2034,7 +2424,7 @@ def statistics():
             users_query = User.query.filter_by(id=user_filter)
         else:
             events_query = Event.query
-            users_query = User.query.filter_by(role='operator')
+            users_query = User.query.filter(User.role != 'admin')
     else:
         events_query = Event.query.filter_by(user_id=current_user.id)
         users_query = User.query.filter_by(id=current_user.id)
@@ -2091,10 +2481,10 @@ def statistics():
         category_stats = category_stats.filter(Event.user_id == user_filter)
     category_stats = category_stats.group_by(Category.id).order_by(func.count(Event.id).desc()).all()
     
-    # 5. Machine Time vs Work Hours Analysis
+    # 5. Machine Time vs Work Hours Analysis (using total machine time, not overhead)
     machine_time_analysis = db.session.query(
         func.date(Event.timestamp).label('date'),
-        func.sum(CNCAnalysis.machine_time_minutes).label('machine_time'),
+        func.sum(CNCAnalysis.cycle_time_seconds).label('total_machine_time_seconds'),
         func.count(Event.id).label('event_count')
     ).join(
         CNCAnalysis, Event.id == CNCAnalysis.event_id, isouter=True
@@ -2112,7 +2502,7 @@ def statistics():
         MonitoredPath.path.label('path'),
         func.count(Event.id).label('event_count'),
         func.count(func.distinct(func.date(Event.timestamp))).label('active_days'),
-        func.sum(CNCAnalysis.machine_time_minutes).label('total_machine_time')
+        func.sum(CNCAnalysis.cycle_time_seconds).label('total_machine_time_seconds')
     ).join(
         Event, Event.file_path.like(func.concat(MonitoredPath.path, '%'))
     ).join(
@@ -2125,21 +2515,30 @@ def statistics():
         monitored_path_stats = monitored_path_stats.filter(Event.user_id == user_filter)
     monitored_path_stats = monitored_path_stats.group_by(MonitoredPath.id).order_by(func.count(Event.id).desc()).all()
     
-    # 7. Efficiency Metrics Calculation
-    work_hours = get_user_work_hours(user_filter if user_filter else current_user.id)
-    total_work_minutes = calculate_work_minutes_in_range(start_date, end_date, work_hours)
+    # 7. Efficiency Metrics Calculation using CALENDAR ONLY
+    target_user_id = user_filter if user_filter else current_user.id
+    total_work_minutes = calculate_work_minutes_in_range_calendar(start_date, end_date)
     events_per_hour = (total_events / (total_work_minutes / 60)) if total_work_minutes > 0 else 0
+    
+    # Get work hours config for efficiency thresholds only
+    work_hours = get_user_work_hours(target_user_id)
     
     # Calculate efficiency by day
     efficiency_by_day = []
     for day_data in daily_trend:
         day_date = datetime.strptime(str(day_data.date), '%Y-%m-%d').date()
-        weekday = day_date.weekday()  # 0=Monday, 6=Sunday
-        day_work_hours = work_hours.get_hours_for_day(weekday)
+        
+        # Get calendar entry for this specific day
+        calendar_entry = WorkCalendar.query.filter_by(
+            date=day_date
+        ).first()
+        
+        day_work_hours = calendar_entry.work_hours if calendar_entry else 0.0
         
         if day_work_hours > 0:
             day_events_per_hour = day_data.count / day_work_hours
-            efficiency_level = work_hours.calculate_efficiency(day_events_per_hour)
+            # Use work_hours config only for efficiency calculation thresholds
+            efficiency_level = work_hours.calculate_efficiency(day_events_per_hour) if work_hours else 'optimal'
         else:
             day_events_per_hour = 0
             efficiency_level = 'off'
@@ -2252,7 +2651,7 @@ def statistics():
                                  .limit(15).all()
     
     # Calculate total machine time
-    total_machine_time = sum(m.machine_time or 0 for m in machine_time_analysis)
+    total_machine_time = sum(m.total_machine_time_seconds or 0 for m in machine_time_analysis)
     
     # Prepare data for charts with enhanced metrics
     statistics_data = {
@@ -2271,9 +2670,9 @@ def statistics():
             'data': [next((h.count for h in hourly_distribution if int(h.hour) == i), 0) for i in range(24)]
         },
         'daily_trend': {
-            'labels': [d.date.strftime(time_format) for d in daily_trend],
+            'labels': [datetime.strptime(str(d.date), '%Y-%m-%d').strftime(time_format) for d in daily_trend],
             'data': [d.count for d in daily_trend],
-            'machine_time': [next((m.machine_time or 0 for m in machine_time_analysis if m.date == d.date), 0) for d in daily_trend]
+            'machine_time': [next(((m.total_machine_time_seconds or 0) / 3600 for m in machine_time_analysis if m.date == d.date), 0) for d in daily_trend]
         },
         'category_performance': {
             'labels': [c.name for c in category_stats],
@@ -2282,8 +2681,8 @@ def statistics():
             'active_days': [c.active_days for c in category_stats]
         },
         'machine_time_vs_work_hours': {
-            'labels': [d['date'].strftime('%m/%d') for d in efficiency_by_day],
-            'machine_time': [next((m.machine_time or 0 for m in machine_time_analysis if str(m.date) == str(d['date'])), 0) for d in efficiency_by_day],
+            'labels': [datetime.strptime(str(d['date']), '%Y-%m-%d').strftime('%m/%d') for d in efficiency_by_day],
+            'machine_time': [next(((m.total_machine_time_seconds or 0) / 3600 for m in machine_time_analysis if str(m.date) == str(d['date'])), 0) for d in efficiency_by_day],
             'work_hours': [d['work_hours'] for d in efficiency_by_day],
             'events_per_hour': [d['events_per_hour'] for d in efficiency_by_day],
             'efficiency_levels': [d['efficiency'] for d in efficiency_by_day]
@@ -2291,7 +2690,7 @@ def statistics():
         'monitored_paths_stats': {
             'labels': [p.path_description or p.path[-30:] for p in monitored_path_stats],
             'event_counts': [p.event_count for p in monitored_path_stats],
-            'machine_times': [p.total_machine_time or 0 for p in monitored_path_stats],
+            'machine_times': [(p.total_machine_time_seconds or 0) / 3600 for p in monitored_path_stats],  # Convert to hours
             'active_days': [p.active_days for p in monitored_path_stats]
         },
         'efficiency_metrics': {
@@ -2342,6 +2741,20 @@ def statistics():
                          start_date=start_date.strftime('%Y-%m-%d'),
                          end_date=end_date.strftime('%Y-%m-%d'),
                          statistics_data=statistics_data)
+
+@main_bp.route('/reports')
+@login_required
+def reports():
+    users = User.query.filter(User.role != 'admin').all() if current_user.role == 'admin' else None
+    
+    # Get recent reports
+    if current_user.role == 'admin':
+        recent_reports = Report.query.order_by(Report.created_at.desc()).limit(10).all()
+    else:
+        recent_reports = Report.query.filter_by(user_id=current_user.id)\
+                                   .order_by(Report.created_at.desc()).limit(10).all()
+    
+    return render_template('reports.html', users=users, recent_reports=recent_reports)
 
 @main_bp.route('/reports/generate', methods=['POST'])
 @login_required
@@ -2411,8 +2824,29 @@ def download_report(id):
 @login_required
 @admin_required
 def categories():
-    categories = Category.query.all()
-    return render_template('categories.html', categories=categories)
+    # Get sort parameter from request
+    sort_by = request.args.get('sort', 'all')
+    
+    # Admins can see all categories for management purposes
+    if current_user.role == 'admin':
+        # Admin sees all categories from all users
+        query = Category.query.join(User)
+        
+        # Apply sorting based on parameter
+        if sort_by == 'all':
+            categories = query.order_by(User.username, Category.name).all()
+        else:
+            # Filter by specific user
+            categories = query.filter(User.username == sort_by).order_by(Category.name).all()
+            
+        # Get all non-admin users for dropdown
+        users = User.query.filter(User.role != 'admin').order_by(User.username).all()
+    else:
+        # Regular users see only their own categories
+        categories = Category.query.filter_by(user_id=current_user.id).all()
+        users = []
+    
+    return render_template('categories.html', categories=categories, users=users, current_sort=sort_by)
 
 @main_bp.route('/category/add', methods=['GET', 'POST'])
 @login_required
@@ -2424,12 +2858,19 @@ def add_category():
         keywords = request.form.getlist('keywords[]')
         patterns = request.form.getlist('patterns[]')
         
+        # Admin can select which user the category is for
+        if current_user.role == 'admin':
+            user_id = request.form.get('user_id', current_user.id)
+        else:
+            user_id = current_user.id
+        
         # Filter out empty values
         keywords = [k.strip() for k in keywords if k.strip()]
         patterns = [p.strip() for p in patterns if p.strip()]
         
         category = Category(
             name=name,
+            user_id=user_id,
             color=color,
             keywords=json.dumps(keywords),
             file_patterns=json.dumps(patterns)
@@ -2441,17 +2882,29 @@ def add_category():
         flash(get_translation('category_added'), 'success')
         return redirect(url_for('main.categories'))
     
-    return render_template('category_form.html', category=None)
+    # Pass users list for admin to select from
+    users = None
+    if current_user.role == 'admin':
+        users = User.query.filter(User.role != 'admin').all()
+    
+    return render_template('category_form.html', category=None, users=users)
 
 @main_bp.route('/category/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_category(id):
+    # Allow editing any category for admin users
     category = Category.query.get_or_404(id)
     
     if request.method == 'POST':
         category.name = request.form.get('name')
         category.color = request.form.get('color', '#007bff')
+        
+        # Admin can change which user the category belongs to
+        if current_user.role == 'admin':
+            user_id = request.form.get('user_id')
+            if user_id:
+                category.user_id = user_id
         
         keywords = request.form.getlist('keywords[]')
         patterns = request.form.getlist('patterns[]')
@@ -2466,12 +2919,18 @@ def edit_category(id):
         flash(get_translation('category_updated'), 'success')
         return redirect(url_for('main.categories'))
     
-    return render_template('category_form.html', category=category)
+    # Pass users list for admin to select from
+    users = None
+    if current_user.role == 'admin':
+        users = User.query.filter(User.role != 'admin').all()
+    
+    return render_template('category_form.html', category=category, users=users)
 
 @main_bp.route('/category/delete/<int:id>')
 @login_required
 @admin_required
 def delete_category(id):
+    # Allow deleting any category for admin users
     category = Category.query.get_or_404(id)
     db.session.delete(category)
     db.session.commit()
@@ -2504,6 +2963,9 @@ def add_user():
         
         db.session.add(user)
         db.session.commit()
+        
+        # Create default categories for the new user
+        create_default_categories_for_user(user)
         
         flash(get_translation('user_added'), 'success')
         return redirect(url_for('main.users'))
@@ -2547,11 +3009,27 @@ def delete_user(id):
     
     username = user.username
     
-    # Delete the user
-    db.session.delete(user)
-    db.session.commit()
+    try:
+        # Delete user's categories first (since they have foreign key constraint)
+        user_categories = Category.query.filter_by(user_id=user.id).all()
+        for category in user_categories:
+            db.session.delete(category)
+        
+        # Update events that reference this user's categories to have no category
+        events_with_user_categories = Event.query.join(Category).filter(Category.user_id == user.id).all()
+        for event in events_with_user_categories:
+            event.category_id = None
+        
+        # Delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash(f"{get_translation('user_deleted')} {username}", 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting user: {str(e)}", 'danger')
     
-    flash(f"{get_translation('user_deleted')} {username}", 'success')
     return redirect(url_for('main.users'))
 
 @main_bp.route('/settings')
@@ -2559,9 +3037,12 @@ def delete_user(id):
 def settings():
     if current_user.role == 'admin':
         paths = MonitoredPath.query.all()
-        users = User.query.filter_by(is_active=True).all()
-        # Get all operators with their work hours for efficiency configuration
-        operators = User.query.filter_by(role='operator', is_active=True).all()
+        users = User.query.filter(User.is_active == True, User.role != 'admin').all()
+        # Get all non-admin users with their work hours for efficiency configuration
+        operators = User.query.filter(
+            User.is_active == True,
+            User.role != 'admin'
+        ).all()
         # Ensure each operator has work hours
         for operator in operators:
             operator.work_hours = get_user_work_hours(operator.id)
@@ -2587,11 +3068,35 @@ def work_calendar():
         # Get year from query parameter, default to current year
         year = request.args.get('year', datetime.now().year, type=int)
         
+        # Debug: Check if migration is needed
+        from sqlalchemy import text
+        try:
+            result = db.session.execute(text("PRAGMA table_info(work_calendar)")).fetchall()
+            has_user_id_column = any('user_id' in str(row) for row in result)
+            if has_user_id_column:
+                flash('Calendar migration is needed. Please restart the application to complete the migration.', 'warning')
+                return redirect(url_for('main.settings'))
+        except Exception as debug_error:
+            print(f"Debug error: {debug_error}")
+        
         # Initialize calendar if it doesn't exist
-        initialize_year_calendar(current_user.id, year)
+        initialize_year_calendar(year)
+        
+        # Ensure we have calendar data for this year
+        from datetime import date
+        year_start = date(year, 1, 1)
+        year_end = date(year, 12, 31)
+        existing_entries = WorkCalendar.query.filter(
+            WorkCalendar.date >= year_start,
+            WorkCalendar.date <= year_end
+        ).count()
+        
+        if existing_entries == 0:
+            print(f"No calendar entries found for {year}, initializing...")
+            initialize_year_calendar(year)
         
         # Get calendar data for display
-        calendar_data = get_calendar_data(current_user.id, year)
+        calendar_data = get_calendar_data(year)
         
         # Calculate calendar statistics
         from datetime import date
@@ -2600,7 +3105,6 @@ def work_calendar():
         
         # Get WorkCalendar entries
         calendar_entries = WorkCalendar.query.filter(
-            WorkCalendar.user_id == current_user.id,
             WorkCalendar.date >= start_date,
             WorkCalendar.date <= end_date
         ).all()
@@ -2644,17 +3148,21 @@ def update_calendar_day():
         day_type = data.get('day_type', 'workday')
         notes = data.get('notes', '')
         
+        # Parse schedule times
+        start_time = float(data.get('start_time', 8.0))
+        end_time = float(data.get('end_time', 17.0))
+        lunch_start = float(data.get('lunch_start', 12.0))
+        lunch_duration = float(data.get('lunch_duration', 1.0))
+        
         target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
         # Find existing entry or create new one
         calendar_entry = WorkCalendar.query.filter_by(
-            user_id=current_user.id,
             date=target_date
         ).first()
         
         if not calendar_entry:
             calendar_entry = WorkCalendar(
-                user_id=current_user.id,
                 date=target_date
             )
             db.session.add(calendar_entry)
@@ -2663,11 +3171,54 @@ def update_calendar_day():
         calendar_entry.work_hours = work_hours
         calendar_entry.day_type = day_type
         calendar_entry.notes = notes
+        calendar_entry.start_time = start_time
+        calendar_entry.end_time = end_time
+        calendar_entry.lunch_start = lunch_start
+        calendar_entry.lunch_duration = lunch_duration
         
         db.session.commit()
         
         return jsonify({'success': True})
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@api_bp.route('/work_calendar/bulk_update_hours', methods=['POST'])
+@login_required
+def bulk_update_work_hours():
+    """Bulk update work hours for all workdays"""
+    try:
+        data = request.get_json()
+        start_time = data.get('start_time', 8.0)
+        end_time = data.get('end_time', 17.0)
+        lunch_start = data.get('lunch_start', 12.0)
+        lunch_duration = data.get('lunch_duration', 1.0)
+        apply_to = data.get('apply_to', 'all_workdays')
+        
+        # Calculate work hours (total time minus lunch)
+        total_hours = end_time - start_time
+        work_hours = total_hours - lunch_duration
+        
+        # Update all workdays in the calendar
+        if apply_to == 'all_workdays':
+            # Update all entries where day_type is 'work_day'
+            updated = WorkCalendar.query.filter_by(
+                user_id=current_user.id,
+                day_type='work_day'
+            ).update({
+                'work_hours': work_hours,
+                'start_time': start_time,
+                'end_time': end_time,
+                'lunch_start': lunch_start,
+                'lunch_duration': lunch_duration
+            })
+            
+            db.session.commit()
+            return jsonify({'success': True, 'updated': updated})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid apply_to option'}), 400
+            
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2684,7 +3235,7 @@ def apply_calendar_template():
         # Apply the template
         if template_name == 'standard':
             # Standard 5-day week - reinitialize the calendar
-            initialize_year_calendar(current_user.id, year)
+            initialize_year_calendar(year)
             updated_count = 365  # Approximate
         else:
             return jsonify({'success': False, 'error': 'Unknown template'}), 400
@@ -2703,7 +3254,7 @@ def apply_calendar_holidays():
         year = data.get('year', datetime.now().year)
         
         # Apply holidays
-        apply_holidays(current_user.id, year)
+        apply_holidays(year)
         db.session.commit()
         
         return jsonify({'success': True})
@@ -2757,13 +3308,11 @@ def bulk_apply_work_hours():
         while current_date <= end_date:
             # Get or create calendar entry
             calendar_entry = WorkCalendar.query.filter_by(
-                user_id=current_user.id,
                 date=current_date
             ).first()
             
             if not calendar_entry:
                 calendar_entry = WorkCalendar(
-                    user_id=current_user.id,
                     date=current_date
                 )
                 db.session.add(calendar_entry)
@@ -3131,9 +3680,9 @@ def backup_database():
             
             # Export categories
             f.write("\n-- Categories Table\n")
-            categories = Category.query.all()
+            categories = Category.query.filter_by(user_id=current_user.id).all()
             for cat in categories:
-                f.write(f"INSERT INTO category (name, keywords, file_patterns, color) VALUES ('{cat.name}', '{cat.keywords}', '{cat.file_patterns}', '{cat.color}');\n")
+                f.write(f"INSERT INTO category (name, user_id, keywords, file_patterns, color) VALUES ('{cat.name}', {cat.user_id or 'NULL'}, '{cat.keywords}', '{cat.file_patterns}', '{cat.color}');\n")
         
         if compress:
             zip_filename = f"backup_data_{timestamp}.zip"
@@ -3488,7 +4037,7 @@ def export_database():
                 writer = csv.writer(csv_content)
                 writer.writerow(['ID', 'Name', 'Keywords', 'Patterns', 'Color'])
                 
-                categories = Category.query.all()
+                categories = Category.query.filter_by(user_id=current_user.id).all()
                 for cat in categories:
                     writer.writerow([
                         cat.id,
@@ -3599,7 +4148,7 @@ def export_database():
         
         if export_categories:
             sql_content.write("-- Categories Table\n")
-            categories = Category.query.all()
+            categories = Category.query.filter_by(user_id=current_user.id).all()
             for cat in categories:
                 sql_content.write(
                     f"INSERT INTO category (id, name, keywords, file_patterns, color) VALUES ("
@@ -3846,54 +4395,95 @@ def generate_detailed_report(date_from, date_to, user_filter, form_data):
     # Add more implementation as needed
     return wb
 
+def create_default_categories_for_user(user):
+    """Create default categories for a new user"""
+    default_categories = [
+        {
+            'name': 'Documents',
+            'keywords': ['document', 'doc', 'report', 'text'],
+            'file_patterns': ['.*\\.doc.*', '.*\\.pdf', '.*\\.txt'],
+            'color': '#007bff'
+        },
+        {
+            'name': 'Images',
+            'keywords': ['image', 'photo', 'picture'],
+            'file_patterns': ['.*\\.jpg', '.*\\.png', '.*\\.gif', '.*\\.bmp'],
+            'color': '#28a745'
+        },
+        {
+            'name': 'Data Files',
+            'keywords': ['data', 'csv', 'excel', 'spreadsheet'],
+            'file_patterns': ['.*\\.csv', '.*\\.xlsx?', '.*\\.json'],
+            'color': '#ffc107'
+        },
+        {
+            'name': 'Log Files',
+            'keywords': ['log', 'error', 'debug', 'trace'],
+            'file_patterns': ['.*\\.log', '.*\\.trace'],
+            'color': '#dc3545'
+        },
+        {
+            'name': 'Allerlei',
+            'keywords': [],
+            'file_patterns': [],
+            'color': '#6c757d'
+        }
+    ]
+    
+    # Check if user already has categories
+    existing_categories = Category.query.filter_by(user_id=user.id).count()
+    if existing_categories > 0:
+        print(f"User {user.username} already has {existing_categories} categories, skipping default creation.")
+        return
+    
+    for cat_data in default_categories:
+        # Double-check if category already exists for this user
+        existing_cat = Category.query.filter_by(name=cat_data['name'], user_id=user.id).first()
+        if existing_cat:
+            print(f"Category '{cat_data['name']}' already exists for user {user.username}, skipping.")
+            continue
+            
+        category = Category(
+            name=cat_data['name'],
+            user_id=user.id,
+            keywords=json.dumps(cat_data['keywords']),
+            file_patterns=json.dumps(cat_data['file_patterns']),
+            color=cat_data['color']
+        )
+        db.session.add(category)
+    
+    try:
+        db.session.commit()
+        print(f"Default categories created for user {user.username}.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating default categories for user {user.username}: {e}")
+
 def create_default_categories():
-    """Create some default categories for demo purposes"""
+    """Create default categories for existing users who don't have any"""
     with app.app_context():
-        if Category.query.count() == 0:
-            default_categories = [
-                {
-                    'name': 'Documents',
-                    'keywords': ['document', 'doc', 'report', 'text'],
-                    'file_patterns': ['.*\\.doc.*', '.*\\.pdf', '.*\\.txt'],
-                    'color': '#007bff'
-                },
-                {
-                    'name': 'Images',
-                    'keywords': ['image', 'photo', 'picture'],
-                    'file_patterns': ['.*\\.jpg', '.*\\.png', '.*\\.gif', '.*\\.bmp'],
-                    'color': '#28a745'
-                },
-                {
-                    'name': 'Data Files',
-                    'keywords': ['data', 'csv', 'excel', 'spreadsheet'],
-                    'file_patterns': ['.*\\.csv', '.*\\.xlsx?', '.*\\.json'],
-                    'color': '#ffc107'
-                },
-                {
-                    'name': 'Log Files',
-                    'keywords': ['log', 'error', 'debug', 'trace'],
-                    'file_patterns': ['.*\\.log', '.*\\.trace'],
-                    'color': '#dc3545'
-                },
-                {
-                    'name': 'Allerlei',
-                    'keywords': [],
-                    'file_patterns': [],
-                    'color': '#6c757d'
-                }
-            ]
+        try:
+            # Check if user_id column exists before querying
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            columns = [col['name'] for col in inspector.get_columns('category')]
             
-            for cat_data in default_categories:
-                category = Category(
-                    name=cat_data['name'],
-                    keywords=json.dumps(cat_data['keywords']),
-                    file_patterns=json.dumps(cat_data['file_patterns']),
-                    color=cat_data['color']
-                )
-                db.session.add(category)
+            if 'user_id' not in columns:
+                print("user_id column not found in category table. Migration may not have run yet.")
+                return
             
-            db.session.commit()
-            print("Default categories created.")
+            # Get all users
+            users = User.query.all()
+            # Get all users
+            users = User.query.all()
+            for user in users:
+                # Check if user has any categories
+                if Category.query.filter_by(user_id=user.id).count() == 0:
+                    create_default_categories_for_user(user)
+                    print(f"Created default categories for existing user: {user.username}")
+        except Exception as e:
+            print(f"Error in create_default_categories: {e}")
+            # Don't crash the app if categories aren't ready yet
 
 # Register blueprints
 app.register_blueprint(auth_bp)
@@ -3932,6 +4522,9 @@ def initialize_database():
             else:
                 print("Admin user already exists.")
             
+            # Create default categories for existing users after migration is complete
+            create_default_categories()
+            
             # File monitoring is now handled by client applications
             print("Note: File monitoring is handled by client applications.")
             
@@ -3949,7 +4542,49 @@ if __name__ == '__main__':
             print("❌ Failed to initialize database. Exiting.")
             exit(1)
         
-        create_default_categories()
+        # Check if calendar migration is needed
+        with app.app_context():
+            try:
+                # Check if we have old user-specific calendar entries
+                from sqlalchemy import text
+                result = db.session.execute(text("PRAGMA table_info(work_calendar)")).fetchall()
+                has_user_id_column = any('user_id' in str(row) for row in result)
+                
+                if has_user_id_column:
+                    print("📅 Detecting old calendar format - running migration to company-wide calendar...")
+                    success = migrate_to_company_calendar()
+                    if success:
+                        print("✓ Calendar migration completed successfully")
+                        # After migration, we need to drop the user_id column
+                        try:
+                            db.session.execute(text("""
+                                CREATE TABLE work_calendar_new (
+                                    id INTEGER PRIMARY KEY,
+                                    date DATE NOT NULL UNIQUE,
+                                    work_hours FLOAT DEFAULT 8.0,
+                                    day_type VARCHAR(20) DEFAULT 'workday',
+                                    notes VARCHAR(255),
+                                    created_at DATETIME,
+                                    updated_at DATETIME
+                                );
+                            """))
+                            db.session.execute(text("""
+                                INSERT INTO work_calendar_new (id, date, work_hours, day_type, notes, created_at, updated_at)
+                                SELECT id, date, work_hours, day_type, notes, created_at, updated_at 
+                                FROM work_calendar;
+                            """))
+                            db.session.execute(text("DROP TABLE work_calendar;"))
+                            db.session.execute(text("ALTER TABLE work_calendar_new RENAME TO work_calendar;"))
+                            db.session.commit()
+                            print("✓ Database schema updated to remove user_id column")
+                        except Exception as schema_error:
+                            print(f"Warning: Schema update failed (may need manual cleanup): {schema_error}")
+                    else:
+                        print("❌ Calendar migration failed")
+                else:
+                    print("✓ Calendar already using company-wide format")
+            except Exception as e:
+                print(f"Warning: Calendar migration check failed: {e}")
         
         # Initialize scheduled backup job if enabled
         with app.app_context():

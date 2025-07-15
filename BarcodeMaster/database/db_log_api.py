@@ -282,6 +282,18 @@ def init_db():
         if 'session_id' not in columns:
             c.execute('ALTER TABLE logs ADD COLUMN session_id TEXT')
             logging.info("Added 'session_id' column to logs table.")
+        if 'nesting_count' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN nesting_count INTEGER DEFAULT 0')
+            logging.info("Added 'nesting_count' column to logs table.")
+        if 'opdeelzaag_count' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN opdeelzaag_count INTEGER DEFAULT 0')
+            logging.info("Added 'opdeelzaag_count' column to logs table.")
+        if 'aantal_items' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN aantal_items INTEGER DEFAULT 0')
+            logging.info("Added 'aantal_items' column to logs table.")
+        if 'aantal_sides' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN aantal_sides INTEGER DEFAULT 0')
+            logging.info("Added 'aantal_sides' column to logs table.")
         
         # Create sessions table
         c.execute('''
@@ -306,6 +318,12 @@ def init_db():
         if 'session_type' not in sessions_columns:
             c.execute('ALTER TABLE sessions ADD COLUMN session_type TEXT DEFAULT "XLSX_UPDATED"')
             logging.info("Added 'session_type' column to sessions table.")
+        if 'nesting_count' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN nesting_count INTEGER DEFAULT 0')
+            logging.info("Added 'nesting_count' column to sessions table.")
+        if 'opdeelzaag_count' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN opdeelzaag_count INTEGER DEFAULT 0')
+            logging.info("Added 'opdeelzaag_count' column to sessions table.")
         
         # Create project_sessions table
         c.execute('''
@@ -360,7 +378,7 @@ def get_config():
     """Get configuration from config system"""
     # Default configuration - no hardcoded users
     default_config = {
-        'dashboard_display_users': [],  # Empty by default, will be populated from scanner users
+        # Using unified scanner_panel_open_event_users for both workflow and display
         'scanner_panel_open_event_users': []  # Also empty by default
     }
     
@@ -371,16 +389,14 @@ def get_config():
             with open(config_path, 'r') as f:
                 loaded_config = json.load(f)
                 
-                # Ensure dashboard_display_users exists
-                if 'dashboard_display_users' not in loaded_config:
-                    # If not set, use scanner panel users as default
-                    scanner_users = loaded_config.get('scanner_panel_open_event_users', [])
-                    loaded_config['dashboard_display_users'] = scanner_users
+                # Ensure scanner_panel_open_event_users exists
+                if 'scanner_panel_open_event_users' not in loaded_config:
+                    loaded_config['scanner_panel_open_event_users'] = []
                     
                     # Save the update
                     with open(config_path, 'w') as f:
                         json.dump(loaded_config, f, indent=2)
-                    logging.info(f"Added dashboard_display_users to config: {scanner_users}")
+                    logging.info("Added scanner_panel_open_event_users to config")
                 
                 return loaded_config
                     
@@ -796,6 +812,34 @@ def start_session():
         logging.error(f"Error starting session: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/project_session/start', methods=['POST'])
+def start_project_session():
+    """Start a new global project session for production time tracking"""
+    data = request.get_json(force=True)
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    try:
+        # Create a project session that will track all projects scanned during this session
+        # We'll create individual project entries when projects are actually scanned
+        session_id = data['session_id']
+        start_time = data['timestamp']
+        
+        # Log the project session start event
+        c.execute("""
+            INSERT INTO logs (timestamp, event, user, session_id, details)
+            VALUES (?, ?, ?, ?, ?)
+        """, (start_time, 'PROJECT_SESSION_START', data['user'], session_id, data.get('details', 'Global project session started')))
+        
+        conn.commit()
+        logging.info(f"Project session started: {session_id}")
+        return jsonify({'success': True, 'session_id': session_id})
+        
+    except Exception as e:
+        logging.error(f"Error starting project session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/session/end', methods=['POST'])
 def end_session():
     """End an active session"""
@@ -865,11 +909,22 @@ def xlsx_updated():
                 VALUES (?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED')
             """, (session_id, data['user'], data['project'], data['timestamp']))
             
-            # Also update project_sessions
+            # Create project session for this specific project using session start time
+            # Find the session start time for the current user's active session
+            c.execute("""
+                SELECT start_time FROM sessions 
+                WHERE user = ? AND status = 'active' AND session_type = 'SCANNER'
+                ORDER BY start_time DESC LIMIT 1
+            """, (data['user'],))
+            
+            session_result = c.fetchone()
+            project_start_time = session_result['start_time'] if session_result else data['timestamp']
+            
+            # Create project session entry with session start time
             c.execute("""
                 INSERT OR IGNORE INTO project_sessions (project, start_time, status)
                 VALUES (?, ?, 'active')
-            """, (data['project'], data['timestamp']))
+            """, (data['project'], project_start_time))
             
             # Update project status from OPEN to BEZIG in project_log table (most recent entry)
             c.execute("""
@@ -1165,9 +1220,17 @@ def log_event():
                     WHERE project = ?
                 """, (project, project, project, project, project))
 
+        # Extract nesting and opdeelzaag counts from item_count for NESTING users
+        nesting_count = 0
+        opdeelzaag_count = 0
+        if user == 'NESTING' and item_count:
+            # For NESTING users, item_count contains total, nesting_count and opdeelzaag_count will be filled by PDF parsing
+            nesting_count = data.get('nesting_count', 0)
+            opdeelzaag_count = data.get('opdeelzaag_count', 0)
+        
         c.execute(
-            'INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, session_id)
+            'INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, nesting_count, opdeelzaag_count, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, nesting_count, opdeelzaag_count, session_id)
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Log entry created.'}), 201
@@ -1300,6 +1363,97 @@ def update_item_count():
     except sqlite3.Error as e:
         logging.error(f"Database error on /update_item_count: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
+
+@app.route('/update_nesting_counts', methods=['POST'])
+def update_nesting_counts():
+    """Update the nesting_count and opdeelzaag_count for an existing OPEN event."""
+    data = request.get_json(force=True)
+    logging.info(f"[db_log_api] /update_nesting_counts called with data: {data}")
+
+    project = data.get('project')
+    user = data.get('user')
+    nesting_count = data.get('nesting_count', 0)
+    opdeelzaag_count = data.get('opdeelzaag_count', 0)
+    
+    if not all([project, user]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Update the most recent OPEN event for this user/project combination
+        c.execute('''
+            UPDATE logs 
+            SET nesting_count = ?, opdeelzaag_count = ?
+            WHERE id = (
+                SELECT id FROM logs 
+                WHERE event = 'OPEN' 
+                AND project = ? 
+                AND user = ?
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            )
+        ''', (nesting_count, opdeelzaag_count, project, user))
+        
+        conn.commit()
+        
+        if c.rowcount > 0:
+            logging.info(f"Updated nesting counts for {user} - {project}: Nesting={nesting_count}, Opdeelzaag={opdeelzaag_count}")
+            return jsonify({'success': True, 'updated_rows': c.rowcount})
+        else:
+            logging.warning(f"No OPEN event found to update nesting counts for {user} - {project}")
+            return jsonify({'success': False, 'error': 'No OPEN event found to update'}), 404
+            
+    except Exception as e:
+        logging.error(f"Database error on /update_nesting_counts: {e}", exc_info=True)
+        return jsonify({'error': 'Database operation failed'}), 500
+
+@app.route('/update_accura_counts', methods=['POST'])
+def update_accura_counts():
+    """Update the aantal_items and aantal_sides for an existing OPEN event."""
+    data = request.get_json(force=True)
+    logging.info(f"[db_log_api] /update_accura_counts called with data: {data}")
+
+    project = data.get('project')
+    user = data.get('user')
+    aantal_items = data.get('aantal_items', 0)
+    aantal_sides = data.get('aantal_sides', 0)
+    
+    if not all([project, user]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Update the most recent OPEN event for this user/project combination
+        c.execute('''
+            UPDATE logs 
+            SET aantal_items = ?, aantal_sides = ?
+            WHERE id = (
+                SELECT id FROM logs 
+                WHERE event = 'OPEN' 
+                AND project = ? 
+                AND user = ?
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            )
+        ''', (aantal_items, aantal_sides, project, user))
+        
+        conn.commit()
+        
+        if c.rowcount > 0:
+            logging.info(f"Updated accura counts for {user} - {project}: Items={aantal_items}, Sides={aantal_sides}")
+            return jsonify({'success': True, 'updated_rows': c.rowcount})
+        else:
+            logging.warning(f"No OPEN event found to update accura counts for {user} - {project}")
+            return jsonify({'success': False, 'error': 'No OPEN event found to update'}), 404
+            
+    except Exception as e:
+        logging.error(f"Database error on /update_accura_counts: {e}", exc_info=True)
+        return jsonify({'error': 'Database operation failed'}), 500
+
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
@@ -1435,12 +1589,8 @@ def dashboard():
         # Get configuration
         config = get_config()
         
-        # Get dashboard display users (these are the users that should always show)
-        dashboard_users = config.get('dashboard_display_users', [])
-        
-        # If dashboard_users is empty, fall back to scanner users
-        if not dashboard_users:
-            dashboard_users = config.get('scanner_panel_open_event_users', [])
+        # Get configured users for display
+        dashboard_users = config.get('scanner_panel_open_event_users', [])
         
         # If still empty, get unique users from recent logs
         if not dashboard_users:
@@ -1646,6 +1796,16 @@ def get_configured_users():
     return jsonify({
         'success': True,
         'users': users
+    })
+
+@app.route('/api/config')
+def get_config_api():
+    """Get relevant configuration for frontend use"""
+    config = get_config()
+    # Return only the necessary config fields for security
+    return jsonify({
+        'scanner_user_to_processing_type_map': config.get('scanner_user_to_processing_type_map', {}),
+        'scanner_panel_open_event_users': config.get('scanner_panel_open_event_users', [])
     })
 
 @app.route('/api/user/<username>/stats')
@@ -1878,8 +2038,7 @@ def manage_dashboard_users():
         config = get_config()
         return jsonify({
             'success': True,
-            'dashboard_users': config.get('dashboard_display_users', []),
-            'scanner_users': config.get('scanner_panel_open_event_users', [])
+            'users': config.get('scanner_panel_open_event_users', [])
         })
     
     elif request.method == 'POST':
@@ -1892,7 +2051,7 @@ def manage_dashboard_users():
                 return jsonify({'success': False, 'error': 'Users must be a list'}), 400
             
             # Save to config
-            save_config({'dashboard_display_users': users})
+            save_config({'scanner_panel_open_event_users': users})
             
             logging.info(f"Updated dashboard display users: {users}")
             return jsonify({
@@ -1913,7 +2072,8 @@ def sync_dashboard_users():
         config = get_config()
         scanner_users = config.get('scanner_panel_open_event_users', [])
         
-        save_config({'dashboard_display_users': scanner_users})
+        # This endpoint is no longer needed since we use one unified array
+        return jsonify({'success': True, 'message': 'Using unified scanner_panel_open_event_users array'})
         
         logging.info(f"Synced dashboard users with scanner users: {scanner_users}")
         return jsonify({
@@ -3036,8 +3196,35 @@ def logs_project():
         ''', (project.lower(), project.lower()))
         sessions_data = [dict(row) for row in c.fetchall()]
         
+        # Get SO number for this project
+        so_number = None
+        try:
+            # Try to get SO number from PDF database if available
+            import sys
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from pdf_database_manager import PDFDatabaseManager
+            pdf_manager = PDFDatabaseManager()
+            so_number = pdf_manager.get_so_number_for_project(project)
+        except Exception as e:
+            logging.info(f"Could not get SO number: {e}")
+        
+        # If not in PDF database, try to extract from any related file paths
+        if not so_number:
+            c.execute('''
+                SELECT DISTINCT file_path FROM logs 
+                WHERE lower(project) = ? AND file_path IS NOT NULL AND file_path != ''
+                LIMIT 1
+            ''', (project.lower(),))
+            row = c.fetchone()
+            if row and row['file_path']:
+                import re
+                match = re.search(r'(S\d+)', row['file_path'])
+                if match:
+                    so_number = match.group(1)
+        
         return render_template('logs_project.html', 
                                project=project, 
+                               so_number=so_number,
                                log_entries=log_entries, 
                                configured_users=configured_users,
                                user_status_html=user_status_html,
@@ -5213,7 +5400,7 @@ def save_user_config():
         users = data['users']
         
         # Validate users data
-        valid_processing_types = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING']
+        valid_processing_types = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING', 'NESTING_PROCESSING', 'ACCURA_PROCESSING', 'BOERE_PROCESSING']
         for user in users:
             if not isinstance(user, dict):
                 return jsonify({'error': 'Each user must be an object'}), 400

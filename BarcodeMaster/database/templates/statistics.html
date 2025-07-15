@@ -484,6 +484,8 @@
                 <th>Totale items</th>
                 <th>Handmatig</th>
                 <th>Automatisch</th>
+                <th>Nesting</th>
+                <th>Opdeelzaag</th>
                 <th>Sessie uren</th>
                 <th>Prestatie</th>
             </tr>
@@ -720,13 +722,43 @@ let currentPeriod = 30;
 let currentPeriodType = 'days';
 let customDateRange = null;
 let charts = {};
+let configuredUsers = [];
+
+// Helper function to sort user data by configured order
+function sortUsersByConfigOrder(userData, userField = 'user') {
+    return userData.sort((a, b) => {
+        const userA = a[userField];
+        const userB = b[userField];
+        const indexA = configuredUsers.indexOf(userA);
+        const indexB = configuredUsers.indexOf(userB);
+        
+        // If both are in config, use that order
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        // If only one is in config, it comes first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        // Otherwise alphabetical
+        return userA.localeCompare(userB);
+    });
+}
 
 // Chart.js default configuration
 Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 Chart.defaults.color = '#6c757d';
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load configured users first
+    try {
+        const response = await fetch('/api/configured_users');
+        const data = await response.json();
+        if (data.success) {
+            configuredUsers = data.users;
+        }
+    } catch (error) {
+        console.error('Failed to load configured users:', error);
+    }
+    
     initializePeriodButtons();
     initializeDateInputs();
     loadAllStatistics();
@@ -873,13 +905,15 @@ function updateProductivityCharts(data) {
         charts.userProductivity.destroy();
     }
     
+    const sortedUserProductivity = sortUsersByConfigOrder([...data.user_productivity]);
+    
     charts.userProductivity = new Chart(userCtx, {
         type: 'bar',
         data: {
-            labels: data.user_productivity.map(u => u.user),
+            labels: sortedUserProductivity.map(u => u.user),
             datasets: [{
                 label: 'Items/uur',
-                data: data.user_productivity.map(u => u.items_per_hour),
+                data: sortedUserProductivity.map(u => u.items_per_hour),
                 backgroundColor: 'rgba(52, 152, 219, 0.8)',
                 borderColor: 'rgba(52, 152, 219, 1)',
                 borderWidth: 1
@@ -950,7 +984,8 @@ function updateProductivityTable(userData) {
     const tbody = document.getElementById('productivity-table');
     tbody.innerHTML = '';
     
-    userData.forEach(user => {
+    const sortedUserData = sortUsersByConfigOrder([...userData]);
+    sortedUserData.forEach(user => {
         const efficiency = user.items_per_hour;
         let badgeClass = 'efficiency-low';
         if (efficiency >= 5) badgeClass = 'efficiency-high';
@@ -963,6 +998,8 @@ function updateProductivityTable(userData) {
             <td>${user.total_items}</td>
             <td>${user.manual_items || 0}</td>
             <td>${user.auto_items || 0}</td>
+            <td><span class="text-primary"><i class="fas fa-layer-group"></i> ${user.nesting_count || 0}</span></td>
+            <td><span class="text-warning"><i class="fas fa-cut"></i> ${user.opdeelzaag_count || 0}</span></td>
             <td>${user.session_hours}</td>
             <td><span class="efficiency-badge ${badgeClass}">${efficiency >= 5 ? 'Hoog' : efficiency >= 2 ? 'Gemiddeld' : 'Laag'}</span></td>
         `;
@@ -989,7 +1026,8 @@ function updateEfficiencyMetrics(data) {
     const container = document.getElementById('efficiency-metrics');
     container.innerHTML = '';
     
-    data.user_efficiency.forEach(user => {
+    const sortedUserEfficiency = sortUsersByConfigOrder([...data.user_efficiency]);
+    sortedUserEfficiency.forEach(user => {
         const metricCard = document.createElement('div');
         metricCard.className = 'metric-card';
         metricCard.innerHTML = `
@@ -1014,11 +1052,11 @@ function updateEfficiencyCharts(data) {
     charts.contribution = new Chart(contributionCtx, {
         type: 'doughnut',
         data: {
-            labels: data.user_efficiency.map(u => u.user),
+            labels: sortedUserEfficiency.map(u => u.user),
             datasets: [
                 {
                     label: 'Items (%)',
-                    data: data.user_efficiency.map(u => u.item_contribution_percent),
+                    data: sortedUserEfficiency.map(u => u.item_contribution_percent),
                     backgroundColor: colors.map(c => c + '80'),
                     borderColor: colors,
                     borderWidth: 2
@@ -1265,13 +1303,15 @@ function updateBottleneckCharts(data) {
         charts.variance.destroy();
     }
     
+    const sortedVarianceAnalysis = sortUsersByConfigOrder([...data.variance_analysis]);
+    
     charts.variance = new Chart(varianceCtx, {
         type: 'bar',
         data: {
-            labels: data.variance_analysis.map(v => v.user),
+            labels: sortedVarianceAnalysis.map(v => v.user),
             datasets: [{
                 label: 'Afwijking %',
-                data: data.variance_analysis.map(v => v.variance_percent),
+                data: sortedVarianceAnalysis.map(v => v.variance_percent),
                 backgroundColor: data.variance_analysis.map(v => 
                     v.variance_percent >= 0 ? 'rgba(39, 174, 96, 0.8)' : 'rgba(231, 76, 60, 0.8)'
                 ),
@@ -1340,7 +1380,8 @@ function displayPredictionResults(data) {
     const global = data.global_prediction;
     
     let userPredictionsHtml = '';
-    data.user_predictions.forEach(user => {
+    const sortedUserPredictions = sortUsersByConfigOrder([...data.user_predictions]);
+    sortedUserPredictions.forEach(user => {
         userPredictionsHtml += `
             <div class="col-md-4 mb-2">
                 <div class="metric-card">
@@ -1505,7 +1546,8 @@ function updateQualityTable(userMetrics) {
     const tbody = document.getElementById('quality-table');
     tbody.innerHTML = '';
     
-    userMetrics.forEach(user => {
+    const sortedUserMetrics = sortUsersByConfigOrder([...userMetrics]);
+    sortedUserMetrics.forEach(user => {
         let qualityClass = 'efficiency-low';
         if (user.quality_rate >= 95) qualityClass = 'efficiency-high';
         else if (user.quality_rate >= 85) qualityClass = 'efficiency-medium';

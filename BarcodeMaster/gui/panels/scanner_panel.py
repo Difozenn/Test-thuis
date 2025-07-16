@@ -294,7 +294,7 @@ class ScannerPanel(tk.Frame):
             import time
             if time.time() - self._last_cache_refresh > 30:  # 30 seconds
                 self.refresh_work_hours_cache()
-                return
+                # Don't return here - continue to schedule next update
         
         if self._work_hours_cache:
             # Use cached work hours for regular updates
@@ -494,11 +494,8 @@ class ScannerPanel(tk.Frame):
             self.log_message(f"🔄 Afsluiten van {len(self.open_projects)} open projecten...", "info")
             
             for project in list(self.open_projects):  # Copy to avoid modification during iteration
-                # Ask for item count for each project
+                # Item counts now come from Excel files automatically, no manual input needed
                 item_count = 0
-                item_dialog_result = self.get_item_count_dialog(f"Project {project}")
-                if item_dialog_result and item_dialog_result['confirmed']:
-                    item_count = item_dialog_result['count']
                 
                 # Send AFGEMELD for this project
                 data_afgemeld = {
@@ -1040,73 +1037,7 @@ class ScannerPanel(tk.Frame):
 
                 browse_btn.config(state=tk.NORMAL if is_corresponding_logic_active else tk.DISABLED)
 
-    def get_item_count_dialog(self, project_name):
-        """Show dialog to get item count for a project"""
-        # Allow dialog even without active session for AFGEMELD events
-        # if not self.current_session_id:
-        #     # No active session, return None to skip dialog
-        #     return None
-            
-        # Create dialog window
-        dialog = tk.Toplevel(self)
-        dialog.title("Aantal Items")
-        dialog.geometry("400x200")
-        dialog.transient(self)
-        dialog.grab_set()
-        
-        # Center the dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"+{x}+{y}")
-        
-        # Create content
-        tk.Label(dialog, text="Project afmelden", font=('Arial', 12, 'bold')).pack(pady=10)
-        tk.Label(dialog, text=f"Project: {project_name}", font=('Arial', 10)).pack(pady=5)
-        tk.Label(dialog, text="Aantal verwerkte items:", font=('Arial', 10)).pack(pady=(20, 5))
-        
-        item_count_var = tk.StringVar(value="0")
-        entry = tk.Entry(dialog, textvariable=item_count_var, font=('Arial', 14), width=10, justify='center')
-        entry.pack(pady=5)
-        entry.focus()
-        entry.select_range(0, tk.END)
-        
-        result = {'confirmed': False, 'count': 0}
-        
-        def on_confirm():
-            try:
-                count = int(item_count_var.get())
-                if count < 0:
-                    tk.messagebox.showerror("Fout", "Aantal moet 0 of hoger zijn", parent=dialog)
-                    return
-                result['confirmed'] = True
-                result['count'] = count
-                dialog.destroy()
-            except ValueError:
-                tk.messagebox.showerror("Fout", "Voer een geldig getal in", parent=dialog)
-        
-        def on_cancel():
-            dialog.destroy()
-        
-        # Buttons
-        button_frame = tk.Frame(dialog)
-        button_frame.pack(pady=20)
-        
-        tk.Button(button_frame, text="Bevestigen", command=on_confirm, 
-                 bg='#4CAF50', fg='white', font=('Arial', 10, 'bold'), 
-                 width=12, pady=5).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Annuleren", command=on_cancel,
-                 bg='#f44336', fg='white', font=('Arial', 10),
-                 width=12, pady=5).pack(side=tk.LEFT, padx=5)
-        
-        # Bind keys
-        entry.bind('<Return>', lambda e: on_confirm())
-        dialog.bind('<Escape>', lambda e: on_cancel())
-        
-        # Wait for dialog
-        dialog.wait_window()
-        
-        return result if result['confirmed'] else None
+    # get_item_count_dialog function removed - item counts now come from Excel files automatically
 
     def log_scan_event(self, code):
         import requests

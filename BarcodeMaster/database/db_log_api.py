@@ -857,7 +857,12 @@ def end_session():
         
         session = c.fetchone()
         if session:
-            work_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
+            # Calculate total work minutes
+            total_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
+            
+            # Subtract pause duration if provided (convert seconds to minutes)
+            pause_duration_minutes = data.get('total_pause_duration', 0) / 60.0
+            actual_work_minutes = max(0, total_minutes - pause_duration_minutes)
             
             c.execute("""
                 UPDATE sessions 
@@ -865,7 +870,7 @@ def end_session():
                     end_time = ?,
                     work_duration_minutes = ?
                 WHERE session_id = ? AND status = 'active'
-            """, (data['timestamp'], work_minutes, data['session_id']))
+            """, (data['timestamp'], actual_work_minutes, data['session_id']))
             
             conn.commit()
             logging.info(f"Session ended: {data['session_id']}")
@@ -1068,6 +1073,83 @@ def finish_manual_session():
         
     except Exception as e:
         logging.error(f"Error finishing manual session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/pause', methods=['POST'])
+def pause_session():
+    """Pause an active session"""
+    try:
+        data = request.get_json()
+        required_fields = ['session_id', 'timestamp']
+        
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Check if session exists and is active
+        c.execute("""
+            SELECT session_id, user, project FROM sessions 
+            WHERE session_id = ? AND status = 'active'
+        """, (data['session_id'],))
+        
+        session = c.fetchone()
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
+        
+        # Log the pause event
+        c.execute("""
+            INSERT INTO logs (timestamp, event, user, session_id, project, details)
+            VALUES (?, 'SESSION_PAUSE', ?, ?, ?, ?)
+        """, (data['timestamp'], session['user'], data['session_id'], session['project'], 
+              'Session paused - switched to different panel'))
+        
+        conn.commit()
+        logging.info(f"Session paused: {data['session_id']}")
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logging.error(f"Error pausing session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/resume', methods=['POST'])
+def resume_session():
+    """Resume a paused session"""
+    try:
+        data = request.get_json()
+        required_fields = ['session_id', 'timestamp']
+        
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Check if session exists and is active
+        c.execute("""
+            SELECT session_id, user, project FROM sessions 
+            WHERE session_id = ? AND status = 'active'
+        """, (data['session_id'],))
+        
+        session = c.fetchone()
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
+        
+        # Log the resume event
+        pause_duration = data.get('total_pause_duration', 0)
+        c.execute("""
+            INSERT INTO logs (timestamp, event, user, session_id, project, details)
+            VALUES (?, 'SESSION_RESUME', ?, ?, ?, ?)
+        """, (data['timestamp'], session['user'], data['session_id'], session['project'], 
+              f'Session resumed - total pause time: {pause_duration:.1f} seconds'))
+        
+        conn.commit()
+        logging.info(f"Session resumed: {data['session_id']} (total pause: {pause_duration:.1f}s)")
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logging.error(f"Error resuming session: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/log', methods=['POST', 'GET'])

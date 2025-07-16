@@ -27,6 +27,9 @@ def load_heavy_imports():
         "psutil": "psutil",
         "pandas": "pandas",
         "openpyxl": "openpyxl",
+        "xlrd": "xlrd",
+        "xlwt": "xlwt",
+        "xlsxwriter": "xlsxwriter",
         "pyodbc": "pyodbc"
     }
     

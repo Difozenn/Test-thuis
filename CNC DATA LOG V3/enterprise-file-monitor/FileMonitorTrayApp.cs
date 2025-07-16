@@ -1745,18 +1745,33 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
             }
 
             // Send the event
-            var payload = new
-            {
-                path_id = changeInfo.PathInfo.id,
-                change_type = changeInfo.ChangeType,
-                file_path = changeInfo.FullPath,
-                timestamp_utc = DateTime.UtcNow.ToString("o"),
-                new_size = fileSize,
-                computer_name = Environment.MachineName,
-                category_id = matchedCategory?.id,
-                matched_keyword = matchedKeyword,
-                cnc_analysis = cncAnalysis
-            };
+object cncAnalysisPayload = null;
+if (cncAnalysis != null && cncAnalysis.AnalysisSuccessful)
+{
+    // IMPORTANT: Send only the fields the server expects
+    cncAnalysisPayload = new
+    {
+        Filename = cncAnalysis.Filename,
+        TotalTime = cncAnalysis.TotalTime,      // Total cycle time in minutes
+        MachineTime = cncAnalysis.MachineTime,  // Machine operation time in minutes
+        ToolChanges = cncAnalysis.ToolChanges   // Number of tool changes
+    };
+    
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC payload prepared: TotalTime={cncAnalysis.TotalTime}min, MachineTime={cncAnalysis.MachineTime}min, Tools={cncAnalysis.ToolChanges}");
+}
+
+var payload = new
+{
+    path_id = changeInfo.PathInfo.id,
+    change_type = changeInfo.ChangeType,
+    file_path = changeInfo.FullPath,
+    timestamp_utc = DateTime.UtcNow.ToString("o"),
+    new_size = fileSize,
+    computer_name = Environment.MachineName,
+    category_id = matchedCategory?.id,
+    matched_keyword = matchedKeyword,
+    cnc_analysis = cncAnalysisPayload
+};
 
             try
             {

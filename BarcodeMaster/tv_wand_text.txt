@@ -1,0 +1,1269 @@
+MO07202-7203
+S04479
+S8
+Project: 0411_MO07202-7203_TV-wand (7-7)
+Klant: Rudi Matterne
+JW
+info: Tekenaar:
+Schuren Lakstraat
+Afwerking:
+Enkel als aangevinkt. Handwerk voor het schuren.
+Totaal aantal onderdelen:
+Kasten monteren! onderdelen sorteren per object
+Vlakstraat: gekleurde sjang gebruiken.
+kopie: terugbezorgen na schuren!
+Datum:
+Opmerkingen:
+Cel Holzer:
+Naam: .../...
+Accura:
+Accura:
+BB_01 en BB_02 na handwerk pas afsjangen
+Naam: .../...
+Opus:
+Reichenbacher:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Naam: .../...
+Handwerk:
+Kl Gannomat:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+Naam: .../... - 2x L-greep monteren (zie tek)
+Cel Massief: - Uitsparing in zijden afsjangen (1 kantje) info JW
+Naam: .../...
+Glasdeur met smal zwart profiel en helder glas,
+Cel schuren:
+zonder onderverdeling
+Naam: .../...
+Page 1 of 36
+Klant: Rudi Matterne
+MO07202-7203
+S8 Tekenaar: JW
+Sales nr: S04479
+Nesting
+Schuren Project: 0411_MO07202-7203_TV-wand (7-7)
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 ProductieM. Opmerkingen
+1 BC HSP 19mm BxB 493 375 19 Fineer eikFineer eik Standaard
+1mm 1mm
+2 BC HSP 19mm BxB 965 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+3 BC HSP 19mm BxB 340 374 19 Fineer eikFineer eik Standaard
+1mm 1mm
+4 BC HSP 19mm BxB 1428 374 19 Fineer eikFineer eik Standaard
+1mm 1mm
+5 BC HSP 19mm BxB 966.5 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+6 BC HSP 19mm BxB 963.5 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+7 BC HSP 19mm BxB 987 446 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+8 LL01 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+9 LL01 HSP 19mm BxB 491 331 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+10 LL02 HSP 19mm BxB 491 331 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+11 LL02 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+12 LL03 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+13 LL03 HSP 19mm BxB 491 331 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+14 LL04 HSP 19mm BxB 466.667 237 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+15 LL05 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+16 LL06 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+17 LL07 HSP 19mm BxB 458.667 330 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+18 LZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+19 LZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 2 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 ProductieM. Opmerkingen
+20 LZ HSP 19mm BxB 1745 375 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoek recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+21 LZ HSP 19mm BxB 1978 374 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+22 LZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+23 LZ HSP 19mm BxB 2573 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+24 OC HSP 19mm BxB 1428 354 19 Fineer eikFineer eik Standaard
+1mm 1mm
+25 OC HSP 19mm BxB 493 355 19 Fineer eikFineer eik Standaard
+1mm 1mm
+26 OC HSP 19mm BxB 340 374 19 Fineer eikFineer eik Standaard
+1mm 1mm
+27 OC HSP 19mm BxB 965 355 19 Fineer eikFineer eik Standaard
+1mm 1mm
+28 OC HSP 19mm BxB 963.5 355 19 Fineer eikFineer eik Standaard
+1mm 1mm
+29 OC HSP 19mm BxB 966.5 355 19 Fineer eikFineer eik Standaard
+1mm 1mm
+30 RZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+31 RZ HSP 19mm BxB 1745 375 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoek recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+32 RZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+33 RZ HSP 19mm BxB 564 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+34 RZ HSP 19mm BxB 2573 376 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+35 RZ HSP 19mm BxB 1978 374 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+36 TZ_01 HSP 19mm BxB 1694 339 19 Fineer eik Standaard Hoek recht frezen, met de hand afsjangen
+1mm
+37 TZ_02 HSP 19mm BxB 1694 339 19 Fineer eik Standaard Hoek recht frezen, met de hand afsjangen
+1mm
+38 VL HSP 19mm BxB 963.5 375 19 Fineer eikFineer eik Standaard
+1mm 1mm
+39 VL HSP 19mm BxB 965 310 19 Fineer eikFineer eik Standaard
+1mm 1mm
+40 VL HSP 19mm BxB 966.5 340 19 Fineer eik Standaard
+1mm
+41 VL01 HSP 19mm BxB 460.667 339 19 Fineer eikFineer eik Standaard
+1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 3 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 ProductieM. Opmerkingen
+42 VL01 HSP 19mm BxB 493 331 19 Fineer eik Standaard
+1mm
+43 VL01 HSP 19mm BxB 340 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+44 VL02 HSP 19mm BxB 493 375 19 Fineer eikFineer eik Standaard
+1mm 1mm
+45 VL02 HSP 19mm BxB 468.667 339 19 Fineer eikFineer eik Standaard
+1mm 1mm
+46 VL02 HSP 19mm BxB 340 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+47 VL03 HSP 19mm BxB 460.667 339 19 Fineer eikFineer eik Standaard
+1mm 1mm
+48 VL03 HSP 19mm BxB 340 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+49 VL04 HSP 19mm BxB 340 337 19 Fineer eikFineer eik Standaard
+1mm 1mm
+50 VL04 HSP 19mm BxB 468.667 330 19 Fineer eikFineer eik Standaard
+1mm 1mm
+51 VL05 HSP 19mm BxB 468.667 330 19 Fineer eikFineer eik Standaard
+1mm 1mm
+52 AFWZ_L MDF 19mm AFQMxB 1750 395 19 Fineer eikFineer eikFineer eikFineer eik Standaard B=20mm overmaat
+1mm 1mm 1mm 1mm
+53 AFWZ_L MDF 19mm AFQMxB 2638 396 19 Fineer eikFineer eikFineer eikFineer eik Standaard L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+54 AFWZ_R MDF 19mm AFQMxB 569 396 19 Fineer eikFineer eikFineer eikFineer eik Standaard L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+55 AFWZ_R MDF 19mm AFQMxB 2038 396 19 Fineer eikFineer eikFineer eikFineer eik Standaard L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+56 AFWZ_R MDF 19mm AFQMxB 1750 395 19 Fineer eikFineer eikFineer eikFineer eik Standaard B=20mm overmaat
+1mm 1mm 1mm 1mm
+57 BB MDF 19mm AFQMxB 1000 469 19 Fineer eikFineer eikFineer eikFineer eik Standaard Borstellen
+1mm 1mm 1mm 1mm
+58 DR_L01 MDF 19mm AFQMxB 1100 484.667 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+59 DR_L01 MDF 19mm AFQMxB 2545 525 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+60 DR_L02 MDF 19mm AFQMxB 599 484.667 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+61 DR_R03 MDF 19mm AFQMxB 599 484.667 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+62 DR_R04 MDF 19mm AFQMxB 1100 484.667 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+63 DR_R05 MDF 19mm AFQMxB 599 484.667 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 4 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 ProductieM. Opmerkingen
+64 LF_01 MDF 19mm AFQMxB 981 250 19 Fineer eikFineer eikFineer eikFineer eik Standaard Borstellen
+1mm 1mm 1mm 1mm
+65 LF_01 MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+66 LF_02 MDF 19mm AFQMxB 981 250 19 Fineer eikFineer eikFineer eikFineer eik Standaard Borstellen
+1mm 1mm 1mm 1mm
+67 LF_02 MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+68 LF_03 MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+69 LF_04 MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+70 LF_05 MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+71 Valklep MDF 19mm AFQMxB 1000 243.5 19 Fineer eikFineer eikFineer eikFineer eik Standaard
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 71
+0411_MO07202-7203_TV-wand (7-7) Page 5 of 36
+Klant: Rudi Matterne
+MO07202-7203
+S8 Tekenaar: JW
+Sales nr: S04479
+Opdeelzaag
+Schuren Project: 0411_MO07202-7203_TV-wand (7-7)
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 Opmerkingen
+1 LZ FineerPlaat AFQMxB 19mm Int 503 469 19 Fineer eik Fineer eikFineer eik Borstellen
+bloom 1mm 1mm 1mm
+FineerPlaat AFQMxB 19mm Int
+2 OC 1000 469 19
+bloom
+3 RZ FineerPlaat AFQMxB 19mm Int 503 469 19 Fineer eikFineer eikFineer eik Borstellen
+bloom 1mm 1mm 1mm
+4 Bodem MDF 13mm BxB 935.5 295 13
+5 Bodem MDF 13mm BxB 934 295 13
+6 Bodem MDF 13mm BxB 935.5 295 13
+7 Bodem MDF 13mm BxB 932.5 295 13
+8 Bodem MDF 13mm BxB 930 395 13
+9 Bodem MDF 13mm BxB 930 395 13
+10 Bodem MDF 13mm BxB 932.5 295 13
+11 Valse rug MDF 13mm BxB 622 467.667 13
+12 L_greep MDF 19mm AFQMxB 1001.5 97 19 Fineer eikFineer eik Afwerken_GR-Gannomat
+1mm 1mm
+13 L_greep MDF 19mm AFQMxB 1004.5 97 19 Fineer eikFineer eik Afwerken_GR-Gannomat
+1mm 1mm
+14 L_greep MDF 19mm AFQMxB 1003 97 19 Fineer eikFineer eik Afwerken_GR-Gannomat
+1mm 1mm
+15 L_greep MDF 19mm AFQMxB 1004.5 100 19 Fineer eik 1x 60mm breed, 1x 34mm breed
+1mm
+16 L_greep MDF 19mm AFQMxB 1001.5 100 19 Fineer eik 1x 60mm breed, 1x 34mm breed
+1mm
+17 L_greep MDF 19mm AFQMxB 1003 100 19 Fineer eik 1x 60mm breed, 1x 34mm breed
+1mm
+18 L-greep MDF 19mm AFQMxB 1466 120 19 Fineer eik 1x 70mm breed, 1x 34mm breed
+1mm
+19 Paslat_Dik MDF 23mm AFQMxB 2770 100 23 Fineer eikFineer eikFineer eikFineer eik
+1mm 1mm 1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 6 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte L1 L2 B1 B2 Opmerkingen
+20 BB_01 MDF 31mm AFQMxB 387.5 416 31 Fineer eikFineer eik Fineer eik Achteraf afsjangen, B=20mm overmaat
+1mm 1mm 1mm
+21 BB_02 MDF 31mm AFQMxB 2641.5 416 31 Fineer eikFineer eikFineer eik Achteraf afsjangen, B=20mm overmaat
+1mm 1mm 1mm
+22 Plank MDF 31mm BxB 453 313 31 Fineer eikFineer eikFineer eikFineer eik
+1mm 1mm 1mm 1mm
+23 RG MDF 5mm BxB 1952 505 5
+24 RG MDF 5mm BxB 975 491 5
+25 RG MDF 5mm BxB 1950 350 5
+26 RG MDF 5mm BxB 977 525 5
+27 RG MDF 5mm BxB 975.5 248.5 5
+28 RG MDF 5mm BxB 978.5 525 5
+29 RG01 MDF 5mm BxB 1706 476.167 5
+30 RG02 MDF 5mm BxB 1706 487.667 5
+31 RG03 MDF 5mm BxB 1706 476.167 5
+Aantal onderdelen: 31
+0411_MO07202-7203_TV-wand (7-7) Page 7 of 36
+Klant: Rudi Matterne
+MO07202-7203
+S8 Tekenaar: JW
+Sales nr: S04479
+Massief
+Schuren Project: 0411_MO07202-7203_TV-wand (7-7)
+Accura:
+BB_01 en BB_02 na handwerk pas afsjangen
+Opus:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Handwerk:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+- 2x L-greep monteren (zie tek)
+- Uitsparing in zijden afsjangen (1 kantje) info JW
+Glasdeur met smal zwart profiel en helder glas,
+zonder onderverdeling
+N° Onderdeel Materiaal Lengte Breedte Dikte Opmerkingen
+1 AS Massief_PM___x14ZS 921 206 14 uitkiepen 60x12
+2 AS Massief_PM___x14ZS 921 206 14 uitkiepen 60x12
+3 AS Massief_PM___x14ZS 923.5 160 14 uitkiepen 60x12
+4 AS Massief_PM___x14ZS 923.5 160 14 uitkiepen 60x12
+5 AS Massief_PM___x14ZS 925 160 14 uitkiepen 60x12
+6 AS Massief_PM___x14ZS 926.5 160 14 uitkiepen 60x12
+7 AS Massief_PM___x14ZS 926.5 160 14 uitkiepen 60x12
+0411_MO07202-7203_TV-wand (7-7) Page 8 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte Opmerkingen
+8 ZS_L Massief_PM___x14ZS 300 160 14
+9 ZS_L Massief_PM___x14ZS 300 160 14
+10 ZS_L Massief_PM___x14ZS 300 160 14
+11 ZS_L Massief_PM___x14ZS 300 160 14
+12 ZS_L Massief_PM___x14ZS 300 160 14
+13 ZS_L Massief_PM___x14ZS 400 206 14
+14 ZS_L Massief_PM___x14ZS 400 206 14
+15 ZS_R Massief_PM___x14ZS 300 160 14
+16 ZS_R Massief_PM___x14ZS 300 160 14
+17 ZS_R Massief_PM___x14ZS 300 160 14
+18 ZS_R Massief_PM___x14ZS 300 160 14
+19 ZS_R Massief_PM___x14ZS 300 160 14
+20 ZS_R Massief_PM___x14ZS 400 206 14
+21 ZS_R Massief_PM___x14ZS 400 206 14
+22 Plint Dressing A Massief_PM018x18PD 1428 18 18
+23 Plint Dressing A Massief_PM018x18PD 493 18 18
+24 Plint Dressing A Massief_PM018x18PD 963.5 18 18
+25 Plint Dressing A Massief_PM018x18PD 965 18 18
+26 Plint Dressing A Massief_PM018x18PD 966.5 18 18
+27 Plint Dressing V Massief_PM018x18PD 1428 18 18
+28 Plint Dressing V Massief_PM018x18PD 493 18 18
+29 Plint Dressing V Massief_PM018x18PD 963.5 18 18
+0411_MO07202-7203_TV-wand (7-7) Page 9 of 36
+N° Onderdeel Materiaal Lengte Breedte Dikte Opmerkingen
+30 Plint Dressing V Massief_PM018x18PD 965 18 18
+31 Plint Dressing V Massief_PM018x18PD 966.5 18 18
+32 AANV_L Massief_PM030x30ML 315 30 30
+33 Achterpoot Massief_PM032x21OP 249 32 21 ZWART
+34 Plint L Massief_PM032x21OP 413 32 21 ZWART
+35 Plint R Massief_PM032x21OP 413 32 21 ZWART
+36 Plint V Massief_PM032x21OP 943 32 21 ZWART
+37 OC_greep MDF 19mm AFQMxB 1001.5 34 19 Profel_L_Greeplijst
+38 OC_greep MDF 19mm AFQMxB 1003 34 19 Profel_L_Greeplijst
+39 OC_greep MDF 19mm AFQMxB 1004.5 34 19 Profel_L_Greeplijst
+40 Rug MDF 19mm AFQMxB 1001.5 60 19 profiel_L_greeplijst
+41 Rug MDF 19mm AFQMxB 1003 60 19 profiel_L_greeplijst
+42 Rug MDF 19mm AFQMxB 1004.5 60 19 profiel_L_greeplijst
+Aantal onderdelen: 42
+0411_MO07202-7203_TV-wand (7-7) Page 10 of 36
+Controle
+MO07202-7203
+Klant:
+Rudi Matterne
+Tekenaar:
+S8
+JW
+Project: S04479
+0411_MO07202-7203_TV-wand (7-7)
+Schuren Accura:
+Totaal aantal onderdelen: BB_01 en BB_02 na handwerk pas afsjangen
+Opus:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Handwerk:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+- 2x L-greep monteren (zie tek)
+- Uitsparing in zijden afsjangen (1 kantje) info JW
+Glasdeur met smal zwart profiel en helder glas,
+zonder onderverdeling
+AANV_0101 Commentaar:
+Aanvulling massief
+Br:493, D: 342, H: 563
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AANV_L Massief_PM030x30ML 315 30 30
+Massief
+Aantal onderdelen: 1
+0411_MO07202-7203_TV-wand (7-7) Page 11 of 36
+AFW_01 Commentaar:
+Br:19, D: 396, H: 2638
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer Fineer Fineer
+1 AFWZ_L MDF 19mm AFQMxB 2638 396 19 Standaard eik eik eik eik L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+AFW_01 Commentaar:
+Br:19, D: 395, H: 1750
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer Fineer Fineer
+1 AFWZ_L MDF 19mm AFQMxB 1750 395 19 Standaard eik eik eik eik B=20mm overmaat
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+AFW_02 Commentaar:
+Br:19, D: 396, H: 2038
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer Fineer Fineer
+1 AFWZ_R MDF 19mm AFQMxB 2038 396 19 Standaard eik eik eik eik L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+AFW_02 Commentaar:
+Br:19, D: 395, H: 1750
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer Fineer Fineer
+1 AFWZ_R MDF 19mm AFQMxB 1750 395 19 Standaard eik eik eik eik B=20mm overmaat
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+AFW_03 Commentaar:
+Tablet
+Br:3029, D: 396, H: 31
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer Fineer
+1 BB_01 MDF 31mm AFQMxB 387.5 396 31 eik eik eik Achteraf afsjangen, B=20mm overmaat
+er
+1mm 1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 12 of 36
+ReichenbachFineer Fineer Fineer
+2 BB_02 MDF 31mm AFQMxB 2641.5 396 31 eik eik eik Achteraf afsjangen, B=20mm overmaat
+er
+1mm 1mm 1mm
+Aantal onderdelen: 2
+AFW_04 Commentaar:
+Br:19, D: 396, H: 569
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer Fineer Fineer
+1 AFWZ_R MDF 19mm AFQMxB 569 396 19 Standaard eik eik eik eik L+B=20mm overmaat
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+BK_ Commentaar:
+MONTEREN
+Br:1000, D: 469, H: 534
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+FineerPlaat AFQMxB ReichenbachFineer Fineer Fineer
+1 LZ 503 469 19 eik eik eik Borstellen
+19mm Int bloom er
+1mm 1mm 1mm
+FineerPlaat AFQMxB Reichenbach
+2 OC 1000 469 19
+19mm Int bloom er
+FineerPlaat AFQMxB Reichenbach Fineer Fineer Fineer
+3 RZ 503 469 19 eik eik eik Borstellen
+19mm Int bloom er
+1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+4 BC HSP 19mm BxB 987 446 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+5 BB MDF 19mm AFQMxB 1000 469 19 Standaard eik eik eik eik Borstellen
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+6 LF_01 MDF 19mm AFQMxB 981 250 19 Standaard eik eik eik eik Borstellen
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+7 LF_02 MDF 19mm AFQMxB 981 250 19 Standaard eik eik eik eik Borstellen
+1mm 1mm 1mm 1mm
+Reichenbach
+8 RG MDF 5mm BxB 975 491 5
+er
+Aantal onderdelen: 8
+BK_01 Commentaar:
+MONTEREN
+Br:378, D: 374, H: 1978
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Glasdeur Dummy 21mm Glasdeur 1962 375 21 Te bestellenDummy Dummy Dummy Dummy
+Fineer Fineer
+2 BC HSP 19mm BxB 340 374 19 Standaard eik eik
+1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 13 of 36
+Fineer Fineer Fineer Fineer
+3 LZ HSP 19mm BxB 1978 374 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer
+4 OC HSP 19mm BxB 340 374 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+5 RZ HSP 19mm BxB 1978 374 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer
+6 VL01 HSP 19mm BxB 340 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+7 VL02 HSP 19mm BxB 340 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+8 VL03 HSP 19mm BxB 340 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+9 VL04 HSP 19mm BxB 340 337 19 Standaard eik eik
+1mm 1mm
+Reichenbach
+10 RG MDF 5mm BxB 1950 350 5
+er
+Aantal onderdelen: 10
+BK_Dressing_01 Commentaar:
+MONTEREN
+Br:1466, D: 375, H: 1750
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Glasdeur Dummy 21mm Glasdeur 1100 484.667 21 Te bestellenDummy Dummy Dummy Dummy
+Fineer Fineer
+2 BC HSP 19mm BxB 1428 374 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+3 LL01 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+4 LL02 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+5 LL03 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+6 LL04 HSP 19mm BxB 466.667 237 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+7 LL05 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+8 LL06 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+9 LL07 HSP 19mm BxB 458.667 330 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+10 LZ HSP 19mm BxB 1745 375 19 Standaard eik eik eik eik Hoek recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer Fineer
+11 OC HSP 19mm BxB 1428 354 19 Standaard eik eik
+1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 14 of 36
+Fineer Fineer Fineer Fineer
+12 RZ HSP 19mm BxB 1745 375 19 Standaard eik eik eik eik Hoek recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer
+13 TZ_01 HSP 19mm BxB 1694 339 19 Standaard eik Hoek recht frezen, met de hand afsjangen
+1mm
+Fineer
+14 TZ_02 HSP 19mm BxB 1694 339 19 Standaard eik Hoek recht frezen, met de hand afsjangen
+1mm
+Fineer Fineer
+15 VL01 HSP 19mm BxB 460.667 339 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+16 VL02 HSP 19mm BxB 468.667 339 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+17 VL03 HSP 19mm BxB 460.667 339 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+18 VL04 HSP 19mm BxB 468.667 330 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer
+19 VL05 HSP 19mm BxB 468.667 330 19 Standaard eik eik
+1mm 1mm
+Gannomat
+20 Plint Dressing A Massief_PM018x18PD 1428 18 18
+Massief
+Gannomat
+21 Plint Dressing V Massief_PM018x18PD 1428 18 18
+Massief
+Fineer Fineer Fineer Fineer
+22 DR_L01 MDF 19mm AFQMxB 1100 484.667 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+23 DR_L02 MDF 19mm AFQMxB 599 484.667 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+24 DR_R03 MDF 19mm AFQMxB 599 484.667 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+25 DR_R04 MDF 19mm AFQMxB 1100 484.667 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+26 DR_R05 MDF 19mm AFQMxB 599 484.667 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Reichenbach
+27 RG01 MDF 5mm BxB 1706 476.167 5
+er
+Reichenbach
+28 RG02 MDF 5mm BxB 1706 487.667 5
+er
+Reichenbach
+29 RG03 MDF 5mm BxB 1706 476.167 5
+er
+Aantal onderdelen: 29
+BK_Dressing_01 Commentaar:
+MONTEREN
+Br:531, D: 376, H: 2578
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer
+1 BC HSP 19mm BxB 493 375 19 Standaard eik eik
+1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 15 of 36
+Fineer Fineer Fineer Fineer
+2 LL01 HSP 19mm BxB 491 331 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+3 LL02 HSP 19mm BxB 491 331 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+4 LL03 HSP 19mm BxB 491 331 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+5 LZ HSP 19mm BxB 2573 376 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer
+6 OC HSP 19mm BxB 493 355 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+7 RZ HSP 19mm BxB 2573 376 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer
+8 VL01 HSP 19mm BxB 493 331 19 Standaard eik
+1mm
+Fineer Fineer
+9 VL02 HSP 19mm BxB 493 375 19 Standaard eik eik
+1mm 1mm
+Gannomat
+10 Plint Dressing A Massief_PM018x18PD 493 18 18
+Massief
+Gannomat
+11 Plint Dressing V Massief_PM018x18PD 493 18 18
+Massief
+Fineer Fineer Fineer Fineer
+12 DR_L01 MDF 19mm AFQMxB 2545 525 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Reichenbach
+13 RG MDF 5mm BxB 1952 505 5
+er
+Aantal onderdelen: 13
+BK_Dressing_02 Commentaar:
+MONTEREN
+Br:1001,5, D: 376, H: 569
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer
+1 BC HSP 19mm BxB 963.5 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+2 LZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer Fineer
+3 OC HSP 19mm BxB 963.5 355 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+4 RZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer Fineer
+5 VL HSP 19mm BxB 963.5 375 19 Standaard eik eik
+1mm 1mm
+Gannomat
+6 Plint Dressing A Massief_PM018x18PD 963.5 18 18
+Massief
+Gannomat
+7 Plint Dressing V Massief_PM018x18PD 963.5 18 18
+Massief
+0411_MO07202-7203_TV-wand (7-7) Page 16 of 36
+Fineer Fineer Fineer Fineer
+8 LF_01 MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+9 LF_02 MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Reichenbach
+10 RG MDF 5mm BxB 975.5 248.5 5
+er
+Aantal onderdelen: 10
+BK_Dressing_03 Commentaar:
+MONTEREN
+Br:1003, D: 376, H: 569
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer
+1 BC HSP 19mm BxB 965 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+2 LZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer Fineer
+3 OC HSP 19mm BxB 965 355 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+4 RZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer Fineer
+5 VL HSP 19mm BxB 965 310 19 Standaard eik eik
+1mm 1mm
+Gannomat
+6 Plint Dressing A Massief_PM018x18PD 965 18 18
+Massief
+Gannomat
+7 Plint Dressing V Massief_PM018x18PD 965 18 18
+Massief
+Fineer Fineer Fineer Fineer
+8 LF_03 MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+9 Valklep MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Reichenbach
+10 RG MDF 5mm BxB 977 525 5
+er
+Aantal onderdelen: 10
+BK_Dressing_04 Commentaar:
+MONTEREN
+Br:1004,5, D: 376, H: 569
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Fineer Fineer
+1 BC HSP 19mm BxB 966.5 337 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+2 LZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+0411_MO07202-7203_TV-wand (7-7) Page 17 of 36
+Fineer Fineer
+3 OC HSP 19mm BxB 966.5 355 19 Standaard eik eik
+1mm 1mm
+Fineer Fineer Fineer Fineer
+4 RZ HSP 19mm BxB 564 376 19 Standaard eik eik eik eik Hoeken recht frezen, met de hand afsjangen
+1mm 1mm 1mm 1mm
+Fineer
+5 VL HSP 19mm BxB 966.5 340 19 Standaard eik
+1mm
+Gannomat
+6 Plint Dressing A Massief_PM018x18PD 966.5 18 18
+Massief
+Gannomat
+7 Plint Dressing V Massief_PM018x18PD 966.5 18 18
+Massief
+Fineer Fineer Fineer Fineer
+8 LF_04 MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Fineer Fineer Fineer Fineer
+9 LF_05 MDF 19mm AFQMxB 1000 243.5 19 Standaard eik eik eik eik
+1mm 1mm 1mm 1mm
+Reichenbach
+10 RG MDF 5mm BxB 978.5 525 5
+er
+Aantal onderdelen: 10
+IND_01 Commentaar:
+schoenplank
+Br:463, D: 342, H: 563
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer Fineer Fineer
+1 Plank MDF 31mm BxB 453 313 31 eik eik eik eik
+er
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+IND_01 Commentaar:
+TV steun
+Br:965, D: 302, H: 236,5
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Rondel tv steun BRUT MDF 18MM 60 60 18 Te bestellen ZWARTE MDF
+Aantal onderdelen: 1
+IND_01 Commentaar:
+Valse rug
+Br:468,667, D: 340, H: 623
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+0411_MO07202-7203_TV-wand (7-7) Page 18 of 36
+Reichenbach
+1 Valse rug MDF 13mm BxB 622 467.667 13
+er
+Aantal onderdelen: 1
+Kamer_ Commentaar:
+Br:3578, D: 396, H: 2638
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Stopcontact ROND Dummy 10mm 100 100 10 Te bestellen ZWART
+2 Stopcontact ROND Dummy 10mm 100 100 10 Te bestellen ZWART
+Aantal onderdelen: 2
+L_Greep01 Commentaar:
+Br:1001,5, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat Fineer
+1 OC_greep MDF 19mm AFQMxB 1001.5 34 19 eik Profel_L_Greeplijst
+Massief
+1mm
+Gannomat Fineer
+2 Rug MDF 19mm AFQMxB 1001.5 60 19 eik profiel_L_greeplijst
+Massief
+1mm
+Aantal onderdelen: 2
+L_Greep01 Commentaar:
+Br:1466, D: 39, H: 70
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer
+1 L-greep MDF 19mm AFQMxB 1466 70 19 eik 1x 70mm breed, 1x 34mm breed
+er
+1mm
+Aantal onderdelen: 1
+L_Greep02 Commentaar:
+Br:1003, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat Fineer
+1 OC_greep MDF 19mm AFQMxB 1003 34 19 eik Profel_L_Greeplijst
+Massief
+1mm
+0411_MO07202-7203_TV-wand (7-7) Page 19 of 36
+Gannomat Fineer
+2 Rug MDF 19mm AFQMxB 1003 60 19 eik profiel_L_greeplijst
+Massief
+1mm
+Aantal onderdelen: 2
+L_Greep03 Commentaar:
+Br:1004,5, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat Fineer
+1 OC_greep MDF 19mm AFQMxB 1004.5 34 19 eik Profel_L_Greeplijst
+Massief
+1mm
+Gannomat Fineer
+2 Rug MDF 19mm AFQMxB 1004.5 60 19 eik profiel_L_greeplijst
+Massief
+1mm
+Aantal onderdelen: 2
+L_Greep04 Commentaar:
+Br:1001,5, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer
+1 L_greep MDF 19mm AFQMxB 1001.5 60 19 eik 1x 60mm breed, 1x 34mm breed
+er
+1mm
+Aantal onderdelen: 1
+L_Greep05 Commentaar:
+Br:1003, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer
+1 L_greep MDF 19mm AFQMxB 1003 60 19 eik 1x 60mm breed, 1x 34mm breed
+er
+1mm
+Aantal onderdelen: 1
+L_Greep06 Commentaar:
+Br:1004,5, D: 39, H: 60
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer
+1 L_greep MDF 19mm AFQMxB 1004.5 60 19 eik 1x 60mm breed, 1x 34mm breed
+er
+1mm
+Aantal onderdelen: 1
+0411_MO07202-7203_TV-wand (7-7) Page 20 of 36
+L_Greep07 Commentaar:
+Br:1001,5, D: 97, H: 19
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer
+1 L_greep MDF 19mm AFQMxB 1001.5 97 19 eik eik Afwerken_GR-Gannomat
+er
+1mm 1mm
+Aantal onderdelen: 1
+L_Greep08 Commentaar:
+Br:1003, D: 97, H: 19
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer
+1 L_greep MDF 19mm AFQMxB 1003 97 19 eik eik Afwerken_GR-Gannomat
+er
+1mm 1mm
+Aantal onderdelen: 1
+L_Greep09 Commentaar:
+Br:1004,5, D: 97, H: 19
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer
+1 L_greep MDF 19mm AFQMxB 1004.5 97 19 eik eik Afwerken_GR-Gannomat
+er
+1mm 1mm
+Aantal onderdelen: 1
+Lade_P_01 Commentaar:
+Push to open
+Br:961, D: 413, H: 226 Standaard lade met massieve zijstukken
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 921 206 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 400 206 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 400 206 14
+Massief
+Reichenbach
+4 Bodem MDF 13mm BxB 930 395 13
+er
+5 Synchrostang Metaal 9mm 868 5 9 Te bestellen 1x_GB00031657 2x_GB00031201
+Aantal onderdelen: 5
+0411_MO07202-7203_TV-wand (7-7) Page 21 of 36
+Lade_P_02 Commentaar:
+Push to open
+Br:961, D: 413, H: 226 Standaard lade met massieve zijstukken
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 921 206 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 400 206 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 400 206 14
+Massief
+Reichenbach
+4 Bodem MDF 13mm BxB 930 395 13
+er
+5 Synchrostang Metaal 9mm 868 5 9 Te bestellen 1x_GB00031657 2x_GB00031201
+Aantal onderdelen: 5
+Lade_S_01 Commentaar:
+Silent
+Br:963,5, D: 313, H: 180
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 923.5 160 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 300 160 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 300 160 14
+Massief
+Reichenbach
+4 Bodem MDF 13mm BxB 932.5 295 13
+er
+Aantal onderdelen: 4
+Lade_S_02 Commentaar:
+Silent
+Br:963,5, D: 313, H: 180
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 923.5 160 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 300 160 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 300 160 14
+Massief
+0411_MO07202-7203_TV-wand (7-7) Page 22 of 36
+Reichenbach
+4 Bodem MDF 13mm BxB 932.5 295 13
+er
+Aantal onderdelen: 4
+Lade_S_03 Commentaar:
+Silent
+Br:965, D: 313, H: 180
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 925 160 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 300 160 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 300 160 14
+Massief
+Reichenbach
+4 Bodem MDF 13mm BxB 934 295 13
+er
+Aantal onderdelen: 4
+Lade_S_04 Commentaar:
+Silent
+Br:966,5, D: 313, H: 180
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 926.5 160 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 300 160 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 300 160 14
+Massief
+Reichenbach
+4 Bodem MDF 13mm BxB 935.5 295 13
+er
+Aantal onderdelen: 4
+Lade_S_05 Commentaar:
+Silent
+Br:966,5, D: 313, H: 180
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 AS Massief_PM___x14ZS 926.5 160 14 uitkiepen 60x12
+Massief
+Gannomat
+2 ZS_L Massief_PM___x14ZS 300 160 14
+Massief
+Gannomat
+3 ZS_R Massief_PM___x14ZS 300 160 14
+Massief
+0411_MO07202-7203_TV-wand (7-7) Page 23 of 36
+Reichenbach
+4 Bodem MDF 13mm BxB 935.5 295 13
+er
+Aantal onderdelen: 4
+Paslat_01 Commentaar:
+23mm dik
+Br:80, D: 600, H: 2780
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+ReichenbachFineer Fineer Fineer Fineer
+1 Paslat_Dik MDF 23mm AFQMxB 2770 100 23 eik eik eik eik
+er
+1mm 1mm 1mm 1mm
+Aantal onderdelen: 1
+PlintB70_01 Commentaar:
+Br:1000, D: 469, H: 32
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+Gannomat
+1 Achterpoot Massief_PM032x21OP 249 32 21 ZWART
+Massief
+Gannomat
+2 Plint L Massief_PM032x21OP 413 32 21 ZWART
+Massief
+Gannomat
+3 Plint R Massief_PM032x21OP 413 32 21 ZWART
+Massief
+Gannomat
+4 Plint V Massief_PM032x21OP 943 32 21 ZWART
+Massief
+Aantal onderdelen: 4
+Verlichtingset_Dupont01Commentaar:
+Br:1000, D: 300, H: 3
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Led_ Dummy 02mm 1000 300 2 Te bestellen (niet ingeven)
+2 LED_SNOER standaard Dummy 03mm 3000 3 3 Te bestellen
+3 LED_SNOER standaard Dummy 03mm 3000 3 3 Te bestellen
+4 LED_Strip_4x8 Dummy 04mm 1080 8 4 Te bestellen Lengte delen door 5000
+0411_MO07202-7203_TV-wand (7-7) Page 24 of 36
+5 LED_Strip_4x8 Dummy 04mm 1080 8 4 Te bestellen Lengte delen door 5000
+Aantal onderdelen: 5
+Verlichtingset_Dupont01Commentaar:
+Br:1000, D: 300, H: 3
+N° Onderdeel Materiaal Lengte Breedte Dikte Pro.methode L1 L2 B1 B2 commentaar
+1 Led_ Dummy 02mm 1000 300 2 Te bestellen (niet ingeven)
+2 LED_SNOER standaard Dummy 03mm 3000 3 3 Te bestellen
+3 LED_SNOER standaard Dummy 03mm 3000 3 3 Te bestellen
+4 LED_Strip_4x8 Dummy 04mm 1978 8 4 Te bestellen Lengte delen door 5000
+5 LED_Strip_4x8 Dummy 04mm 1978 8 4 Te bestellen Lengte delen door 5000
+Aantal onderdelen: 5
+0411_MO07202-7203_TV-wand (7-7) Page 25 of 36
+Magazijn
+MO07202-7203
+Klant:
+Rudi Matterne
+Tekenaar:
+S8
+JW
+Project: S04479
+0411_MO07202-7203_TV-wand (7-7)
+Accura:
+Schuren
+BB_01 en BB_02 na handwerk pas afsjangen
+Opus:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Handwerk:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+- 2x L-greep monteren (zie tek)
+- Uitsparing in zijden afsjangen (1 kantje) info JW
+Glasdeur met smal zwart profiel en helder glas,
+zonder onderverdeling
+N° Beschrijving Aantal stuks GB nummer
+1 71T950A + 177H3100E 4 71T950A+177H3100E
+2 71T960A + 177H3100E 3 71T960A+177H3100E
+3 Afpunting Ø2,5x3 25 Afpunting Ø2,5x3
+4 Afpunting Ø2,5x3 19 Afpunting Ø2,5x3
+5 Afpunting Ø2,5x3 5 Afpunting Ø2,5x3
+0411_MO07202-7203_TV-wand (7-7) Page 26 of 36
+N° Beschrijving Aantal stuks GB nummer
+6 Bloom_BC_OC 1
+7 Boorgat VAR 2 Variabel boorgat
+8 Drevel 8x35 32 GB00022500
+9 Drevel 8x35 120 GB00022500
+10 Drevel 8x35 verbinding lade 16 Drevel 8x35
+11 Drevel 8x35 verbinding lade 40 Drevel 8x35
+12 Excentrisch verbindingsbeslag afstand 9,5mm 40 GB00030952, GB00030953
+13 Excentrisch verbindingsbeslag afstand 9,5mm 25 GB00030952, GB00030953
+14 Klepscharnier Kimana 3 GB00031452, GB00031453, GB00031454 (Geen aanvullingen)
+15 Lamello_Tenso_P14_(verstek) 3 GB00031429
+16 LED_Dupont_Maatwerk 1
+17 LED_Dupont_Maatwerk 1
+18 LED_Dupont_Soldeerwerk 2
+19 LED_Dupont_Soldeerwerk 2
+20 LED_Dupont_Transfo_35W 1
+21 LED_Dupont_Transfo_60W 1
+22 LED_Dupont_Wago-2 6
+23 LED_Dupont_Wago-2 6
+24 LED_Dupont_Wago-3 1
+25 LED_Dupont_Wago-3 1
+26 LED_Dupont_Wago-5 2
+27 LED_Dupont_Wago-5 1
+0411_MO07202-7203_TV-wand (7-7) Page 27 of 36
+N° Beschrijving Aantal stuks GB nummer
+28 LED_inbouw_Touchdimmer 1 GL00030948
+29 LED_inbouw_Touchdimmer 1 GL00030948
+30 LED_Kabelgroef_zijkant 1
+31 LED_Kabelgroef_zijkant 1
+32 LED_verlichting_4x8_ 2 Led Dupont
+33 LED_verlichting_4x8_ 2 Led Dupont
+34 Magneet (bruin) 6 Magneet bruin - GB00003599 - GB00022356 (2x) - GB00022365 (2x)
+35 PlaatDrager 140
+36 PlaatDrager 60
+37 Plaatdrager effectief 28 PlaatDrager zwart GB00031275
+38 Plaatdrager effectief 12 PlaatDrager zwart GB00031275
+39 Rastex 15-12 24mm 16 GB00031372 en GB00031373
+40 Rastex 15-12 24mm 40 GB00031372 en GB00031373
+41 Rond_gat_doorgaand 1
+42 Schoenplank_Uitkamering 1
+43 schroef 4.5x45_Parallel 9 GB00022303
+44 Stelvoet dressing 16 GB00030951
+45 Stelvoet dressing 4 GB00030951
+46 TV-steun 1
+47 V_groef_45° 2
+48 Valschaar L 1 GB00006997
+49 Valschaar R 1 GB00006997
+0411_MO07202-7203_TV-wand (7-7) Page 28 of 36
+N° Beschrijving Aantal stuks GB nummer
+50 VAR_Boorgat_ 24
+51 VAR_Rond_gat 2
+52 VAR_Rond_gat_Doorgaand_ 6
+53 Quadro V6 300 Snappers 1 SILENT GB00023705_(Snapper_GB00031631_GB00031632) 4x GB00020345
+54 Quadro V6 4D Push 400 2 GB00031145 - GB00031146 - GB00031147 - GB00031148 - GB00031149 - GB00031150 - 4x GB00020345
+55 Quadro V6 4D Silent 300 5 GB00031730 - GB00031731 - GB00031147 - GB00031148 - GB00031149 - GB00031150 - 4x GB00020345
+56 Sensys B12,5 - D0 10 GB00031278 - GB00031287 - GB00031281 - GB00031463
+57 Sensys B12,5 - D0 5 GB00031278 - GB00031287 - GB00031281 - GB00031463
+58 Sensys B3 - D0 Zwart 2 GB00031279 - GB00031287 - GB00031281 - GB00031463
+59 Inhangbeslag multiclip_zonder boring 12 GB00017932 (2x) en GB00022339 (4x)
+60 Handgreep L-GREEP 150MM DIKTE 1,5MM ZWART 9005 MAT 1
+61 Handgreep L-GREEP 150MM DIKTE 1,5MM ZWART 9005 MAT 1
+62 Handgreep T55 320mm 1 GB00031273 - GB00022619 (2x)
+63 Achterwandschroef Ø4x35mm_WAND 6 GB00031082
+64 Achterwandschroef Ø4x35mm_WAND 12 GB00031082
+65 Achterwandschroef Ø4x35mm_WAND 46 GB00031082
+66 schroef Ø3.5x30mm_PAR 15 GB00031138
+67 schroef Ø3.5x30mm_PAR 6 GB00031138
+68 schroef Ø4x35mm_WAND 8 GB00022340
+69 schroef_4,5x45_TB_Verz_PAR_afgepunt 3 GB00022303
+70 Schroef_4x45_TB_Verz_PAR 26 GB00031063
+0411_MO07202-7203_TV-wand (7-7) Page 29 of 36
+N° Beschrijving Aantal stuks GB nummer
+71 Schroef_4x45_TB_Verz_PAR 100 GB00031063
+Aantal onderdelen: 71
+Te bestellen
+Project:
+0411_MO07202-7203_TV-wand (7-7)
+N° Onderdeel opmerking Materiaal Lengte Breedte Dikte Opmerkingen
+1 Rondel tv steun BRUT MDF 18MM 60 60 18 ZWARTE MDF
+2 Led_ Dummy 02mm 1000 300 2 (niet ingeven)
+3 Led_ Dummy 02mm 1000 300 2 (niet ingeven)
+4 LED_SNOER standaard Dummy 03mm 3000 3 3
+5 LED_SNOER standaard Dummy 03mm 3000 3 3
+6 LED_SNOER standaard Dummy 03mm 3000 3 3
+7 LED_SNOER standaard Dummy 03mm 3000 3 3
+8 LED_Strip_4x8 Dummy 04mm 1080 8 4 Lengte delen door 5000
+9 LED_Strip_4x8 Dummy 04mm 1080 8 4 Lengte delen door 5000
+10 LED_Strip_4x8 Dummy 04mm 1978 8 4 Lengte delen door 5000
+11 LED_Strip_4x8 Dummy 04mm 1978 8 4 Lengte delen door 5000
+12 Stopcontact ROND Dummy 10mm 100 100 10 ZWART
+13 Stopcontact ROND Dummy 10mm 100 100 10 ZWART
+14 Glasdeur Dummy 21mm Glasdeur 1100 484.667 21
+15 Glasdeur Dummy 21mm Glasdeur 1962 375 21
+16 Synchrostang Metaal 9mm 868 5 9 1x_GB00031657 2x_GB00031201
+17 Synchrostang Metaal 9mm 868 5 9 1x_GB00031657 2x_GB00031201
+Aantal onderdelen: 17
+0411_MO07202-7203_TV-wand (7-7) Page 30 of 36
+Magazijn
+MO07202-7203
+Klant:
+Rudi Matterne
+Tekenaar:
+S8
+JW
+Project: S04479
+0411_MO07202-7203_TV-wand (7-7)
+Accura:
+Schuren
+BB_01 en BB_02 na handwerk pas afsjangen
+Opus:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Handwerk:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+- 2x L-greep monteren (zie tek)
+- Uitsparing in zijden afsjangen (1 kantje) info JW
+Glasdeur met smal zwart profiel en helder glas,
+zonder onderverdeling
+N° Beschrijving Aantal stuks GB nummer
+1 71T950A + 177H3100E 4 71T950A+177H3100E
+2 71T960A + 177H3100E 3 71T960A+177H3100E
+3 Afpunting Ø2,5x3 25 Afpunting Ø2,5x3
+4 Afpunting Ø2,5x3 19 Afpunting Ø2,5x3
+5 Afpunting Ø2,5x3 5 Afpunting Ø2,5x3
+0411_MO07202-7203_TV-wand (7-7) Page 31 of 36
+N° Beschrijving Aantal stuks GB nummer
+6 Bloom_BC_OC 1
+7 Boorgat VAR 2 Variabel boorgat
+8 Drevel 8x35 32 GB00022500
+9 Drevel 8x35 120 GB00022500
+10 Drevel 8x35 verbinding lade 16 Drevel 8x35
+11 Drevel 8x35 verbinding lade 40 Drevel 8x35
+12 Excentrisch verbindingsbeslag afstand 9,5mm 40 GB00030952, GB00030953
+13 Excentrisch verbindingsbeslag afstand 9,5mm 25 GB00030952, GB00030953
+14 Klepscharnier Kimana 3 GB00031452, GB00031453, GB00031454 (Geen aanvullingen)
+15 Lamello_Tenso_P14_(verstek) 3 GB00031429
+16 LED_Dupont_Maatwerk 1
+17 LED_Dupont_Maatwerk 1
+18 LED_Dupont_Soldeerwerk 2
+19 LED_Dupont_Soldeerwerk 2
+20 LED_Dupont_Transfo_35W 1
+21 LED_Dupont_Transfo_60W 1
+22 LED_Dupont_Wago-2 6
+23 LED_Dupont_Wago-2 6
+24 LED_Dupont_Wago-3 1
+25 LED_Dupont_Wago-3 1
+26 LED_Dupont_Wago-5 2
+27 LED_Dupont_Wago-5 1
+0411_MO07202-7203_TV-wand (7-7) Page 32 of 36
+N° Beschrijving Aantal stuks GB nummer
+28 LED_inbouw_Touchdimmer 1 GL00030948
+29 LED_inbouw_Touchdimmer 1 GL00030948
+30 LED_Kabelgroef_zijkant 1
+31 LED_Kabelgroef_zijkant 1
+32 LED_verlichting_4x8_ 2 Led Dupont
+33 LED_verlichting_4x8_ 2 Led Dupont
+34 Magneet (bruin) 6 Magneet bruin - GB00003599 - GB00022356 (2x) - GB00022365 (2x)
+35 PlaatDrager 140
+36 PlaatDrager 60
+37 Plaatdrager effectief 28 PlaatDrager zwart GB00031275
+38 Plaatdrager effectief 12 PlaatDrager zwart GB00031275
+39 Rastex 15-12 24mm 16 GB00031372 en GB00031373
+40 Rastex 15-12 24mm 40 GB00031372 en GB00031373
+41 Rond_gat_doorgaand 1
+42 Schoenplank_Uitkamering 1
+43 schroef 4.5x45_Parallel 9 GB00022303
+44 Stelvoet dressing 16 GB00030951
+45 Stelvoet dressing 4 GB00030951
+46 TV-steun 1
+47 V_groef_45° 2
+48 Valschaar L 1 GB00006997
+49 Valschaar R 1 GB00006997
+0411_MO07202-7203_TV-wand (7-7) Page 33 of 36
+N° Beschrijving Aantal stuks GB nummer
+50 VAR_Boorgat_ 24
+51 VAR_Rond_gat 2
+52 VAR_Rond_gat_Doorgaand_ 6
+53 Quadro V6 300 Snappers 1 SILENT GB00023705_(Snapper_GB00031631_GB00031632) 4x GB00020345
+54 Quadro V6 4D Push 400 2 GB00031145 - GB00031146 - GB00031147 - GB00031148 - GB00031149 - GB00031150 - 4x GB00020345
+55 Quadro V6 4D Silent 300 5 GB00031730 - GB00031731 - GB00031147 - GB00031148 - GB00031149 - GB00031150 - 4x GB00020345
+56 Sensys B12,5 - D0 10 GB00031278 - GB00031287 - GB00031281 - GB00031463
+57 Sensys B12,5 - D0 5 GB00031278 - GB00031287 - GB00031281 - GB00031463
+58 Sensys B3 - D0 Zwart 2 GB00031279 - GB00031287 - GB00031281 - GB00031463
+59 Inhangbeslag multiclip_zonder boring 12 GB00017932 (2x) en GB00022339 (4x)
+60 Handgreep L-GREEP 150MM DIKTE 1,5MM ZWART 9005 MAT 1
+61 Handgreep L-GREEP 150MM DIKTE 1,5MM ZWART 9005 MAT 1
+62 Handgreep T55 320mm 1 GB00031273 - GB00022619 (2x)
+63 Achterwandschroef Ø4x35mm_WAND 6 GB00031082
+64 Achterwandschroef Ø4x35mm_WAND 12 GB00031082
+65 Achterwandschroef Ø4x35mm_WAND 46 GB00031082
+66 schroef Ø3.5x30mm_PAR 15 GB00031138
+67 schroef Ø3.5x30mm_PAR 6 GB00031138
+68 schroef Ø4x35mm_WAND 8 GB00022340
+69 schroef_4,5x45_TB_Verz_PAR_afgepunt 3 GB00022303
+70 Schroef_4x45_TB_Verz_PAR 26 GB00031063
+0411_MO07202-7203_TV-wand (7-7) Page 34 of 36
+N° Beschrijving Aantal stuks GB nummer
+71 Schroef_4x45_TB_Verz_PAR 100 GB00031063
+Aantal onderdelen: 71
+Te bestellen
+Project:
+0411_MO07202-7203_TV-wand (7-7)
+N° Onderdeel opmerking Materiaal Lengte Breedte Dikte Opmerkingen
+1 Rondel tv steun BRUT MDF 18MM 60 60 18 ZWARTE MDF
+2 Led_ Dummy 02mm 1000 300 2 (niet ingeven)
+3 Led_ Dummy 02mm 1000 300 2 (niet ingeven)
+4 LED_SNOER standaard Dummy 03mm 3000 3 3
+5 LED_SNOER standaard Dummy 03mm 3000 3 3
+6 LED_SNOER standaard Dummy 03mm 3000 3 3
+7 LED_SNOER standaard Dummy 03mm 3000 3 3
+8 LED_Strip_4x8 Dummy 04mm 1080 8 4 Lengte delen door 5000
+9 LED_Strip_4x8 Dummy 04mm 1080 8 4 Lengte delen door 5000
+10 LED_Strip_4x8 Dummy 04mm 1978 8 4 Lengte delen door 5000
+11 LED_Strip_4x8 Dummy 04mm 1978 8 4 Lengte delen door 5000
+12 Stopcontact ROND Dummy 10mm 100 100 10 ZWART
+13 Stopcontact ROND Dummy 10mm 100 100 10 ZWART
+14 Glasdeur Dummy 21mm Glasdeur 1100 484.667 21
+15 Glasdeur Dummy 21mm Glasdeur 1962 375 21
+16 Synchrostang Metaal 9mm 868 5 9 1x_GB00031657 2x_GB00031201
+17 Synchrostang Metaal 9mm 868 5 9 1x_GB00031657 2x_GB00031201
+Aantal onderdelen: 17
+0411_MO07202-7203_TV-wand (7-7) Page 35 of 36
+MO07202-7203
+S04479
+S8
+Project: 0411_MO07202-7203_TV-wand (7-7)
+Klant: Rudi Matterne
+JW
+info: Tekenaar:
+Schuren Lakstraat: uurregistratie.
+Opgelet: Controlelijst en tekeningen meegeven naar de lakstraat!
+Totaal aantal onderdelen: (bij bicolour dubbel afdrukken!)
+Opmerkingen: Accura:
+BB_01 en BB_02 na handwerk pas afsjangen
+m²
+Opus:
+- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)
+Bezetting
+Handwerk:
+- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)
+- 2x L-greep monteren (zie tek)
+- Uitsparing in zijden afsjangen (1 kantje) info JW
+Stelstukken
+Glasdeur met smal zwart profiel en helder glas,
+zonder onderverdeling
+Datum: begin: einde:
+Stilstanden / oorzaak
+Page 36 of 36
+

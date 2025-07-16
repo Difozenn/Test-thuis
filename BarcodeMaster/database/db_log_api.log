@@ -68551,547 +68551,219 @@ with app.app_context(). See the documentation for more information.
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: KL GANNOMAT
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: ACCURA
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:54:19,650 INFO PDF database initialized successfully
-2025-07-12 10:54:19,650 INFO PDF database manager initialized successfully
-2025-07-12 10:54:19,651 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
-2025-07-12 10:54:19,750 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
-2025-07-12 10:54:19,751 INFO Database initialization complete.
-2025-07-12 10:54:19,752 ERROR Error creating efficiency tables: Working outside of application context.
+2025-07-15 22:20:33,908 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-15 22:20:34,038 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-07-15 22:20:34,039 INFO Database initialization complete.
+2025-07-15 22:20:34,040 ERROR Error creating efficiency tables: Working outside of application context.
 
 This typically means that you attempted to use functionality that needed
 the current application. To solve this, set up an application context
 with app.app_context(). See the documentation for more information.
-2025-07-12 10:54:19,752 INFO Daily efficiency update scheduler started
-2025-07-12 10:54:19,753 INFO Daily efficiency updated for 0 users
-2025-07-12 10:54:19,753 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
-2025-07-12 10:54:19,753 INFO Efficiency tracking system initialized
-2025-07-12 10:54:19,768 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-07-12 10:54:21,373 INFO PDF database initialized successfully
-2025-07-12 10:54:21,373 INFO PDF database manager initialized successfully
-2025-07-12 10:54:48,464 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-12 10:54:48,466 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-12 10:54:48,466 INFO Adding empty project list for dashboard user: OPUS
-2025-07-12 10:54:48,466 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-12 10:54:48,466 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:54:52,614 INFO database management page was called
-2025-07-12 10:54:57,038 INFO [db_log_api] /clear_logs POST request received.
-2025-07-12 10:54:57,040 INFO Cleared table: logs
-2025-07-12 10:54:57,040 INFO Cleared table: sessions
-2025-07-12 10:54:57,041 INFO Cleared table: project_sessions
-2025-07-12 10:54:57,043 INFO All database tables cleared successfully.
-2025-07-12 10:55:23,014 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-12 10:55:23,015 INFO Adding empty project list for dashboard user: NESTING
-2025-07-12 10:55:23,015 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-12 10:55:23,015 INFO Adding empty project list for dashboard user: OPUS
-2025-07-12 10:55:23,016 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-12 10:55:23,016 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:55:28,672 INFO Session started for NESTING: NESTING_20250712_105526
-2025-07-12 10:55:30,697 INFO Project session started: NESTING_20250712_105526
-2025-07-12 10:55:53,346 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-12 10:55:53,347 INFO Adding empty project list for dashboard user: NESTING
-2025-07-12 10:55:53,347 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-12 10:55:53,348 INFO Adding empty project list for dashboard user: OPUS
-2025-07-12 10:55:53,348 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-12 10:55:53,348 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:56:15,411 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': '0411_MO07202-7203_TV-wand (7-7)', 'project': 'MO07202-7203_TV-wand (7-7)', 'base_mo_code': 'MO07202', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250712_105526', 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:15,413 INFO Event OPEN received for NESTING on MO07202-7203_TV-wand (7-7). Triggering background import service.
-2025-07-12 10:56:15,413 INFO Configuratie succesvol geladen.
-2025-07-12 10:56:15,413 INFO Event ontvangen: User=NESTING, Project=MO07202-7203_TV-wand (7-7). Controleren voor import...
-2025-07-12 10:56:15,413 INFO NESTING_PROCESSING voor user 'NESTING': Triggering unified PDF search for 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:15,413 INFO Found matching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,413 INFO Processing PDF for all processors in same directory: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:15,413 INFO [UNIFIED_PDF] Processing C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF for processors: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:15,413 INFO [PDF_DB] Extracted project code: 'MO07202-7203_TV-wand (7-7)' from 'S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF'
-2025-07-12 10:56:15,414 INFO [PDF_DB] Parsing and caching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,414 INFO Parsing and storing PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,432 INFO [BG_TASK] Processing OPEN for MO07202-7203_TV-wand (7-7), scanned by NESTING.
-2025-07-12 10:56:15,432 INFO Background task started for OPEN event: MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:15,434 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
-2025-07-12 10:56:15,434 INFO [BG_TASK] Running background unified PDF processing for non-scanner PDF processors: ['ACCURA', 'BOERE']
-2025-07-12 10:56:15,434 INFO [UNIFIED_PDF] Processing directory 'C:/Rapporten' for PDF processors: ['ACCURA', 'BOERE']
-2025-07-12 10:56:15,436 INFO [UNIFIED_PDF] No match: 'S04302_RAPPORT_Smet - Baten_0312_MO07482_Vestiaire_(1-3)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,436 INFO [UNIFIED_PDF] No match: 'S04302_RAPPORT_Smet - Baten_0312_MO07483_Linnenkast_(2-2)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,437 INFO [UNIFIED_PDF] No match: 'S04302_RAPPORT_Smet - Baten_0312_MO07484_Toilet_Poolhouse_(3-3)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,437 INFO [UNIFIED_PDF] No match: 'S04302_RAPPORT_Smet - Baten_0325_MO07483_Linnenkast_Rep_LZ_01' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,438 INFO [UNIFIED_PDF] No match: 'S04302_RAPPORT_Smet - Baten_0326_MO07483_Linnenkast_Rep_BC' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,438 INFO [UNIFIED_PDF] No match: 'S04473_RAPPORT_Krols - Pierard_0305_MO07175_TV-meubel (1-2)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,439 INFO [UNIFIED_PDF] No match: 'S04473_RAPPORT_Krols - Pierard_0305_MO07176_Bergkast (2-2)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,439 INFO [UNIFIED_PDF] No match: 'S04473_RAPPORT_Krols - Pierard_0402_MO07176_Bergkast_REP_VL' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,440 INFO [UNIFIED_PDF] No match: 'S04473_RAPPORT_Krols - Pierard_0403_MO07175_TV-meubel_REP_Zijden' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,440 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07195_Hoekdressing (1-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,441 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07196_Bedbrug (2-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,442 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07197 - 7198_Dressing-TV (3-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,443 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07199_Hoekdressing - opklapbed (4-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,443 INFO Processing page 1/36
-2025-07-12 10:56:15,443 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07200_Vestiaire (5-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,444 INFO [UNIFIED_PDF] No match: 'S04479_RAPPORT_Rudi Matterne_0411_MO07201_Bergkast (6-7)' does not end with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,444 INFO [UNIFIED_PDF] Match found: 'S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7)' ends with 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:15,444 INFO [UNIFIED_PDF] Found matching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,444 INFO [PDF_DB] Extracted project code: 'MO07202-7203_TV-wand (7-7)' from 'S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF'
-2025-07-12 10:56:15,446 INFO [PDF_DB] Parsing and caching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,448 INFO Parsing and storing PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:15,470 INFO Table 0 header: ['S8']
-2025-07-12 10:56:15,470 INFO Column mapping: {}
-2025-07-12 10:56:15,477 INFO Stored 2 rows from Massief table 0 on page 1
-2025-07-12 10:56:15,478 INFO Table 1 header: ['Cel Holzer:\nNaam: .../...', 'Opmerkingen:\nAccura:\nBB_01 en BB_02 na handwerk pas afsjangen\nOpus:\n- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)\nHandwerk:\n- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)\n- 2x L-greep monteren (zie tek)\n- Uitsparing in zijden afsjangen (1 kantje) info JW\nGlasdeur met smal zwart profiel en helder glas,\nzonder onderverdeling']
-2025-07-12 10:56:15,478 INFO Column mapping: {'opmerkingen': 1}
-2025-07-12 10:56:15,479 INFO Processing page 1/36
-2025-07-12 10:56:15,491 INFO Stored 5 rows from Massief table 1 on page 1
-2025-07-12 10:56:15,494 INFO Processing page 2/36
-2025-07-12 10:56:15,505 INFO Table 0 header: ['S8']
-2025-07-12 10:56:15,516 INFO Column mapping: {}
-2025-07-12 10:56:15,576 INFO Stored 2 rows from Massief table 0 on page 1
-2025-07-12 10:56:15,581 INFO Table 1 header: ['Cel Holzer:\nNaam: .../...', 'Opmerkingen:\nAccura:\nBB_01 en BB_02 na handwerk pas afsjangen\nOpus:\n- Hoeken recht frezen van zijden (BK_Dressing_02-03-04)\nHandwerk:\n- BB_01 en BB_02 met elkaar verbinden (achteraf afsjangen)\n- 2x L-greep monteren (zie tek)\n- Uitsparing in zijden afsjangen (1 kantje) info JW\nGlasdeur met smal zwart profiel en helder glas,\nzonder onderverdeling']
-2025-07-12 10:56:15,586 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', 'L1', 'L2', 'B1', 'B2', 'ProductieM.', None]
-2025-07-12 10:56:15,586 INFO Column mapping: {'opmerkingen': 1}
-2025-07-12 10:56:15,586 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5, 'l1': 6, 'l2': 7, 'b1': 8, 'b2': 9}
-2025-07-12 10:56:15,590 INFO Stored 9 rows from Nesting table 0 on page 2
-2025-07-12 10:56:15,590 INFO Processing page 3/36
-2025-07-12 10:56:15,622 INFO Stored 5 rows from Massief table 1 on page 1
-2025-07-12 10:56:15,638 INFO Processing page 2/36
-2025-07-12 10:56:15,680 INFO Processing page 4/36
-2025-07-12 10:56:15,818 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', 'L1', 'L2', 'B1', 'B2', 'ProductieM.', None]
-2025-07-12 10:56:15,828 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5, 'l1': 6, 'l2': 7, 'b1': 8, 'b2': 9}
-2025-07-12 10:56:15,839 INFO Processing page 5/36
-2025-07-12 10:56:15,876 INFO Processing page 6/36
-2025-07-12 10:56:15,882 INFO Stored 9 rows from Nesting table 0 on page 2
-2025-07-12 10:56:15,909 INFO Processing page 3/36
-2025-07-12 10:56:15,975 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', 'L1', 'L2', 'B1', 'B2', None]
-2025-07-12 10:56:16,011 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5, 'l1': 6, 'l2': 7, 'b1': 8, 'b2': 9}
-2025-07-12 10:56:16,048 INFO Processing page 4/36
-2025-07-12 10:56:16,054 INFO Stored 9 rows from Opdeelzaag table 0 on page 6
-2025-07-12 10:56:16,064 INFO Processing page 7/36
-2025-07-12 10:56:16,154 INFO Processing page 8/36
-2025-07-12 10:56:16,154 INFO Processing page 5/36
-2025-07-12 10:56:16,190 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', None]
-2025-07-12 10:56:16,205 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5}
-2025-07-12 10:56:16,213 INFO Processing page 6/36
-2025-07-12 10:56:16,303 INFO Stored 7 rows from Massief table 0 on page 8
-2025-07-12 10:56:16,313 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', 'L1', 'L2', 'B1', 'B2', None]
-2025-07-12 10:56:16,313 INFO Processing page 9/36
-2025-07-12 10:56:16,313 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5, 'l1': 6, 'l2': 7, 'b1': 8, 'b2': 9}
-2025-07-12 10:56:16,361 INFO Table 0 header: ['8', 'ZS_L', 'Massief_PM___x14ZS', '300', '160', '14', '']
-2025-07-12 10:56:16,361 INFO Column mapping: {}
-2025-07-12 10:56:16,364 INFO Stored 9 rows from Opdeelzaag table 0 on page 6
-2025-07-12 10:56:16,364 INFO Processing page 7/36
-2025-07-12 10:56:16,398 INFO Processing page 8/36
-2025-07-12 10:56:16,406 INFO Stored 21 rows from Massief table 0 on page 9
-2025-07-12 10:56:16,416 INFO Processing page 10/36
-2025-07-12 10:56:16,423 INFO Table 0 header: [None, 'Onderdeel', 'Materiaal', 'Lengte', 'Breedte', 'Dikte', None]
-2025-07-12 10:56:16,429 INFO Column mapping: {'onderdeel': 1, 'materiaal': 2, 'lengte': 3, 'breedte': 4, 'dikte': 5}
-2025-07-12 10:56:16,454 INFO Table 0 header: ['30', 'Plint Dressing V', 'Massief_PM018x18PD', '965', '18', '18', '']
-2025-07-12 10:56:16,454 INFO Column mapping: {}
-2025-07-12 10:56:16,459 INFO Stored 7 rows from Massief table 0 on page 8
-2025-07-12 10:56:16,460 INFO Processing page 9/36
-2025-07-12 10:56:16,509 INFO Table 0 header: ['8', 'ZS_L', 'Massief_PM___x14ZS', '300', '160', '14', '']
-2025-07-12 10:56:16,509 INFO Column mapping: {}
-2025-07-12 10:56:16,513 INFO Stored 12 rows from Massief table 0 on page 10
-2025-07-12 10:56:16,514 INFO Processing page 11/36
-2025-07-12 10:56:16,530 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:16,530 INFO Column mapping: {}
-2025-07-12 10:56:16,531 INFO Stored 0 rows from Controle table 0 on page 11
-2025-07-12 10:56:16,531 INFO Processing page 12/36
-2025-07-12 10:56:16,539 INFO Stored 21 rows from Massief table 0 on page 9
-2025-07-12 10:56:16,550 INFO Processing page 10/36
-2025-07-12 10:56:16,572 INFO Processing page 13/36
-2025-07-12 10:56:16,608 INFO Table 0 header: ['30', 'Plint Dressing V', 'Massief_PM018x18PD', '965', '18', '18', '']
-2025-07-12 10:56:16,620 INFO Column mapping: {}
-2025-07-12 10:56:16,708 INFO Processing page 14/36
-2025-07-12 10:56:16,717 INFO Stored 12 rows from Massief table 0 on page 10
-2025-07-12 10:56:16,722 INFO Processing page 11/36
-2025-07-12 10:56:16,775 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:16,785 INFO Column mapping: {}
-2025-07-12 10:56:16,788 INFO Processing page 15/36
-2025-07-12 10:56:16,795 INFO Stored 0 rows from Controle table 0 on page 11
-2025-07-12 10:56:16,805 INFO Processing page 12/36
-2025-07-12 10:56:16,898 INFO Table 0 header: ['12', 'RZ', 'HSP 19mm BxB', '1745', '375', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Hoek recht frezen, met de hand afsjangen']
-2025-07-12 10:56:16,906 INFO Processing page 13/36
-2025-07-12 10:56:16,906 INFO Column mapping: {}
-2025-07-12 10:56:16,961 INFO Processing page 14/36
-2025-07-12 10:56:16,968 INFO Stored 17 rows from Massief table 0 on page 15
-2025-07-12 10:56:16,985 INFO Processing page 16/36
-2025-07-12 10:56:17,056 INFO Processing page 15/36
-2025-07-12 10:56:17,194 INFO Table 0 header: ['2', 'LL01', 'HSP 19mm BxB', '491', '331', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '']
-2025-07-12 10:56:17,205 INFO Column mapping: {}
-2025-07-12 10:56:17,245 INFO Table 0 header: ['12', 'RZ', 'HSP 19mm BxB', '1745', '375', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Hoek recht frezen, met de hand afsjangen']
-2025-07-12 10:56:17,245 INFO Column mapping: {}
-2025-07-12 10:56:17,253 INFO Stored 11 rows from Massief table 0 on page 16
-2025-07-12 10:56:17,253 INFO Table 1 header: [None, 'BC', 'HSP 19mm BxB', '963.5', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,253 INFO Column mapping: {}
-2025-07-12 10:56:17,259 INFO Stored 6 rows from Massief table 1 on page 16
-2025-07-12 10:56:17,259 INFO Processing page 17/36
-2025-07-12 10:56:17,326 INFO Table 0 header: ['8', 'LF_01', 'MDF 19mm AFQMxB', '1000', '243.5', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '']
-2025-07-12 10:56:17,326 INFO Column mapping: {}
-2025-07-12 10:56:17,329 INFO Stored 17 rows from Massief table 0 on page 15
-2025-07-12 10:56:17,329 INFO Processing page 16/36
-2025-07-12 10:56:17,362 INFO Stored 2 rows from Massief table 0 on page 17
-2025-07-12 10:56:17,368 INFO Table 1 header: [None, 'BC', 'HSP 19mm BxB', '965', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,379 INFO Column mapping: {}
-2025-07-12 10:56:17,405 INFO Table 0 header: ['2', 'LL01', 'HSP 19mm BxB', '491', '331', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '']
-2025-07-12 10:56:17,405 INFO Column mapping: {}
-2025-07-12 10:56:17,411 INFO Stored 9 rows from Massief table 1 on page 17
-2025-07-12 10:56:17,411 INFO Table 2 header: [None, 'BC', 'HSP 19mm BxB', '966.5', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,411 INFO Column mapping: {}
-2025-07-12 10:56:17,415 INFO Stored 11 rows from Massief table 0 on page 16
-2025-07-12 10:56:17,415 INFO Table 1 header: [None, 'BC', 'HSP 19mm BxB', '963.5', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,415 INFO Column mapping: {}
-2025-07-12 10:56:17,420 INFO Stored 1 rows from Massief table 2 on page 17
-2025-07-12 10:56:17,421 INFO Processing page 18/36
-2025-07-12 10:56:17,439 INFO Stored 6 rows from Massief table 1 on page 16
-2025-07-12 10:56:17,455 INFO Processing page 17/36
-2025-07-12 10:56:17,472 INFO Table 0 header: [None, 'OC', 'HSP 19mm BxB', '966.5', '355', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,477 INFO Column mapping: {}
-2025-07-12 10:56:17,540 INFO Table 0 header: ['8', 'LF_01', 'MDF 19mm AFQMxB', '1000', '243.5', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '']
-2025-07-12 10:56:17,540 INFO Column mapping: {}
-2025-07-12 10:56:17,545 INFO Stored 7 rows from Massief table 0 on page 18
-2025-07-12 10:56:17,545 INFO Processing page 19/36
-2025-07-12 10:56:17,589 INFO Table 1 header: [None, 'Stopcontact ROND', 'Dummy 10mm', '100', '100', '10', 'Te bestellen', '', '', '', '', None]
-2025-07-12 10:56:17,589 INFO Stored 2 rows from Massief table 0 on page 17
-2025-07-12 10:56:17,589 INFO Column mapping: {}
-2025-07-12 10:56:17,589 INFO Table 1 header: [None, 'BC', 'HSP 19mm BxB', '965', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,589 INFO Column mapping: {}
-2025-07-12 10:56:17,594 INFO Stored 1 rows from Massief table 1 on page 19
-2025-07-12 10:56:17,594 INFO Table 2 header: [None, 'OC_greep', 'MDF 19mm AFQMxB', '1001.5', '34', '19', 'Gannomat\nMassief', 'Fineer\neik\n1mm', '', '', '', None]
-2025-07-12 10:56:17,595 INFO Column mapping: {}
-2025-07-12 10:56:17,599 INFO Stored 9 rows from Massief table 1 on page 17
-2025-07-12 10:56:17,600 INFO Table 2 header: [None, 'BC', 'HSP 19mm BxB', '966.5', '337', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,600 INFO Column mapping: {}
-2025-07-12 10:56:17,606 INFO Stored 1 rows from Massief table 2 on page 17
-2025-07-12 10:56:17,606 INFO Processing page 18/36
-2025-07-12 10:56:17,618 INFO Stored 1 rows from Massief table 2 on page 19
-2025-07-12 10:56:17,634 INFO Processing page 20/36
-2025-07-12 10:56:17,656 INFO Table 0 header: [None, 'OC', 'HSP 19mm BxB', '966.5', '355', '19', 'Standaard', 'Fineer\neik\n1mm', 'Fineer\neik\n1mm', '', '', None]
-2025-07-12 10:56:17,672 INFO Column mapping: {}
-2025-07-12 10:56:17,784 INFO Table 1 header: [None, 'OC_greep', 'MDF 19mm AFQMxB', '1004.5', '34', '19', 'Gannomat\nMassief', 'Fineer\neik\n1mm', '', '', '', None]
-2025-07-12 10:56:17,786 INFO Column mapping: {}
-2025-07-12 10:56:17,790 INFO Stored 7 rows from Massief table 0 on page 18
-2025-07-12 10:56:17,790 INFO Processing page 19/36
-2025-07-12 10:56:17,811 INFO Stored 1 rows from Massief table 1 on page 20
-2025-07-12 10:56:17,821 INFO Processing page 21/36
-2025-07-12 10:56:17,834 INFO Table 1 header: [None, 'Stopcontact ROND', 'Dummy 10mm', '100', '100', '10', 'Te bestellen', '', '', '', '', None]
-2025-07-12 10:56:17,839 INFO Column mapping: {}
-2025-07-12 10:56:17,881 INFO Table 3 header: [None, 'AS', 'Massief_PM___x14ZS', '921', '206', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:17,881 INFO Column mapping: {}
-2025-07-12 10:56:17,883 INFO Stored 1 rows from Massief table 1 on page 19
-2025-07-12 10:56:17,883 INFO Table 2 header: [None, 'OC_greep', 'MDF 19mm AFQMxB', '1001.5', '34', '19', 'Gannomat\nMassief', 'Fineer\neik\n1mm', '', '', '', None]
-2025-07-12 10:56:17,884 INFO Column mapping: {}
-2025-07-12 10:56:17,888 INFO Stored 4 rows from Massief table 3 on page 21
-2025-07-12 10:56:17,888 INFO Processing page 22/36
-2025-07-12 10:56:17,903 INFO Stored 1 rows from Massief table 2 on page 19
-2025-07-12 10:56:17,908 INFO Processing page 20/36
-2025-07-12 10:56:17,977 INFO Table 0 header: [None, 'AS', 'Massief_PM___x14ZS', '921', '206', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:17,984 INFO Table 1 header: [None, 'OC_greep', 'MDF 19mm AFQMxB', '1004.5', '34', '19', 'Gannomat\nMassief', 'Fineer\neik\n1mm', '', '', '', None]
-2025-07-12 10:56:17,984 INFO Column mapping: {}
-2025-07-12 10:56:17,984 INFO Column mapping: {}
-2025-07-12 10:56:17,989 INFO Stored 1 rows from Massief table 1 on page 20
-2025-07-12 10:56:17,989 INFO Processing page 21/36
-2025-07-12 10:56:18,037 INFO Table 3 header: [None, 'AS', 'Massief_PM___x14ZS', '921', '206', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,037 INFO Column mapping: {}
-2025-07-12 10:56:18,041 INFO Stored 4 rows from Massief table 0 on page 22
-2025-07-12 10:56:18,041 INFO Table 1 header: [None, 'AS', 'Massief_PM___x14ZS', '923.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,042 INFO Column mapping: {}
-2025-07-12 10:56:18,047 INFO Stored 3 rows from Massief table 1 on page 22
-2025-07-12 10:56:18,047 INFO Table 2 header: [None, 'AS', 'Massief_PM___x14ZS', '923.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,047 INFO Column mapping: {}
-2025-07-12 10:56:18,051 INFO Stored 2 rows from Massief table 2 on page 22
-2025-07-12 10:56:18,051 INFO Processing page 23/36
-2025-07-12 10:56:18,104 INFO Table 1 header: [None, 'AS', 'Massief_PM___x14ZS', '925', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,105 INFO Column mapping: {}
-2025-07-12 10:56:18,108 INFO Stored 4 rows from Massief table 3 on page 21
-2025-07-12 10:56:18,108 INFO Processing page 22/36
-2025-07-12 10:56:18,159 INFO Stored 3 rows from Massief table 1 on page 23
-2025-07-12 10:56:18,161 INFO Table 0 header: [None, 'AS', 'Massief_PM___x14ZS', '921', '206', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,161 INFO Table 2 header: [None, 'AS', 'Massief_PM___x14ZS', '926.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,161 INFO Column mapping: {}
-2025-07-12 10:56:18,161 INFO Column mapping: {}
-2025-07-12 10:56:18,166 INFO Stored 3 rows from Massief table 2 on page 23
-2025-07-12 10:56:18,166 INFO Table 3 header: [None, 'AS', 'Massief_PM___x14ZS', '926.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,166 INFO Column mapping: {}
-2025-07-12 10:56:18,172 INFO Stored 2 rows from Massief table 3 on page 23
-2025-07-12 10:56:18,172 INFO Processing page 24/36
-2025-07-12 10:56:18,200 INFO Stored 4 rows from Massief table 0 on page 22
-2025-07-12 10:56:18,205 INFO Table 1 header: [None, 'AS', 'Massief_PM___x14ZS', '923.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,221 INFO Column mapping: {}
-2025-07-12 10:56:18,221 INFO Table 2 header: [None, 'Achterpoot', 'Massief_PM032x21OP', '249', '32', '21', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,221 INFO Column mapping: {}
-2025-07-12 10:56:18,226 INFO Stored 3 rows from Massief table 1 on page 22
-2025-07-12 10:56:18,226 INFO Table 2 header: [None, 'AS', 'Massief_PM___x14ZS', '923.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,226 INFO Column mapping: {}
-2025-07-12 10:56:18,231 INFO Stored 2 rows from Massief table 2 on page 22
-2025-07-12 10:56:18,231 INFO Processing page 23/36
-2025-07-12 10:56:18,278 INFO Stored 3 rows from Massief table 2 on page 24
-2025-07-12 10:56:18,284 INFO Table 1 header: [None, 'AS', 'Massief_PM___x14ZS', '925', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,284 INFO Table 3 header: [None, 'Led_', 'Dummy 02mm', '1000', '300', '2', 'Te bestellen', '', '', '', '', None]
-2025-07-12 10:56:18,284 INFO Column mapping: {}
-2025-07-12 10:56:18,284 INFO Column mapping: {}
-2025-07-12 10:56:18,288 INFO Stored 3 rows from Massief table 1 on page 23
-2025-07-12 10:56:18,288 INFO Table 2 header: [None, 'AS', 'Massief_PM___x14ZS', '926.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,288 INFO Column mapping: {}
-2025-07-12 10:56:18,293 INFO Stored 3 rows from Massief table 3 on page 24
-2025-07-12 10:56:18,293 INFO Processing page 25/36
-2025-07-12 10:56:18,306 INFO Stored 3 rows from Massief table 2 on page 23
-2025-07-12 10:56:18,316 INFO Processing page 26/36
-2025-07-12 10:56:18,316 INFO Table 3 header: [None, 'AS', 'Massief_PM___x14ZS', '926.5', '160', '14', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,327 INFO Column mapping: {}
-2025-07-12 10:56:18,331 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:18,332 INFO Column mapping: {}
-2025-07-12 10:56:18,336 INFO Stored 1 rows from Magazijn table 0 on page 26
-2025-07-12 10:56:18,336 INFO Table 1 header: [None, '71T950A + 177H3100E', '4', None]
-2025-07-12 10:56:18,336 INFO Column mapping: {}
-2025-07-12 10:56:18,343 INFO Stored 2 rows from Massief table 3 on page 23
-2025-07-12 10:56:18,343 INFO Processing page 24/36
-2025-07-12 10:56:18,391 INFO Table 2 header: [None, 'Achterpoot', 'Massief_PM032x21OP', '249', '32', '21', 'Gannomat\nMassief', '', '', '', '', None]
-2025-07-12 10:56:18,391 INFO Column mapping: {}
-2025-07-12 10:56:18,393 INFO Stored 4 rows from Magazijn table 1 on page 26
-2025-07-12 10:56:18,393 INFO Processing page 27/36
-2025-07-12 10:56:18,542 INFO Stored 3 rows from Massief table 2 on page 24
-2025-07-12 10:56:18,542 INFO Processing page 28/36
-2025-07-12 10:56:18,542 INFO Table 3 header: [None, 'Led_', 'Dummy 02mm', '1000', '300', '2', 'Te bestellen', '', '', '', '', None]
-2025-07-12 10:56:18,548 INFO Column mapping: {}
-2025-07-12 10:56:18,572 INFO Processing page 29/36
-2025-07-12 10:56:18,601 INFO Stored 3 rows from Massief table 3 on page 24
-2025-07-12 10:56:18,607 INFO Processing page 30/36
-2025-07-12 10:56:18,607 INFO Processing page 25/36
-2025-07-12 10:56:18,668 INFO Processing page 31/36
-2025-07-12 10:56:18,674 INFO Processing page 26/36
-2025-07-12 10:56:18,696 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:18,707 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:18,707 INFO Column mapping: {}
-2025-07-12 10:56:18,707 INFO Column mapping: {}
-2025-07-12 10:56:18,713 INFO Stored 1 rows from Magazijn table 0 on page 31
-2025-07-12 10:56:18,713 INFO Table 1 header: [None, '71T950A + 177H3100E', '4', None]
-2025-07-12 10:56:18,713 INFO Column mapping: {}
-2025-07-12 10:56:18,718 INFO Stored 1 rows from Magazijn table 0 on page 26
-2025-07-12 10:56:18,718 INFO Table 1 header: [None, '71T950A + 177H3100E', '4', None]
-2025-07-12 10:56:18,718 INFO Column mapping: {}
-2025-07-12 10:56:18,724 INFO Stored 4 rows from Magazijn table 1 on page 26
-2025-07-12 10:56:18,724 INFO Processing page 27/36
-2025-07-12 10:56:18,746 INFO Stored 4 rows from Magazijn table 1 on page 31
-2025-07-12 10:56:18,751 INFO Processing page 28/36
-2025-07-12 10:56:18,751 INFO Processing page 32/36
-2025-07-12 10:56:18,806 INFO Processing page 29/36
-2025-07-12 10:56:18,807 INFO Processing page 33/36
-2025-07-12 10:56:18,845 INFO Processing page 30/36
-2025-07-12 10:56:18,868 INFO Processing page 34/36
-2025-07-12 10:56:18,922 INFO Processing page 31/36
-2025-07-12 10:56:18,955 INFO Processing page 35/36
-2025-07-12 10:56:18,962 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:18,973 INFO Column mapping: {}
-2025-07-12 10:56:19,003 INFO Processing page 36/36
-2025-07-12 10:56:19,010 INFO Stored 1 rows from Magazijn table 0 on page 31
-2025-07-12 10:56:19,016 INFO Table 1 header: [None, '71T950A + 177H3100E', '4', None]
-2025-07-12 10:56:19,017 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:19,017 INFO Column mapping: {}
-2025-07-12 10:56:19,018 INFO Column mapping: {}
-2025-07-12 10:56:19,018 INFO Stored 0 rows from Controle table 0 on page 36
-2025-07-12 10:56:19,018 INFO Table 1 header: ['']
-2025-07-12 10:56:19,018 INFO Column mapping: {}
-2025-07-12 10:56:19,018 INFO Stored 0 rows from Controle table 1 on page 36
-2025-07-12 10:56:19,024 INFO Stored 4 rows from Magazijn table 1 on page 31
-2025-07-12 10:56:19,024 INFO Processing page 32/36
-2025-07-12 10:56:19,027 INFO Successfully stored 158 rows from 36 pages
-2025-07-12 10:56:19,053 INFO Processing page 33/36
-2025-07-12 10:56:19,054 INFO NESTING database result: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:19,084 INFO Processing page 34/36
-2025-07-12 10:56:19,084 INFO ACCURA Nesting item 2: 2 sides
-2025-07-12 10:56:19,089 INFO ACCURA Nesting item 4: 2 sides
-2025-07-12 10:56:19,101 INFO ACCURA Nesting item 6: 2 sides
-2025-07-12 10:56:19,112 INFO ACCURA Nesting item 8: 4 sides
-2025-07-12 10:56:19,116 INFO Processing page 35/36
-2025-07-12 10:56:19,116 INFO ACCURA Nesting item 10: 4 sides
-2025-07-12 10:56:19,116 INFO ACCURA Nesting item 12: 4 sides
-2025-07-12 10:56:19,126 INFO ACCURA Nesting item 14: 4 sides
-2025-07-12 10:56:19,154 INFO ACCURA Nesting item 16: 4 sides
-2025-07-12 10:56:19,291 INFO ACCURA Nesting item 18: 4 sides
-2025-07-12 10:56:19,326 INFO ACCURA Opdeelzaag item 12: 2 sides
-2025-07-12 10:56:19,326 INFO ACCURA Opdeelzaag item 14: 2 sides
-2025-07-12 10:56:19,326 INFO ACCURA Opdeelzaag item 16: 1 sides
-2025-07-12 10:56:19,326 INFO Processing page 36/36
-2025-07-12 10:56:19,326 INFO ACCURA Opdeelzaag item 18: 1 sides
-2025-07-12 10:56:19,339 INFO Table 0 header: ['S8', None]
-2025-07-12 10:56:19,340 INFO ACCURA database result: 13 items, 36 sides
-2025-07-12 10:56:19,340 INFO Column mapping: {}
-2025-07-12 10:56:19,340 INFO Stored 0 rows from Controle table 0 on page 36
-2025-07-12 10:56:19,340 INFO Table 1 header: ['']
-2025-07-12 10:56:19,340 INFO Column mapping: {}
-2025-07-12 10:56:19,340 INFO BOERE database result: 0 items (excluding 'Te bestellen')
-2025-07-12 10:56:19,340 INFO Stored 0 rows from Controle table 1 on page 36
-2025-07-12 10:56:19,341 INFO [UNIFIED_PDF] Work found for NESTING (NESTING_PROCESSING)
-2025-07-12 10:56:19,346 INFO Successfully stored 158 rows from 36 pages
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 2: 2 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 4: 2 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 6: 2 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 8: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 10: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 12: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 14: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 16: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Nesting item 18: 4 sides
-2025-07-12 10:56:19,348 INFO ACCURA Opdeelzaag item 12: 2 sides
-2025-07-12 10:56:19,348 INFO ACCURA Opdeelzaag item 14: 2 sides
-2025-07-12 10:56:19,348 INFO ACCURA Opdeelzaag item 16: 1 sides
-2025-07-12 10:56:19,348 INFO ACCURA Opdeelzaag item 18: 1 sides
-2025-07-12 10:56:19,349 INFO ACCURA database result: 13 items, 36 sides
-2025-07-12 10:56:19,349 INFO BOERE database result: 0 items (excluding 'Te bestellen')
-2025-07-12 10:56:19,349 INFO [UNIFIED_PDF] Work found for ACCURA (ACCURA_PROCESSING)
-2025-07-12 10:56:19,349 INFO [UNIFIED_PDF] Waiting 1.40s before posting OPEN for ACCURA
-2025-07-12 10:56:21,345 INFO [db_log_api] /update_nesting_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'nesting_count': 9, 'opdeelzaag_count': 9, 'timestamp': '2025-07-12T10:56:19.341662'}
-2025-07-12 10:56:21,348 INFO Updated nesting counts for NESTING - MO07202-7203_TV-wand (7-7): Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:21,351 INFO OPEN event updated with nesting counts for: NESTING - MO07202-7203_TV-wand (7-7) (Nesting: 9, Opdeelzaag: 9)
-2025-07-12 10:56:21,351 INFO NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:22,766 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected PDF work', 'project': 'MO07202-7203_TV-wand (7-7)', 'base_mo_code': 'MO07202', 'is_rep_variant': False, 'user': 'ACCURA', 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:22,768 INFO Event OPEN received for ACCURA on MO07202-7203_TV-wand (7-7). Triggering background import service.
-2025-07-12 10:56:22,768 INFO Configuratie succesvol geladen.
-2025-07-12 10:56:22,768 INFO Event ontvangen: User=ACCURA, Project=MO07202-7203_TV-wand (7-7). Controleren voor import...
-2025-07-12 10:56:22,768 INFO ACCURA_PROCESSING voor user 'ACCURA': Triggering unified PDF search for 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:22,768 INFO Found matching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:22,768 INFO Processing PDF for all processors in same directory: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:22,769 INFO [UNIFIED_PDF] Processing C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF for processors: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:22,769 INFO [PDF_DB] Extracted project code: 'MO07202-7203_TV-wand (7-7)' from 'S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF'
-2025-07-12 10:56:22,770 INFO PDF already cached: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:22,770 INFO [PDF_DB] Using cached PDF data for: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:22,770 INFO NESTING database result: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 2: 2 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 4: 2 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 6: 2 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 8: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 10: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 12: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 14: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 16: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Nesting item 18: 4 sides
-2025-07-12 10:56:22,771 INFO ACCURA Opdeelzaag item 12: 2 sides
-2025-07-12 10:56:22,771 INFO ACCURA Opdeelzaag item 14: 2 sides
-2025-07-12 10:56:22,771 INFO ACCURA Opdeelzaag item 16: 1 sides
-2025-07-12 10:56:22,771 INFO ACCURA Opdeelzaag item 18: 1 sides
-2025-07-12 10:56:22,771 INFO ACCURA database result: 13 items, 36 sides
-2025-07-12 10:56:22,772 INFO BOERE database result: 0 items (excluding 'Te bestellen')
-2025-07-12 10:56:22,772 INFO [UNIFIED_PDF] Work found for NESTING (NESTING_PROCESSING)
-2025-07-12 10:56:22,776 INFO [UNIFIED_PDF] Successfully posted OPEN for MO07202-7203_TV-wand (7-7) for user ACCURA
-2025-07-12 10:56:23,356 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9', 'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'timestamp': '2025-07-12T10:56:21.351792'}
-2025-07-12 10:56:23,362 INFO Import event gelogd naar API: NESTING - MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:23,363 INFO [UNIFIED_PDF] Work found for ACCURA (ACCURA_PROCESSING)
-2025-07-12 10:56:23,396 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-12 10:56:23,398 INFO Adding empty project list for dashboard user: OPUS
-2025-07-12 10:56:23,398 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-12 10:56:23,398 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:56:24,780 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'ACCURA', 'aantal_items': 13, 'aantal_sides': 36, 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:24,784 INFO Updated accura counts for ACCURA - MO07202-7203_TV-wand (7-7): Items=13, Sides=36
-2025-07-12 10:56:24,787 INFO OPEN event updated with accura counts for: ACCURA - MO07202-7203_TV-wand (7-7) (Items: 13, Sides: 36)
-2025-07-12 10:56:24,790 INFO [UNIFIED_PDF] No work found for BOERE (BOERE_PROCESSING)
-2025-07-12 10:56:24,791 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
-2025-07-12 10:56:24,791 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:24,791 INFO [BG_TASK] Match found for 'MO07202-7203_TV-wand (7-7)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
-2025-07-12 10:56:24,791 INFO [BG_TASK] Waiting for 1.27s before posting OPEN for OPUS.
-2025-07-12 10:56:24,797 INFO [db_log_api] /update_nesting_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'nesting_count': 9, 'opdeelzaag_count': 9, 'timestamp': '2025-07-12T10:56:22.772223'}
-2025-07-12 10:56:24,799 INFO Updated nesting counts for NESTING - MO07202-7203_TV-wand (7-7): Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:24,800 INFO OPEN event updated with nesting counts for: NESTING - MO07202-7203_TV-wand (7-7) (Nesting: 9, Opdeelzaag: 9)
-2025-07-12 10:56:24,800 INFO NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:25,684 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0411_MO07202-7203_TV-wand (7-7)", 'project': 'MO07202-7203_TV-wand (7-7)', 'base_mo_code': 'MO07202', 'is_rep_variant': False, 'user': 'ACCURA', 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:25,686 INFO Event OPEN received for ACCURA on MO07202-7203_TV-wand (7-7). Triggering background import service.
-2025-07-12 10:56:25,686 INFO Configuratie succesvol geladen.
-2025-07-12 10:56:25,686 INFO Event ontvangen: User=ACCURA, Project=MO07202-7203_TV-wand (7-7). Controleren voor import...
-2025-07-12 10:56:25,686 INFO ACCURA_PROCESSING voor user 'ACCURA': Triggering unified PDF search for 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:25,686 INFO Found matching PDF: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:25,686 INFO Processing PDF for all processors in same directory: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:25,686 INFO [UNIFIED_PDF] Processing C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF for processors: ['NESTING', 'ACCURA', 'BOERE']
-2025-07-12 10:56:25,686 INFO [PDF_DB] Extracted project code: 'MO07202-7203_TV-wand (7-7)' from 'S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF'
-2025-07-12 10:56:25,688 INFO PDF already cached: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:25,688 INFO [PDF_DB] Using cached PDF data for: C:/Rapporten\S04479_RAPPORT_Rudi Matterne_0411_MO07202-7203_TV-wand (7-7).PDF
-2025-07-12 10:56:25,688 INFO NESTING database result: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:25,688 INFO ACCURA Nesting item 2: 2 sides
-2025-07-12 10:56:25,688 INFO ACCURA Nesting item 4: 2 sides
-2025-07-12 10:56:25,688 INFO ACCURA Nesting item 6: 2 sides
-2025-07-12 10:56:25,688 INFO ACCURA Nesting item 8: 4 sides
-2025-07-12 10:56:25,688 INFO ACCURA Nesting item 10: 4 sides
-2025-07-12 10:56:25,689 INFO ACCURA Nesting item 12: 4 sides
-2025-07-12 10:56:25,689 INFO ACCURA Nesting item 14: 4 sides
-2025-07-12 10:56:25,689 INFO ACCURA Nesting item 16: 4 sides
-2025-07-12 10:56:25,689 INFO ACCURA Nesting item 18: 4 sides
-2025-07-12 10:56:25,689 INFO ACCURA Opdeelzaag item 12: 2 sides
-2025-07-12 10:56:25,689 INFO ACCURA Opdeelzaag item 14: 2 sides
-2025-07-12 10:56:25,689 INFO ACCURA Opdeelzaag item 16: 1 sides
-2025-07-12 10:56:25,689 INFO ACCURA Opdeelzaag item 18: 1 sides
-2025-07-12 10:56:25,689 INFO ACCURA database result: 13 items, 36 sides
-2025-07-12 10:56:25,690 INFO BOERE database result: 0 items (excluding 'Te bestellen')
-2025-07-12 10:56:25,690 INFO [UNIFIED_PDF] Work found for NESTING (NESTING_PROCESSING)
-2025-07-12 10:56:25,693 INFO Successfully posted OPEN event for ACCURA on project MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:26,818 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9', 'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'timestamp': '2025-07-12T10:56:24.800471'}
-2025-07-12 10:56:26,825 INFO Import event gelogd naar API: NESTING - MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:26,826 INFO [UNIFIED_PDF] Work found for ACCURA (ACCURA_PROCESSING)
-2025-07-12 10:56:27,695 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'ACCURA', 'aantal_items': 13, 'aantal_sides': 36, 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:27,697 INFO Updated accura counts for ACCURA - MO07202-7203_TV-wand (7-7): Items=13, Sides=36
-2025-07-12 10:56:27,698 INFO OPEN event updated with accura counts for: ACCURA - MO07202-7203_TV-wand (7-7) (Items: 13, Sides: 36)
-2025-07-12 10:56:27,698 INFO [UNIFIED_PDF] No work found for BOERE (BOERE_PROCESSING)
-2025-07-12 10:56:27,705 INFO [db_log_api] /update_nesting_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'nesting_count': 9, 'opdeelzaag_count': 9, 'timestamp': '2025-07-12T10:56:25.690632'}
-2025-07-12 10:56:27,706 INFO Updated nesting counts for NESTING - MO07202-7203_TV-wand (7-7): Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:27,707 INFO OPEN event updated with nesting counts for: NESTING - MO07202-7203_TV-wand (7-7) (Nesting: 9, Opdeelzaag: 9)
-2025-07-12 10:56:27,707 INFO NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9
-2025-07-12 10:56:28,061 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0411_MO07202-7203_TV-wand (7-7)", 'project': 'MO07202-7203_TV-wand (7-7)', 'base_mo_code': 'MO07202', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:28,062 INFO Event OPEN received for OPUS on MO07202-7203_TV-wand (7-7). Triggering background import service.
-2025-07-12 10:56:28,062 INFO Configuratie succesvol geladen.
-2025-07-12 10:56:28,062 INFO Event ontvangen: User=OPUS, Project=MO07202-7203_TV-wand (7-7). Controleren voor import...
-2025-07-12 10:56:28,064 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO07202-7203_TV-wand (7-7)' for directory matching.
-2025-07-12 10:56:28,064 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO07202-7203_TV-wand (7-7)' (Upper: 'MO07202-7203_TV-WAND (7-7)')
-2025-07-12 10:56:28,064 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO07202-7203_TV-WAND (7-7)'? Result: False
-2025-07-12 10:56:28,064 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO07202-7203_TV-wand (7-7)' (Upper: 'MO07202-7203_TV-WAND (7-7)')
-2025-07-12 10:56:28,064 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO07202-7203_TV-WAND (7-7)'? Result: True
-2025-07-12 10:56:28,064 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:28,064 INFO HOPS import gestart voor user 'OPUS', project context: MO07202-7203_TV-wand (7-7) in map: C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:28,064 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:28,064 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)' voor Excel rapportage.
-2025-07-12 10:56:28,071 INFO [BG_TASK] Successfully posted OPEN for MO07202-7203_TV-wand (7-7) for user OPUS.
-2025-07-12 10:56:28,073 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
-2025-07-12 10:56:28,073 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:28,074 INFO [BG_TASK] Match found for 'MO07202-7203_TV-wand (7-7)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
-2025-07-12 10:56:28,074 INFO [BG_TASK] Waiting for 0.95s before posting OPEN for KL GANNOMAT.
-2025-07-12 10:56:28,079 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:28,079 INFO HOPS Excel rapport bevat 2 items
-2025-07-12 10:56:28,832 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'ACCURA', 'aantal_items': 13, 'aantal_sides': 36, 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:28,835 INFO Updated accura counts for ACCURA - MO07202-7203_TV-wand (7-7): Items=13, Sides=36
-2025-07-12 10:56:28,836 INFO OPEN event updated with accura counts for: ACCURA - MO07202-7203_TV-wand (7-7) (Items: 13, Sides: 36)
-2025-07-12 10:56:28,836 INFO [UNIFIED_PDF] No work found for BOERE (BOERE_PROCESSING)
-2025-07-12 10:56:29,712 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=9, Opdeelzaag=9', 'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'NESTING', 'timestamp': '2025-07-12T10:56:27.707883'}
-2025-07-12 10:56:29,719 INFO Import event gelogd naar API: NESTING - MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:29,719 INFO [UNIFIED_PDF] Work found for ACCURA (ACCURA_PROCESSING)
-2025-07-12 10:56:30,093 INFO [db_log_api] /update_file_path called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0411_MO07202-7203_TV-wand (7-7)\\0411_MO07202-7203_TV-wand (7-7).xlsx', 'timestamp': '2025-07-12T10:56:28.079457'}
-2025-07-12 10:56:30,097 INFO Updated file_path for OPEN event: user=OPUS, project=MO07202-7203_TV-wand (7-7), path=C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:30,100 INFO OPEN event updated with Excel path for: OPUS - MO07202-7203_TV-wand (7-7) at C:/OPUS/KORPUS\0411_MO07202-7203_TV-wand (7-7)\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:31,026 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0411_MO07202-7203_TV-wand (7-7)", 'project': 'MO07202-7203_TV-wand (7-7)', 'base_mo_code': 'MO07202', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:31,028 INFO Event OPEN received for KL GANNOMAT on MO07202-7203_TV-wand (7-7). Triggering background import service.
-2025-07-12 10:56:31,028 INFO Configuratie succesvol geladen.
-2025-07-12 10:56:31,028 INFO Event ontvangen: User=KL GANNOMAT, Project=MO07202-7203_TV-wand (7-7). Controleren voor import...
-2025-07-12 10:56:31,028 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
-2025-07-12 10:56:31,029 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO07202-7203_TV-wand (7-7) in map: C:/GANNOMAT
-2025-07-12 10:56:31,029 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO07202-7203_TV-wand (7-7)' (Upper: 'MO07202-7203_TV-WAND (7-7)')
-2025-07-12 10:56:31,030 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO07202-7203_TV-WAND (7-7)'? Result: False
-2025-07-12 10:56:31,030 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO07202-7203_TV-wand (7-7)' (Upper: 'MO07202-7203_TV-WAND (7-7)')
-2025-07-12 10:56:31,030 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO07202-7203_TV-WAND (7-7)'? Result: True
-2025-07-12 10:56:31,030 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0411_MO07202-7203_TV-wand (7-7).Mdb. Verwerken...
-2025-07-12 10:56:31,041 INFO [BG_TASK] Successfully posted OPEN for MO07202-7203_TV-wand (7-7) for user KL GANNOMAT.
-2025-07-12 10:56:31,044 INFO [BG_TASK] Finished processing OPEN for MO07202-7203_TV-wand (7-7).
-2025-07-12 10:56:31,184 INFO Querying 'ProgramNumber' from table 'Program' in 0411_MO07202-7203_TV-wand (7-7).Mdb
-2025-07-12 10:56:31,241 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:31,241 INFO MDB Excel report successfully saved: C:/GANNOMAT\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:31,241 INFO MDB Excel rapport bevat 4 items
-2025-07-12 10:56:31,734 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'ACCURA', 'aantal_items': 13, 'aantal_sides': 36, 'timestamp': '2025-07-12T10:55:26.665742'}
-2025-07-12 10:56:31,735 INFO Updated accura counts for ACCURA - MO07202-7203_TV-wand (7-7): Items=13, Sides=36
-2025-07-12 10:56:31,736 INFO OPEN event updated with accura counts for: ACCURA - MO07202-7203_TV-wand (7-7) (Items: 13, Sides: 36)
-2025-07-12 10:56:31,736 INFO [UNIFIED_PDF] No work found for BOERE (BOERE_PROCESSING)
-2025-07-12 10:56:32,116 INFO [db_log_api] /update_item_count called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-12T10:56:30.100530'}
-2025-07-12 10:56:32,119 INFO Updated item_count for OPEN event: user=OPUS, project=MO07202-7203_TV-wand (7-7), count=2
-2025-07-12 10:56:32,122 INFO OPEN event updated with item count (2) for: OPUS - MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:32,122 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 10
-2025-07-12 10:56:33,246 INFO [db_log_api] /update_file_path called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0411_MO07202-7203_TV-wand (7-7).xlsx', 'timestamp': '2025-07-12T10:56:31.243068'}
-2025-07-12 10:56:33,250 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO07202-7203_TV-wand (7-7), path=C:/GANNOMAT\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:33,253 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO07202-7203_TV-wand (7-7) at C:/GANNOMAT\0411_MO07202-7203_TV-wand (7-7).xlsx
-2025-07-12 10:56:34,774 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-12 10:56:34,776 INFO Adding empty project list for dashboard user: BOERE
-2025-07-12 10:56:35,257 INFO [db_log_api] /update_item_count called with data: {'project': 'MO07202-7203_TV-wand (7-7)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-12T10:56:33.253722'}
-2025-07-12 10:56:35,261 INFO Updated item_count for OPEN event: user=KL GANNOMAT, project=MO07202-7203_TV-wand (7-7), count=4
-2025-07-12 10:56:35,264 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO07202-7203_TV-wand (7-7)
-2025-07-12 10:56:35,264 INFO Excel rapport gegenereerd voor 0411_MO07202-7203_TV-wand (7-7).Mdb.
-2025-07-12 10:56:35,265 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07202-7203_TV-wand (7-7)'.
-2025-07-12 10:56:35,265 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 11
-2025-07-12 10:56:36,823 INFO logs_project endpoint called for project: 'MO07202-7203_TV-wand (7-7)'
-2025-07-12 10:56:36,824 INFO PDF database initialized successfully
+2025-07-15 22:20:34,040 INFO Daily efficiency update scheduler started
+2025-07-15 22:20:34,041 INFO Daily efficiency updated for 0 users
+2025-07-15 22:20:34,041 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
+2025-07-15 22:20:34,041 INFO Efficiency tracking system initialized
+2025-07-15 22:20:34,058 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-07-15 22:20:57,296 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:21:27,461 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:21:27,462 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:21:57,789 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:22:27,818 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:22:58,146 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:23:28,188 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:23:58,519 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:24:28,545 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:24:28,546 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:24:28,546 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:24:28,547 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:24:28,547 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:24:53,763 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:24:55,359 INFO database management page was called
+2025-07-15 22:25:01,224 INFO [db_log_api] /clear_logs POST request received.
+2025-07-15 22:25:01,226 INFO Cleared table: logs
+2025-07-15 22:25:01,226 INFO Cleared table: sessions
+2025-07-15 22:25:01,226 INFO Cleared table: project_sessions
+2025-07-15 22:25:01,229 INFO All database tables cleared successfully.
+2025-07-15 22:25:02,233 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
+2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: NESTING
+2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:25:10,666 INFO Work hours configuration updated: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-15 22:25:10,666 INFO Work hours configuration saved to config.json
+2025-07-15 22:27:34,389 INFO Session started for NESTING: NESTING_20250715_222732
+2025-07-15 22:27:36,414 INFO Project session started: NESTING_20250715_222732
+2025-07-15 22:31:43,595 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: NESTING
+2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: ACCURA
+2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: BOERE
+2025-07-15 22:32:02,047 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'MO06797_Bureaukast_(15-16)', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250715_222732', 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:02,048 INFO Event OPEN received for NESTING on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-15 22:32:02,049 INFO Configuratie succesvol geladen.
+2025-07-15 22:32:02,049 INFO Event ontvangen: User=NESTING, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-15 22:32:02,049 INFO NESTING_PROCESSING voor user 'NESTING': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
+2025-07-15 22:32:02,049 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:02,050 INFO NESTING_PROCESSING gestart voor user 'NESTING', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:02,103 INFO [BG_TASK] Processing OPEN for MO06797_Bureaukast_(15-16), scanned by NESTING.
+2025-07-15 22:32:02,109 INFO Background task started for OPEN event: MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:02,113 INFO NESTING_PROCESSING voltooid: Nesting=40, Opdeelzaag=14
+2025-07-15 22:32:02,113 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
+2025-07-15 22:32:02,113 INFO [BG_TASK] Running background unified Excel processing for non-scanner Excel processors: ['ACCURA', 'BOERE']
+2025-07-15 22:32:02,113 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['ACCURA', 'BOERE']
+2025-07-15 22:32:02,115 ERROR Fout bij updaten OPEN event met nesting counts: Object of type int64 is not JSON serializable
+2025-07-15 22:32:02,115 INFO Fout bij nesting counts API update: Object of type int64 is not JSON serializable
+2025-07-15 22:32:02,115 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:02,160 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
+2025-07-15 22:32:02,160 INFO [UNIFIED_EXCEL] Waiting 1.12s before posting OPEN for ACCURA
+2025-07-15 22:32:04,118 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=40, Opdeelzaag=14', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'NESTING', 'timestamp': '2025-07-15T22:32:02.115253'}
+2025-07-15 22:32:04,125 INFO Import event gelogd naar API: NESTING - MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:05,301 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'user': 'ACCURA', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:05,302 INFO Event OPEN received for ACCURA on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-15 22:32:05,302 INFO Configuratie succesvol geladen.
+2025-07-15 22:32:05,302 INFO Event ontvangen: User=ACCURA, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-15 22:32:05,303 INFO ACCURA_PROCESSING voor user 'ACCURA': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
+2025-07-15 22:32:05,303 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:05,304 INFO ACCURA_PROCESSING gestart voor user 'ACCURA', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:05,325 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user ACCURA
+2025-07-15 22:32:05,346 INFO ACCURA_PROCESSING voltooid: 49 items, 141 sides
+2025-07-15 22:32:06,139 INFO Failed to update project metadata: 404
+2025-07-15 22:32:07,360 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'aantal_items': 49, 'aantal_sides': 141, 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:07,362 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'aantal_items': 49, 'aantal_sides': 141, 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:07,363 INFO Updated accura counts for ACCURA - MO06797_Bureaukast_(15-16): Items=49, Sides=141
+2025-07-15 22:32:07,365 INFO OPEN event updated with accura counts for: ACCURA - MO06797_Bureaukast_(15-16) (Items: 49, Sides: 141)
+2025-07-15 22:32:07,371 INFO Updated accura counts for ACCURA - MO06797_Bureaukast_(15-16): Items=49, Sides=141
+2025-07-15 22:32:07,375 INFO OPEN event updated with accura counts for: ACCURA - MO06797_Bureaukast_(15-16) (Items: 49, Sides: 141)
+2025-07-15 22:32:09,369 INFO Failed to update project metadata: 404
+2025-07-15 22:32:09,371 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
+2025-07-15 22:32:09,371 INFO [UNIFIED_EXCEL] Waiting 0.38s before posting OPEN for BOERE
+2025-07-15 22:32:09,389 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'ACCURA_PROCESSING voltooid: 49 items, 141 sides', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'timestamp': '2025-07-15T22:32:07.375186'}
+2025-07-15 22:32:09,397 INFO Import event gelogd naar API: ACCURA - MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:11,403 INFO Failed to update project metadata: 404
+2025-07-15 22:32:11,761 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'user': 'BOERE', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:11,762 INFO Event OPEN received for BOERE on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-15 22:32:11,762 INFO Configuratie succesvol geladen.
+2025-07-15 22:32:11,762 INFO Event ontvangen: User=BOERE, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-15 22:32:11,762 INFO BOERE_PROCESSING voor user 'BOERE': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
+2025-07-15 22:32:11,763 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:11,763 INFO BOERE_PROCESSING gestart voor user 'BOERE', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-15 22:32:11,784 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user BOERE
+2025-07-15 22:32:11,796 ERROR Error updating item count: Object of type int64 is not JSON serializable
+2025-07-15 22:32:11,796 INFO Fout bij updaten OPEN event met boere count
+2025-07-15 22:32:11,806 INFO BOERE_PROCESSING voltooid: 86 items
+2025-07-15 22:32:13,623 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-15 22:32:13,625 INFO Adding empty project list for dashboard user: OPUS
+2025-07-15 22:32:13,625 INFO Adding empty project list for dashboard user: KL GANNOMAT
+2025-07-15 22:32:13,812 INFO Failed to update project metadata: 404
+2025-07-15 22:32:13,813 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
+2025-07-15 22:32:13,813 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
+2025-07-15 22:32:13,813 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-07-15 22:32:13,813 INFO [BG_TASK] Waiting for 0.61s before posting OPEN for OPUS.
+2025-07-15 22:32:13,820 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'item_count': 86, 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:13,825 INFO Updated item_count for OPEN event: user=BOERE, project=MO06797_Bureaukast_(15-16), count=86
+2025-07-15 22:32:13,828 INFO OPEN event updated with boere count for: BOERE - MO06797_Bureaukast_(15-16) (Items: 86)
+2025-07-15 22:32:15,842 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'BOERE_PROCESSING voltooid: 86 items', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'timestamp': '2025-07-15T22:32:13.828785'}
+2025-07-15 22:32:15,850 INFO Import event gelogd naar API: BOERE - MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:16,444 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:16,446 INFO Event OPEN received for OPUS on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-15 22:32:16,446 INFO Configuratie succesvol geladen.
+2025-07-15 22:32:16,446 INFO Event ontvangen: User=OPUS, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-15 22:32:16,447 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO06797_Bureaukast_(15-16)' for directory matching.
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
+2025-07-15 22:32:16,447 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:16,447 INFO HOPS import gestart voor user 'OPUS', project context: MO06797_Bureaukast_(15-16) in map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:16,448 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)'.
+2025-07-15 22:32:16,448 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)' voor Excel rapportage.
+2025-07-15 22:32:16,453 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user OPUS.
+2025-07-15 22:32:16,455 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
+2025-07-15 22:32:16,455 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
+2025-07-15 22:32:16,456 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-07-15 22:32:16,456 INFO [BG_TASK] Waiting for 0.66s before posting OPEN for KL GANNOMAT.
+2025-07-15 22:32:16,462 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:16,462 INFO HOPS Excel rapport bevat 2 items
+2025-07-15 22:32:17,867 INFO Failed to update project metadata: 404
+2025-07-15 22:32:18,477 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0618_MO06797_Bureaukast_(15-16)\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-15T22:32:16.462636'}
+2025-07-15 22:32:18,481 INFO Updated file_path for OPEN event: user=OPUS, project=MO06797_Bureaukast_(15-16), path=C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:18,484 INFO OPEN event updated with Excel path for: OPUS - MO06797_Bureaukast_(15-16) at C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:19,137 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-15T22:27:32.371790'}
+2025-07-15 22:32:19,139 INFO Event OPEN received for KL GANNOMAT on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-15 22:32:19,139 INFO Configuratie succesvol geladen.
+2025-07-15 22:32:19,139 INFO Event ontvangen: User=KL GANNOMAT, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-15 22:32:19,139 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-07-15 22:32:19,139 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO06797_Bureaukast_(15-16) in map: C:/GANNOMAT
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
+2025-07-15 22:32:19,140 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).Mdb. Verwerken...
+2025-07-15 22:32:19,151 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user KL GANNOMAT.
+2025-07-15 22:32:19,154 INFO [BG_TASK] Finished processing OPEN for MO06797_Bureaukast_(15-16).
+2025-07-15 22:32:19,280 INFO Querying 'ProgramNumber' from table 'Program' in 0618_MO06797_Bureaukast_(15-16).Mdb
+2025-07-15 22:32:19,341 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:19,341 INFO MDB Excel report successfully saved: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:19,341 INFO MDB Excel rapport bevat 4 items
+2025-07-15 22:32:20,488 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-15T22:32:18.484358'}
+2025-07-15 22:32:20,492 INFO Updated item_count for OPEN event: user=OPUS, project=MO06797_Bureaukast_(15-16), count=2
+2025-07-15 22:32:20,496 INFO OPEN event updated with item count (2) for: OPUS - MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:20,496 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 6
+2025-07-15 22:32:21,346 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-15T22:32:19.342684'}
+2025-07-15 22:32:21,351 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO06797_Bureaukast_(15-16), path=C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:21,353 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO06797_Bureaukast_(15-16) at C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-15 22:32:23,355 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-15T22:32:21.353281'}
+2025-07-15 22:32:23,358 INFO Updated item_count for OPEN event: user=KL GANNOMAT, project=MO06797_Bureaukast_(15-16), count=4
+2025-07-15 22:32:23,362 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO06797_Bureaukast_(15-16)
+2025-07-15 22:32:23,362 INFO Excel rapport gegenereerd voor 0618_MO06797_Bureaukast_(15-16).Mdb.
+2025-07-15 22:32:23,362 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO06797_Bureaukast_(15-16)'.
+2025-07-15 22:32:23,362 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 7
+2025-07-15 22:32:24,226 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-15 22:32:25,413 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
+2025-07-15 22:32:25,458 INFO PDF database initialized successfully
+2025-07-15 22:33:40,489 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-15 22:34:07,724 ERROR Error getting productivity metrics: '>' not supported between instances of 'NoneType' and 'int'
+2025-07-15 22:34:07,730 ERROR Error getting bottleneck analysis: no such column: timestamp
+2025-07-15 22:34:07,732 ERROR Error getting quality metrics: unsupported operand type(s) for -: 'int' and 'NoneType'
+2025-07-15 22:34:16,222 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-15 22:34:33,333 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
+2025-07-15 22:34:33,335 INFO PDF database initialized successfully

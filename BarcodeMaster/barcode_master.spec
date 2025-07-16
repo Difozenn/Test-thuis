@@ -60,12 +60,25 @@ a = Analysis(
         # PIL essentials
         'PIL._tkinter_finder',
         
+        # Excel processing dependencies
+        'pandas',
+        'xlrd',
+        'openpyxl',
+        'xlwt',
+        'xlsxwriter',
+        
+        # Threading and concurrency
+        'threading',
+        'concurrent.futures',
+        'queue',
+        
         # Project modules (let PyInstaller auto-detect most others)
         'gui.app',
         'path_utils',
         'config_utils',
         'database.db_log_api',
         'services.background_import_service',
+        'services.excel_processing_functions',
     ],
     hookspath=[],
     hooksconfig={},

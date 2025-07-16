@@ -76,8 +76,78 @@ VSVersionInfo(
         f.write(version_info)
     print("Created version_info.txt")
 
+def check_dependencies():
+    """Check all required dependencies are installed"""
+    print("Checking dependencies...")
+    
+    required_deps = [
+        'tkinter',
+        'threading', 
+        'requests',
+        'serial',
+        'pandas',
+        'openpyxl',
+        'xlrd',
+        'xlwt',
+        'xlsxwriter',
+        'pyodbc',
+        'PIL',
+        'psutil'
+    ]
+    
+    missing = []
+    for dep in required_deps:
+        try:
+            __import__(dep)
+            print(f"  ✓ {dep}")
+        except ImportError:
+            missing.append(dep)
+            print(f"  ✗ {dep}")
+    
+    if missing:
+        print("\nERROR: Missing required dependencies:")
+        for dep in missing:
+            print(f"  - {dep}")
+        print("\nInstall missing dependencies with:")
+        print("  pip install -r requirements.txt")
+        sys.exit(1)
+    
+    print("✓ All dependencies found")
+
+def check_project_modules():
+    """Check all project modules can be imported"""
+    print("Checking project modules...")
+    
+    project_modules = [
+        'config_utils',
+        'path_utils', 
+        'gui.app',
+        'database.db_log_api',
+        'services.background_import_service',
+        'services.excel_processing_functions'
+    ]
+    
+    missing = []
+    for module in project_modules:
+        try:
+            __import__(module)
+            print(f"  ✓ {module}")
+        except ImportError as e:
+            missing.append(f"{module}: {e}")
+            print(f"  ✗ {module}: {e}")
+    
+    if missing:
+        print("\nERROR: Missing project modules:")
+        for module in missing:
+            print(f"  - {module}")
+        sys.exit(1)
+    
+    print("✓ All project modules found")
+
 def check_assets():
     """Verify all required assets exist"""
+    print("Checking assets...")
+    
     required_assets = [
         'assets/ico.ico',
         'assets/Logo.png',
@@ -92,14 +162,32 @@ def check_assets():
     for asset in required_assets:
         if not os.path.exists(asset):
             missing.append(asset)
+            print(f"  ✗ {asset}")
+        else:
+            print(f"  ✓ {asset}")
     
     if missing:
-        print("WARNING: Missing assets:")
+        print("\nWARNING: Missing assets:")
         for asset in missing:
             print(f"  - {asset}")
         response = input("Continue anyway? (y/n): ")
         if response.lower() != 'y':
             sys.exit(1)
+    else:
+        print("✓ All assets found")
+
+def check_pyinstaller():
+    """Check PyInstaller is available"""
+    print("Checking PyInstaller...")
+    
+    try:
+        import PyInstaller
+        print(f"  ✓ PyInstaller {PyInstaller.__version__}")
+    except ImportError:
+        print("  ✗ PyInstaller not found")
+        print("\nERROR: PyInstaller is required for building")
+        print("Install with: pip install pyinstaller")
+        sys.exit(1)
 
 def build_exe(debug=False):
     """Build the executable"""
@@ -157,6 +245,14 @@ def post_build():
    - logs/ (for application logs)
    - config.json (for settings)
 
+Features:
+- Excel file processing (.xlsx/.xls) for NESTING, ACCURA, and BOERE workflows
+- Automatic color extraction from Excel files
+- Background processing with multiple scanner support
+- Real-time barcode scanning and session management
+- HOPS and MDB file processing
+- Multi-user project coordination
+
 Requirements:
 - Windows 7 or later
 - Microsoft Visual C++ Redistributable (usually already installed)
@@ -186,6 +282,9 @@ def main():
         clean_build()
     
     create_version_file()
+    check_dependencies()
+    check_project_modules()
+    check_pyinstaller()
     check_assets()
     build_exe(debug=debug)
     post_build()

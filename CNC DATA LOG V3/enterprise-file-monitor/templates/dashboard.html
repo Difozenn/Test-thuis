@@ -296,11 +296,11 @@
 </div>
 
 <!-- CNC Efficiency Analysis -->
-{% if cnc_efficiency and cnc_efficiency.total_programs > 0 %}
 <div class="row mb-4">
-    <div class="col-md-8">
+    <div class="col-12">
         <div class="chart-container">
-            <h5><i class="fas fa-cogs me-2"></i>{{ t('cnc_efficiency_analysis_today') }}</h5>
+            <h5><i class="fas fa-cogs me-2"></i>{{ t('cnc_efficiency_analysis') }}</h5>
+            {% if cnc_efficiency and cnc_efficiency.total_programs > 0 %}
             <div class="row">
                 <div class="col-md-4">
                     <div class="text-center mb-3">
@@ -308,7 +308,7 @@
                             {% if cnc_efficiency.avg_efficiency >= 65 %}text-success
                             {% elif cnc_efficiency.avg_efficiency >= 40 %}text-warning
                             {% else %}text-danger{% endif %}">
-                            {{ cnc_efficiency.avg_efficiency }}%
+                            {{ "%.0f"|format(cnc_efficiency.avg_efficiency) }}%
                         </h3>
                         <p class="mb-0 text-muted">Average Efficiency</p>
                         <small class="text-muted">{{ cnc_efficiency.total_programs }} programs analyzed</small>
@@ -324,23 +324,33 @@
             <!-- Program Details -->
             {% if cnc_efficiency.programs %}
             <div class="mt-3">
-                <h6 class="mb-3">{{ t('todays_programs') }}</h6>
+                <div class="mb-3">
+                    <h6 class="mb-0">{{ t('todays_programs') }}</h6>
+                </div>
                 <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
                     <table class="table table-sm">
                         <thead class="table-light">
                             <tr>
-                                <th>Program</th>
-                                <th>Machine Time</th>
-                                <th>Tools</th>
-                                <th>Efficiency</th>
-                                <th>Rating</th>
+                                <th>{{ t('program') }}</th>
+                                <th>{{ t('machine_time') }}</th>
+                                <th>{{ t('tools') }}</th>
+                                <th>{{ t('efficiency') }}</th>
+                                <th>{{ t('rating') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for program in cnc_efficiency.programs %}
                             <tr>
-                                <td class="text-truncate" style="max-width: 120px;" title="{{ program.file_name }}">
-                                    {{ program.file_name }}
+                                <td class="text-truncate" style="max-width: 120px;" 
+                                    title="{% if program.program_name %}{{ program.program_name }} (from {{ program.full_path | basename }}){% else %}{{ program.full_path }}{% endif %}">
+                                    <a href="{{ url_for('main.cnc_program_analysis', event_id=program.event_id) }}" 
+                                       class="text-decoration-none text-primary fw-bold">
+                                        {% if program.program_name %}
+                                            <i class="fas fa-file-code text-primary me-1"></i>{{ program.program_name }}
+                                        {% else %}
+                                            {{ program.file_name }}
+                                        {% endif %}
+                                    </a>
                                 </td>
                                 <td>{{ "%.1f"|format(program.total_machine_time) }}m</td>
                                 <td>{{ program.tool_changes }}</td>
@@ -368,11 +378,17 @@
                 </div>
             </div>
             {% endif %}
+            {% else %}
+            <!-- No data state -->
+            <div class="text-center py-5">
+                <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                <p class="text-muted">{{ t('no_cnc_programs_today') }}</p>
+                <small class="text-muted">{{ t('cnc_efficiency_data_message') }}</small>
+            </div>
+            {% endif %}
         </div>
     </div>
-    
 </div>
-{% endif %}
 
 <!-- Weekly Activity Normalized by Work Hours -->
 {% if weekly_activity %}

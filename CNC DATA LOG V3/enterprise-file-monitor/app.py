@@ -31,11 +31,13 @@ import atexit
 # Import our translation module
 from translations import get_translation, setup_translations, get_available_languages, format_date_localized
 
+
 # Initialize Flask extensions
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 migrate = Migrate()
+
 
 def check_and_migrate_database():
     """Check if database needs migration and perform it automatically"""
@@ -1587,15 +1589,57 @@ def change_language():
     
     return redirect(request.referrer or url_for('main.dashboard'))
 
+def extract_program_name_from_cnc_file(file_path):
+    """Extract .HOPS/.HOP program name from CNC file content"""
+    try:
+        if not file_path or not os.path.exists(file_path):
+            return None
+            
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+            
+        # Look for .HOPS or .HOP file references
+        import re
+        
+        # Pattern to match .HOPS or .HOP files
+        hop_pattern = r'([A-Za-z0-9_-]+\.HOP[S]?)'
+        matches = re.findall(hop_pattern, content, re.IGNORECASE)
+        
+        if matches:
+            # Return the first .HOP/.HOPS file found
+            return matches[0]
+        
+        # If no .HOP/.HOPS found, try to find program name in comments
+        # Look for common CNC program name patterns
+        program_patterns = [
+            r'PROGRAM\s*[:=]\s*([A-Za-z0-9_-]+)',
+            r'PROGRAM\s+([A-Za-z0-9_-]+)',
+            r';\s*PROGRAM\s*[:=]\s*([A-Za-z0-9_-]+)',
+            r';\s*([A-Za-z0-9_-]+\.HOP[S]?)',
+            r'\(([A-Za-z0-9_-]+\.HOP[S]?)\)'
+        ]
+        
+        for pattern in program_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                return matches[0]
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error extracting program name from {file_path}: {e}")
+        return None
+
 def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
     """Calculate CNC efficiency metrics for today with woodworking-optimized scoring"""
     
-    # Get today's CNC analysis data
+    # Get today's CNC analysis data (sorted by newest first)
     cnc_query = db.session.query(
         CNCAnalysis.cycle_time_seconds,
         CNCAnalysis.machine_time_minutes,
         CNCAnalysis.tool_changes,
-        CNCAnalysis.file_path
+        CNCAnalysis.file_path,
+        Event.id.label('event_id')
     ).join(Event).filter(
         Event.timestamp >= today_start_utc
     )
@@ -1603,7 +1647,7 @@ def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
     if user_filter:
         cnc_query = cnc_query.filter(Event.user_id == user_filter)
     
-    cnc_analyses = cnc_query.all()
+    cnc_analyses = cnc_query.order_by(Event.timestamp.desc()).all()
     
     if not cnc_analyses:
         return {
@@ -1617,7 +1661,7 @@ def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
     efficiency_counts = {'excellent': 0, 'good': 0, 'poor': 0}
     
     for analysis in cnc_analyses:
-        cycle_time_seconds, machine_time_minutes, tool_changes, file_path = analysis
+        cycle_time_seconds, machine_time_minutes, tool_changes, file_path, event_id = analysis
         
         if not cycle_time_seconds or cycle_time_seconds <= 0:
             continue
@@ -1647,8 +1691,15 @@ def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
             
         efficiency_counts[efficiency_class] += 1
         
+        # Extract program name from CNC file content (look for .HOPS/.HOP files)
+        program_name = extract_program_name_from_cnc_file(file_path)
+        display_name = program_name if program_name else (os.path.basename(file_path) if file_path else 'Unknown')
+        
         programs.append({
-            'file_name': os.path.basename(file_path) if file_path else 'Unknown',
+            'file_name': display_name,
+            'full_path': file_path,
+            'program_name': program_name,
+            'event_id': event_id,
             'total_machine_time': total_machine_time_minutes,
             'cutting_time': cutting_time_minutes,
             'overhead_time': overhead_time_minutes,
@@ -1668,6 +1719,168 @@ def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
         'efficiency_distribution': efficiency_counts,
         'programs': programs
     }
+
+@main_bp.route('/cnc_program_analysis/<int:event_id>')
+@login_required
+def cnc_program_analysis(event_id):
+    """Detailed CNC program analysis and optimization page"""
+    
+    # Get the event and CNC analysis data
+    event = Event.query.get_or_404(event_id)
+    cnc_analysis = CNCAnalysis.query.filter_by(event_id=event_id).first()
+    
+    if not cnc_analysis:
+        flash('CNC analysis data not found for this program', 'error')
+        return redirect(url_for('main.dashboard'))
+    
+    # Check permissions
+    if current_user.role != 'admin' and event.user_id != current_user.id:
+        flash('Access denied', 'error')
+        return redirect(url_for('main.dashboard'))
+    
+    # Extract program name from CNC file content
+    program_name = extract_program_name_from_cnc_file(cnc_analysis.file_path)
+    display_name = program_name if program_name else os.path.basename(cnc_analysis.file_path)
+    
+    # Calculate detailed metrics based on actual C# tray app data
+    cycle_time_seconds = cnc_analysis.cycle_time_seconds or 0
+    machine_time_minutes = cnc_analysis.machine_time_minutes or 0
+    tool_changes = cnc_analysis.tool_changes or 0
+    
+    # Calculate derived metrics
+    cycle_time_minutes = cycle_time_seconds / 60
+    cutting_time_minutes = cycle_time_minutes - machine_time_minutes
+    cutting_time_minutes = max(0, cutting_time_minutes)  # Ensure non-negative
+    
+    # Calculate efficiency metrics (matching FileMonitorTrayApp.cs logic)
+    cutting_efficiency = (cutting_time_minutes / cycle_time_minutes) * 100 if cycle_time_minutes > 0 else 0
+    tool_changes_per_minute = tool_changes / cycle_time_minutes if cycle_time_minutes > 0 else 0
+    tool_efficiency = max(0, 100 - (tool_changes_per_minute * 25))
+    overall_efficiency = (cutting_efficiency * 0.6) + (tool_efficiency * 0.4)
+    
+    # Classify efficiency
+    if overall_efficiency >= 65:
+        efficiency_class = 'excellent'
+        efficiency_color = 'success'
+    elif overall_efficiency >= 40:
+        efficiency_class = 'good'
+        efficiency_color = 'warning'
+    else:
+        efficiency_class = 'poor'
+        efficiency_color = 'danger'
+    
+    # Calculate optimization insights
+    optimization_insights = []
+    
+    # Tool change optimization (following original specs: UITSTEKEND <1.0/min, GOED 1.0-2.0/min, SLECHT >2.0/min)
+    if tool_changes_per_minute > 2.0:
+        optimization_insights.append({
+            'type': 'tool_changes',
+            'message': f'Poor tool efficiency ({tool_changes_per_minute:.1f} changes/min) - poor tool planning, excessive subdivision',
+            'severity': 'high',
+            'icon': 'fas fa-tools'
+        })
+    elif tool_changes_per_minute > 1.0:
+        optimization_insights.append({
+            'type': 'tool_changes',
+            'message': f'Good tool efficiency ({tool_changes_per_minute:.1f} changes/min) - reasonable for complex parts',
+            'severity': 'low',
+            'icon': 'fas fa-tools'
+        })
+    
+    # Cutting efficiency optimization (following original specs: UITSTEKEND >65%, GOED 40-65%, SLECHT <40%)
+    if cutting_efficiency < 40:
+        optimization_insights.append({
+            'type': 'cutting_efficiency',
+            'message': f'Poor cutting efficiency ({cutting_efficiency:.1f}%) - excessive air movements, inefficient toolpaths',
+            'severity': 'high',
+            'icon': 'fas fa-cut'
+        })
+    elif cutting_efficiency < 65:
+        optimization_insights.append({
+            'type': 'cutting_efficiency',
+            'message': f'Good cutting efficiency ({cutting_efficiency:.1f}%) - acceptable for complex 5-axis woodworking',
+            'severity': 'low',
+            'icon': 'fas fa-cut'
+        })
+    
+    # Machine time optimization
+    if machine_time_minutes > (cycle_time_minutes * 0.3):
+        optimization_insights.append({
+            'type': 'machine_time',
+            'message': f'High machine operation time ({machine_time_minutes:.1f}min) - optimize operations sequence',
+            'severity': 'medium',
+            'icon': 'fas fa-cogs'
+        })
+    
+    # Cycle time analysis
+    if cycle_time_minutes > 30:
+        optimization_insights.append({
+            'type': 'cycle_time',
+            'message': f'Long cycle time ({cycle_time_minutes:.1f}min) - consider batch processing',
+            'severity': 'low',
+            'icon': 'fas fa-clock'
+        })
+    
+    # Get historical data for this program (same file path)
+    historical_data = db.session.query(CNCAnalysis, Event).join(Event).filter(
+        CNCAnalysis.file_path == cnc_analysis.file_path,
+        Event.timestamp >= datetime.now(timezone.utc) - timedelta(days=30)
+    ).order_by(Event.timestamp.desc()).limit(10).all()
+    
+    historical_trends = []
+    for hist_analysis, hist_event in historical_data:
+        if hist_analysis.cycle_time_seconds:
+            hist_cycle_minutes = hist_analysis.cycle_time_seconds / 60
+            hist_machine_minutes = hist_analysis.machine_time_minutes or 0
+            hist_cutting_minutes = max(0, hist_cycle_minutes - hist_machine_minutes)
+            hist_cutting_eff = (hist_cutting_minutes / hist_cycle_minutes) * 100 if hist_cycle_minutes > 0 else 0
+            hist_tool_changes_per_min = (hist_analysis.tool_changes or 0) / hist_cycle_minutes if hist_cycle_minutes > 0 else 0
+            hist_tool_eff = max(0, 100 - (hist_tool_changes_per_min * 25))
+            hist_overall_eff = (hist_cutting_eff * 0.6) + (hist_tool_eff * 0.4)
+            
+            historical_trends.append({
+                'timestamp': hist_event.timestamp,
+                'cycle_time': hist_cycle_minutes,
+                'efficiency': hist_overall_eff,
+                'tool_changes': hist_analysis.tool_changes or 0
+            })
+    
+    # Prepare data for templates
+    program_data = {
+        'event_id': event_id,
+        'program_name': display_name,
+        'file_path': cnc_analysis.file_path,
+        'analysis_timestamp': event.timestamp,
+        'user': event.user.username if event.user else 'Unknown',
+        'computer': event.computer_name,
+        
+        # Time analysis
+        'cycle_time_seconds': cycle_time_seconds,
+        'cycle_time_minutes': cycle_time_minutes,
+        'machine_time_minutes': machine_time_minutes,
+        'cutting_time_minutes': cutting_time_minutes,
+        
+        # Efficiency metrics
+        'cutting_efficiency': cutting_efficiency,
+        'tool_efficiency': tool_efficiency,
+        'overall_efficiency': overall_efficiency,
+        'efficiency_class': efficiency_class,
+        'efficiency_color': efficiency_color,
+        
+        # Tool analysis
+        'tool_changes': tool_changes,
+        'tool_changes_per_minute': tool_changes_per_minute,
+        
+        # File info
+        'file_size': event.file_size,
+        'file_basename': os.path.basename(cnc_analysis.file_path)
+    }
+    
+    return render_template('cnc_program_analysis.html',
+                         program=program_data,
+                         optimization_insights=optimization_insights,
+                         historical_trends=historical_trends)
 
 # Routes - Main Blueprint
 @main_bp.route('/')
@@ -4593,6 +4806,7 @@ if __name__ == '__main__':
                 print("✓ Scheduled backup job initialized")
             except Exception as e:
                 print(f"Warning: Failed to initialize scheduled backup job: {e}")
+        
         
         if not os.environ.get('WERKZEUG_RUN_MAIN'):
             print("="*50)

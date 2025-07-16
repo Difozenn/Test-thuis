@@ -147,25 +147,46 @@ class PDFDatabaseManager:
             with pdfplumber.open(pdf_path) as pdf:
                 total_pages = len(pdf.pages)
                 
+                # Dynamic approach: detect sections based on content patterns
+                current_section_context = None
+                
                 for page_num, page in enumerate(pdf.pages, 1):
                     self._log(f"Processing page {page_num}/{total_pages}")
                     
-                    # Detect section type from page text
                     page_text = page.extract_text() or ""
-                    section_type = self._detect_section_type(page_text)
                     
-                    if not section_type:
-                        continue
+                    # Update section context when we see clear section headers
+                    explicit_section = self._detect_section_type(page_text)
+                    if explicit_section:
+                        current_section_context = explicit_section
                     
-                    # Extract tables with improved settings
+                    # Extract and process tables
                     tables = self._extract_tables_with_settings(page)
                     
                     for table_idx, table in enumerate(tables):
                         if not table or len(table) < 2:
                             continue
                         
-                        rows_stored = self._process_table(pdf_id, page_num, section_type, table_idx, table)
-                        total_rows_stored += rows_stored
+                        # Analyze table content dynamically
+                        table_section_type, is_data_table = self._analyze_table_content_type(table)
+                        
+                        # Determine final section type:
+                        # 1. Use table analysis if it's confident
+                        # 2. Use current section context if table analysis is unclear
+                        # 3. Use explicit page detection as last resort
+                        final_section_type = (table_section_type or 
+                                            current_section_context or 
+                                            explicit_section)
+                        
+                        # Only process meaningful data tables
+                        if final_section_type and is_data_table:
+                            rows_stored = self._process_table(pdf_id, page_num, final_section_type, table_idx, table)
+                            total_rows_stored += rows_stored
+                            self._log(f"Page {page_num} Table {table_idx}: {final_section_type} (data)")
+                        elif final_section_type:
+                            self._log(f"Page {page_num} Table {table_idx}: {final_section_type} (skipped - template/empty)")
+                        else:
+                            self._log(f"Page {page_num} Table {table_idx}: Unknown type (skipped)")
                 
                 # Update document with success status
                 with sqlite3.connect(self.db_path) as conn:
@@ -185,21 +206,85 @@ class PDFDatabaseManager:
             return False
     
     def _detect_section_type(self, page_text):
-        """Detect section type from page text."""
+        """Dynamically detect section type based on content characteristics."""
         text_upper = page_text.upper()
         
-        if 'NESTING' in text_upper:
+        # Primary section identifiers
+        if 'NESTING' in text_upper and 'OPDEELZAAG' not in text_upper:
             return 'Nesting'
         elif 'OPDEELZAAG' in text_upper:
             return 'Opdeelzaag'
-        elif 'CONTROLE' in text_upper:
-            return 'Controle'
-        elif 'MASSIEF' in text_upper:
-            return 'Massief'
         elif 'MAGAZIJN' in text_upper:
             return 'Magazijn'
+        elif 'MASSIEF' in text_upper and 'CONTROLE' not in text_upper:
+            return 'Massief'
+        elif 'CONTROLE' in text_upper:
+            return 'Controle'
         
+        # If no explicit section header, return None - let table analysis decide
         return None
+    
+    def _analyze_table_content_type(self, table):
+        """Dynamically analyze table to determine if it contains actual data or just templates."""
+        if not table or len(table) < 2:
+            return None, False
+            
+        # Get first few rows to analyze
+        analysis_rows = table[:5]
+        
+        # Count characteristics
+        has_headers = False
+        has_numeric_data = False
+        has_meaningful_content = False
+        row_count = len(table)
+        
+        # Check first row for headers
+        first_row = table[0] if table else []
+        header_indicators = ['ONDERDEEL', 'MATERIAAL', 'LENGTE', 'BREEDTE', 'DIKTE', 'L1', 'L2', 'B1', 'B2', 'PRO.METHODE']
+        if any(str(cell).upper() in header_indicators for cell in first_row if cell):
+            has_headers = True
+        
+        # Analyze content rows
+        data_rows = table[1:] if has_headers else table
+        for row in data_rows:
+            if not row:
+                continue
+                
+            # Check for numeric dimensions (length/width/thickness)
+            numeric_cells = 0
+            for cell in row:
+                if cell and str(cell).replace('.', '').replace(',', '').isdigit():
+                    numeric_cells += 1
+            
+            if numeric_cells >= 3:  # Length, width, thickness
+                has_numeric_data = True
+            
+            # Check for meaningful material/component names
+            for cell in row:
+                if cell and len(str(cell).strip()) > 2:
+                    cell_str = str(cell).upper()
+                    # Look for material codes, component names, etc.
+                    if any(indicator in cell_str for indicator in ['MDF', 'HSP', 'MASSIEF', 'MM', 'AFW', 'BK_', 'FINEER']):
+                        has_meaningful_content = True
+                        break
+        
+        # Determine table type
+        is_data_table = has_meaningful_content and has_numeric_data and row_count > 1
+        
+        # Determine section type based on content patterns - DON'T override page detection
+        section_type = None
+        if is_data_table:
+            # Look for section-specific patterns in the data
+            table_text = ' '.join(str(cell) for row in table for cell in row if cell).upper()
+            
+            # Only classify as Controle if we see strong indicators AND no clear section headers
+            if any(pattern in table_text for pattern in ['REICHENBACH', 'GANNOMAT']) and not any(pattern in table_text for pattern in ['NESTING', 'OPDEELZAAG']):
+                section_type = 'Controle'
+            elif 'MASSIEF_PM' in table_text:
+                section_type = 'Massief'
+            # Don't override Nesting/Opdeelzaag detection based on content alone
+        
+        return section_type, is_data_table
     
     def _extract_tables_with_settings(self, page):
         """Extract tables with optimized settings."""
@@ -260,13 +345,31 @@ class PDFDatabaseManager:
                     # Extract data using column mapping
                     row_data = self._extract_row_data(row, column_map)
                     
-                    # For numbered rows, try to extract item number from first column if not mapped
-                    if 'item_number' not in row_data and row and str(row[0]).strip().isdigit():
-                        row_data['item_number'] = str(row[0]).strip()
+                    # Enhanced item number extraction
+                    if not row_data.get('item_number') and row:
+                        # Try first column if it's a digit
+                        if str(row[0]).strip().isdigit():
+                            row_data['item_number'] = str(row[0]).strip()
+                        # For Nesting/Opdeelzaag, use sequential numbering when no explicit number
+                        elif section_type in ['Nesting', 'Opdeelzaag'] and row_data.get('onderdeel'):
+                            row_data['item_number'] = str(row_idx)
                     
-                    # Skip rows without item numbers for main data tables
-                    if section_type in ['Nesting', 'Opdeelzaag', 'Controle'] and not row_data.get('item_number'):
-                        continue
+                    # More flexible row filtering - don't skip all rows without item numbers
+                    # For Controle sections, include rows with meaningful data even without item numbers
+                    has_meaningful_data = (
+                        row_data.get('onderdeel') or 
+                        row_data.get('materiaal') or 
+                        any(row_data.get(col) for col in ['l1', 'l2', 'b1', 'b2']) or
+                        row_data.get('pro_methode')
+                    )
+                    
+                    # Skip only truly empty rows
+                    if section_type in ['Nesting', 'Opdeelzaag', 'Controle']:
+                        if not has_meaningful_data:
+                            continue
+                        # Assign sequential item number if missing but has data
+                        if not row_data.get('item_number') and has_meaningful_data:
+                            row_data['item_number'] = str(row_idx)
                     
                     # Store row in database
                     conn.execute('''
@@ -304,8 +407,12 @@ class PDFDatabaseManager:
             return 0
     
     def _map_columns(self, header):
-        """Map column names to their indices."""
+        """Dynamically map column names to their indices based on content patterns."""
         column_map = {}
+        
+        # If no clear header, try to infer from data patterns
+        if not any(str(cell).upper() in ['ONDERDEEL', 'MATERIAAL', 'LENGTE'] for cell in header if cell):
+            return self._infer_columns_from_data_pattern(header)
         
         for i, cell in enumerate(header):
             if not cell:
@@ -313,8 +420,8 @@ class PDFDatabaseManager:
             
             cell_upper = str(cell).upper().strip()
             
-            # Map common column names
-            if cell_upper in ['N°', 'NO', 'NUM']:
+            # Dynamic column mapping
+            if cell_upper in ['N°', 'NO', 'NUM', 'N']:
                 column_map['item_number'] = i
             elif 'ONDERDEEL' in cell_upper:
                 column_map['onderdeel'] = i
@@ -334,10 +441,51 @@ class PDFDatabaseManager:
                 column_map['b1'] = i
             elif cell_upper == 'B2':
                 column_map['b2'] = i
-            elif 'PRO.METHODE' in cell_upper or 'METHODE' in cell_upper:
+            elif ('PRO.METHODE' in cell_upper or 'METHODE' in cell_upper or 
+                  'PRODUCTIEMETHODE' in cell_upper or 'PRODUCTIEM' in cell_upper):
                 column_map['pro_methode'] = i
-            elif 'OPMERKING' in cell_upper:
+            elif 'OPMERKING' in cell_upper or 'COMMENTAAR' in cell_upper:
                 column_map['opmerkingen'] = i
+        
+        return column_map
+    
+    def _infer_columns_from_data_pattern(self, first_row):
+        """Infer column mapping when no clear headers exist."""
+        column_map = {}
+        
+        for i, cell in enumerate(first_row):
+            if not cell:
+                continue
+                
+            cell_str = str(cell).strip()
+            
+            # Pattern-based inference
+            if i == 0 and cell_str.isdigit():
+                column_map['item_number'] = i
+            elif i == 0 and not cell_str.isdigit():
+                column_map['onderdeel'] = i
+            elif 'MDF' in cell_str.upper() or 'HSP' in cell_str.upper() or 'MASSIEF' in cell_str.upper():
+                column_map['materiaal'] = i
+            elif cell_str.replace('.', '').replace(',', '').isdigit() and len(cell_str) >= 2:
+                # Likely dimension - assign based on position
+                if 'lengte' not in column_map:
+                    column_map['lengte'] = i
+                elif 'breedte' not in column_map:
+                    column_map['breedte'] = i
+                elif 'dikte' not in column_map:
+                    column_map['dikte'] = i
+            elif 'FINEER' in cell_str.upper() or 'STANDAARD' in cell_str.upper():
+                # Could be L1/L2/B1/B2 or pro_methode
+                if 'pro_methode' not in column_map and ('STANDAARD' in cell_str.upper() or 'REICHENBACH' in cell_str.upper() or 'GANNOMAT' in cell_str.upper()):
+                    column_map['pro_methode'] = i
+                elif 'l1' not in column_map:
+                    column_map['l1'] = i
+                elif 'l2' not in column_map:
+                    column_map['l2'] = i
+                elif 'b1' not in column_map:
+                    column_map['b1'] = i
+                elif 'b2' not in column_map:
+                    column_map['b2'] = i
         
         return column_map
     

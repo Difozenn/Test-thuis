@@ -1231,13 +1231,13 @@ def log_event():
                 logging.info(f"Updated {c.rowcount} 'OPEN' log(s) to 'BEZIG' for user '{user}' on project '{project}'.")
         elif event == 'AFGEMELD':
             status = 'AFGEMELD'
-            # Find the corresponding 'OPEN' log and update its status to 'CLOSED'
+            # Find the corresponding 'OPEN' log and update its status to 'AFGEMELD'
             c.execute(
                 'UPDATE logs SET status = ? WHERE event = ? AND status = ? AND lower(project) = ? AND user = ?',
-                ('CLOSED', 'OPEN', 'OPEN', project.lower(), user)
+                ('AFGEMELD', 'OPEN', 'OPEN', project.lower(), user)
             )
             if c.rowcount > 0:
-                logging.info(f"Closed {c.rowcount} 'OPEN' log(s) for user '{user}' on project '{project}'.")
+                logging.info(f"Updated {c.rowcount} 'OPEN' log(s) to 'AFGEMELD' for user '{user}' on project '{project}'.")
             
             # Handle session completion for AFGEMELD events
             # SCANNER sessions (batch) should remain active until manually stopped
@@ -1606,7 +1606,7 @@ def update_item_count():
             WHERE id = (
                 SELECT id FROM logs 
                 WHERE event = 'OPEN' 
-                AND status IN ('OPEN', 'CLOSED')
+                AND status IN ('OPEN', 'AFGEMELD', 'CLOSED')
                 AND project = ? 
                 AND user = ?
                 ORDER BY timestamp DESC 

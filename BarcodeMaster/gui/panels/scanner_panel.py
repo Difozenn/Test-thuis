@@ -625,6 +625,12 @@ class ScannerPanel(tk.Frame):
                 project = parts[1]
                 user = parts[2]
                 self.log_message(f"✓ Project {project} geopend voor {user}", "success")
+        elif "BACKGROUND_NO_WORK_FOUND:" in message:
+            parts = message.split(":")
+            if len(parts) >= 3:
+                project = parts[1]
+                user = parts[2]
+                self.log_message(f"○ Project {project} - geen werk voor {user}", "info")
         elif "BACKGROUND_PROJECT_OPEN_FAILED:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
@@ -1102,6 +1108,19 @@ class ScannerPanel(tk.Frame):
             all_ok = False
 
         self.log_message(f"🔄 Project {project_code_to_log} wordt verwerkt voor alle gebruikers...", "info")
+        
+        # Show progress for the current user immediately
+        self.after(500, lambda: self.log_message_from_service(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{current_user}"))
+        
+        # If current user is an Excel processor, show progress for other Excel processors too
+        excel_processors = ['NESTING', 'ACCURA', 'BOERE']
+        if current_user in excel_processors:
+            # Show progress for all Excel processors after a delay
+            for i, processor in enumerate(excel_processors):
+                if processor != current_user and config.get('scanner_panel_open_event_user_logic_active', {}).get(processor, True):
+                    delay = 1000 + (i * 500)  # Stagger the messages
+                    self.after(delay, lambda p=processor, proj=project_code_to_log: 
+                              self.log_message_from_service(f"BACKGROUND_PROJECT_OPENED:{proj}:{p}"))
         
         # Trigger background service for other users
         self.background_import_service.process_scan_for_open_event_async(

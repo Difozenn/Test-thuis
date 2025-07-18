@@ -1,0 +1,900 @@
+2025-06-13 22:44:32,529 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:44:37,529 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:44:42,530 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:44:47,531 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:44:52,532 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:44:57,533 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:02,534 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:07,535 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:12,536 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:17,537 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:22,538 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:27,539 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:32,540 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:37,541 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:42,541 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:47,542 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:52,543 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:45:57,544 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:02,545 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:07,547 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:12,548 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:17,549 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:22,549 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:27,550 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:32,551 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:37,552 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:42,552 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:47,553 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:52,554 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:46:57,555 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:02,556 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:07,557 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:12,558 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:17,559 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:22,560 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:27,560 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:32,561 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:37,562 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:43,316 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:48,317 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:53,318 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:47:58,319 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:03,320 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:08,321 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:13,321 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:18,322 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:23,323 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:23,429 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:23,429 - INFO - Automatische import is niet ingeschakeld (master switch).
+2025-06-13 22:48:25,445 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:25,446 - INFO - Automatische import is niet ingeschakeld (master switch).
+2025-06-13 22:48:28,324 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:33,325 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:36,732 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:38,326 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:43,327 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:48,328 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:52,631 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:52,632 - INFO - Event ontvangen: User=GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-13 22:48:52,632 - INFO - GANNOMAT import wordt uitgevoerd. Pad: C:/GANNOMAT
+2025-06-13 22:48:52,632 - INFO - Triggering GANNOMAT import voor project: MO07987 using path: C:/GANNOMAT
+2025-06-13 22:48:52,918 - INFO - Geen GANNOMAT data gevonden voor project MO07987
+2025-06-13 22:48:52,918 - INFO - Import succesvol getriggerd voor GANNOMAT. Totaal: 1
+2025-06-13 22:48:53,329 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:54,945 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:48:54,945 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-13 22:48:54,945 - INFO - OPUS import overgeslagen: logica niet actief in ScannerPanel config.
+2025-06-13 22:48:58,330 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:03,330 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:08,331 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:13,332 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:18,333 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:23,333 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:28,334 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:33,335 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:38,336 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:43,337 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:48,338 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:53,339 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:49:58,340 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:03,341 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:08,342 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:13,343 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:18,343 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:23,344 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:28,345 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:33,346 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:38,346 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:43,347 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:48,348 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:53,349 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:50:58,350 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:03,351 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:08,352 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:13,353 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:18,354 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:23,355 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:28,356 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:33,357 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:38,358 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:43,359 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:48,360 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:53,361 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:51:58,362 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:03,362 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:08,363 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:13,365 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:18,366 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:23,367 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:28,367 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:33,368 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:38,369 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:43,370 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:48,371 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:53,373 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:52:58,374 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:03,374 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:08,375 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:13,376 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:18,378 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:23,378 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:28,379 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:33,380 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:38,381 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:43,382 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:48,383 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:53,384 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:53:58,384 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:03,385 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:08,386 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:13,387 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:18,387 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:23,388 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:28,389 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:33,390 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:38,391 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:43,392 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:48,393 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:53,394 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:54:58,395 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:03,396 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:08,397 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:13,397 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:18,398 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:23,399 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:28,399 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:33,400 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:38,401 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:43,402 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:48,403 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:53,404 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:55:58,405 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:03,406 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:08,407 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:13,407 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:18,408 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:23,410 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:28,411 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:33,411 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:38,412 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:43,413 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:48,414 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:53,415 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:56:58,416 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:03,417 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:08,417 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:13,419 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:18,420 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:23,421 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:28,422 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:33,423 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:38,424 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:43,425 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:48,426 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:53,427 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:57:58,427 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:03,429 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:08,430 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:13,431 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:18,431 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:23,432 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:28,433 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:33,434 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:38,434 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:43,435 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:48,436 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:53,437 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:58:58,438 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:03,439 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:08,440 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:13,441 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:18,442 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:23,443 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:28,444 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:33,445 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:38,445 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:43,447 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:48,447 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:53,448 - INFO - Configuratie succesvol geladen.
+2025-06-13 22:59:58,449 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:03,450 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:08,450 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:13,451 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:18,453 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:23,454 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:28,455 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:33,456 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:38,457 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:43,457 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:48,458 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:53,459 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:00:58,461 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:03,462 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:08,463 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:13,464 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:18,465 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:23,465 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:28,467 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:33,468 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:38,470 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:43,471 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:48,471 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:53,472 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:01:58,473 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:03,474 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:08,475 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:13,476 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:18,477 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:23,477 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:28,478 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:33,479 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:38,479 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:43,480 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:48,481 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:53,482 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:02:58,484 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:03,485 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:08,486 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:13,486 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:18,487 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:23,488 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:28,489 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:33,491 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:38,492 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:43,492 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:48,494 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:53,495 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:03:58,496 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:03,497 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:08,498 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:13,500 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:18,501 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:23,502 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:28,503 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:33,505 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:38,506 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:43,507 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:48,507 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:53,508 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:04:58,509 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:03,510 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:08,511 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:13,512 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:18,512 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:23,513 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:28,514 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:05:33,515 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:10:44,657 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:10:44,657 - INFO - Master service globally active: True
+2025-06-13 23:10:44,658 - INFO - Background Import Service is globaal ingeschakeld en klaar om events te verwerken.
+2025-06-13 23:10:44,658 - INFO - Background Import Service is globally enabled.
+2025-06-13 23:18:17,335 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:18:17,335 - INFO - Master service globally active: True
+2025-06-13 23:18:17,335 - INFO - Event ontvangen: User=GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-13 23:18:17,335 - INFO - GANNOMAT import wordt uitgevoerd. Pad: C:/GANNOMAT
+2025-06-13 23:18:19,361 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:18:19,361 - INFO - Master service globally active: True
+2025-06-13 23:18:19,362 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-13 23:18:19,362 - INFO - OPUS import overgeslagen: logica niet actief in ScannerPanel config.
+2025-06-13 23:22:39,233 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:22:39,233 - INFO - Master service globally active: True
+2025-06-13 23:22:39,233 - INFO - Event ontvangen: User=GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-13 23:22:39,233 - INFO - GANNOMAT import wordt uitgevoerd. Pad: C:/GANNOMAT
+2025-06-13 23:22:39,233 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-13 23:22:39,233 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:22:39,410 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:22:39,584 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:22:39,584 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:22:39,584 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-13 23:22:39,584 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-13 23:22:41,596 - INFO - Import event gelogd naar API: GANNOMAT - MO07987
+2025-06-13 23:22:41,597 - INFO - Import succesvol getriggerd voor GANNOMAT. Totaal: 1
+2025-06-13 23:22:43,611 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:22:43,611 - INFO - Master service globally active: True
+2025-06-13 23:22:43,611 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-13 23:22:43,611 - INFO - OPUS import wordt uitgevoerd. Pad: C:/OPUS/KORPUS
+2025-06-13 23:22:43,611 - INFO - OPUS import gestart voor project context: MO07987 in map: C:/OPUS/KORPUS
+2025-06-13 23:22:43,612 - INFO - 4 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS'.
+2025-06-13 23:22:43,612 - INFO - 4 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS' voor Excel rapportage.
+2025-06-13 23:22:43,625 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\KORPUS.xlsx
+2025-06-13 23:22:43,625 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\KORPUS.xlsx
+2025-06-13 23:22:45,637 - INFO - Import event gelogd naar API: OPUS - MO07987
+2025-06-13 23:22:45,638 - INFO - Import succesvol getriggerd voor OPUS. Totaal: 2
+2025-06-13 23:29:47,009 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:29:47,009 - INFO - Master service globally active: True
+2025-06-13 23:29:47,010 - INFO - Event ontvangen: User=GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-13 23:29:47,010 - INFO - GANNOMAT import wordt uitgevoerd. Pad: C:/GANNOMAT
+2025-06-13 23:29:47,010 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-13 23:29:47,010 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:29:47,180 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:29:47,344 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:29:47,344 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:29:47,344 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-13 23:29:47,344 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-13 23:29:49,356 - INFO - Import event gelogd naar API: GANNOMAT - MO07987
+2025-06-13 23:29:49,356 - INFO - Import succesvol getriggerd voor GANNOMAT. Totaal: 1
+2025-06-13 23:29:51,379 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:29:51,379 - INFO - Master service globally active: True
+2025-06-13 23:29:51,379 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-13 23:29:51,379 - INFO - OPUS import overgeslagen: kon project submap naam niet extraheren uit event_details. Details: "Scan event: 0520_MO07987_TV-wand (1-1)"
+2025-06-13 23:31:45,787 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:31:45,787 - INFO - Master service globally active: True
+2025-06-13 23:31:45,787 - INFO - Event ontvangen: User=GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-13 23:31:45,787 - INFO - GANNOMAT import wordt uitgevoerd. Pad: C:/GANNOMAT
+2025-06-13 23:31:45,787 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-13 23:31:45,787 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:31:45,954 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-13 23:31:46,110 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:31:46,110 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-13 23:31:46,110 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-13 23:31:46,110 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-13 23:31:48,140 - INFO - Import event gelogd naar API: GANNOMAT - MO07987
+2025-06-13 23:31:48,140 - INFO - Import succesvol getriggerd voor GANNOMAT. Totaal: 1
+2025-06-13 23:31:50,162 - INFO - Configuratie succesvol geladen.
+2025-06-13 23:31:50,162 - INFO - Master service globally active: True
+2025-06-13 23:31:50,163 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-13 23:31:50,163 - INFO - OPUS import wordt uitgevoerd voor specifieke map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-13 23:31:50,163 - INFO - OPUS import gestart voor project context: MO07987 in map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-13 23:31:50,163 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)'.
+2025-06-13 23:31:50,163 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)' voor Excel rapportage.
+2025-06-13 23:31:50,176 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-13 23:31:50,176 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-13 23:31:52,210 - INFO - Import event gelogd naar API: OPUS - MO07987
+2025-06-13 23:31:52,210 - INFO - Import succesvol getriggerd voor OPUS. Totaal: 2
+2025-06-14 01:29:28,667 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:29:28,668 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-14 01:29:28,668 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart (in achtergrond thread) voor specifieke map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:29:28,668 - INFO - OPUS import gestart voor project context: MO07987 in map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:29:28,669 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)'.
+2025-06-14 01:29:28,669 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)' voor Excel rapportage.
+2025-06-14 01:29:28,798 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:29:28,798 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:29:30,691 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:29:30,691 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-14 01:29:30,691 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-14 01:29:30,691 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-14 01:29:30,692 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:29:30,830 - INFO - Import event gelogd naar API: OPUS - MO07987
+2025-06-14 01:29:30,831 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-14 01:29:30,855 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:29:30,913 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:29:30,913 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:29:30,913 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-14 01:29:30,913 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-14 01:29:32,936 - INFO - Import event gelogd naar API: GANNOMAT - MO07987
+2025-06-14 01:29:32,936 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-14 01:41:52,842 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:41:52,843 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-14 01:41:52,843 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart (in achtergrond thread) voor specifieke map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:41:52,844 - INFO - OPUS import gestart voor project context: MO07987 in map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:41:52,844 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)'.
+2025-06-14 01:41:52,844 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)' voor Excel rapportage.
+2025-06-14 01:41:52,850 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:41:52,851 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:41:54,870 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:41:54,870 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-14 01:41:54,870 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-14 01:41:54,871 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-14 01:41:54,871 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:41:54,882 - INFO - Import event gelogd naar API: OPUS - MO07987
+2025-06-14 01:41:54,882 - INFO - OPUS import thread voltooid. Totaal OPUS: 2, Totaal: 3
+2025-06-14 01:41:54,975 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:41:55,029 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:41:55,030 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:41:55,030 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-14 01:41:55,030 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-14 01:41:57,052 - INFO - Import event gelogd naar API: GANNOMAT - MO07987
+2025-06-14 01:41:57,052 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 2, Totaal: 4
+2025-06-14 01:43:01,195 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:43:01,196 - INFO - Event ontvangen: User=OPUS, Project=MO07987. Controleren voor import...
+2025-06-14 01:43:01,196 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart (in achtergrond thread) voor specifieke map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:43:01,196 - INFO - OPUS import gestart voor project context: MO07987 in map: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)
+2025-06-14 01:43:01,197 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)'.
+2025-06-14 01:43:01,197 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)' voor Excel rapportage.
+2025-06-14 01:43:01,324 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:43:01,324 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0520_MO07987_TV-wand (1-1)\0520_MO07987_TV-wand (1-1).xlsx
+2025-06-14 01:43:01,324 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-14 01:43:03,221 - INFO - Configuratie succesvol geladen.
+2025-06-14 01:43:03,221 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07987. Controleren voor import...
+2025-06-14 01:43:03,221 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-14 01:43:03,221 - INFO - GANNOMAT import gestart voor project context: MO07987 in map: C:/GANNOMAT
+2025-06-14 01:43:03,222 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:43:03,392 - INFO - Querying 'ProgramNumber' from table 'Program' in 0520_MO07987_TV-wand (1-1).Mdb
+2025-06-14 01:43:03,446 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:43:03,447 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0520_MO07987_TV-wand (1-1)_GANNOMAT.xlsx
+2025-06-14 01:43:03,447 - INFO - Excel rapport gegenereerd voor 0520_MO07987_TV-wand (1-1).Mdb.
+2025-06-14 01:43:03,447 - INFO - 1 GANNOMAT bestanden verwerkt. 1 Excel rapporten gegenereerd in C:/GANNOMAT.
+2025-06-14 01:43:03,447 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-18 19:31:44,756 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:31:44,757 - INFO - Event ontvangen: User=OPUS, Project=MO00001. Controleren voor import...
+2025-06-18 19:31:44,757 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001
+2025-06-18 19:31:44,757 - INFO - OPUS import gestart voor project context: MO00001 in map: C:/OPUS/KORPUS\MO00001
+2025-06-18 19:31:44,758 - INFO - Geen .hop/.hops bestanden gevonden in 'C:/OPUS/KORPUS\MO00001'.
+2025-06-18 19:31:44,758 - INFO - Geen .hop/.hops bestanden gevonden in OPUS map 'C:/OPUS/KORPUS\MO00001' voor Excel rapportage.
+2025-06-18 19:31:44,758 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 19:33:17,972 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:33:17,972 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_. Controleren voor import...
+2025-06-18 19:33:17,972 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:33:17,973 - INFO - OPUS import gestart voor project context: MO00001_REP_ in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:33:17,973 - INFO - Geen .hop/.hops bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 19:33:17,973 - INFO - Geen .hop/.hops bestanden gevonden in OPUS map 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 19:33:17,973 - INFO - OPUS import thread voltooid. Totaal OPUS: 2, Totaal: 2
+2025-06-18 19:34:04,948 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:34:04,948 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 19:34:04,948 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:34:04,949 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:34:04,949 - INFO - Geen .hop/.hops bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 19:34:04,949 - INFO - Geen .hop/.hops bestanden gevonden in OPUS map 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 19:34:04,949 - INFO - OPUS import thread voltooid. Totaal OPUS: 3, Totaal: 3
+2025-06-18 19:34:58,347 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:34:58,347 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 19:34:58,347 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:34:58,347 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:34:58,348 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 19:34:58,348 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 19:34:58,994 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:34:58,994 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:34:58,994 - INFO - OPUS import thread voltooid. Totaal OPUS: 4, Totaal: 4
+2025-06-18 19:45:39,963 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:45:39,963 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 19:45:39,963 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:45:39,964 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:45:39,964 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 19:45:39,964 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 19:45:40,089 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:45:40,089 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:45:40,089 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 19:48:48,529 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:48:48,529 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 19:48:48,530 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:48:48,530 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 19:48:48,531 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 19:48:48,531 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 19:48:48,658 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:48:48,658 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 19:48:48,658 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 19:52:06,336 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:52:06,336 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 19:52:06,337 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 19:52:06,337 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 19:52:06,337 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP_vl2'.
+2025-06-18 19:52:06,337 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP_vl2' voor Excel rapportage.
+2025-06-18 19:52:06,466 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 19:52:06,466 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 19:52:06,466 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 19:54:47,136 - INFO - Configuratie succesvol geladen.
+2025-06-18 19:54:47,136 - INFO - Event ontvangen: User=OPUS, Project=MO00001. Controleren voor import...
+2025-06-18 19:54:47,137 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001
+2025-06-18 19:54:47,137 - INFO - OPUS import gestart voor project context: MO00001 in map: C:/OPUS/KORPUS\MO00001
+2025-06-18 19:54:47,137 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001'.
+2025-06-18 19:54:47,137 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001' voor Excel rapportage.
+2025-06-18 19:54:47,260 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001\MO00001.xlsx
+2025-06-18 19:54:47,261 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001\MO00001.xlsx
+2025-06-18 19:54:47,261 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 20:00:50,808 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:00:50,808 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 20:00:50,809 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 20:00:50,810 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 20:00:50,810 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP_vl2'.
+2025-06-18 20:00:50,810 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP_vl2' voor Excel rapportage.
+2025-06-18 20:00:50,936 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 20:00:50,936 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 20:00:50,936 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 20:01:03,461 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:01:03,461 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP. Controleren voor import...
+2025-06-18 20:01:03,462 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 20:01:03,462 - INFO - OPUS import gestart voor project context: MO00001_REP in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 20:01:03,462 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 20:01:03,463 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 20:01:03,469 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 20:01:03,469 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 20:01:03,469 - INFO - OPUS import thread voltooid. Totaal OPUS: 2, Totaal: 2
+2025-06-18 20:03:58,199 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:03:58,199 - INFO - Event ontvangen: User=OPUS, Project=MO00001. Controleren voor import...
+2025-06-18 20:03:58,200 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001
+2025-06-18 20:03:58,200 - INFO - OPUS import gestart voor project context: MO00001 in map: C:/OPUS/KORPUS\MO00001
+2025-06-18 20:03:58,201 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001'.
+2025-06-18 20:03:58,201 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001' voor Excel rapportage.
+2025-06-18 20:03:58,321 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001\MO00001.xlsx
+2025-06-18 20:03:58,322 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001\MO00001.xlsx
+2025-06-18 20:03:58,322 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 20:06:35,665 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:06:35,665 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP. Controleren voor import...
+2025-06-18 20:06:35,666 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 20:06:35,666 - INFO - OPUS import gestart voor project context: MO00001_REP in map: C:/OPUS/KORPUS\MO00001_REP
+2025-06-18 20:06:35,667 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP'.
+2025-06-18 20:06:35,667 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP' voor Excel rapportage.
+2025-06-18 20:06:35,793 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 20:06:35,793 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP\MO00001_REP.xlsx
+2025-06-18 20:06:35,793 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-18 20:06:42,527 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:06:42,527 - INFO - Event ontvangen: User=OPUS, Project=MO00001_REP_vl2. Controleren voor import...
+2025-06-18 20:06:42,527 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 20:06:42,528 - INFO - OPUS import gestart voor project context: MO00001_REP_vl2 in map: C:/OPUS/KORPUS\MO00001_REP_vl2
+2025-06-18 20:06:42,528 - INFO - 1 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO00001_REP_vl2'.
+2025-06-18 20:06:42,528 - INFO - 1 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO00001_REP_vl2' voor Excel rapportage.
+2025-06-18 20:06:42,534 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 20:06:42,534 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\MO00001_REP_vl2\MO00001_REP_vl2.xlsx
+2025-06-18 20:06:42,534 - INFO - OPUS import thread voltooid. Totaal OPUS: 2, Totaal: 2
+2025-06-18 20:21:52,339 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:21:52,339 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00000_REP. Controleren voor import...
+2025-06-18 20:21:52,339 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:21:52,340 - INFO - GANNOMAT import gestart voor project context: MO00000_REP in map: C:/GANNOMAT
+2025-06-18 20:21:52,340 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP.Mdb
+2025-06-18 20:21:52,679 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP.Mdb
+2025-06-18 20:21:52,868 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:21:52,868 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:21:52,869 - INFO - Excel rapport gegenereerd voor MO00000_REP.Mdb.
+2025-06-18 20:21:52,869 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP_vl2.Mdb
+2025-06-18 20:21:52,960 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP_vl2.Mdb
+2025-06-18 20:21:53,017 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:21:53,018 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:21:53,018 - INFO - Excel rapport gegenereerd voor MO00000_REP_vl2.Mdb.
+2025-06-18 20:21:53,018 - INFO - 2 overeenkomende GANNOMAT bestanden verwerkt. 2 Excel rapporten gegenereerd.
+2025-06-18 20:21:53,018 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 1
+2025-06-18 20:35:23,526 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:35:23,527 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00000_REP. Controleren voor import...
+2025-06-18 20:35:23,527 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:35:23,527 - INFO - GANNOMAT import gestart voor project context: MO00000_REP in map: C:/GANNOMAT
+2025-06-18 20:35:23,527 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP.Mdb
+2025-06-18 20:35:23,637 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP.Mdb
+2025-06-18 20:35:23,692 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:35:23,692 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:35:23,692 - INFO - Excel rapport gegenereerd voor MO00000_REP.Mdb.
+2025-06-18 20:35:23,692 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP_vl2.Mdb
+2025-06-18 20:35:23,778 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP_vl2.Mdb
+2025-06-18 20:35:23,829 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:35:23,830 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:35:23,830 - INFO - Excel rapport gegenereerd voor MO00000_REP_vl2.Mdb.
+2025-06-18 20:35:23,830 - INFO - 2 overeenkomende GANNOMAT bestanden verwerkt. 2 Excel rapporten gegenereerd.
+2025-06-18 20:35:23,830 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 2, Totaal: 2
+2025-06-18 20:35:49,240 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:35:49,240 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00000_REP. Controleren voor import...
+2025-06-18 20:35:49,240 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:35:49,241 - INFO - GANNOMAT import gestart voor project context: MO00000_REP in map: C:/GANNOMAT
+2025-06-18 20:35:49,241 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP.Mdb
+2025-06-18 20:35:49,342 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP.Mdb
+2025-06-18 20:35:49,396 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:35:49,396 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:35:49,396 - INFO - Excel rapport gegenereerd voor MO00000_REP.Mdb.
+2025-06-18 20:35:49,396 - INFO - Verwerken GANNOMAT bestand: C:/GANNOMAT\MO00000_REP_vl2.Mdb
+2025-06-18 20:35:49,486 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP_vl2.Mdb
+2025-06-18 20:35:49,538 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:35:49,538 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:35:49,538 - INFO - Excel rapport gegenereerd voor MO00000_REP_vl2.Mdb.
+2025-06-18 20:35:49,538 - INFO - 2 overeenkomende GANNOMAT bestanden verwerkt. 2 Excel rapporten gegenereerd.
+2025-06-18 20:35:49,538 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 3, Totaal: 3
+2025-06-18 20:38:42,116 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:38:42,116 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00000_REP. Controleren voor import...
+2025-06-18 20:38:42,116 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:38:42,117 - INFO - GANNOMAT import gestart voor project context: MO00000_REP in map: C:/GANNOMAT
+2025-06-18 20:38:42,117 - INFO - Overeenkomend GANNOMAT bestand gevonden: C:/GANNOMAT\MO00000_REP.Mdb. Verwerken...
+2025-06-18 20:38:42,280 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP.Mdb
+2025-06-18 20:38:42,452 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:38:42,452 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_GANNOMAT.xlsx
+2025-06-18 20:38:42,452 - INFO - Excel rapport gegenereerd voor MO00000_REP.Mdb.
+2025-06-18 20:38:42,452 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO00000_REP'.
+2025-06-18 20:38:42,452 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 1
+2025-06-18 20:39:18,580 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:39:18,581 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00000_REP_vl2. Controleren voor import...
+2025-06-18 20:39:18,581 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:39:18,581 - INFO - GANNOMAT import gestart voor project context: MO00000_REP_vl2 in map: C:/GANNOMAT
+2025-06-18 20:39:18,581 - INFO - Overeenkomend GANNOMAT bestand gevonden: C:/GANNOMAT\MO00000_REP_vl2.Mdb. Verwerken...
+2025-06-18 20:39:18,703 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00000_REP_vl2.Mdb
+2025-06-18 20:39:18,758 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:39:18,758 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00000_REP_vl2_GANNOMAT.xlsx
+2025-06-18 20:39:18,758 - INFO - Excel rapport gegenereerd voor MO00000_REP_vl2.Mdb.
+2025-06-18 20:39:18,758 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO00000_REP_vl2'.
+2025-06-18 20:39:18,758 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 2, Totaal: 2
+2025-06-18 20:40:29,534 - INFO - Configuratie succesvol geladen.
+2025-06-18 20:40:29,534 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO00001. Controleren voor import...
+2025-06-18 20:40:29,534 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-18 20:40:29,535 - INFO - GANNOMAT import gestart voor project context: MO00001 in map: C:/GANNOMAT
+2025-06-18 20:40:29,535 - INFO - Overeenkomend GANNOMAT bestand gevonden: C:/GANNOMAT\MO00001.Mdb. Verwerken...
+2025-06-18 20:40:29,650 - INFO - Querying 'ProgramNumber' from table 'Program' in MO00001.Mdb
+2025-06-18 20:40:29,715 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO00001_GANNOMAT.xlsx
+2025-06-18 20:40:29,715 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\MO00001_GANNOMAT.xlsx
+2025-06-18 20:40:29,715 - INFO - Excel rapport gegenereerd voor MO00001.Mdb.
+2025-06-18 20:40:29,715 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO00001'.
+2025-06-18 20:40:29,715 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 3, Totaal: 3
+2025-06-19 19:27:47,456 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:27:47,456 - INFO - Event ontvangen: User=OPUS, Project=0618_MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:27:47,456 - INFO - HOPS_PROCESSING: Using '0618_MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:27:47,456 - INFO - HOPS_PROCESSING (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:27:47,456 - INFO - OPUS import gestart voor project context: 0618_MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:27:47,457 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:27:47,457 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:27:48,115 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:27:48,115 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:27:48,115 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:27:49,495 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:27:49,495 - INFO - Event ontvangen: User=KL GANNOMAT, Project=0618_MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:27:49,496 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:27:49,496 - INFO - GANNOMAT import gestart voor project context: 0618_MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:27:49,496 - INFO - Overeenkomend GANNOMAT bestand gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:27:49,674 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:27:49,734 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:27:49,735 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:27:49,735 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:27:49,735 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project '0618_MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:27:49,735 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 19:33:25,579 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:33:25,579 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:33:25,580 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:33:25,580 - INFO - HOPS_PROCESSING (voor OPUS) overgeslagen: geen overeenkomende projectmap gevonden in 'C:/OPUS/KORPUS' voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:33:27,599 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:33:27,599 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:33:27,599 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:33:27,600 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:33:27,600 - INFO - Geen overeenkomend .mdb/.accdb bestand gevonden in 'C:/GANNOMAT' voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:33:27,600 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 1
+2025-06-19 19:41:17,523 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:41:17,523 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:41:17,523 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:17,523 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:17,524 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:41:17,524 - INFO - HOPS_PROCESSING (REP match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:41:17,524 - INFO - OPUS import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:41:17,524 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:41:17,524 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:41:17,657 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:41:17,658 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:41:17,658 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:41:19,546 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:41:19,546 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:41:19,546 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:41:19,547 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:41:19,547 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:41:19,548 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:41:19,548 - INFO - Overeenkomend GANNOMAT bestand (REP match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:41:19,714 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:41:19,771 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:41:19,771 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:41:19,772 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:41:19,772 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:41:19,772 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 19:47:01,764 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:47:01,765 - INFO - Event ontvangen: User=OPUS, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:47:01,765 - INFO - HOPS_PROCESSING: Using 'MO07834_BOEKENKAST_REP_VL5' for directory matching.
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:01,765 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:47:01,765 - INFO - HOPS_PROCESSING (REP match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:47:01,766 - INFO - OPUS import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5
+2025-06-19 19:47:01,766 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5'.
+2025-06-19 19:47:01,766 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5' voor Excel rapportage.
+2025-06-19 19:47:01,896 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:47:01,896 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast_Rep_VL5\0618_MO07834_Boekenkast_Rep_VL5.xlsx
+2025-06-19 19:47:01,897 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 19:47:03,792 - INFO - Configuratie succesvol geladen.
+2025-06-19 19:47:03,792 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_BOEKENKAST_REP_VL5. Controleren voor import...
+2025-06-19 19:47:03,793 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 19:47:03,793 - INFO - GANNOMAT import gestart voor project context: MO07834_BOEKENKAST_REP_VL5 in map: C:/GANNOMAT
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,793 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: False
+2025-06-19 19:47:03,794 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO07834_BOEKENKAST_REP_VL5' (Upper: 'MO07834_BOEKENKAST_REP_VL5')
+2025-06-19 19:47:03,794 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO07834_BOEKENKAST_REP_VL5'? Result: True
+2025-06-19 19:47:03,794 - INFO - Overeenkomend GANNOMAT bestand (REP match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5.Mdb. Verwerken...
+2025-06-19 19:47:03,965 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast_Rep_VL5.Mdb
+2025-06-19 19:47:04,022 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:47:04,022 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_Rep_VL5_GANNOMAT.xlsx
+2025-06-19 19:47:04,022 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast_Rep_VL5.Mdb.
+2025-06-19 19:47:04,023 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_BOEKENKAST_REP_VL5'.
+2025-06-19 19:47:04,023 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 20:56:16,418 - INFO - Configuratie succesvol geladen.
+2025-06-19 20:56:16,419 - INFO - Event ontvangen: User=OPUS, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 20:56:16,419 - INFO - HOPS_PROCESSING: Using 'MO07834_Boekenkast' for directory matching.
+2025-06-19 20:56:16,419 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 20:56:16,419 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 20:56:16,419 - INFO - HOPS_PROCESSING (EndsWith match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 20:56:16,420 - INFO - OPUS import gestart voor project context: MO07834_Boekenkast in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 20:56:16,420 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast'.
+2025-06-19 20:56:16,420 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast' voor Excel rapportage.
+2025-06-19 20:56:16,552 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 20:56:16,552 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 20:56:16,552 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 20:56:18,444 - INFO - Configuratie succesvol geladen.
+2025-06-19 20:56:18,444 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 20:56:18,444 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 20:56:18,444 - INFO - GANNOMAT import gestart voor project context: MO07834_Boekenkast in map: C:/GANNOMAT
+2025-06-19 20:56:18,445 - INFO - Geen overeenkomend .mdb/.accdb bestand gevonden in 'C:/GANNOMAT' voor project 'MO07834_Boekenkast'.
+2025-06-19 20:56:18,445 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 21:03:52,237 - INFO - Configuratie succesvol geladen.
+2025-06-19 21:03:52,237 - INFO - Event ontvangen: User=OPUS, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 21:03:52,237 - INFO - HOPS_PROCESSING: Using 'MO07834_Boekenkast' for directory matching.
+2025-06-19 21:03:52,237 - INFO -   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with code_to_match: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:52,237 - INFO -   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 21:03:52,237 - INFO - HOPS_PROCESSING (EndsWith match) (voor OPUS) wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 21:03:52,238 - INFO - OPUS import gestart voor project context: MO07834_Boekenkast in map: C:/OPUS/KORPUS\0618_MO07834_Boekenkast
+2025-06-19 21:03:52,238 - INFO - 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast'.
+2025-06-19 21:03:52,238 - INFO - 2 OPUS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO07834_Boekenkast' voor Excel rapportage.
+2025-06-19 21:03:52,364 - INFO - OPUS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 21:03:52,364 - INFO - OPUS Excel report successfully saved: C:/OPUS/KORPUS\0618_MO07834_Boekenkast\0618_MO07834_Boekenkast.xlsx
+2025-06-19 21:03:52,364 - INFO - OPUS import thread voltooid. Totaal OPUS: 1, Totaal: 1
+2025-06-19 21:03:54,263 - INFO - Configuratie succesvol geladen.
+2025-06-19 21:03:54,263 - INFO - Event ontvangen: User=KL GANNOMAT, Project=MO07834_Boekenkast. Controleren voor import...
+2025-06-19 21:03:54,263 - INFO - MDB_PROCESSING (voor KL GANNOMAT) wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-06-19 21:03:54,263 - INFO - GANNOMAT import gestart voor project context: MO07834_Boekenkast in map: C:/GANNOMAT
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO07834_BOEKENKAST'? Result: False
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast' (Upper: '0618_MO07834_BOEKENKAST') with project_event_code: 'MO07834_Boekenkast' (Upper: 'MO07834_BOEKENKAST')
+2025-06-19 21:03:54,264 - INFO -   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST' end with 'MO07834_BOEKENKAST'? Result: True
+2025-06-19 21:03:54,264 - INFO - Overeenkomend GANNOMAT bestand (EndsWith match) gevonden: C:/GANNOMAT\0618_MO07834_Boekenkast.Mdb. Verwerken...
+2025-06-19 21:03:54,439 - INFO - Querying 'ProgramNumber' from table 'Program' in 0618_MO07834_Boekenkast.Mdb
+2025-06-19 21:03:54,502 - INFO - GANNOMAT Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO07834_Boekenkast_GANNOMAT.xlsx
+2025-06-19 21:03:54,502 - INFO - GANNOMAT Excel report successfully saved: C:/GANNOMAT\0618_MO07834_Boekenkast_GANNOMAT.xlsx
+2025-06-19 21:03:54,502 - INFO - Excel rapport gegenereerd voor 0618_MO07834_Boekenkast.Mdb.
+2025-06-19 21:03:54,502 - INFO - 1 GANNOMAT bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO07834_Boekenkast'.
+2025-06-19 21:03:54,502 - INFO - GANNOMAT import thread voltooid. Totaal GANNOMAT: 1, Totaal: 2
+2025-06-19 21:31:51,339 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:32:34,560 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:35:49,094 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:23,452 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:24,517 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:41:25,722 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 21:43:48,228 - INFO - [DatabasePanel] Shutdown called.
+2025-06-19 22:19:00,904 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:44:03,721 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:45:03,955 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 16:55:53,345 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:07:28,375 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:10:20,924 - INFO - [BG_TASK] Processing OPEN for MO00000_TEST, scanned by NESTING.
+2025-06-20 17:10:20,924 - INFO - Background task started for OPEN event: MO00000_TEST
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO00000_TEST'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] No match for 'MO00000_TEST' in 'C:/OPUS/KORPUS' for user 'OPUS'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO00000_TEST'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] No match for 'MO00000_TEST' in 'C:/GANNOMAT' for user 'KL GANNOMAT'.
+2025-06-20 17:10:20,925 - INFO - [BG_TASK] Finished processing OPEN for MO00000_TEST.
+2025-06-20 17:16:18,846 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:17:33,424 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:17:33,424 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:17:33,424 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:17:33,425 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:17:35,441 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:17:35,441 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:17:35,442 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:17:37,467 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:17:37,467 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:21:24,099 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:31:10,418 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:31:10,418 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:31:12,443 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:31:12,444 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:31:12,444 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:31:14,450 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:31:14,450 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:42:55,495 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:43:59,820 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:43:59,820 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:43:59,821 - INFO - [BG_TASK] Waiting for 0.86s before posting OPEN for OPUS.
+2025-06-20 17:44:02,692 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:44:02,692 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:44:02,693 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:44:02,693 - INFO - [BG_TASK] Waiting for 0.65s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:44:05,358 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:44:05,358 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:49:22,933 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:50:12,767 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:50:12,767 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:50:12,768 - INFO - [BG_TASK] Waiting for 0.65s before posting OPEN for OPUS.
+2025-06-20 17:50:15,433 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:50:15,434 - INFO - [BG_TASK] Waiting for 1.08s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:50:18,538 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:50:18,538 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 17:51:43,780 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 17:57:49,364 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 17:57:49,365 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 17:57:49,365 - INFO - [BG_TASK] Waiting for 0.94s before posting OPEN for OPUS.
+2025-06-20 17:57:52,328 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 17:57:52,329 - INFO - [BG_TASK] Waiting for 0.59s before posting OPEN for KL GANNOMAT.
+2025-06-20 17:57:54,938 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 17:57:54,939 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:12:07,814 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:13:12,205 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:13:12,205 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:13:12,205 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:13:12,206 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:13:12,206 - INFO - [BG_TASK] Waiting for 0.91s before posting OPEN for OPUS.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:13:15,134 - INFO - [BG_TASK] Waiting for 1.17s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:13:18,332 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:13:18,332 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:16:35,245 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:19:02,883 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:19:36,435 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:19:36,435 - INFO - [BG_TASK] Waiting for 1.36s before posting OPEN for OPUS.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for OPUS: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:19:39,817 - INFO - [BG_TASK] Waiting for 0.52s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:19:42,348 - INFO - [BG_TASK_ERR] API Error opening project MO07834_Boekenkast for KL GANNOMAT: 500 - {"error":"Database operation failed"}
+
+2025-06-20 18:19:42,348 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:31:43,994 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:32:11,925 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast, scanned by NESTING.
+2025-06-20 18:32:11,925 - INFO - Background task started for OPEN event: MO07834_Boekenkast
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast'.
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 18:32:11,926 - INFO - [BG_TASK] Waiting for 1.48s before posting OPEN for OPUS.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast for user OPUS.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast'.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 18:32:15,417 - INFO - [BG_TASK] Waiting for 1.04s before posting OPEN for KL GANNOMAT.
+2025-06-20 18:32:18,478 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast for user KL GANNOMAT.
+2025-06-20 18:32:18,478 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast.
+2025-06-20 18:50:04,385 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 18:55:54,128 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 19:00:26,996 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 19:54:33,386 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 20:12:14,145 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 23:03:20,841 - INFO - [DatabasePanel] Shutdown called.
+2025-06-20 23:04:59,937 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast_Rep_VL5, scanned by NESTING.
+2025-06-20 23:04:59,937 - INFO - Background task started for OPEN event: MO07834_Boekenkast_Rep_VL5
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 23:04:59,938 - INFO - [BG_TASK] Waiting for 0.79s before posting OPEN for OPUS.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user OPUS.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:05:02,751 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 23:05:02,752 - INFO - [BG_TASK] Waiting for 0.92s before posting OPEN for KL GANNOMAT.
+2025-06-20 23:05:05,693 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user KL GANNOMAT.
+2025-06-20 23:05:05,694 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast_Rep_VL5.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Processing OPEN for MO07834_Boekenkast_Rep_VL5, scanned by NESTING.
+2025-06-20 23:24:19,669 - INFO - Background task started for OPEN event: MO07834_Boekenkast_Rep_VL5
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-06-20 23:24:19,669 - INFO - [BG_TASK] Waiting for 1.18s before posting OPEN for OPUS.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user OPUS.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' for project 'MO07834_Boekenkast_Rep_VL5'.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Match found for 'MO07834_Boekenkast_Rep_VL5' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-06-20 23:24:22,875 - INFO - [BG_TASK] Waiting for 0.79s before posting OPEN for KL GANNOMAT.
+2025-06-20 23:24:25,673 - INFO - [BG_TASK] Successfully posted OPEN for MO07834_Boekenkast_Rep_VL5 for user KL GANNOMAT.
+2025-06-20 23:24:25,673 - INFO - [BG_TASK] Finished processing OPEN for MO07834_Boekenkast_Rep_VL5.
+2025-06-21 07:47:59,368 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 09:37:16,237 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 10:06:31,346 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 19:59:07,773 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 20:18:49,378 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 20:19:38,759 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 21:58:50,692 - INFO - [DatabasePanel] Shutdown called.
+2025-06-23 22:18:03,742 - INFO - [DatabasePanel] Shutdown called.

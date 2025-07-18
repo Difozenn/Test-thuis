@@ -68551,219 +68551,650 @@ with app.app_context(). See the documentation for more information.
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: KL GANNOMAT
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: ACCURA
 2025-07-11 22:59:08,147 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:20:33,908 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
-2025-07-15 22:20:34,038 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
-2025-07-15 22:20:34,039 INFO Database initialization complete.
-2025-07-15 22:20:34,040 ERROR Error creating efficiency tables: Working outside of application context.
+2025-07-16 21:05:00,585 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-16 21:05:00,696 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-07-16 21:05:00,697 INFO Database initialization complete.
+2025-07-16 21:05:00,698 ERROR Error creating efficiency tables: Working outside of application context.
 
 This typically means that you attempted to use functionality that needed
 the current application. To solve this, set up an application context
 with app.app_context(). See the documentation for more information.
-2025-07-15 22:20:34,040 INFO Daily efficiency update scheduler started
-2025-07-15 22:20:34,041 INFO Daily efficiency updated for 0 users
-2025-07-15 22:20:34,041 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
-2025-07-15 22:20:34,041 INFO Efficiency tracking system initialized
-2025-07-15 22:20:34,058 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-07-15 22:20:57,296 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:20:57,298 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:21:27,461 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:21:27,462 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:21:27,463 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:21:57,789 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:21:57,790 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:22:27,818 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:22:27,819 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:22:58,146 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:22:58,148 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:23:28,188 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:23:28,189 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:23:58,519 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:23:58,520 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:24:28,545 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:24:28,546 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:24:28,546 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:24:28,547 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:24:28,547 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:24:53,763 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:24:53,764 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:24:55,359 INFO database management page was called
-2025-07-15 22:25:01,224 INFO [db_log_api] /clear_logs POST request received.
-2025-07-15 22:25:01,226 INFO Cleared table: logs
-2025-07-15 22:25:01,226 INFO Cleared table: sessions
-2025-07-15 22:25:01,226 INFO Cleared table: project_sessions
-2025-07-15 22:25:01,229 INFO All database tables cleared successfully.
-2025-07-15 22:25:02,233 INFO Dashboard display users: ['NESTING', 'OPUS', 'KL GANNOMAT', 'ACCURA', 'BOERE']
-2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: NESTING
-2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:25:02,234 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:25:10,666 INFO Work hours configuration updated: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
-2025-07-15 22:25:10,666 INFO Work hours configuration saved to config.json
-2025-07-15 22:27:34,389 INFO Session started for NESTING: NESTING_20250715_222732
-2025-07-15 22:27:36,414 INFO Project session started: NESTING_20250715_222732
-2025-07-15 22:31:43,595 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: NESTING
-2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: ACCURA
-2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:31:43,596 INFO Adding empty project list for dashboard user: BOERE
-2025-07-15 22:32:02,047 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'MO06797_Bureaukast_(15-16)', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250715_222732', 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:02,048 INFO Event OPEN received for NESTING on MO06797_Bureaukast_(15-16). Triggering background import service.
-2025-07-15 22:32:02,049 INFO Configuratie succesvol geladen.
-2025-07-15 22:32:02,049 INFO Event ontvangen: User=NESTING, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
-2025-07-15 22:32:02,049 INFO NESTING_PROCESSING voor user 'NESTING': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
-2025-07-15 22:32:02,049 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:02,050 INFO NESTING_PROCESSING gestart voor user 'NESTING', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:02,103 INFO [BG_TASK] Processing OPEN for MO06797_Bureaukast_(15-16), scanned by NESTING.
-2025-07-15 22:32:02,109 INFO Background task started for OPEN event: MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:02,113 INFO NESTING_PROCESSING voltooid: Nesting=40, Opdeelzaag=14
-2025-07-15 22:32:02,113 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
-2025-07-15 22:32:02,113 INFO [BG_TASK] Running background unified Excel processing for non-scanner Excel processors: ['ACCURA', 'BOERE']
-2025-07-15 22:32:02,113 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['ACCURA', 'BOERE']
-2025-07-15 22:32:02,115 ERROR Fout bij updaten OPEN event met nesting counts: Object of type int64 is not JSON serializable
-2025-07-15 22:32:02,115 INFO Fout bij nesting counts API update: Object of type int64 is not JSON serializable
-2025-07-15 22:32:02,115 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:02,160 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
-2025-07-15 22:32:02,160 INFO [UNIFIED_EXCEL] Waiting 1.12s before posting OPEN for ACCURA
-2025-07-15 22:32:04,118 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=40, Opdeelzaag=14', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'NESTING', 'timestamp': '2025-07-15T22:32:02.115253'}
-2025-07-15 22:32:04,125 INFO Import event gelogd naar API: NESTING - MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:05,301 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'user': 'ACCURA', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:05,302 INFO Event OPEN received for ACCURA on MO06797_Bureaukast_(15-16). Triggering background import service.
-2025-07-15 22:32:05,302 INFO Configuratie succesvol geladen.
-2025-07-15 22:32:05,302 INFO Event ontvangen: User=ACCURA, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
-2025-07-15 22:32:05,303 INFO ACCURA_PROCESSING voor user 'ACCURA': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
-2025-07-15 22:32:05,303 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:05,304 INFO ACCURA_PROCESSING gestart voor user 'ACCURA', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:05,325 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user ACCURA
-2025-07-15 22:32:05,346 INFO ACCURA_PROCESSING voltooid: 49 items, 141 sides
-2025-07-15 22:32:06,139 INFO Failed to update project metadata: 404
-2025-07-15 22:32:07,360 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'aantal_items': 49, 'aantal_sides': 141, 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:07,362 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'aantal_items': 49, 'aantal_sides': 141, 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:07,363 INFO Updated accura counts for ACCURA - MO06797_Bureaukast_(15-16): Items=49, Sides=141
-2025-07-15 22:32:07,365 INFO OPEN event updated with accura counts for: ACCURA - MO06797_Bureaukast_(15-16) (Items: 49, Sides: 141)
-2025-07-15 22:32:07,371 INFO Updated accura counts for ACCURA - MO06797_Bureaukast_(15-16): Items=49, Sides=141
-2025-07-15 22:32:07,375 INFO OPEN event updated with accura counts for: ACCURA - MO06797_Bureaukast_(15-16) (Items: 49, Sides: 141)
-2025-07-15 22:32:09,369 INFO Failed to update project metadata: 404
-2025-07-15 22:32:09,371 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
-2025-07-15 22:32:09,371 INFO [UNIFIED_EXCEL] Waiting 0.38s before posting OPEN for BOERE
-2025-07-15 22:32:09,389 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'ACCURA_PROCESSING voltooid: 49 items, 141 sides', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'timestamp': '2025-07-15T22:32:07.375186'}
-2025-07-15 22:32:09,397 INFO Import event gelogd naar API: ACCURA - MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:11,403 INFO Failed to update project metadata: 404
-2025-07-15 22:32:11,761 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'user': 'BOERE', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:11,762 INFO Event OPEN received for BOERE on MO06797_Bureaukast_(15-16). Triggering background import service.
-2025-07-15 22:32:11,762 INFO Configuratie succesvol geladen.
-2025-07-15 22:32:11,762 INFO Event ontvangen: User=BOERE, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
-2025-07-15 22:32:11,762 INFO BOERE_PROCESSING voor user 'BOERE': zoeken naar Excel bestand voor 'MO06797_Bureaukast_(15-16)'
-2025-07-15 22:32:11,763 INFO Excel bestand gevonden: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:11,763 INFO BOERE_PROCESSING gestart voor user 'BOERE', project 'MO06797_Bureaukast_(15-16)', Excel: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
-2025-07-15 22:32:11,784 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user BOERE
-2025-07-15 22:32:11,796 ERROR Error updating item count: Object of type int64 is not JSON serializable
-2025-07-15 22:32:11,796 INFO Fout bij updaten OPEN event met boere count
-2025-07-15 22:32:11,806 INFO BOERE_PROCESSING voltooid: 86 items
-2025-07-15 22:32:13,623 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-15 22:32:13,625 INFO Adding empty project list for dashboard user: OPUS
-2025-07-15 22:32:13,625 INFO Adding empty project list for dashboard user: KL GANNOMAT
-2025-07-15 22:32:13,812 INFO Failed to update project metadata: 404
-2025-07-15 22:32:13,813 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
-2025-07-15 22:32:13,813 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
-2025-07-15 22:32:13,813 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
-2025-07-15 22:32:13,813 INFO [BG_TASK] Waiting for 0.61s before posting OPEN for OPUS.
-2025-07-15 22:32:13,820 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'item_count': 86, 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:13,825 INFO Updated item_count for OPEN event: user=BOERE, project=MO06797_Bureaukast_(15-16), count=86
-2025-07-15 22:32:13,828 INFO OPEN event updated with boere count for: BOERE - MO06797_Bureaukast_(15-16) (Items: 86)
-2025-07-15 22:32:15,842 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'BOERE_PROCESSING voltooid: 86 items', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'timestamp': '2025-07-15T22:32:13.828785'}
-2025-07-15 22:32:15,850 INFO Import event gelogd naar API: BOERE - MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:16,444 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:16,446 INFO Event OPEN received for OPUS on MO06797_Bureaukast_(15-16). Triggering background import service.
-2025-07-15 22:32:16,446 INFO Configuratie succesvol geladen.
-2025-07-15 22:32:16,446 INFO Event ontvangen: User=OPUS, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
-2025-07-15 22:32:16,447 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO06797_Bureaukast_(15-16)' for directory matching.
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:16,447 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
-2025-07-15 22:32:16,447 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:16,447 INFO HOPS import gestart voor user 'OPUS', project context: MO06797_Bureaukast_(15-16) in map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:16,448 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)'.
-2025-07-15 22:32:16,448 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)' voor Excel rapportage.
-2025-07-15 22:32:16,453 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user OPUS.
-2025-07-15 22:32:16,455 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
-2025-07-15 22:32:16,455 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
-2025-07-15 22:32:16,456 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
-2025-07-15 22:32:16,456 INFO [BG_TASK] Waiting for 0.66s before posting OPEN for KL GANNOMAT.
-2025-07-15 22:32:16,462 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:16,462 INFO HOPS Excel rapport bevat 2 items
-2025-07-15 22:32:17,867 INFO Failed to update project metadata: 404
-2025-07-15 22:32:18,477 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0618_MO06797_Bureaukast_(15-16)\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-15T22:32:16.462636'}
-2025-07-15 22:32:18,481 INFO Updated file_path for OPEN event: user=OPUS, project=MO06797_Bureaukast_(15-16), path=C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:18,484 INFO OPEN event updated with Excel path for: OPUS - MO06797_Bureaukast_(15-16) at C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:19,137 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-15T22:27:32.371790'}
-2025-07-15 22:32:19,139 INFO Event OPEN received for KL GANNOMAT on MO06797_Bureaukast_(15-16). Triggering background import service.
-2025-07-15 22:32:19,139 INFO Configuratie succesvol geladen.
-2025-07-15 22:32:19,139 INFO Event ontvangen: User=KL GANNOMAT, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
-2025-07-15 22:32:19,139 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
-2025-07-15 22:32:19,139 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO06797_Bureaukast_(15-16) in map: C:/GANNOMAT
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
-2025-07-15 22:32:19,140 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
-2025-07-15 22:32:19,140 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).Mdb. Verwerken...
-2025-07-15 22:32:19,151 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user KL GANNOMAT.
-2025-07-15 22:32:19,154 INFO [BG_TASK] Finished processing OPEN for MO06797_Bureaukast_(15-16).
-2025-07-15 22:32:19,280 INFO Querying 'ProgramNumber' from table 'Program' in 0618_MO06797_Bureaukast_(15-16).Mdb
-2025-07-15 22:32:19,341 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:19,341 INFO MDB Excel report successfully saved: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:19,341 INFO MDB Excel rapport bevat 4 items
-2025-07-15 22:32:20,488 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-15T22:32:18.484358'}
-2025-07-15 22:32:20,492 INFO Updated item_count for OPEN event: user=OPUS, project=MO06797_Bureaukast_(15-16), count=2
-2025-07-15 22:32:20,496 INFO OPEN event updated with item count (2) for: OPUS - MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:20,496 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 6
-2025-07-15 22:32:21,346 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-15T22:32:19.342684'}
-2025-07-15 22:32:21,351 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO06797_Bureaukast_(15-16), path=C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:21,353 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO06797_Bureaukast_(15-16) at C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
-2025-07-15 22:32:23,355 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-15T22:32:21.353281'}
-2025-07-15 22:32:23,358 INFO Updated item_count for OPEN event: user=KL GANNOMAT, project=MO06797_Bureaukast_(15-16), count=4
-2025-07-15 22:32:23,362 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO06797_Bureaukast_(15-16)
-2025-07-15 22:32:23,362 INFO Excel rapport gegenereerd voor 0618_MO06797_Bureaukast_(15-16).Mdb.
-2025-07-15 22:32:23,362 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO06797_Bureaukast_(15-16)'.
-2025-07-15 22:32:23,362 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 7
-2025-07-15 22:32:24,226 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-15 22:32:25,413 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
-2025-07-15 22:32:25,458 INFO PDF database initialized successfully
-2025-07-15 22:33:40,489 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-15 22:34:07,724 ERROR Error getting productivity metrics: '>' not supported between instances of 'NoneType' and 'int'
-2025-07-15 22:34:07,730 ERROR Error getting bottleneck analysis: no such column: timestamp
-2025-07-15 22:34:07,732 ERROR Error getting quality metrics: unsupported operand type(s) for -: 'int' and 'NoneType'
-2025-07-15 22:34:16,222 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
-2025-07-15 22:34:33,333 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
-2025-07-15 22:34:33,335 INFO PDF database initialized successfully
+2025-07-16 21:05:00,698 INFO Daily efficiency update scheduler started
+2025-07-16 21:05:00,703 INFO Daily efficiency updated for 1 users
+2025-07-16 21:05:00,706 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 401.5, 'total_items': 89, 'total_minutes': 13.3, 'user': 'NESTING'}]}
+2025-07-16 21:05:00,706 INFO Efficiency tracking system initialized
+2025-07-16 21:05:00,728 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-07-16 21:05:08,801 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:05:10,779 INFO database management page was called
+2025-07-16 21:05:14,759 INFO [db_log_api] /clear_logs POST request received.
+2025-07-16 21:05:14,762 INFO Cleared table: logs
+2025-07-16 21:05:14,762 INFO Cleared table: sessions
+2025-07-16 21:05:14,763 INFO Cleared table: project_sessions
+2025-07-16 21:05:14,766 INFO All database tables cleared successfully.
+2025-07-16 21:05:36,678 INFO Work hours configuration updated: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 23.983333333333334}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-16 21:05:36,679 INFO Work hours configuration saved to config.json
+2025-07-16 21:05:38,261 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:06:08,281 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:06:25,276 INFO Session started for NESTING: NESTING_20250716_210623
+2025-07-16 21:06:27,288 INFO Project session started: NESTING_20250716_210623
+2025-07-16 21:06:38,601 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:07:08,622 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:07:38,953 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:08:09,282 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:08:39,309 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:09:09,636 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:09:39,665 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:10:09,993 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:10:40,017 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:11:10,352 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:11:40,394 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:12:10,729 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:12:40,751 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:13:11,077 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:13:41,100 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:14:11,425 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:14:41,448 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:15:11,777 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:15:41,802 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:16:12,135 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:16:42,163 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:17:12,500 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:17:42,530 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:18:12,867 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:18:42,913 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:19:13,253 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:19:43,282 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:20:13,610 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:20:43,644 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:21:13,740 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': '0619_MO06787_Spiegel_(5-16)', 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250716_210623', 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:13,742 INFO Event OPEN received for NESTING on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 21:21:13,742 INFO Configuratie succesvol geladen.
+2025-07-16 21:21:13,742 INFO Event ontvangen: User=NESTING, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 21:21:13,742 INFO NESTING_PROCESSING voor user 'NESTING': zoeken naar Excel bestand voor 'MO06787_Spiegel_(5-16)'
+2025-07-16 21:21:13,743 INFO Excel bestand gevonden: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:13,743 INFO NESTING_PROCESSING gestart voor user 'NESTING', project 'MO06787_Spiegel_(5-16)', Excel: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:13,779 INFO [BG_TASK] Processing OPEN for MO06787_Spiegel_(5-16), scanned by NESTING.
+2025-07-16 21:21:13,780 INFO Background task started for OPEN event: MO06787_Spiegel_(5-16)
+2025-07-16 21:21:13,780 INFO NESTING_PROCESSING: Geen onderdelen gevonden in Excel C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:13,782 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
+2025-07-16 21:21:13,782 INFO [BG_TASK] Running background unified Excel processing for non-scanner Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 21:21:13,782 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 21:21:13,783 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:13,817 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
+2025-07-16 21:21:13,817 INFO [UNIFIED_EXCEL] Waiting 1.04s before posting OPEN for ACCURA
+2025-07-16 21:21:13,980 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:21:15,795 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 21:21:15,799 INFO Updated project metadata for 1 records in project MO06787_Spiegel_(5-16)
+2025-07-16 21:21:15,803 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 21:21:16,856 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'user': 'ACCURA', 'color': 'N8', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'item_count': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:16,859 INFO Event OPEN received for ACCURA on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 21:21:16,859 INFO Configuratie succesvol geladen.
+2025-07-16 21:21:16,859 INFO Event ontvangen: User=ACCURA, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 21:21:16,859 INFO ACCURA_PROCESSING voor user 'ACCURA': zoeken naar Excel bestand voor 'MO06787_Spiegel_(5-16)'
+2025-07-16 21:21:16,860 INFO Excel bestand gevonden: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:16,860 INFO ACCURA_PROCESSING gestart voor user 'ACCURA', project 'MO06787_Spiegel_(5-16)', Excel: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 21:21:16,879 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user ACCURA
+2025-07-16 21:21:16,897 INFO ACCURA_PROCESSING voltooid: 3 items, 12 sides
+2025-07-16 21:21:18,900 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'item_count': 3, 'aantal_items': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:18,904 INFO Updated accura counts for ACCURA - MO06787_Spiegel_(5-16): Total=3, Items=3, Sides=12
+2025-07-16 21:21:18,906 INFO OPEN event updated with accura counts for: ACCURA - MO06787_Spiegel_(5-16) (Items: 3, Sides: 12)
+2025-07-16 21:21:18,913 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'item_count': 3, 'aantal_items': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:18,914 INFO Updated accura counts for ACCURA - MO06787_Spiegel_(5-16): Total=3, Items=3, Sides=12
+2025-07-16 21:21:18,915 INFO OPEN event updated with accura counts for: ACCURA - MO06787_Spiegel_(5-16) (Items: 3, Sides: 12)
+2025-07-16 21:21:20,909 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 21:21:20,910 INFO Updated project metadata for 2 records in project MO06787_Spiegel_(5-16)
+2025-07-16 21:21:20,912 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 21:21:20,914 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
+2025-07-16 21:21:20,914 INFO [UNIFIED_EXCEL] Waiting 0.70s before posting OPEN for BOERE
+2025-07-16 21:21:20,918 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'ACCURA_PROCESSING voltooid: 3 items, 12 sides', 'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'timestamp': '2025-07-16T21:21:18.915499'}
+2025-07-16 21:21:20,924 INFO Import event gelogd naar API: ACCURA - MO06787_Spiegel_(5-16)
+2025-07-16 21:21:21,620 INFO [UNIFIED_EXCEL] Error posting OPEN: Object of type int64 is not JSON serializable
+2025-07-16 21:21:21,620 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
+2025-07-16 21:21:21,621 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 21:21:21,621 INFO [BG_TASK] Match found for 'MO06787_Spiegel_(5-16)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-07-16 21:21:21,621 INFO [BG_TASK] Waiting for 1.28s before posting OPEN for OPUS.
+2025-07-16 21:21:22,939 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 21:21:22,941 INFO Updated project metadata for 2 records in project MO06787_Spiegel_(5-16)
+2025-07-16 21:21:22,942 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 21:21:24,914 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0619_MO06787_Spiegel_(5-16)", 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:24,915 INFO Event OPEN received for OPUS on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 21:21:24,915 INFO Configuratie succesvol geladen.
+2025-07-16 21:21:24,915 INFO Event ontvangen: User=OPUS, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 21:21:24,915 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO06787_Spiegel_(5-16)' for directory matching.
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,915 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07835_Boekenkast5' (Upper: '0618_MO07835_BOEKENKAST5') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Does '0618_MO07835_BOEKENKAST5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Comparing dir: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:24,916 INFO   [DEBUG HOPS] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: True
+2025-07-16 21:21:24,916 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)
+2025-07-16 21:21:24,916 INFO HOPS import gestart voor user 'OPUS', project context: MO06787_Spiegel_(5-16) in map: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)
+2025-07-16 21:21:24,917 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)'.
+2025-07-16 21:21:24,917 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)' voor Excel rapportage.
+2025-07-16 21:21:24,925 INFO [BG_TASK] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user OPUS.
+2025-07-16 21:21:24,926 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
+2025-07-16 21:21:24,926 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 21:21:24,926 INFO [BG_TASK] Match found for 'MO06787_Spiegel_(5-16)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-07-16 21:21:24,926 INFO [BG_TASK] Waiting for 0.58s before posting OPEN for KL GANNOMAT.
+2025-07-16 21:21:24,929 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:24,929 INFO HOPS Excel rapport bevat 2 items
+2025-07-16 21:21:26,934 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0619_MO06787_Spiegel_(5-16)\\0619_MO06787_Spiegel_(5-16).xlsx', 'timestamp': '2025-07-16T21:21:24.929191'}
+2025-07-16 21:21:26,939 INFO Updated file_path for OPEN event: user=OPUS, project=MO06787_Spiegel_(5-16), path=C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:26,942 INFO OPEN event updated with Excel path for: OPUS - MO06787_Spiegel_(5-16) at C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:27,519 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0619_MO06787_Spiegel_(5-16)", 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-16T21:06:23.267638'}
+2025-07-16 21:21:27,521 INFO Event OPEN received for KL GANNOMAT on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 21:21:27,521 INFO Configuratie succesvol geladen.
+2025-07-16 21:21:27,521 INFO Event ontvangen: User=KL GANNOMAT, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 21:21:27,521 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-07-16 21:21:27,522 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO06787_Spiegel_(5-16) in map: C:/GANNOMAT
+2025-07-16 21:21:27,522 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,522 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:27,522 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,523 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:27,523 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,523 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:27,523 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,523 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:27,524 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,524 INFO   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 21:21:27,524 INFO   [DEBUG MDB] Comparing file_basename: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 21:21:27,524 INFO   [DEBUG MDB] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: True
+2025-07-16 21:21:27,524 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).Mdb. Verwerken...
+2025-07-16 21:21:27,528 INFO [BG_TASK] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user KL GANNOMAT.
+2025-07-16 21:21:27,538 INFO [BG_TASK] Finished processing OPEN for MO06787_Spiegel_(5-16).
+2025-07-16 21:21:27,694 INFO Querying 'ProgramNumber' from table 'Program' in 0619_MO06787_Spiegel_(5-16).Mdb
+2025-07-16 21:21:27,768 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:27,768 INFO MDB Excel report successfully saved: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:27,768 INFO MDB Excel rapport bevat 4 items
+2025-07-16 21:21:28,968 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-16T21:21:26.943149'}
+2025-07-16 21:21:28,975 INFO Updated item count for OPUS - MO06787_Spiegel_(5-16): Total=2 (Nesting=0, Opdeelzaag=0)
+2025-07-16 21:21:28,977 INFO OPEN event updated with item count (2) for: OPUS - MO06787_Spiegel_(5-16)
+2025-07-16 21:21:28,977 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 4
+2025-07-16 21:21:29,775 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0619_MO06787_Spiegel_(5-16).xlsx', 'timestamp': '2025-07-16T21:21:27.768980'}
+2025-07-16 21:21:29,780 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO06787_Spiegel_(5-16), path=C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:29,783 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO06787_Spiegel_(5-16) at C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 21:21:31,795 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-16T21:21:29.783011'}
+2025-07-16 21:21:31,799 INFO Updated item count for KL GANNOMAT - MO06787_Spiegel_(5-16): Total=4 (Nesting=0, Opdeelzaag=0)
+2025-07-16 21:21:31,802 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO06787_Spiegel_(5-16)
+2025-07-16 21:21:31,802 INFO Excel rapport gegenereerd voor 0619_MO06787_Spiegel_(5-16).Mdb.
+2025-07-16 21:21:31,802 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 21:21:31,802 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 5
+2025-07-16 21:21:44,017 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:22:14,354 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:22:38,829 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 21:22:39,988 INFO logs_project endpoint called for project: 'MO06787_Spiegel_(5-16)'
+2025-07-16 22:28:51,497 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 23.983333333333334}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-16 22:28:51,605 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-07-16 22:28:51,607 INFO Database initialization complete.
+2025-07-16 22:28:51,608 ERROR Error creating efficiency tables: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2025-07-16 22:28:51,608 INFO Daily efficiency update scheduler started
+2025-07-16 22:28:51,609 INFO Daily efficiency updated for 0 users
+2025-07-16 22:28:51,610 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
+2025-07-16 22:28:51,610 INFO Efficiency tracking system initialized
+2025-07-16 22:28:51,627 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-07-16 22:28:53,693 INFO users endpoint was called
+2025-07-16 22:28:54,300 INFO database management page was called
+2025-07-16 22:28:55,423 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:28:57,353 INFO database management page was called
+2025-07-16 22:29:01,388 INFO [db_log_api] /clear_logs POST request received.
+2025-07-16 22:29:01,390 INFO Cleared table: logs
+2025-07-16 22:29:01,391 INFO Cleared table: sessions
+2025-07-16 22:29:01,392 INFO Cleared table: project_sessions
+2025-07-16 22:29:01,395 INFO All database tables cleared successfully.
+2025-07-16 22:29:02,082 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:29:10,221 INFO Session started for NESTING: NESTING_20250716_222908
+2025-07-16 22:29:12,243 INFO Project session started: NESTING_20250716_222908
+2025-07-16 22:29:32,103 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:29:40,873 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'MO08421_Dressingkastje (2-4)', 'project': 'MO08421_Dressingkastje (2-4)', 'base_mo_code': 'MO08421', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250716_222908', 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:40,874 INFO Event OPEN received for NESTING on MO08421_Dressingkastje (2-4). Triggering background import service.
+2025-07-16 22:29:40,874 INFO Configuratie succesvol geladen.
+2025-07-16 22:29:40,875 INFO Event ontvangen: User=NESTING, Project=MO08421_Dressingkastje (2-4). Controleren voor import...
+2025-07-16 22:29:40,875 INFO NESTING_PROCESSING voor user 'NESTING': zoeken naar Excel bestand voor 'MO08421_Dressingkastje (2-4)'
+2025-07-16 22:29:40,875 INFO Excel bestand gevonden: C:/Rapporten\S04656_MO08421_Dressingkastje (2-4)_Frank Celis.xls
+2025-07-16 22:29:40,876 INFO NESTING_PROCESSING gestart voor user 'NESTING', project 'MO08421_Dressingkastje (2-4)', Excel: C:/Rapporten\S04656_MO08421_Dressingkastje (2-4)_Frank Celis.xls
+2025-07-16 22:29:40,919 INFO [BG_TASK] Processing OPEN for MO08421_Dressingkastje (2-4), scanned by NESTING.
+2025-07-16 22:29:40,919 INFO Background task started for OPEN event: MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:40,929 INFO NESTING_PROCESSING voltooid: Nesting=12, Opdeelzaag=1
+2025-07-16 22:29:40,929 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
+2025-07-16 22:29:40,929 INFO [BG_TASK] Running unified Excel processing for Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 22:29:40,929 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 22:29:40,930 ERROR Fout bij updaten OPEN event met nesting counts: Object of type int64 is not JSON serializable
+2025-07-16 22:29:40,930 INFO Fout bij nesting counts API update: Object of type int64 is not JSON serializable
+2025-07-16 22:29:40,931 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S04656_MO08421_Dressingkastje (2-4)_Frank Celis.xls
+2025-07-16 22:29:40,968 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
+2025-07-16 22:29:40,968 INFO [UNIFIED_EXCEL] Waiting 0.30s before posting OPEN for ACCURA
+2025-07-16 22:29:42,932 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'NESTING_PROCESSING voltooid: Nesting=12, Opdeelzaag=1', 'project': 'MO08421_Dressingkastje (2-4)', 'user': 'NESTING', 'timestamp': '2025-07-16T22:29:40.930314'}
+2025-07-16 22:29:42,939 INFO Import event gelogd naar API: NESTING - MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:43,297 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO08421_Dressingkastje (2-4)', 'base_mo_code': 'MO08421', 'user': 'ACCURA', 'color': 'S1/N8', 'mo_number': 'MO08421', 'so_number': 'S04656', 'customer_name': 'Frank Celis', 'item_count': 11, 'aantal_sides': 33, 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:43,299 INFO Event OPEN received for ACCURA on MO08421_Dressingkastje (2-4). Triggering background import service.
+2025-07-16 22:29:43,299 INFO Configuratie succesvol geladen.
+2025-07-16 22:29:43,299 INFO Event ontvangen: User=ACCURA, Project=MO08421_Dressingkastje (2-4). Controleren voor import...
+2025-07-16 22:29:43,299 INFO ACCURA_PROCESSING voor user 'ACCURA': zoeken naar Excel bestand voor 'MO08421_Dressingkastje (2-4)'
+2025-07-16 22:29:43,300 INFO Excel bestand gevonden: C:/Rapporten\S04656_MO08421_Dressingkastje (2-4)_Frank Celis.xls
+2025-07-16 22:29:43,300 INFO ACCURA_PROCESSING gestart voor user 'ACCURA', project 'MO08421_Dressingkastje (2-4)', Excel: C:/Rapporten\S04656_MO08421_Dressingkastje (2-4)_Frank Celis.xls
+2025-07-16 22:29:43,312 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO08421_Dressingkastje (2-4) for user ACCURA
+2025-07-16 22:29:43,343 INFO ACCURA_PROCESSING voltooid: 11 items, 33 sides
+2025-07-16 22:29:44,946 INFO [db_log_api] /project/metadata called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'mo_number': 'MO08421', 'so_number': 'S04656', 'customer_name': 'Frank Celis', 'color': 'S1/N8'}
+2025-07-16 22:29:44,949 INFO Updated project metadata for 2 records in project MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:44,952 INFO Project metadata updated for MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:45,347 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'ACCURA', 'item_count': 11, 'aantal_items': 11, 'aantal_sides': 33, 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:45,350 INFO Updated accura counts for ACCURA - MO08421_Dressingkastje (2-4): Total=11, Items=11, Sides=33
+2025-07-16 22:29:45,354 INFO OPEN event updated with accura counts for: ACCURA - MO08421_Dressingkastje (2-4) (Items: 11, Sides: 33)
+2025-07-16 22:29:45,359 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'ACCURA', 'item_count': 11, 'aantal_items': 11, 'aantal_sides': 33, 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:45,360 INFO Updated accura counts for ACCURA - MO08421_Dressingkastje (2-4): Total=11, Items=11, Sides=33
+2025-07-16 22:29:45,361 INFO OPEN event updated with accura counts for: ACCURA - MO08421_Dressingkastje (2-4) (Items: 11, Sides: 33)
+2025-07-16 22:29:47,368 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'ACCURA_PROCESSING voltooid: 11 items, 33 sides', 'project': 'MO08421_Dressingkastje (2-4)', 'user': 'ACCURA', 'timestamp': '2025-07-16T22:29:45.362369'}
+2025-07-16 22:29:47,376 INFO Import event gelogd naar API: ACCURA - MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:47,380 INFO [db_log_api] /project/metadata called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'mo_number': 'MO08421', 'so_number': 'S04656', 'customer_name': 'Frank Celis', 'color': 'S1/N8'}
+2025-07-16 22:29:47,381 INFO Updated project metadata for 2 records in project MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:47,383 INFO Project metadata updated for MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:47,385 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
+2025-07-16 22:29:47,385 INFO [UNIFIED_EXCEL] Waiting 0.85s before posting OPEN for BOERE
+2025-07-16 22:29:48,239 INFO [UNIFIED_EXCEL] Error posting OPEN: Object of type int64 is not JSON serializable
+2025-07-16 22:29:48,240 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
+2025-07-16 22:29:48,240 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO08421_Dressingkastje (2-4)'.
+2025-07-16 22:29:48,240 INFO [BG_TASK] Match found for 'MO08421_Dressingkastje (2-4)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-07-16 22:29:48,240 INFO [BG_TASK] Waiting for 0.35s before posting OPEN for OPUS.
+2025-07-16 22:29:49,391 INFO [db_log_api] /project/metadata called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'mo_number': 'MO08421', 'so_number': 'S04656', 'customer_name': 'Frank Celis', 'color': 'S1/N8'}
+2025-07-16 22:29:49,393 INFO Updated project metadata for 2 records in project MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:49,393 INFO Project metadata updated for MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:50,595 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO08421_Dressingkastje (2-4)", 'project': 'MO08421_Dressingkastje (2-4)', 'base_mo_code': 'MO08421', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:50,596 INFO Event OPEN received for OPUS on MO08421_Dressingkastje (2-4). Triggering background import service.
+2025-07-16 22:29:50,596 INFO Configuratie succesvol geladen.
+2025-07-16 22:29:50,596 INFO Event ontvangen: User=OPUS, Project=MO08421_Dressingkastje (2-4). Controleren voor import...
+2025-07-16 22:29:50,597 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO08421_Dressingkastje (2-4)' for directory matching.
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,597 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07835_Boekenkast5' (Upper: '0618_MO07835_BOEKENKAST5') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Does '0618_MO07835_BOEKENKAST5' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Comparing dir: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Comparing dir: 'KAST1' (Upper: 'KAST1') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Does 'KAST1' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Comparing dir: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)') with code_to_match: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:50,598 INFO   [DEBUG HOPS] Does 'MO08421_DRESSINGKASTJE (2-4)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: True
+2025-07-16 22:29:50,598 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:50,599 INFO HOPS import gestart voor user 'OPUS', project context: MO08421_Dressingkastje (2-4) in map: C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:50,599 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)'.
+2025-07-16 22:29:50,599 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)' voor Excel rapportage.
+2025-07-16 22:29:50,605 INFO [BG_TASK] Successfully posted OPEN for MO08421_Dressingkastje (2-4) for user OPUS.
+2025-07-16 22:29:50,608 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
+2025-07-16 22:29:50,608 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO08421_Dressingkastje (2-4)'.
+2025-07-16 22:29:50,608 INFO [BG_TASK] Match found for 'MO08421_Dressingkastje (2-4)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-07-16 22:29:50,608 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:50,608 INFO [BG_TASK] Waiting for 1.09s before posting OPEN for KL GANNOMAT.
+2025-07-16 22:29:50,608 INFO HOPS Excel rapport bevat 2 items
+2025-07-16 22:29:52,615 INFO [db_log_api] /update_file_path called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\MO08421_Dressingkastje (2-4)\\MO08421_Dressingkastje (2-4).xlsx', 'timestamp': '2025-07-16T22:29:50.610190'}
+2025-07-16 22:29:52,618 INFO Updated file_path for OPEN event: user=OPUS, project=MO08421_Dressingkastje (2-4), path=C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:52,620 INFO OPEN event updated with Excel path for: OPUS - MO08421_Dressingkastje (2-4) at C:/OPUS/KORPUS\MO08421_Dressingkastje (2-4)\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:53,708 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO08421_Dressingkastje (2-4)", 'project': 'MO08421_Dressingkastje (2-4)', 'base_mo_code': 'MO08421', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-16T22:29:08.214182'}
+2025-07-16 22:29:53,710 INFO Event OPEN received for KL GANNOMAT on MO08421_Dressingkastje (2-4). Triggering background import service.
+2025-07-16 22:29:53,711 INFO Configuratie succesvol geladen.
+2025-07-16 22:29:53,711 INFO Event ontvangen: User=KL GANNOMAT, Project=MO08421_Dressingkastje (2-4). Controleren voor import...
+2025-07-16 22:29:53,711 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-07-16 22:29:53,711 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO08421_Dressingkastje (2-4) in map: C:/GANNOMAT
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: 'MO08108_Vestiaire (1-4)' (Upper: 'MO08108_VESTIAIRE (1-4)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does 'MO08108_VESTIAIRE (1-4)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: False
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Comparing file_basename: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)') with project_event_code: 'MO08421_Dressingkastje (2-4)' (Upper: 'MO08421_DRESSINGKASTJE (2-4)')
+2025-07-16 22:29:53,712 INFO   [DEBUG MDB] Does 'MO08421_DRESSINGKASTJE (2-4)' end with 'MO08421_DRESSINGKASTJE (2-4)'? Result: True
+2025-07-16 22:29:53,712 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\MO08421_Dressingkastje (2-4).Mdb. Verwerken...
+2025-07-16 22:29:53,725 INFO [BG_TASK] Successfully posted OPEN for MO08421_Dressingkastje (2-4) for user KL GANNOMAT.
+2025-07-16 22:29:53,727 INFO [BG_TASK] Finished processing OPEN for MO08421_Dressingkastje (2-4).
+2025-07-16 22:29:53,844 INFO Querying 'ProgramNumber' from table 'Program' in MO08421_Dressingkastje (2-4).Mdb
+2025-07-16 22:29:53,906 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:53,906 INFO MDB Excel report successfully saved: C:/GANNOMAT\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:53,906 INFO MDB Excel rapport bevat 4 items
+2025-07-16 22:29:54,634 INFO [db_log_api] /update_item_count called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-16T22:29:52.620841'}
+2025-07-16 22:29:54,637 INFO Updated item count for OPUS - MO08421_Dressingkastje (2-4): Total=2 (Nesting=0, Opdeelzaag=0)
+2025-07-16 22:29:54,640 INFO OPEN event updated with item count (2) for: OPUS - MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:54,640 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 4
+2025-07-16 22:29:55,911 INFO [db_log_api] /update_file_path called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\MO08421_Dressingkastje (2-4).xlsx', 'timestamp': '2025-07-16T22:29:53.906661'}
+2025-07-16 22:29:55,916 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO08421_Dressingkastje (2-4), path=C:/GANNOMAT\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:55,919 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO08421_Dressingkastje (2-4) at C:/GANNOMAT\MO08421_Dressingkastje (2-4).xlsx
+2025-07-16 22:29:57,933 INFO [db_log_api] /update_item_count called with data: {'project': 'MO08421_Dressingkastje (2-4)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-16T22:29:55.919659'}
+2025-07-16 22:29:57,938 INFO Updated item count for KL GANNOMAT - MO08421_Dressingkastje (2-4): Total=4 (Nesting=0, Opdeelzaag=0)
+2025-07-16 22:29:57,942 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO08421_Dressingkastje (2-4)
+2025-07-16 22:29:57,942 INFO Excel rapport gegenereerd voor MO08421_Dressingkastje (2-4).Mdb.
+2025-07-16 22:29:57,943 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO08421_Dressingkastje (2-4)'.
+2025-07-16 22:29:57,943 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 5
+2025-07-16 22:30:00,191 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:30:01,305 INFO logs_project endpoint called for project: 'MO08421_Dressingkastje (2-4)'
+2025-07-16 22:51:17,508 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 23.983333333333334}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-16 22:51:17,616 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-07-16 22:51:17,617 INFO Database initialization complete.
+2025-07-16 22:51:17,618 ERROR Error creating efficiency tables: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2025-07-16 22:51:17,618 INFO Daily efficiency update scheduler started
+2025-07-16 22:51:17,619 INFO Daily efficiency updated for 0 users
+2025-07-16 22:51:17,621 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
+2025-07-16 22:51:17,621 INFO Efficiency tracking system initialized
+2025-07-16 22:51:17,638 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-07-16 22:51:33,884 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:51:36,575 INFO database management page was called
+2025-07-16 22:51:40,331 INFO [db_log_api] /clear_logs POST request received.
+2025-07-16 22:51:40,333 INFO Cleared table: logs
+2025-07-16 22:51:40,333 INFO Cleared table: sessions
+2025-07-16 22:51:40,333 INFO Cleared table: project_sessions
+2025-07-16 22:51:40,336 INFO All database tables cleared successfully.
+2025-07-16 22:51:41,233 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:51:49,637 INFO Session started for NESTING: NESTING_20250716_225147
+2025-07-16 22:51:51,650 INFO Project session started: NESTING_20250716_225147
+2025-07-16 22:52:06,538 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': '0619_MO06787_Spiegel_(5-16)', 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250716_225147', 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:06,539 INFO Event OPEN received for NESTING on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 22:52:06,540 INFO Configuratie succesvol geladen.
+2025-07-16 22:52:06,540 INFO Event ontvangen: User=NESTING, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 22:52:06,540 INFO NESTING_PROCESSING voor user 'NESTING': zoeken naar Excel bestand voor 'MO06787_Spiegel_(5-16)'
+2025-07-16 22:52:06,540 INFO Excel bestand gevonden: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:06,540 INFO NESTING_PROCESSING gestart voor user 'NESTING', project 'MO06787_Spiegel_(5-16)', Excel: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:06,585 INFO [BG_TASK] Processing OPEN for MO06787_Spiegel_(5-16), scanned by NESTING.
+2025-07-16 22:52:06,585 INFO Background task started for OPEN event: MO06787_Spiegel_(5-16)
+2025-07-16 22:52:06,594 INFO NESTING_PROCESSING: Geen onderdelen gevonden in Excel C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:06,594 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
+2025-07-16 22:52:06,594 INFO [BG_TASK] Running unified Excel processing for Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 22:52:06,594 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['ACCURA', 'BOERE']
+2025-07-16 22:52:06,595 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:06,630 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
+2025-07-16 22:52:06,630 INFO [UNIFIED_EXCEL] Waiting 0.81s before posting OPEN for ACCURA
+2025-07-16 22:52:08,598 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 22:52:08,602 INFO Updated project metadata for 1 records in project MO06787_Spiegel_(5-16)
+2025-07-16 22:52:08,605 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 22:52:09,449 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'user': 'ACCURA', 'color': 'N8', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'item_count': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:09,450 INFO Event OPEN received for ACCURA on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 22:52:09,452 INFO Configuratie succesvol geladen.
+2025-07-16 22:52:09,452 INFO Event ontvangen: User=ACCURA, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 22:52:09,452 INFO ACCURA_PROCESSING voor user 'ACCURA': zoeken naar Excel bestand voor 'MO06787_Spiegel_(5-16)'
+2025-07-16 22:52:09,452 INFO Excel bestand gevonden: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:09,452 INFO ACCURA_PROCESSING gestart voor user 'ACCURA', project 'MO06787_Spiegel_(5-16)', Excel: C:/Rapporten\S03673_0619_MO06787_Spiegel_(5-16)_Frank Celis.xls
+2025-07-16 22:52:09,471 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user ACCURA
+2025-07-16 22:52:09,490 INFO ACCURA_PROCESSING voltooid: 3 items, 12 sides
+2025-07-16 22:52:11,256 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:52:11,493 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'item_count': 3, 'aantal_items': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:11,496 INFO Updated accura counts for ACCURA - MO06787_Spiegel_(5-16): Total=3, Items=3, Sides=12
+2025-07-16 22:52:11,497 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'item_count': 3, 'aantal_items': 3, 'aantal_sides': 12, 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:11,499 INFO OPEN event updated with accura counts for: ACCURA - MO06787_Spiegel_(5-16) (Items: 3, Sides: 12)
+2025-07-16 22:52:11,500 INFO Updated accura counts for ACCURA - MO06787_Spiegel_(5-16): Total=3, Items=3, Sides=12
+2025-07-16 22:52:11,501 INFO OPEN event updated with accura counts for: ACCURA - MO06787_Spiegel_(5-16) (Items: 3, Sides: 12)
+2025-07-16 22:52:13,504 INFO [db_log_api] /log called with data: {'event': 'AUTO_IMPORT', 'details': 'ACCURA_PROCESSING voltooid: 3 items, 12 sides', 'project': 'MO06787_Spiegel_(5-16)', 'user': 'ACCURA', 'timestamp': '2025-07-16T22:52:11.502258'}
+2025-07-16 22:52:13,504 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 22:52:13,507 INFO Import event gelogd naar API: ACCURA - MO06787_Spiegel_(5-16)
+2025-07-16 22:52:13,517 INFO Updated project metadata for 2 records in project MO06787_Spiegel_(5-16)
+2025-07-16 22:52:13,519 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 22:52:13,523 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
+2025-07-16 22:52:13,523 INFO [UNIFIED_EXCEL] Waiting 0.49s before posting OPEN for BOERE
+2025-07-16 22:52:14,018 INFO [UNIFIED_EXCEL] Error posting OPEN: Object of type int64 is not JSON serializable
+2025-07-16 22:52:14,018 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
+2025-07-16 22:52:14,018 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 22:52:14,019 INFO [BG_TASK] Match found for 'MO06787_Spiegel_(5-16)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-07-16 22:52:14,019 INFO [BG_TASK] Waiting for 0.35s before posting OPEN for OPUS.
+2025-07-16 22:52:15,521 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06787_Spiegel_(5-16)', 'mo_number': 'MO06787', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8'}
+2025-07-16 22:52:15,523 INFO Updated project metadata for 2 records in project MO06787_Spiegel_(5-16)
+2025-07-16 22:52:15,524 INFO Project metadata updated for MO06787_Spiegel_(5-16)
+2025-07-16 22:52:16,374 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0619_MO06787_Spiegel_(5-16)", 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'OPUS', 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:16,376 INFO Event OPEN received for OPUS on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 22:52:16,376 INFO Configuratie succesvol geladen.
+2025-07-16 22:52:16,376 INFO Event ontvangen: User=OPUS, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 22:52:16,376 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO06787_Spiegel_(5-16)' for directory matching.
+2025-07-16 22:52:16,376 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Comparing dir: '0618_MO07835_Boekenkast5' (Upper: '0618_MO07835_BOEKENKAST5') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,377 INFO   [DEBUG HOPS] Does '0618_MO07835_BOEKENKAST5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:16,378 INFO   [DEBUG HOPS] Comparing dir: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with code_to_match: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:16,378 INFO   [DEBUG HOPS] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: True
+2025-07-16 22:52:16,378 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)
+2025-07-16 22:52:16,378 INFO HOPS import gestart voor user 'OPUS', project context: MO06787_Spiegel_(5-16) in map: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)
+2025-07-16 22:52:16,378 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)'.
+2025-07-16 22:52:16,378 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)' voor Excel rapportage.
+2025-07-16 22:52:16,384 INFO [BG_TASK] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user OPUS.
+2025-07-16 22:52:16,387 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:16,387 INFO HOPS Excel rapport bevat 2 items
+2025-07-16 22:52:16,388 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
+2025-07-16 22:52:16,388 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 22:52:16,389 INFO [BG_TASK] Match found for 'MO06787_Spiegel_(5-16)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-07-16 22:52:16,389 INFO [BG_TASK] Waiting for 0.51s before posting OPEN for KL GANNOMAT.
+2025-07-16 22:52:18,400 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0619_MO06787_Spiegel_(5-16)\\0619_MO06787_Spiegel_(5-16).xlsx', 'timestamp': '2025-07-16T22:52:16.388194'}
+2025-07-16 22:52:18,403 INFO Updated file_path for OPEN event: user=OPUS, project=MO06787_Spiegel_(5-16), path=C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:18,406 INFO OPEN event updated with Excel path for: OPUS - MO06787_Spiegel_(5-16) at C:/OPUS/KORPUS\0619_MO06787_Spiegel_(5-16)\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:18,920 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of 0619_MO06787_Spiegel_(5-16)", 'project': 'MO06787_Spiegel_(5-16)', 'base_mo_code': 'MO06787', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'timestamp': '2025-07-16T22:51:47.608774'}
+2025-07-16 22:52:18,923 INFO Event OPEN received for KL GANNOMAT on MO06787_Spiegel_(5-16). Triggering background import service.
+2025-07-16 22:52:18,923 INFO Configuratie succesvol geladen.
+2025-07-16 22:52:18,923 INFO Event ontvangen: User=KL GANNOMAT, Project=MO06787_Spiegel_(5-16). Controleren voor import...
+2025-07-16 22:52:18,923 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-07-16 22:52:18,924 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO06787_Spiegel_(5-16) in map: C:/GANNOMAT
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO07834_Boekenkast_Rep_VL5' (Upper: '0618_MO07834_BOEKENKAST_REP_VL5') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0618_MO07834_BOEKENKAST_REP_VL5' end with 'MO06787_SPIEGEL_(5-16)'? Result: False
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Comparing file_basename: '0619_MO06787_Spiegel_(5-16)' (Upper: '0619_MO06787_SPIEGEL_(5-16)') with project_event_code: 'MO06787_Spiegel_(5-16)' (Upper: 'MO06787_SPIEGEL_(5-16)')
+2025-07-16 22:52:18,924 INFO   [DEBUG MDB] Does '0619_MO06787_SPIEGEL_(5-16)' end with 'MO06787_SPIEGEL_(5-16)'? Result: True
+2025-07-16 22:52:18,924 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).Mdb. Verwerken...
+2025-07-16 22:52:18,938 INFO [BG_TASK] Successfully posted OPEN for MO06787_Spiegel_(5-16) for user KL GANNOMAT.
+2025-07-16 22:52:18,940 INFO [BG_TASK] Finished processing OPEN for MO06787_Spiegel_(5-16).
+2025-07-16 22:52:19,077 INFO Querying 'ProgramNumber' from table 'Program' in 0619_MO06787_Spiegel_(5-16).Mdb
+2025-07-16 22:52:19,134 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:19,134 INFO MDB Excel report successfully saved: C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:19,135 INFO MDB Excel rapport bevat 4 items
+2025-07-16 22:52:20,414 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-16T22:52:18.406869'}
+2025-07-16 22:52:20,417 INFO Updated item count for OPUS - MO06787_Spiegel_(5-16): Total=2 (Nesting=0, Opdeelzaag=0)
+2025-07-16 22:52:20,421 INFO OPEN event updated with item count (2) for: OPUS - MO06787_Spiegel_(5-16)
+2025-07-16 22:52:20,421 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 4
+2025-07-16 22:52:21,137 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0619_MO06787_Spiegel_(5-16).xlsx', 'timestamp': '2025-07-16T22:52:19.135093'}
+2025-07-16 22:52:21,142 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO06787_Spiegel_(5-16), path=C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:21,145 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO06787_Spiegel_(5-16) at C:/GANNOMAT\0619_MO06787_Spiegel_(5-16).xlsx
+2025-07-16 22:52:23,159 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06787_Spiegel_(5-16)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-16T22:52:21.145873'}
+2025-07-16 22:52:23,162 INFO Updated item count for KL GANNOMAT - MO06787_Spiegel_(5-16): Total=4 (Nesting=0, Opdeelzaag=0)
+2025-07-16 22:52:23,165 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO06787_Spiegel_(5-16)
+2025-07-16 22:52:23,165 INFO Excel rapport gegenereerd voor 0619_MO06787_Spiegel_(5-16).Mdb.
+2025-07-16 22:52:23,165 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO06787_Spiegel_(5-16)'.
+2025-07-16 22:52:23,165 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 5
+2025-07-16 22:52:23,343 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-16 22:52:24,938 INFO logs_project endpoint called for project: 'MO06787_Spiegel_(5-16)'
+2025-07-18 06:47:03,317 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 23.983333333333334}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-18 06:47:03,424 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-07-18 06:47:03,425 INFO Database initialization complete.
+2025-07-18 06:47:03,426 ERROR Error creating efficiency tables: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+2025-07-18 06:47:03,426 INFO Daily efficiency update scheduler started
+2025-07-18 06:47:03,427 INFO Daily efficiency updated for 0 users
+2025-07-18 06:47:03,428 INFO Efficiency update triggered: {'success': True, 'updated_users': []}
+2025-07-18 06:47:03,428 INFO Efficiency tracking system initialized
+2025-07-18 06:47:03,443 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-07-18 06:47:30,793 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-18 06:47:40,219 INFO Work hours configuration updated: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 23.983333333333334}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 6.1, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5], 'saturday': {'start': 0.0, 'end': 22.0}}
+2025-07-18 06:47:40,220 INFO Work hours configuration saved to config.json
+2025-07-18 06:47:41,502 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-18 06:47:42,515 INFO database management page was called
+2025-07-18 06:47:48,357 INFO [db_log_api] /clear_logs POST request received.
+2025-07-18 06:47:48,359 INFO Cleared table: logs
+2025-07-18 06:47:48,359 INFO Cleared table: sessions
+2025-07-18 06:47:48,359 INFO Cleared table: project_sessions
+2025-07-18 06:47:48,363 INFO All database tables cleared successfully.
+2025-07-18 06:48:11,160 INFO Session started for NESTING: NESTING_20250718_064809
+2025-07-18 06:48:13,182 INFO Project session started: NESTING_20250718_064809
+2025-07-18 06:48:21,531 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'MO06797_Bureaukast_(15-16)', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'NESTING', 'session_id': 'NESTING_20250718_064809', 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:21,532 INFO Event OPEN received for NESTING on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-18 06:48:21,533 INFO Configuratie succesvol geladen.
+2025-07-18 06:48:21,533 INFO Event ontvangen: User=NESTING, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-18 06:48:21,533 INFO NESTING_PROCESSING voor user 'NESTING': triggering unified Excel processing voor 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:48:21,533 INFO [UNIFIED_SCAN] Processing ALL Excel users for project 'MO06797_Bureaukast_(15-16)' (triggered by NESTING)
+2025-07-18 06:48:21,534 INFO [UNIFIED_SCAN] Found Excel processors: ['NESTING', 'ACCURA', 'BOERE']
+2025-07-18 06:48:21,534 INFO [UNIFIED_EXCEL] Processing directory 'C:/Rapporten' for Excel processors: ['NESTING', 'ACCURA', 'BOERE']
+2025-07-18 06:48:21,534 INFO [UNIFIED_EXCEL] Found Excel file: C:/Rapporten\S03673_MO06797_Bureaukast_(15-16)_Frank Celis.xls
+2025-07-18 06:48:21,584 INFO [BG_TASK] Processing OPEN for MO06797_Bureaukast_(15-16), scanned by NESTING.
+2025-07-18 06:48:21,584 INFO Background task started for OPEN event: MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:21,585 INFO [BG_TASK] Checking dir 'C:/Rapporten' for users: ['ACCURA', 'BOERE']
+2025-07-18 06:48:21,594 INFO [BG_TASK] Skipping Excel processing for ['ACCURA', 'BOERE'] - handled by direct API path
+2025-07-18 06:48:21,597 INFO [UNIFIED_EXCEL] NESTING_PROCESSING results: {'item_count': np.int64(54), 'nesting_count': np.int64(40), 'opdeelzaag_count': np.int64(14), 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1'}
+2025-07-18 06:48:21,598 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for users: ['OPUS']
+2025-07-18 06:48:21,598 INFO [UNIFIED_EXCEL] ACCURA_PROCESSING results: {'item_count': 49, 'aantal_items': 49, 'aantal_sides': 141, 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1', 'items_list': ['BK_01 - RZ', 'BK_01 - TZ_01', 'BK_01 - TZ_02', 'BK_01 - BC', 'BK_01 - LZ', 'BK_01 - OC', 'BK_02 - RZ', 'BK_02 - BC', 'BK_02 - LZ', 'BK_02 - OC', 'BK_03 - RZ', 'BK_03 - TZ', 'BK_03 - BC', 'BK_03 - LZ', 'BK_03 - OC', 'Bueau - Kabellat_02', 'Bueau - Kabellat_01', 'AFW_01 - AFWZ_L', 'AFW_02 - AFWZ_L', 'AFW_03 - AFWZ_R01', 'AFW_03 - AFWZ_R02', 'AFW_05 - Wandplaat', 'BK_01 - LF_03', 'BK_01 - LF_04', 'BK_01 - DR_L01', 'BK_01 - Vast paneel', 'BK_01 - LF_01', 'BK_01 - LF_02', 'BK_02 - DR_R04', 'BK_03 - DR_R03', 'BK_03 - DR_L02', 'Bueau - Traver', 'L_Greep01 - Rug', 'L_Greep01 - OC_greep', 'L_Greep02 - L_greep', 'Paslat_01 - Paslat', 'Paslat_L - Paslat', 'Bueau - RZ', 'Bueau - BC', 'AFW_04 - BB', 'BK_02 - VL03', 'BK_02 - VL04', 'BK_02 - VL05', 'BK_02 - VL06', 'BK_02 - VL01', 'BK_02 - VL02', 'BK_03 - VL02', 'BK_03 - VL01', 'Lade_C_01 - schuifplank']}
+2025-07-18 06:48:21,598 INFO [BG_TASK] Checking dir 'C:/OPUS/KORPUS' for user 'OPUS' (type: HOPS_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
+2025-07-18 06:48:21,598 INFO [UNIFIED_EXCEL] BOERE_PROCESSING results: {'item_count': 86, 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1', 'items_list': ['Verlichtingset_Dupont01 - Led_', 'Verlichtingset_Dupont01 - LED_SNOER standaard', 'Verlichtingset_Dupont01 - LED_Strip_4x8', 'BK_01 - RZ', 'BK_01 - TZ_01', 'BK_01 - TZ_02', 'BK_01 - BC', 'BK_01 - LZ', 'BK_01 - OC', 'BK_02 - RZ', 'BK_02 - BC', 'BK_02 - LZ', 'BK_02 - OC', 'BK_03 - RZ', 'BK_03 - TZ', 'BK_03 - BC', 'BK_03 - LZ', 'BK_03 - OC', 'Bueau - Kabellat_02', 'Bueau - Kabellat_01', 'AANV_01 - AANV_L', 'AFW_07 - Greep', 'PlintB70_01 - Plint V', 'PlintB70_01 - Achterpoot', 'PlintB70_01 - Plint L', 'PlintB70_01 - Plint R', 'PlintB70_02 - Plint V', 'PlintB70_02 - Achterpoot', 'PlintB70_02 - Plint L', 'PlintB70_02 - Plint R', 'B40_01 - Achtertraver', 'B40_01 - Piklat', 'Lade_P_02 - ZS_R', 'Lade_P_02 - AS', 'Lade_P_02 - ZS_L', 'Lade_P_03 - ZS_R', 'Lade_P_03 - AS', 'Lade_P_03 - ZS_L', 'Lade_P_04 - ZS_R', 'Lade_P_04 - AS', 'Lade_P_04 - ZS_L', 'Lade_S_01 - ZS_R', 'Lade_S_01 - AS', 'Lade_S_01 - ZS_L', 'BK_01 - RG', 'Lade_P_02 - Bodem', 'Lade_P_03 - Bodem', 'Lade_P_04 - Bodem', 'Lade_S_01 - Bodem', 'AFW_01 - AFWZ_L', 'AFW_02 - AFWZ_L', 'AFW_03 - AFWZ_R01', 'AFW_03 - AFWZ_R02', 'AFW_05 - Wandplaat', 'BK_01 - LF_03', 'BK_01 - LF_04', 'BK_01 - DR_L01', 'BK_01 - Vast paneel', 'BK_01 - LF_01', 'BK_01 - LF_02', 'BK_02 - DR_R04', 'BK_03 - DR_R03', 'BK_03 - DR_L02', 'Bueau - Traver', 'L_Greep01 - Rug', 'L_Greep01 - OC_greep', 'L_Greep02 - L_greep', 'Paslat_01 - Paslat', 'Paslat_L - Paslat', 'Bueau - RZ', 'Bueau - BC', 'AFW_04 - BB', 'BK_02 - VL03', 'BK_02 - VL04', 'BK_02 - VL05', 'BK_02 - VL06', 'BK_02 - VL01', 'BK_02 - VL02', 'BK_03 - VL02', 'BK_03 - VL01', 'Lade_C_01 - schuifplank', 'BK_02 - RG', 'BK_03 - RG', 'Lade_P_02 - Synchrostang', 'Lade_P_03 - Synchrostang', 'Lade_P_04 - Synchrostang']}
+2025-07-18 06:48:21,598 INFO [BG_TASK] Extracted project code 'MO06797_Bureaukast_(15-16)' from 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:48:21,599 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/OPUS/KORPUS' for user 'OPUS'. Posting OPEN.
+2025-07-18 06:48:21,599 INFO [BG_TASK] Waiting for 0.88s before posting OPEN for OPUS.
+2025-07-18 06:48:21,606 INFO [ACCURA] Generated Excel file: C:/ACCURA\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:21,617 INFO [BOERE] Generated Excel file: C:/BOERE\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:21,617 INFO [UNIFIED_EXCEL] Checking NESTING: in_results=True, has_work=True, item_count=54
+2025-07-18 06:48:21,618 INFO [UNIFIED_EXCEL] Skipping additional OPEN event for triggering user NESTING - already has one from original scan
+2025-07-18 06:48:21,618 INFO [UPDATE_EXISTING] NESTING_PROCESSING for NESTING: {'has_work': np.True_, 'item_count': np.int64(54), 'nesting_count': np.int64(40), 'opdeelzaag_count': np.int64(14), 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1'}
+2025-07-18 06:48:23,622 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'NESTING', 'item_count': 54, 'nesting_count': 40, 'opdeelzaag_count': 14, 'timestamp': '2025-07-18T06:48:21.618962'}
+2025-07-18 06:48:23,625 INFO Updated item count for NESTING - MO06797_Bureaukast_(15-16): Total=54 (Nesting=40, Opdeelzaag=14)
+2025-07-18 06:48:23,629 INFO OPEN event updated with item count for: NESTING - MO06797_Bureaukast_(15-16) (Total: 54, Nesting: 40, Opdeelzaag: 14)
+2025-07-18 06:48:23,629 INFO [UNIFIED_EXCEL] Checking ACCURA: in_results=True, has_work=True, item_count=49
+2025-07-18 06:48:23,629 INFO [UNIFIED_EXCEL] Work found for ACCURA (ACCURA_PROCESSING)
+2025-07-18 06:48:23,630 INFO [UNIFIED_EXCEL] Waiting 0.60s before posting OPEN for ACCURA
+2025-07-18 06:48:24,494 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'OPUS', 'session_type': 'XLSX_UPDATED', 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:24,496 INFO Event OPEN received for OPUS on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-18 06:48:24,496 INFO Configuratie succesvol geladen.
+2025-07-18 06:48:24,497 INFO Event ontvangen: User=OPUS, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-18 06:48:24,497 INFO HOPS_PROCESSING voor user 'OPUS': Using 'MO06797_Bureaukast_(15-16)' for directory matching.
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Comparing dir: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Comparing dir: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with code_to_match: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:24,497 INFO   [DEBUG HOPS] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
+2025-07-18 06:48:24,497 INFO HOPS_PROCESSING (EndsWith match) (voor user 'OPUS') wordt gestart voor gevonden map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:24,498 INFO HOPS import gestart voor user 'OPUS', project context: MO06797_Bureaukast_(15-16) in map: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:24,498 INFO 2 .hop/.hops bestanden verzameld uit 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)'.
+2025-07-18 06:48:24,498 INFO 2 HOPS (.hop/.hops) bestanden gevonden in 'C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)' voor Excel rapportage.
+2025-07-18 06:48:24,504 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user OPUS.
+2025-07-18 06:48:24,504 INFO HOPS Excel rapport succesvol opgeslagen: C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:24,505 INFO HOPS Excel rapport bevat 2 items
+2025-07-18 06:48:24,508 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for users: ['KL GANNOMAT']
+2025-07-18 06:48:24,508 INFO [BG_TASK] Checking dir 'C:/GANNOMAT' for user 'KL GANNOMAT' (type: MDB_PROCESSING) for project 'MO06797_Bureaukast_(15-16)'.
+2025-07-18 06:48:24,508 INFO [BG_TASK] Extracted project code 'MO06797_Bureaukast_(15-16)' from 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:48:24,509 INFO [BG_TASK] Match found for 'MO06797_Bureaukast_(15-16)' in 'C:/GANNOMAT' for user 'KL GANNOMAT'. Posting OPEN.
+2025-07-18 06:48:24,509 INFO [BG_TASK] Waiting for 1.16s before posting OPEN for KL GANNOMAT.
+2025-07-18 06:48:26,244 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'session_type': 'XLSX_UPDATED', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'item_count': 49, 'aantal_sides': 141, 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:26,247 INFO Skipping background import trigger for auto-generated OPEN event: ACCURA on MO06797_Bureaukast_(15-16) (Auto-detected Excel work)
+2025-07-18 06:48:26,252 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user ACCURA
+2025-07-18 06:48:26,519 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'file_path': 'C:/OPUS/KORPUS\\0618_MO06797_Bureaukast_(15-16)\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-18T06:48:24.505519'}
+2025-07-18 06:48:26,523 INFO Updated file_path for OPEN event: user=OPUS, project=MO06797_Bureaukast_(15-16), path=C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:26,525 INFO OPEN event updated with Excel path for: OPUS - MO06797_Bureaukast_(15-16) at C:/OPUS/KORPUS\0618_MO06797_Bureaukast_(15-16)\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:27,671 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': "Auto-detected from NESTING's scan of MO06797_Bureaukast_(15-16)", 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797', 'is_rep_variant': False, 'user': 'KL GANNOMAT', 'session_type': 'XLSX_UPDATED', 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:27,672 INFO Event OPEN received for KL GANNOMAT on MO06797_Bureaukast_(15-16). Triggering background import service.
+2025-07-18 06:48:27,673 INFO Configuratie succesvol geladen.
+2025-07-18 06:48:27,673 INFO Event ontvangen: User=KL GANNOMAT, Project=MO06797_Bureaukast_(15-16). Controleren voor import...
+2025-07-18 06:48:27,673 INFO MDB_PROCESSING voor user 'KL GANNOMAT' wordt gestart (in achtergrond thread). Pad: C:/GANNOMAT
+2025-07-18 06:48:27,673 INFO MDB import gestart voor user 'KL GANNOMAT', project context: MO06797_Bureaukast_(15-16) in map: C:/GANNOMAT
+2025-07-18 06:48:27,673 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07195_Hoekdressing (1-7)' (Upper: '0411_MO07195_HOEKDRESSING (1-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Does '0411_MO07195_HOEKDRESSING (1-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Comparing file_basename: '0411_MO07202-7203_TV-wand (7-7)' (Upper: '0411_MO07202-7203_TV-WAND (7-7)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Does '0411_MO07202-7203_TV-WAND (7-7)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Comparing file_basename: '0520_MO07987_TV-wand (1-1)' (Upper: '0520_MO07987_TV-WAND (1-1)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Does '0520_MO07987_TV-WAND (1-1)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: False
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Comparing file_basename: '0618_MO06797_Bureaukast_(15-16)' (Upper: '0618_MO06797_BUREAUKAST_(15-16)') with project_event_code: 'MO06797_Bureaukast_(15-16)' (Upper: 'MO06797_BUREAUKAST_(15-16)')
+2025-07-18 06:48:27,674 INFO   [DEBUG MDB] Does '0618_MO06797_BUREAUKAST_(15-16)' end with 'MO06797_BUREAUKAST_(15-16)'? Result: True
+2025-07-18 06:48:27,674 INFO Overeenkomend MDB bestand (EndsWith match) gevonden: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).Mdb. Verwerken...
+2025-07-18 06:48:27,679 INFO [BG_TASK] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user KL GANNOMAT.
+2025-07-18 06:48:27,687 INFO [BG_TASK] Finished processing OPEN for MO06797_Bureaukast_(15-16).
+2025-07-18 06:48:27,810 INFO Querying 'ProgramNumber' from table 'Program' in 0618_MO06797_Bureaukast_(15-16).Mdb
+2025-07-18 06:48:27,864 INFO MDB Excel rapport succesvol opgeslagen: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:27,864 INFO MDB Excel report successfully saved: C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:27,864 INFO MDB Excel rapport bevat 4 items
+2025-07-18 06:48:28,257 INFO [db_log_api] /update_accura_counts called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'item_count': 49, 'aantal_items': 49, 'aantal_sides': 141, 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:28,260 INFO Updated accura counts for ACCURA - MO06797_Bureaukast_(15-16): Total=49, Items=49, Sides=141
+2025-07-18 06:48:28,263 INFO OPEN event updated with accura counts for: ACCURA - MO06797_Bureaukast_(15-16) (Items: 49, Sides: 141)
+2025-07-18 06:48:28,539 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'OPUS', 'item_count': 2, 'timestamp': '2025-07-18T06:48:26.526967'}
+2025-07-18 06:48:28,543 INFO Updated item count for OPUS - MO06797_Bureaukast_(15-16): Total=2 (Nesting=0, Opdeelzaag=0)
+2025-07-18 06:48:28,546 INFO OPEN event updated with item count (2) for: OPUS - MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:28,546 INFO HOPS import thread voltooid voor user 'OPUS'. Totaal HOPS: 1, Totaal: 2
+2025-07-18 06:48:29,879 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'file_path': 'C:/GANNOMAT\\0618_MO06797_Bureaukast_(15-16).xlsx', 'timestamp': '2025-07-18T06:48:27.865722'}
+2025-07-18 06:48:29,884 INFO Updated file_path for OPEN event: user=KL GANNOMAT, project=MO06797_Bureaukast_(15-16), path=C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:29,887 INFO OPEN event updated with Excel path for: KL GANNOMAT - MO06797_Bureaukast_(15-16) at C:/GANNOMAT\0618_MO06797_Bureaukast_(15-16).xlsx
+2025-07-18 06:48:30,266 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'file_path': 'C:/ACCURA\\MO06797_S03673_Frank Celis_20250718_064821.xlsx', 'timestamp': '2025-07-18T06:48:28.264130'}
+2025-07-18 06:48:30,271 INFO Updated file_path for OPEN event: user=ACCURA, project=MO06797_Bureaukast_(15-16), path=C:/ACCURA\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:30,273 INFO OPEN event updated with Excel path for: ACCURA - MO06797_Bureaukast_(15-16) at C:/ACCURA\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:31,891 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'KL GANNOMAT', 'item_count': 4, 'timestamp': '2025-07-18T06:48:29.888021'}
+2025-07-18 06:48:31,896 INFO Updated item count for KL GANNOMAT - MO06797_Bureaukast_(15-16): Total=4 (Nesting=0, Opdeelzaag=0)
+2025-07-18 06:48:31,899 INFO OPEN event updated with item count (4) for: KL GANNOMAT - MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:31,899 INFO Excel rapport gegenereerd voor 0618_MO06797_Bureaukast_(15-16).Mdb.
+2025-07-18 06:48:31,899 INFO 1 MDB bestand(en) verwerkt. 1 Excel rapporten gegenereerd voor project 'MO06797_Bureaukast_(15-16)'.
+2025-07-18 06:48:31,899 INFO MDB import thread voltooid voor user 'KL GANNOMAT'. Totaal MDB: 1, Totaal: 3
+2025-07-18 06:48:32,298 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'ACCURA', 'item_count': 49, 'timestamp': '2025-07-18T06:48:30.273763'}
+2025-07-18 06:48:32,300 INFO Updated item count for ACCURA - MO06797_Bureaukast_(15-16): Total=49 (Nesting=0, Opdeelzaag=0)
+2025-07-18 06:48:32,301 INFO OPEN event updated with item count (49) for: ACCURA - MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:34,306 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1'}
+2025-07-18 06:48:34,310 INFO Updated project metadata for 4 records in project MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:34,312 INFO Project metadata updated for MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:34,313 INFO [UNIFIED_EXCEL] Checking BOERE: in_results=True, has_work=True, item_count=86
+2025-07-18 06:48:34,313 INFO [UNIFIED_EXCEL] Work found for BOERE (BOERE_PROCESSING)
+2025-07-18 06:48:34,313 INFO [UNIFIED_EXCEL] Waiting 0.31s before posting OPEN for BOERE
+2025-07-18 06:48:36,643 INFO [db_log_api] /log called with data: {'event': 'OPEN', 'details': 'Auto-detected Excel work', 'project': 'MO06797_Bureaukast_(15-16)', 'base_mo_code': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'session_type': 'XLSX_UPDATED', 'color': 'N8/S1', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'item_count': 86, 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:36,645 INFO Skipping background import trigger for auto-generated OPEN event: BOERE on MO06797_Bureaukast_(15-16) (Auto-detected Excel work)
+2025-07-18 06:48:36,649 INFO [UNIFIED_EXCEL] Successfully posted OPEN for MO06797_Bureaukast_(15-16) for user BOERE
+2025-07-18 06:48:38,653 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'item_count': 86, 'timestamp': '2025-07-18T06:48:09.152509'}
+2025-07-18 06:48:38,655 INFO Updated item count for BOERE - MO06797_Bureaukast_(15-16): Total=86 (Nesting=0, Opdeelzaag=0)
+2025-07-18 06:48:38,656 INFO OPEN event updated with boere count for: BOERE - MO06797_Bureaukast_(15-16) (Items: 86)
+2025-07-18 06:48:40,660 INFO [db_log_api] /update_file_path called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'file_path': 'C:/BOERE\\MO06797_S03673_Frank Celis_20250718_064821.xlsx', 'timestamp': '2025-07-18T06:48:38.656787'}
+2025-07-18 06:48:40,664 INFO Updated file_path for OPEN event: user=BOERE, project=MO06797_Bureaukast_(15-16), path=C:/BOERE\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:40,666 INFO OPEN event updated with Excel path for: BOERE - MO06797_Bureaukast_(15-16) at C:/BOERE\MO06797_S03673_Frank Celis_20250718_064821.xlsx
+2025-07-18 06:48:42,670 INFO [db_log_api] /update_item_count called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'user': 'BOERE', 'item_count': 86, 'timestamp': '2025-07-18T06:48:40.667117'}
+2025-07-18 06:48:42,671 INFO Updated item count for BOERE - MO06797_Bureaukast_(15-16): Total=86 (Nesting=0, Opdeelzaag=0)
+2025-07-18 06:48:42,672 INFO OPEN event updated with item count (86) for: BOERE - MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:44,676 INFO [db_log_api] /project/metadata called with data: {'project': 'MO06797_Bureaukast_(15-16)', 'mo_number': 'MO06797', 'so_number': 'S03673', 'customer_name': 'Frank Celis', 'color': 'N8/S1'}
+2025-07-18 06:48:44,676 INFO Updated project metadata for 5 records in project MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:44,677 INFO Project metadata updated for MO06797_Bureaukast_(15-16)
+2025-07-18 06:48:44,678 INFO [UNIFIED_SCAN] Completed unified Excel processing for project 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:48:56,974 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-18 06:48:58,371 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:49:14,191 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'details': 'Auto-close on session end', 'project': 'MO06797_Bureaukast_(15-16)', 'user': 'NESTING', 'item_count': 0, 'session_id': 'NESTING_20250718_064809', 'timestamp': '2025-07-18T06:49:12.175315'}
+2025-07-18 06:49:14,192 INFO Closed 1 'OPEN' log(s) for user 'NESTING' on project 'MO06797_Bureaukast_(15-16)'.
+2025-07-18 06:49:16,219 INFO Session ended: NESTING_20250718_064809
+2025-07-18 06:49:16,225 INFO Daily efficiency updated for 1 users
+2025-07-18 06:49:16,225 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 3085.71, 'total_items': 54, 'total_minutes': 1.05, 'user': 'NESTING'}]}
+2025-07-18 06:49:25,038 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:52:01,366 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-07-18 06:52:13,046 INFO logs_project endpoint called for project: 'MO06797_Bureaukast_(15-16)'
+2025-07-18 06:53:25,177 ERROR Error getting productivity metrics: '>' not supported between instances of 'NoneType' and 'int'
+2025-07-18 06:53:25,182 ERROR Error getting bottleneck analysis: no such column: timestamp
+2025-07-18 06:53:40,216 INFO projects endpoint was called
+2025-07-18 06:53:47,173 ERROR Error getting productivity metrics: '>' not supported between instances of 'NoneType' and 'int'
+2025-07-18 06:53:47,176 ERROR Error getting bottleneck analysis: no such column: timestamp
+2025-07-18 06:54:04,249 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']

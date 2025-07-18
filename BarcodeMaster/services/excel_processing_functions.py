@@ -210,7 +210,8 @@ def parse_excel_for_nesting(excel_path):
     - Rows starting with "Z" = Opdeelzaag count
     
     Returns:
-        dict with nesting_count, opdeelzaag_count, mo_number, so_number, customer_name
+        dict with item_count (total), nesting_count, opdeelzaag_count, mo_number, so_number, customer_name
+        Note: nesting_count and opdeelzaag_count are kept for backward compatibility but item_count is the consolidated value
     """
     try:
         # Get correct sheet name
@@ -218,6 +219,7 @@ def parse_excel_for_nesting(excel_path):
         if not sheet_name:
             print(f"[NESTING] No valid sheet found in {excel_path}")
             return {
+                'item_count': 0,
                 'nesting_count': 0,
                 'opdeelzaag_count': 0,
                 'mo_number': None,
@@ -233,6 +235,7 @@ def parse_excel_for_nesting(excel_path):
         df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
         
         result = {
+            'item_count': 0,
             'nesting_count': 0,
             'opdeelzaag_count': 0,
             'mo_number': None,
@@ -269,12 +272,16 @@ def parse_excel_for_nesting(excel_path):
             # Count entries starting with 'Z'
             result['opdeelzaag_count'] = parcours_col.str.startswith('Z', na=False).sum()
             
+            # Calculate total item count (consolidated)
+            result['item_count'] = result['nesting_count'] + result['opdeelzaag_count']
+            
         return result
         
     except Exception as e:
         print(f"Error parsing Excel for NESTING: {e}")
         traceback.print_exc()
         return {
+            'item_count': 0,
             'nesting_count': 0,
             'opdeelzaag_count': 0,
             'mo_number': None,
@@ -297,7 +304,8 @@ def parse_excel_for_accura(excel_path):
     Count of non-empty cells = number of sides
     
     Returns:
-        dict with aantal_items, aantal_sides, mo_number, so_number, customer_name, items_list
+        dict with item_count, aantal_sides (accura_sides), mo_number, so_number, customer_name, items_list
+        Note: aantal_items is kept for backward compatibility but item_count is the consolidated value
     """
     try:
         # Get correct sheet name
@@ -305,7 +313,8 @@ def parse_excel_for_accura(excel_path):
         if not sheet_name:
             print(f"[ACCURA] No valid sheet found in {excel_path}")
             return {
-                'aantal_items': 0,
+                'item_count': 0,
+                'aantal_items': 0,  # Keep for backward compatibility
                 'aantal_sides': 0,
                 'mo_number': None,
                 'so_number': None,
@@ -321,7 +330,8 @@ def parse_excel_for_accura(excel_path):
         df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
         
         result = {
-            'aantal_items': 0,
+            'item_count': 0,
+            'aantal_items': 0,  # Keep for backward compatibility
             'aantal_sides': 0,
             'mo_number': None,
             'so_number': None,
@@ -368,7 +378,8 @@ def parse_excel_for_accura(excel_path):
                 
                 # If any Afplak column has content, it's 1 item
                 if has_content:
-                    result['aantal_items'] += 1
+                    result['item_count'] += 1
+                    result['aantal_items'] += 1  # Keep for backward compatibility
                     result['aantal_sides'] += sides_in_row
                     
                     # Extract Positie and Wand Naam for item list
@@ -385,7 +396,8 @@ def parse_excel_for_accura(excel_path):
         print(f"Error parsing Excel for ACCURA: {e}")
         traceback.print_exc()
         return {
-            'aantal_items': 0,
+            'item_count': 0,
+            'aantal_items': 0,  # Keep for backward compatibility
             'aantal_sides': 0,
             'mo_number': None,
             'so_number': None,
@@ -531,6 +543,7 @@ def process_excel_for_all_types(excel_path, processor_types):
         for proc_type in processor_types:
             if proc_type == 'NESTING_PROCESSING':
                 result = {
+                    'item_count': 0,
                     'nesting_count': 0,
                     'opdeelzaag_count': 0,
                     'mo_number': mo_number,
@@ -543,17 +556,21 @@ def process_excel_for_all_types(excel_path, processor_types):
                     parcours_col = df['Parcours'].astype(str).str.strip()
                     result['nesting_count'] = parcours_col.str.startswith('N', na=False).sum()
                     result['opdeelzaag_count'] = parcours_col.str.startswith('Z', na=False).sum()
+                    # Calculate total item count (consolidated)
+                    result['item_count'] = result['nesting_count'] + result['opdeelzaag_count']
                 
                 results[proc_type] = result
                 
             elif proc_type == 'ACCURA_PROCESSING':
                 result = {
-                    'aantal_items': 0,
+                    'item_count': 0,
+                    'aantal_items': 0,  # Keep for backward compatibility
                     'aantal_sides': 0,
                     'mo_number': mo_number,
                     'so_number': so_number,
                     'customer_name': customer_name,
-                    'color': color
+                    'color': color,
+                    'items_list': []  # Add items_list for Excel generation
                 }
                 
                 afplak_columns = ['Afplak Boven', 'Afplak Onder', 'Afplak Links', 'Afplak Rechts']
@@ -571,8 +588,17 @@ def process_excel_for_all_types(excel_path, processor_types):
                                 has_content = True
                         
                         if has_content:
-                            result['aantal_items'] += 1
+                            result['item_count'] += 1
+                            result['aantal_items'] += 1  # Keep for backward compatibility
                             result['aantal_sides'] += sides_in_row
+                            
+                            # Extract Positie and Wand Naam for item list
+                            positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
+                            wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                            
+                            # Format as "Positie - Wand Naam"
+                            item_name = f"{positie} - {wand_naam}"
+                            result['items_list'].append(item_name)
                 
                 results[proc_type] = result
                 
@@ -582,11 +608,22 @@ def process_excel_for_all_types(excel_path, processor_types):
                     'mo_number': mo_number,
                     'so_number': so_number,
                     'customer_name': customer_name,
-                    'color': color
+                    'color': color,
+                    'items_list': []  # Add items_list for Excel generation
                 }
                 
                 if 'Materiaal' in df.columns:
-                    result['item_count'] = df['Materiaal'].notna().sum()
+                    for idx, row in df.iterrows():
+                        if pd.notna(row['Materiaal']):
+                            result['item_count'] += 1
+                            
+                            # Extract Positie and Wand Naam for item list
+                            positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
+                            wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                            
+                            # Format as "Positie - Wand Naam"
+                            item_name = f"{positie} - {wand_naam}"
+                            result['items_list'].append(item_name)
                 
                 results[proc_type] = result
                 
@@ -611,8 +648,11 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name):
         Path to generated Excel file or None if failed
     """
     try:
-        # Create directory if it doesn't exist
-        output_dir = "C:/ACCURA"
+        # Create directory if it doesn't exist - use system-appropriate path
+        if os.name == 'nt':  # Windows
+            output_dir = "C:/ACCURA"
+        else:  # Linux/Unix
+            output_dir = "/tmp/ACCURA"
         os.makedirs(output_dir, exist_ok=True)
         
         # Create filename similar to HOPS/MDB pattern
@@ -652,8 +692,11 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name):
         Path to generated Excel file or None if failed
     """
     try:
-        # Create directory if it doesn't exist
-        output_dir = "C:/BOERE"
+        # Create directory if it doesn't exist - use system-appropriate path
+        if os.name == 'nt':  # Windows
+            output_dir = "C:/BOERE"
+        else:  # Linux/Unix
+            output_dir = "/tmp/BOERE"
         os.makedirs(output_dir, exist_ok=True)
         
         # Create filename similar to HOPS/MDB pattern

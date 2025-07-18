@@ -864,13 +864,37 @@ def end_session():
             pause_duration_minutes = data.get('total_pause_duration', 0) / 60.0
             actual_work_minutes = max(0, total_minutes - pause_duration_minutes)
             
+            # Calculate total items processed during this session
+            # Get all OPEN events for this user during the session timeframe
+            c.execute("""
+                SELECT user FROM sessions WHERE session_id = ?
+            """, (data['session_id'],))
+            session_info = c.fetchone()
+            
+            total_items = 0
+            if session_info:
+                user = session_info['user']
+                c.execute("""
+                    SELECT SUM(COALESCE(item_count, 0)) as total_items
+                    FROM logs 
+                    WHERE user = ? 
+                    AND event = 'OPEN' 
+                    AND timestamp >= ?
+                    AND timestamp <= ?
+                    AND item_count > 0
+                """, (user, session['start_time'], data['timestamp']))
+                
+                result = c.fetchone()
+                total_items = result['total_items'] if result and result['total_items'] else 0
+            
             c.execute("""
                 UPDATE sessions 
                 SET status = 'completed', 
                     end_time = ?,
-                    work_duration_minutes = ?
+                    work_duration_minutes = ?,
+                    item_count = ?
                 WHERE session_id = ? AND status = 'active'
-            """, (data['timestamp'], actual_work_minutes, data['session_id']))
+            """, (data['timestamp'], actual_work_minutes, total_items, data['session_id']))
             
             conn.commit()
             logging.info(f"Session ended: {data['session_id']}")
@@ -1182,14 +1206,20 @@ def log_event():
 
         if event == 'OPEN':
             status = 'OPEN'
-            # Trigger the background import service for OPUS/GANNOMAT processing
-            logging.info(f"Event OPEN received for {user} on {project}. Triggering background import service.")
-            background_service.trigger_import_for_event(
-                user_type=user,
-                project_code=project,
-                event_details=details,
-                timestamp=timestamp
-            )
+            # Only trigger background import service for initial scanner events, not for auto-generated events
+            # This prevents infinite loops where background service creates OPEN events that trigger more processing
+            # Exception: Allow OPUS and KL GANNOMAT to be processed even if auto-generated
+            if not (details and ('Auto-detected' in details or 'XLSX_UPDATED' in details)) or user in ['OPUS', 'KL GANNOMAT']:
+                # Trigger the background import service for processing
+                logging.info(f"Event OPEN received for {user} on {project}. Triggering background import service.")
+                background_service.trigger_import_for_event(
+                    user_type=user,
+                    project_code=project,
+                    event_details=details,
+                    timestamp=timestamp
+                )
+            else:
+                logging.info(f"Skipping background import trigger for auto-generated OPEN event: {user} on {project} ({details})")
         elif event == 'PROJECT_START':
             status = 'BEZIG'
             # Update the corresponding OPEN log to BEZIG status
@@ -1310,9 +1340,23 @@ def log_event():
             nesting_count = data.get('nesting_count', 0)
             opdeelzaag_count = data.get('opdeelzaag_count', 0)
         
+        # Extract metadata fields
+        mo_number = data.get('mo_number')
+        so_number = data.get('so_number')
+        customer_name = data.get('customer_name')
+        color = data.get('color')
+        
+        # Extract ACCURA-specific fields
+        aantal_items = data.get('aantal_items', 0)
+        aantal_sides = data.get('aantal_sides', 0)
+        
         c.execute(
-            'INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, nesting_count, opdeelzaag_count, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, item_count, nesting_count, opdeelzaag_count, session_id)
+            '''INSERT INTO logs (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, 
+               file_path, item_count, nesting_count, opdeelzaag_count, session_id, mo_number, so_number, 
+               customer_name, color, aantal_items, aantal_sides) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (timestamp, event, details, project, user, status, base_mo_code, is_rep_variant, file_path, 
+             item_count, nesting_count, opdeelzaag_count, session_id, mo_number, so_number, customer_name, color, aantal_items, aantal_sides)
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Log entry created.'}), 201
@@ -1400,50 +1444,88 @@ def update_file_path():
         logging.error(f"Database error on /update_file_path: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
 
-@app.route('/update_item_count', methods=['POST'])
-def update_item_count():
-    """Update the item_count for an existing OPEN event (logs only, NOT sessions)."""
+
+@app.route('/project/metadata', methods=['POST'])
+def update_project_metadata():
+    """Update project metadata including color, MO number, SO number, and customer name."""
     data = request.get_json(force=True)
-    logging.info(f"[db_log_api] /update_item_count called with data: {data}")
+    logging.info(f"[db_log_api] /project/metadata called with data: {data}")
 
     project = data.get('project')
-    user = data.get('user')
-    item_count = data.get('item_count', 0)
+    mo_number = data.get('mo_number')
+    so_number = data.get('so_number')
+    customer_name = data.get('customer_name')
+    color = data.get('color')
     
-    if not all([project, user]):
-        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    if not project:
+        return jsonify({'success': False, 'error': 'Missing project field'}), 400
 
     try:
         conn = get_db()
         c = conn.cursor()
         
-        # Update the most recent OPEN event for this user/project combination (LOGS TABLE ONLY)
-        # DO NOT update sessions.item_count here - that should only happen on session end
-        c.execute('''
-            UPDATE logs 
-            SET item_count = ? 
-            WHERE id = (
-                SELECT id FROM logs 
-                WHERE event = 'OPEN' 
-                AND status = 'OPEN' 
-                AND user = ? 
-                AND project = ? 
-                ORDER BY timestamp DESC 
-                LIMIT 1
-            )
-        ''', (item_count, user, project))
+        # First, check if the logs table has the required columns
+        c.execute("PRAGMA table_info(logs)")
+        columns = [row[1] for row in c.fetchall()]
         
-        conn.commit()
+        # Add missing columns if they don't exist
+        if 'mo_number' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN mo_number TEXT')
+            logging.info("Added mo_number column to logs table")
         
-        if c.rowcount > 0:
-            logging.info(f"Updated item_count for OPEN event: user={user}, project={project}, count={item_count}")
-            return jsonify({'success': True, 'message': 'Item count updated successfully'}), 200
+        if 'so_number' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN so_number TEXT')
+            logging.info("Added so_number column to logs table")
+            
+        if 'customer_name' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN customer_name TEXT')
+            logging.info("Added customer_name column to logs table")
+            
+        if 'color' not in columns:
+            c.execute('ALTER TABLE logs ADD COLUMN color TEXT')
+            logging.info("Added color column to logs table")
+        
+        # Update all OPEN events for this project with the metadata
+        update_fields = []
+        update_values = []
+        
+        if mo_number:
+            update_fields.append("mo_number = ?")
+            update_values.append(mo_number)
+        if so_number:
+            update_fields.append("so_number = ?")
+            update_values.append(so_number)
+        if customer_name:
+            update_fields.append("customer_name = ?")
+            update_values.append(customer_name)
+        if color:
+            update_fields.append("color = ?")
+            update_values.append(color)
+        
+        if update_fields:
+            update_values.append(project)  # Add project for WHERE clause
+            
+            update_query = f'''
+                UPDATE logs 
+                SET {", ".join(update_fields)}
+                WHERE project = ? AND event = 'OPEN'
+            '''
+            
+            c.execute(update_query, update_values)
+            conn.commit()
+            
+            updated_count = c.rowcount
+            if updated_count > 0:
+                logging.info(f"Updated project metadata for {updated_count} records in project {project}")
+                return jsonify({'success': True, 'message': f'Updated {updated_count} records'}), 200
+            else:
+                logging.warning(f"No OPEN events found for project {project}")
+                return jsonify({'success': False, 'error': 'No matching project found'}), 404
         else:
-            logging.warning(f"No OPEN event found to update for user={user}, project={project}")
-            return jsonify({'success': False, 'error': 'No matching OPEN event found'}), 404
+            return jsonify({'success': False, 'error': 'No metadata provided'}), 400
             
     except sqlite3.Error as e:
-        logging.error(f"Database error on /update_item_count: {e}", exc_info=True)
+        logging.error(f"Database error on /project/metadata: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
 
 @app.route('/update_nesting_counts', methods=['POST'])
@@ -1457,6 +1539,9 @@ def update_nesting_counts():
     nesting_count = data.get('nesting_count', 0)
     opdeelzaag_count = data.get('opdeelzaag_count', 0)
     
+    # Calculate consolidated item_count
+    item_count = nesting_count + opdeelzaag_count
+    
     if not all([project, user]):
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
@@ -1465,23 +1550,25 @@ def update_nesting_counts():
         c = conn.cursor()
         
         # Update the most recent OPEN event for this user/project combination
+        # Update both separate counts (for backward compatibility) and consolidated item_count
         c.execute('''
             UPDATE logs 
-            SET nesting_count = ?, opdeelzaag_count = ?
+            SET nesting_count = ?, opdeelzaag_count = ?, item_count = ?
             WHERE id = (
                 SELECT id FROM logs 
                 WHERE event = 'OPEN' 
+                AND status = 'OPEN'
                 AND project = ? 
                 AND user = ?
                 ORDER BY timestamp DESC 
                 LIMIT 1
             )
-        ''', (nesting_count, opdeelzaag_count, project, user))
+        ''', (nesting_count, opdeelzaag_count, item_count, project, user))
         
         conn.commit()
         
         if c.rowcount > 0:
-            logging.info(f"Updated nesting counts for {user} - {project}: Nesting={nesting_count}, Opdeelzaag={opdeelzaag_count}")
+            logging.info(f"Updated nesting counts for {user} - {project}: Nesting={nesting_count}, Opdeelzaag={opdeelzaag_count}, Total={item_count}")
             return jsonify({'success': True, 'updated_rows': c.rowcount})
         else:
             logging.warning(f"No OPEN event found to update nesting counts for {user} - {project}")
@@ -1491,16 +1578,19 @@ def update_nesting_counts():
         logging.error(f"Database error on /update_nesting_counts: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
 
-@app.route('/update_accura_counts', methods=['POST'])
-def update_accura_counts():
-    """Update the aantal_items and aantal_sides for an existing OPEN event."""
+@app.route('/update_item_count', methods=['POST'])
+def update_item_count():
+    """Update the item_count for an existing OPEN event (consolidated approach)."""
     data = request.get_json(force=True)
-    logging.info(f"[db_log_api] /update_accura_counts called with data: {data}")
+    logging.info(f"[db_log_api] /update_item_count called with data: {data}")
 
     project = data.get('project')
     user = data.get('user')
-    aantal_items = data.get('aantal_items', 0)
-    aantal_sides = data.get('aantal_sides', 0)
+    item_count = data.get('item_count', 0)
+    
+    # For NESTING compatibility, also extract separate counts if provided
+    nesting_count = data.get('nesting_count', 0)
+    opdeelzaag_count = data.get('opdeelzaag_count', 0)
     
     if not all([project, user]):
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
@@ -1512,21 +1602,72 @@ def update_accura_counts():
         # Update the most recent OPEN event for this user/project combination
         c.execute('''
             UPDATE logs 
-            SET aantal_items = ?, aantal_sides = ?
+            SET item_count = ?, nesting_count = ?, opdeelzaag_count = ?
             WHERE id = (
                 SELECT id FROM logs 
                 WHERE event = 'OPEN' 
+                AND status IN ('OPEN', 'CLOSED')
                 AND project = ? 
                 AND user = ?
                 ORDER BY timestamp DESC 
                 LIMIT 1
             )
-        ''', (aantal_items, aantal_sides, project, user))
+        ''', (item_count, nesting_count, opdeelzaag_count, project, user))
         
         conn.commit()
         
         if c.rowcount > 0:
-            logging.info(f"Updated accura counts for {user} - {project}: Items={aantal_items}, Sides={aantal_sides}")
+            logging.info(f"Updated item count for {user} - {project}: Total={item_count} (Nesting={nesting_count}, Opdeelzaag={opdeelzaag_count})")
+            return jsonify({'success': True, 'updated_rows': c.rowcount})
+        else:
+            logging.warning(f"No OPEN event found to update item count for {user} - {project}")
+            return jsonify({'success': False, 'error': 'No OPEN event found to update'}), 404
+            
+    except Exception as e:
+        logging.error(f"Database error on /update_item_count: {e}", exc_info=True)
+        return jsonify({'error': 'Database operation failed'}), 500
+
+@app.route('/update_accura_counts', methods=['POST'])
+def update_accura_counts():
+    """Update the aantal_items and aantal_sides for an existing OPEN event using consolidated approach."""
+    data = request.get_json(force=True)
+    logging.info(f"[db_log_api] /update_accura_counts called with data: {data}")
+
+    project = data.get('project')
+    user = data.get('user')
+    
+    # Support both old (aantal_items) and new (item_count) input
+    item_count = data.get('item_count', data.get('aantal_items', 0))
+    aantal_items = data.get('aantal_items', item_count)  # For backward compatibility
+    aantal_sides = data.get('aantal_sides', 0)
+    
+    if not all([project, user]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Update the most recent OPEN event for this user/project combination
+        # Update both item_count (consolidated) and aantal_items (backward compatibility)
+        c.execute('''
+            UPDATE logs 
+            SET item_count = ?, aantal_items = ?, aantal_sides = ?
+            WHERE id = (
+                SELECT id FROM logs 
+                WHERE event = 'OPEN' 
+                AND status = 'OPEN'
+                AND project = ? 
+                AND user = ?
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            )
+        ''', (item_count, aantal_items, aantal_sides, project, user))
+        
+        conn.commit()
+        
+        if c.rowcount > 0:
+            logging.info(f"Updated accura counts for {user} - {project}: Total={item_count}, Items={aantal_items}, Sides={aantal_sides}")
             return jsonify({'success': True, 'updated_rows': c.rowcount})
         else:
             logging.warning(f"No OPEN event found to update accura counts for {user} - {project}")
@@ -1759,7 +1900,7 @@ def dashboard():
         for user in dashboard_users:
             if user not in formatted_users_projects:
                 formatted_users_projects[user] = []
-                logging.info(f"Adding empty project list for dashboard user: {user}")
+                logging.debug(f"Adding empty project list for dashboard user: {user}")
         
         # --- SERVER-SIDE METRICS CALCULATION ---
         # Calculate metrics using the same logic as projects.html
@@ -3197,7 +3338,7 @@ def logs_project():
         conn = get_db()
         c = conn.cursor()
 
-        c.execute('SELECT * FROM logs WHERE lower(project) = ? ORDER BY id DESC', (project.lower(),))
+        c.execute('SELECT * FROM logs WHERE lower(project) = ? AND event != ? ORDER BY id DESC', (project.lower(), 'AUTO_IMPORT'))
         log_entries = [dict(row) for row in c.fetchall()]
 
         c.execute('''
@@ -3278,19 +3419,52 @@ def logs_project():
         ''', (project.lower(), project.lower()))
         sessions_data = [dict(row) for row in c.fetchall()]
         
-        # Get SO number for this project
+        # Get project metadata (SO number, MO number, customer name, color)
         so_number = None
-        try:
-            # Try to get SO number from PDF database if available
-            import sys
-            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            from pdf_database_manager import PDFDatabaseManager
-            pdf_manager = PDFDatabaseManager()
-            so_number = pdf_manager.get_so_number_for_project(project)
-        except Exception as e:
-            logging.info(f"Could not get SO number: {e}")
+        mo_number = None
+        customer_name = None
+        color = None
         
-        # If not in PDF database, try to extract from any related file paths
+        # First try to get metadata from logs table - prioritize records with the most metadata
+        c.execute('''
+            SELECT DISTINCT so_number, mo_number, customer_name, color, file_path 
+            FROM logs 
+            WHERE lower(project) = ?
+            ORDER BY 
+                CASE WHEN so_number IS NOT NULL THEN 1 ELSE 0 END +
+                CASE WHEN mo_number IS NOT NULL THEN 1 ELSE 0 END +
+                CASE WHEN customer_name IS NOT NULL THEN 1 ELSE 0 END +
+                CASE WHEN color IS NOT NULL THEN 1 ELSE 0 END DESC,
+                timestamp DESC
+            LIMIT 1
+        ''', (project.lower(),))
+        row = c.fetchone()
+        
+        if row:
+            so_number = row['so_number'] if row['so_number'] else so_number
+            mo_number = row['mo_number'] if row['mo_number'] else mo_number
+            customer_name = row['customer_name'] if row['customer_name'] else customer_name
+            color = row['color'] if row['color'] else color
+            
+            # If SO number is missing, try to extract from file path
+            if not so_number and row['file_path']:
+                import re
+                match = re.search(r'(S\d+)', row['file_path'])
+                if match:
+                    so_number = match.group(1)
+        
+        # Fallback: try to get SO number from PDF database if available
+        if not so_number:
+            try:
+                import sys
+                sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from pdf_database_manager import PDFDatabaseManager
+                pdf_manager = PDFDatabaseManager()
+                so_number = pdf_manager.get_so_number_for_project(project)
+            except Exception as e:
+                logging.info(f"Could not get SO number from PDF database: {e}")
+        
+        # Additional fallback for file path extraction if still no SO number
         if not so_number:
             c.execute('''
                 SELECT DISTINCT file_path FROM logs 
@@ -3307,6 +3481,9 @@ def logs_project():
         return render_template('logs_project.html', 
                                project=project, 
                                so_number=so_number,
+                               mo_number=mo_number,
+                               customer_name=customer_name,
+                               color=color,
                                log_entries=log_entries, 
                                configured_users=configured_users,
                                user_status_html=user_status_html,

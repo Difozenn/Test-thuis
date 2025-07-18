@@ -671,13 +671,24 @@
             </div>
             <div>
                 <h3 class="mb-0" style="color: var(--dark-blue); font-weight: 600;">{{ project }}</h3>
-                <p class="mb-0 text-muted">
-                    {% if so_number %}
-                        Sales Order: {{ so_number }} | Manufacturing Order
-                    {% else %}
-                        Project Code
+                <div class="mb-0">
+                    {% if so_number or mo_number %}
+                        <p class="mb-1 text-muted">
+                            {% if so_number %}Sales Order: <strong>{{ so_number }}</strong>{% endif %}
+                            {% if so_number and mo_number %} | {% endif %}
+                            {% if mo_number %}Manufacturing Order: <strong>{{ mo_number }}</strong>{% endif %}
+                        </p>
                     {% endif %}
-                </p>
+                    {% if customer_name %}
+                        <p class="mb-1 text-muted">Klant: <strong>{{ customer_name }}</strong></p>
+                    {% endif %}
+                    {% if color %}
+                        <p class="mb-1 text-muted">Kleur: <strong>{{ color }}</strong></p>
+                    {% endif %}
+                    {% if not so_number and not mo_number and not customer_name and not color %}
+                        <p class="mb-0 text-muted">Project Code</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
@@ -860,10 +871,8 @@
                                 <th onclick="sortTable('details')">Details <span class="sort-icon">▼</span></th>
                                 <th onclick="sortTable('status')">Status <span class="sort-icon">▼</span></th>
                                 <th onclick="sortTable('item_count')">Items <span class="sort-icon">▼</span></th>
-                                <th onclick="sortTable('nesting_count')">Nesting <span class="sort-icon">▼</span></th>
-                                <th onclick="sortTable('opdeelzaag_count')">Opdeelzaag <span class="sort-icon">▼</span></th>
-                                <th onclick="sortTable('aantal_items')">Aantal Items <span class="sort-icon">▼</span></th>
-                                <th onclick="sortTable('aantal_sides')">Aantal Sides <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('nesting_count')">Details <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('aantal_sides')">Sides <span class="sort-icon">▼</span></th>
                             </tr>
                         </thead>
                         <tbody id="log-table-body">
@@ -960,15 +969,21 @@ async function loadUserProcessingTypes() {
 }
 
 function getItemCountForLog(log) {
-    // Different processing types use different count fields
+    // Use consolidated item_count approach - prioritize item_count field for all types
     const processingType = userProcessingTypes[log.user] || 'DEFAULT';
     
+    // For all processing types, first try the consolidated item_count field
+    if (log.item_count && log.item_count > 0) {
+        return log.item_count;
+    }
+    
+    // Fallback to legacy fields for backward compatibility
     if (processingType === 'NESTING_PROCESSING' && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) {
         return (log.nesting_count || 0) + (log.opdeelzaag_count || 0);
     } else if (processingType === 'ACCURA_PROCESSING' && log.aantal_items > 0) {
         return log.aantal_items || 0;
     } else {
-        // BOERE_PROCESSING, HOPS_PROCESSING, MDB_PROCESSING and others use regular item_count
+        // Default fallback to item_count (which may be 0)
         return log.item_count || 0;
     }
 }
@@ -1286,11 +1301,9 @@ function renderTableView() {
             <td>${log.user || 'N/A'}</td>
             <td>${log.details || 'N/A'}</td>
             <td><span class="status-badge status-${getStatusClass(log.status)}">${log.status || 'N/A'}</span></td>
-            <td>${log.item_count || 0}</td>
-            <td>${log.nesting_count || 0}</td>
-            <td>${log.opdeelzaag_count || 0}</td>
-            <td>${log.aantal_items || 0}</td>
-            <td>${log.aantal_sides || 0}</td>
+            <td>${getItemCountForLog(log) || 0}</td>
+            <td>${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? `${log.nesting_count}N + ${log.opdeelzaag_count}Z` : '-'}</td>
+            <td>${log.aantal_sides || '-'}</td>
         </tr>
     `).join('');
 }
@@ -1318,11 +1331,9 @@ function renderCardsView() {
                     <small class="text-muted">
                         <i class="fas fa-user"></i> ${log.user || 'N/A'} • 
                         <i class="far fa-clock"></i> ${formatTimestamp(log.timestamp)}
-                        ${log.item_count ? ` • <i class="fas fa-box"></i> ${log.item_count} items` : ''}
-                        ${log.nesting_count ? ` • <i class="fas fa-layer-group"></i> ${log.nesting_count} nesting` : ''}
-                        ${log.opdeelzaag_count ? ` • <i class="fas fa-cut"></i> ${log.opdeelzaag_count} opdeelzaag` : ''}
-                        ${log.aantal_items ? ` • <i class="fas fa-clipboard-check"></i> ${log.aantal_items} aantal items` : ''}
-                        ${log.aantal_sides ? ` • <i class="fas fa-shapes"></i> ${log.aantal_sides} aantal sides` : ''}
+                        ${getItemCountForLog(log) ? ` • <i class="fas fa-box"></i> ${getItemCountForLog(log)} items` : ''}
+                        ${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? ` (${log.nesting_count} nesting + ${log.opdeelzaag_count} opdeelzaag)` : ''}
+                        ${log.aantal_sides ? ` • <i class="fas fa-shapes"></i> ${log.aantal_sides} sides` : ''}
                     </small>
                 </div>
             </div>
@@ -1346,11 +1357,9 @@ function renderTimelineView() {
             <p>${log.details || 'Geen details'}</p>
             <small class="text-muted">
                 ${log.user || 'N/A'} • ${formatTimestamp(log.timestamp)}
-                ${log.item_count ? ` • ${log.item_count} items` : ''}
-                ${log.nesting_count ? ` • ${log.nesting_count} nesting` : ''}
-                ${log.opdeelzaag_count ? ` • ${log.opdeelzaag_count} opdeelzaag` : ''}
-                ${log.aantal_items ? ` • ${log.aantal_items} aantal items` : ''}
-                ${log.aantal_sides ? ` • ${log.aantal_sides} aantal sides` : ''}
+                ${getItemCountForLog(log) ? ` • ${getItemCountForLog(log)} items` : ''}
+                ${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? ` (${log.nesting_count} nesting + ${log.opdeelzaag_count} opdeelzaag)` : ''}
+                ${log.aantal_sides ? ` • ${log.aantal_sides} sides` : ''}
             </small>
         </div>
     `).join('');
@@ -1612,25 +1621,70 @@ function updateWorkflowStatus() {
                                latestEvent.status === 'COMPLETED';
             
             if (isCompleted) {
-                // User completed
+                // User completed - show dynamic completion info
                 stepElement.classList.add('completed');
-                stepElement.querySelector('.chain-step-user').textContent = 'Voltooid';
-                completedCount++;
-            } else if (latestEvent.status === 'BEZIG' || latestEvent.event === 'PROJECT_START' || latestEvent.event === 'SESSION_START') {
-                // User active (has started work - BEZIG, PROJECT_START, etc.)
-                stepElement.classList.add('active');
-                stepElement.querySelector('.chain-step-user').textContent = 'Bezig';
-                if (!currentActiveUser) {
-                    currentActiveUser = user;
+                
+                // Get total items processed by this user for this project (using consolidated count)
+                const userItems = logData
+                    .filter(log => log.user === user && log.project === project)
+                    .reduce((total, log) => total + getItemCountForLog(log), 0);
+                
+                const processingType = userProcessingTypes[user] || 'DEFAULT';
+                const shortType = processingType.replace('_PROCESSING', '');
+                
+                if (userItems > 0) {
+                    stepElement.querySelector('.chain-step-user').textContent = `Voltooid (${userItems} items)`;
+                } else {
+                    stepElement.querySelector('.chain-step-user').textContent = 'Voltooid';
                 }
-            } else if (latestEvent.event === 'OPEN' || latestEvent.status === 'OPEN') {
-                // User has OPEN status - work received but not started
-                stepElement.classList.add('processing');
-                stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
+                completedCount++;
             } else {
-                // Fallback - unknown state
-                stepElement.classList.add('processing');
-                stepElement.querySelector('.chain-step-user').textContent = 'In behandeling';
+                // Check if user has any OPEN events that haven't been closed
+                const userEvents = logData.filter(log => log.user === user);
+                const hasOpenEvent = userEvents.some(event => 
+                    event.event === 'OPEN' || event.status === 'OPEN'
+                );
+                
+                if (hasOpenEvent) {
+                    // User has OPEN status - work received but not started
+                    stepElement.classList.add('processing');
+                    stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
+                } else if (latestEvent.status === 'BEZIG' || latestEvent.event === 'PROJECT_START' || latestEvent.event === 'SESSION_START') {
+                    // Check if user has an active batch session
+                    const hasActiveBatchSession = sessionsData.some(session => 
+                        session.user === user && 
+                        session.status === 'active' &&
+                        session.session_type === 'SCANNER'
+                    );
+                    
+                    // User active (has started work - BEZIG, PROJECT_START, etc.)
+                    stepElement.classList.add('active');
+                    
+                    if (hasActiveBatchSession) {
+                        stepElement.querySelector('.chain-step-user').textContent = 'Batch actief';
+                    } else {
+                        stepElement.querySelector('.chain-step-user').textContent = 'Bezig';
+                    }
+                    
+                    if (!currentActiveUser) {
+                        currentActiveUser = user;
+                    }
+                } else {
+                    // Check if user has an active session to determine if they're actually working
+                    const hasActiveSession = sessionsData.some(session => 
+                        session.user === user && session.status === 'active'
+                    );
+                    
+                    if (hasActiveSession) {
+                        // User has active session - show as working
+                        stepElement.classList.add('active');
+                        stepElement.querySelector('.chain-step-user').textContent = 'In behandeling';
+                    } else {
+                        // Default: show as work received
+                        stepElement.classList.add('processing');
+                        stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
+                    }
+                }
             }
             
             // Show timestamp from latest event
@@ -1762,7 +1816,8 @@ async function updatePerformanceMetrics() {
     
     // Use project-specific productivity metrics API for accurate batch time allocation
     try {
-        const response = await fetch(`/api/project/{{ project }}/productivity-metrics`);
+        const projectName = '{{ project }}';
+        const response = await fetch(`/api/project/${encodeURIComponent(projectName)}/productivity-metrics`);
         const data = await response.json();
         
         if (data.success && data.user_productivity) {
@@ -1782,11 +1837,23 @@ async function updatePerformanceMetrics() {
                 
                 if (userMetric) {
                     // Use API data with proportional time allocation
+                    let nestingCount = 0;
+                    let opdeelzaagCount = 0;
+                    if (user === 'NESTING') {
+                        const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                        const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+                        
+                        nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                        opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+                    }
+                    
                     userStats[user] = {
                         items: userMetric.total_items || 0,
                         sessionMinutes: userMetric.session_hours === 'IN_PROGRESS' ? 'IN_PROGRESS' : Math.round((userMetric.session_hours || 0) * 60),
                         itemsPerHour: userMetric.items_per_hour === 'IN_PROGRESS' ? 'IN_PROGRESS' : (userMetric.items_per_hour || 0),
-                        status: userMetric.status || 'COMPLETED'
+                        status: userMetric.status || 'COMPLETED',
+                        nestingCount: nestingCount,
+                        opdeelzaagCount: opdeelzaagCount
                     };
                 } else {
                     // Fallback to raw session data for users not in API response
@@ -1801,10 +1868,23 @@ async function updatePerformanceMetrics() {
                     
                     const itemsPerHour = userSessionMinutes > 0 ? Math.round((userItems / userSessionMinutes) * 60 * 100) / 100 : 0;
                     
+                    // For NESTING users, also get the breakdown of nesting vs opdeelzaag counts
+                    let nestingCount = 0;
+                    let opdeelzaagCount = 0;
+                    if (user === 'NESTING') {
+                        const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                        const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+                        
+                        nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                        opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+                    }
+                    
                     userStats[user] = {
                         items: userItems,
                         sessionMinutes: userSessionMinutes,
-                        itemsPerHour: itemsPerHour
+                        itemsPerHour: itemsPerHour,
+                        nestingCount: nestingCount,
+                        opdeelzaagCount: opdeelzaagCount
                     };
                 }
             });
@@ -1856,10 +1936,23 @@ async function updatePerformanceMetrics() {
             const itemsPerHour = userSessionMinutes > 0 && projectItems > 0 ? 
                 Math.round((projectItems * 60.0) / userSessionMinutes * 100) / 100 : 0;
             
+            // For NESTING users, also get the breakdown of nesting vs opdeelzaag counts
+            let nestingCount = 0;
+            let opdeelzaagCount = 0;
+            if (user === 'NESTING') {
+                const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+                
+                nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+            }
+            
             userStats[user] = {
                 items: projectItems,
                 sessionMinutes: Math.round(userSessionMinutes),
-                itemsPerHour: itemsPerHour
+                itemsPerHour: itemsPerHour,
+                nestingCount: nestingCount,
+                opdeelzaagCount: opdeelzaagCount
             };
             
             console.log(`  Final stats: ${projectItems} items, ${userSessionMinutes.toFixed(1)}min, ${itemsPerHour} items/hour`);
@@ -2091,11 +2184,25 @@ async function updateUserPerformanceCards(userStats) {
         
         if (isWaiting) {
             // Show waiting state - user has OPEN event but no work sessions
+            const processingType = userProcessingTypes[user] || 'DEFAULT';
+            const shortType = processingType.replace('_PROCESSING', '');
+            const typeIcon = {
+                'NESTING': 'fas fa-layer-group',
+                'ACCURA': 'fas fa-clipboard-check', 
+                'BOERE': 'fas fa-drill',
+                'HOPS': 'fas fa-database',
+                'MDB': 'fas fa-table',
+                'DEFAULT': 'fas fa-cog'
+            }[shortType] || 'fas fa-cog';
+            
             html += `
                 <div class="col-md-6 col-lg-4 mb-3">
                     <div class="enterprise-card">
                         <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5>${user}</h5>
+                            <div>
+                                <h5 class="mb-0">${user}</h5>
+                                <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                            </div>
                             <span class="badge bg-secondary">Wachten op start</span>
                         </div>
                         <div class="text-center mb-3">
@@ -2124,6 +2231,17 @@ async function updateUserPerformanceCards(userStats) {
         
         if (isInProgress) {
             // Show pending calculation for batch in progress
+            const processingType = userProcessingTypes[user] || 'DEFAULT';
+            const shortType = processingType.replace('_PROCESSING', '');
+            const typeIcon = {
+                'NESTING': 'fas fa-layer-group',
+                'ACCURA': 'fas fa-clipboard-check', 
+                'BOERE': 'fas fa-drill',
+                'HOPS': 'fas fa-database',
+                'MDB': 'fas fa-table',
+                'DEFAULT': 'fas fa-cog'
+            }[shortType] || 'fas fa-cog';
+            
             const performanceColor = 'warning';
             const performanceLabel = 'Berekening in behandeling';
             const currentEfficiency = 'Wachten...';
@@ -2134,7 +2252,10 @@ async function updateUserPerformanceCards(userStats) {
                 <div class="col-md-6 col-lg-4 mb-3">
                     <div class="enterprise-card">
                         <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5>${user}</h5>
+                            <div>
+                                <h5 class="mb-0">${user}</h5>
+                                <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                            </div>
                             <span class="badge bg-warning text-dark">${performanceLabel}</span>
                         </div>
                         <div class="text-center mb-3">
@@ -2147,6 +2268,11 @@ async function updateUserPerformanceCards(userStats) {
                         <div class="metric-row">
                             <span class="metric-label">Items</span>
                             <span class="metric-value">${stats.items}</span>
+                            ${user === 'NESTING' && stats.nestingCount !== undefined && stats.opdeelzaagCount !== undefined ? `
+                                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                    ${stats.nestingCount} Nesting, ${stats.opdeelzaagCount} Opdeelzaag
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Sessietijd</span>
@@ -2188,11 +2314,26 @@ async function updateUserPerformanceCards(userStats) {
             performanceLabel = 'Aandacht nodig';
         }
         
+        // Get processing type for dynamic display
+        const processingType = userProcessingTypes[user] || 'DEFAULT';
+        const shortType = processingType.replace('_PROCESSING', '');
+        const typeIcon = {
+            'NESTING': 'fas fa-layer-group',
+            'ACCURA': 'fas fa-clipboard-check', 
+            'BOERE': 'fas fa-drill',
+            'HOPS': 'fas fa-database',
+            'MDB': 'fas fa-table',
+            'DEFAULT': 'fas fa-cog'
+        }[shortType] || 'fas fa-cog';
+        
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="enterprise-card">
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h5 class="mb-0">${user}</h5>
+                        <div>
+                            <h5 class="mb-0">${user}</h5>
+                            <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                        </div>
                         <div class="text-end">
                             <span class="badge bg-${performanceColor} mb-1">${performanceLabel}</span>
                             <div class="fw-bold">${currentEfficiency.toFixed(1)} items/uur</div>
@@ -2204,6 +2345,12 @@ async function updateUserPerformanceCards(userStats) {
                             <div class="text-center">
                                 <div class="fs-4 fw-bold text-dark">${stats.items}</div>
                                 <div class="text-muted small">Items</div>
+                                ${user === 'NESTING' && stats.nestingCount !== undefined && stats.opdeelzaagCount !== undefined ? `
+                                    <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                        ${stats.nestingCount} Nesting<br>
+                                        ${stats.opdeelzaagCount} Opdeelzaag
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                         <div class="col-6">

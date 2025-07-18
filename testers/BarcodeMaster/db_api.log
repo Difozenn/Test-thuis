@@ -1,0 +1,34 @@
+Database API process found: PID 10636
+Database API is already running.
+Launching main application from main.py...
+An error occurred while running main.py: [Errno 2] No such file or directory: 'C:\\Users\\opususer\\Desktop\\Test-thuis-main\\BarcodeMaster\\database\\main.py'
+No database API process was started by this launcher.
+Database API process found: PID 14540
+Database API is already running.
+Launching main application from main.py...
+An error occurred while running main.py: [Errno 2] No such file or directory: 'C:\\Users\\opususer\\Desktop\\Test-thuis-main\\BarcodeMaster\\database\\main.py'
+No database API process was started by this launcher.
+Database API process found: PID 19612
+Database API is already running.
+Launching main application from main.py...
+An error occurred while running main.py: [Errno 2] No such file or directory: 'C:\\Users\\opususer\\Desktop\\Test-thuis-main\\BarcodeMaster\\database\\main.py'
+No database API process was started by this launcher.
+Database API process found: PID 1428
+Database API is already running.
+Launching main application from main.py...
+An error occurred while running main.py: [Errno 2] No such file or directory: 'C:\\Users\\opususer\\Desktop\\Test-thuis-main\\BarcodeMaster\\database\\main.py'
+No database API process was started by this launcher.
+Database API process found: PID 17660
+Database API is already running.
+Launching main application from main.py...
+An error occurred while running main.py: [Errno 2] No such file or directory: 'C:\\Users\\opususer\\Desktop\\Test-thuis-main\\BarcodeMaster\\database\\main.py'
+No database API process was started by this launcher.
+Database API process found: PID 17808
+Database API is already running.
+Launching main application from main.py...
+
+--- AN ERROR OCCURRED IN main.py ---
+[Errno 2] No such file or directory: 'C:\\Users\\Rob_v\\Desktop\\test-werk-main\\BarcodeMaster\\database\\main.py'
+-------------------------------------
+
+Press Enter to exit...

@@ -1,7 +1,7 @@
-# BarcodeMaster System Interconnection Map
+# Project Datalog System Interconnection Map
 
 ## 🧠 **Core System Overview**
-BarcodeMaster is a barcode management system with client-server architecture featuring real-time session tracking, workflow management, and comprehensive analytics.
+Project Datalog is a barcode management system with client-server architecture featuring real-time session tracking, workflow management, and comprehensive analytics.
 
 ---
 
@@ -161,7 +161,7 @@ WORK_HOURS = {
 
 ### **🔗 Core Applications**
 
-#### **1. BarcodeMaster Main Application**
+#### **1. Project Datalog Main Application**
 - **Location**: `gui/app.py` (main GUI application)
 - **Panels**: Scanner panel, admin panel, settings panel
 - **Session Type**: SCANNER (always starts workflow)

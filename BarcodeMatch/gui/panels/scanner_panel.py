@@ -42,6 +42,7 @@ class ScannerPanel(ttk.Frame):
         self.current_session_id = None
         self.session_start_time = None
         self.session_item_count = 0
+        self.session_paused = False
 
         # --- Initialization ---
         self.build_tab()
@@ -169,6 +170,7 @@ class ScannerPanel(ttk.Frame):
         self.context_menu.add_command(label="Status wissen", command=self._clear_item_status) # Changed from Markeer als NIET OK
         self.tree.bind("<Button-3>", self._show_context_menu)
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+        self.tree.bind("<Double-1>", self._on_tree_double_click)
 
         # Initial setup
         self._log("Scannerpaneel geïnitialiseerd.")
@@ -352,8 +354,8 @@ class ScannerPanel(ttk.Frame):
     def _load_excel_data(self, file_path, update_config_path=True):
         """Laadt gegevens uit het geselecteerde Excel-bestand en vult de treeview."""
         try:
-            # Start a new session when loading Excel data
-            self._start_session()
+            # Start session when Excel file is loaded (user begins working)
+            self._start_session_for_excel_work(file_path)
             
             path_to_load = file_path
             potential_updated_path = self._generate_updated_path(file_path)
@@ -439,8 +441,8 @@ class ScannerPanel(ttk.Frame):
             messagebox.showerror("Fout", f"Lezen van Excel-bestand mislukt: {e}")
             self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}", "error")
 
-    def _start_session(self):
-        """Start a new session for the current user (NESTING)"""
+    def _start_session_for_excel_work(self, excel_file_path):
+        """Start a session when user begins working on Excel file"""
         try:
             config_file_path = get_config_path()
             if os.path.exists(config_file_path):
@@ -448,35 +450,302 @@ class ScannerPanel(ttk.Frame):
                     config = json.load(f)
                     
                 api_url = config.get('api_url', '')
-                current_user = config.get('user', 'NESTING')  # Primary scanner is usually NESTING
+                if not api_url:
+                    return
                 
-                if api_url:
-                    # Generate session ID
-                    self.session_start_time = datetime.now()
-                    self.current_session_id = f"{current_user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
-                    self.session_item_count = 0
-                    
-                    # Send session start event
-                    data = {
-                        'session_id': self.current_session_id,
-                        'user': current_user,
-                        'timestamp': self.session_start_time.isoformat()
-                    }
-                    
-                    # Make API call in background thread to avoid blocking UI
-                    def start_session_api():
-                        try:
-                            response = requests.post(api_url.replace('/log', '/session/start'), 
-                                                   json=data, timeout=1)  # Reduced timeout
-                            if response.ok:
-                                self._log(f"Session started for {current_user}: {self.current_session_id}")
-                        except Exception as e:
-                            self._log(f"Failed to start session (non-blocking): {e}")
-                    
-                    threading.Thread(target=start_session_api, daemon=True).start()
+                # Determine user from file path (e.g., C:/BOERE/... -> BOERE)
+                user = self._determine_user_from_path(excel_file_path)
+                if not user:
+                    user = config.get('user', 'NESTING')  # Fallback
+                
+                # Extract project from filename
+                project_name = self._extract_project_from_filename(excel_file_path)
+                
+                # Generate session ID
+                self.session_start_time = datetime.now()
+                self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                self.session_item_count = 0
+                
+                # Send session start event
+                data = {
+                    'session_id': self.current_session_id,
+                    'user': user,
+                    'timestamp': self.session_start_time.isoformat(),
+                    'session_type': 'XLSX_UPDATED',
+                    'item_count': len(getattr(self, 'barcode_data', {}))  # Number of items in Excel
+                }
+                
+                if project_name:
+                    data['project'] = project_name
+                
+                # Make API call in background thread
+                def start_session_api():
+                    try:
+                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'), 
+                                               json=data, timeout=1)
+                        if response.ok:
+                            self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
+                    except Exception as e:
+                        self._log(f"Failed to start XLSX session: {e}")
+                
+                threading.Thread(target=start_session_api, daemon=True).start()
                         
         except Exception as e:
             self._log(f"Error starting session: {e}")
+    
+    def _determine_user_from_path(self, file_path):
+        """Extract user from file path"""
+        if not file_path:
+            return None
+        
+        # Get valid users from logs
+        valid_users = self._get_valid_users_from_logs()
+        
+        # Extract user from file path
+        path_parts = file_path.replace('\\', '/').split('/')
+        for part in path_parts:
+            if part.upper() in valid_users:
+                return part.upper()
+        
+        return None
+    
+    def _extract_project_from_filename(self, file_path):
+        """Extract project name from filename dynamically"""
+        if not file_path:
+            return None
+        
+        filename = os.path.basename(file_path)
+        
+        # Priority 1: Look up project from database using file path
+        try:
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    config = json.load(f)
+                    
+                api_url = config.get('api_url', '')
+                if api_url:
+                    # Get logs to find project by file path
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    if logs_response.ok:
+                        logs_data = logs_response.json()
+                        if isinstance(logs_data, list):
+                            # Find project by matching file path (Windows path normalization)
+                            normalized_file_path = file_path.replace('\\', '/')
+                            for log_entry in logs_data:
+                                if isinstance(log_entry, dict) and 'file_path' in log_entry and 'project' in log_entry:
+                                    log_file_path = log_entry['file_path']
+                                    if log_file_path:
+                                        normalized_log_path = log_file_path.replace('\\', '/')
+                                        if normalized_log_path == normalized_file_path:
+                                            return log_entry['project']
+                                            
+                            # Priority 2: Match by filename in file_path field
+                            for log_entry in logs_data:
+                                if isinstance(log_entry, dict) and 'file_path' in log_entry and 'project' in log_entry:
+                                    log_file_path = log_entry['file_path']
+                                    if log_file_path and filename in log_file_path:
+                                        return log_entry['project']
+        except:
+            pass
+        
+        # Priority 3: Try to get project names from logs data and match against filename
+        try:
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    config = json.load(f)
+                    
+                api_url = config.get('api_url', '')
+                if api_url:
+                    # Get logs to extract project information
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    if logs_response.ok:
+                        logs_data = logs_response.json()
+                        if isinstance(logs_data, list):
+                            # Find projects from logs and match against filename
+                            for log_entry in logs_data:
+                                if isinstance(log_entry, dict) and 'project' in log_entry:
+                                    project = log_entry['project']
+                                    if project and project in filename:
+                                        return project
+        except:
+            pass
+        
+        # Priority 4: Fallback - extract MO code dynamically
+        import re
+        mo_match = re.search(r'(MO\d{5})', filename)
+        if mo_match:
+            # Try to extract full project name from filename structure
+            project_parts = filename.split('_')
+            if len(project_parts) >= 2:
+                # Build project name by removing timestamp and extension
+                project_name = filename
+                # Remove timestamp pattern
+                project_name = re.sub(r'_\d{8}_\d{6}\.xlsx?$', '', project_name)
+                # Remove file extension if still present
+                project_name = re.sub(r'\.xlsx?$', '', project_name)
+                return project_name
+            else:
+                return mo_match.group(1)
+        
+        return None
+    
+    def _get_valid_users_from_logs(self):
+        """Get valid users from BarcodeMaster logs"""
+        valid_users = set()
+        
+        try:
+            config_file_path = get_config_path()
+            if os.path.exists(config_file_path):
+                with open(config_file_path, 'r') as f:
+                    config = json.load(f)
+                    
+                api_url = config.get('api_url', '')
+                if api_url:
+                    # Get logs to extract user information
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    if logs_response.ok:
+                        logs_data = logs_response.json()
+                        if isinstance(logs_data, list):
+                            for log_entry in logs_data:
+                                if isinstance(log_entry, dict) and 'user' in log_entry:
+                                    user = log_entry['user']
+                                    if user and user.strip():
+                                        valid_users.add(user.upper())
+        except:
+            pass
+        
+        # Fallback: try to get users from BarcodeMaster config dynamically
+        if not valid_users:
+            try:
+                # Look for BarcodeMaster config file dynamically
+                import glob
+                
+                # Search for config files in possible locations
+                config_search_paths = [
+                    '/home/*/Projects/BarcodeMaster/config.json',
+                    '../*/config.json',
+                    '../../*/config.json',
+                    'config.json'
+                ]
+                
+                for search_path in config_search_paths:
+                    config_files = glob.glob(search_path)
+                    for config_file in config_files:
+                        if os.path.exists(config_file):
+                            with open(config_file, 'r') as f:
+                                bm_config = json.load(f)
+                                open_event_users = bm_config.get('scanner_panel_open_event_users', [])
+                                if open_event_users:
+                                    valid_users.update([user.upper() for user in open_event_users])
+                                    break
+                    if valid_users:
+                        break
+            except:
+                pass
+        
+        # Final fallback: scan directory names if still no users found
+        if not valid_users:
+            try:
+                # Get common directory names from file paths in logs
+                config_file_path = get_config_path()
+                if os.path.exists(config_file_path):
+                    with open(config_file_path, 'r') as f:
+                        config = json.load(f)
+                        api_url = config.get('api_url', '')
+                        if api_url:
+                            logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                            if logs_response.ok:
+                                logs_data = logs_response.json()
+                                if isinstance(logs_data, list):
+                                    for log_entry in logs_data:
+                                        if isinstance(log_entry, dict) and 'details' in log_entry:
+                                            details = log_entry['details']
+                                            if details and ('C:/' in details or 'C:\\' in details):
+                                                # Extract potential user names from file paths
+                                                import re
+                                                path_match = re.search(r'[C]:[/\\]([A-Z\s]+)[/\\]', details)
+                                                if path_match:
+                                                    potential_user = path_match.group(1).strip()
+                                                    if potential_user and len(potential_user) > 2:
+                                                        valid_users.add(potential_user.upper())
+            except:
+                pass
+        
+        return valid_users
+
+    def _pause_session(self):
+        """Pause the current session when panel is hidden"""
+        if self.current_session_id and not self.session_paused:
+            try:
+                config_file_path = get_config_path()
+                if os.path.exists(config_file_path):
+                    with open(config_file_path, 'r') as f:
+                        config = json.load(f)
+                        
+                    api_url = config.get('api_url', '')
+                    if api_url:
+                        data = {
+                            'session_id': self.current_session_id,
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        
+                        def pause_session_api():
+                            try:
+                                response = requests.post(api_url.replace('/log', '/session/pause'), 
+                                                       json=data, timeout=1)
+                                if response.ok:
+                                    self._log(f"Session paused: {self.current_session_id}")
+                                    self.session_paused = True
+                            except Exception as e:
+                                self._log(f"Failed to pause session: {e}")
+                        
+                        threading.Thread(target=pause_session_api, daemon=True).start()
+                        
+            except Exception as e:
+                self._log(f"Error pausing session: {e}")
+    
+    def _resume_session(self):
+        """Resume the current session when panel is shown"""
+        if self.current_session_id and self.session_paused:
+            try:
+                config_file_path = get_config_path()
+                if os.path.exists(config_file_path):
+                    with open(config_file_path, 'r') as f:
+                        config = json.load(f)
+                        
+                    api_url = config.get('api_url', '')
+                    if api_url:
+                        data = {
+                            'session_id': self.current_session_id,
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        
+                        def resume_session_api():
+                            try:
+                                response = requests.post(api_url.replace('/log', '/session/resume'), 
+                                                       json=data, timeout=1)
+                                if response.ok:
+                                    self._log(f"Session resumed: {self.current_session_id}")
+                                    self.session_paused = False
+                            except Exception as e:
+                                self._log(f"Failed to resume session: {e}")
+                        
+                        threading.Thread(target=resume_session_api, daemon=True).start()
+                        
+            except Exception as e:
+                self._log(f"Error resuming session: {e}")
+    
+    def pack(self, **kwargs):
+        """Override pack to detect when panel is shown"""
+        super().pack(**kwargs)
+        self._resume_session()
+    
+    def pack_forget(self):
+        """Override pack_forget to detect when panel is hidden"""
+        self._pause_session()
+        super().pack_forget()
 
     def _end_session(self):
         """End the current session"""
@@ -983,6 +1252,63 @@ class ScannerPanel(ttk.Frame):
                 self._log(f"[FOUT] Fout bij lezen van COM-poort: {e}")
                 break
 
+    def _on_tree_double_click(self, event):
+        """Handles double-click events on the treeview to open .HOP/.HOPS files."""
+        try:
+            # Get the selected item
+            selected_item = self.tree.selection()
+            if not selected_item:
+                return
+            
+            # Get the item data
+            item_data = self.tree.item(selected_item[0])
+            if not item_data or 'values' not in item_data:
+                return
+            
+            values = item_data['values']
+            if len(values) < 2:  # Need at least Status and Item columns
+                return
+            
+            item_content = str(values[1])  # Item column is the second column
+            
+            # Check if the item content contains a file path with .HOP or .HOPS extension
+            if not item_content:
+                return
+            
+            # Check if it's a .HOP or .HOPS file
+            if not (item_content.lower().endswith('.hop') or item_content.lower().endswith('.hops')):
+                self._log(f"Item '{item_content}' is geen .HOP/.HOPS bestand")
+                return
+            
+            # Check if the file exists
+            if not os.path.exists(item_content):
+                self._log(f"Bestand niet gevonden: {item_content}")
+                messagebox.showwarning("Bestand niet gevonden", 
+                                     f"Het bestand kon niet worden gevonden:\n{item_content}")
+                return
+            
+            # Try to open the file with the default associated program
+            try:
+                if os.name == 'nt':  # Windows
+                    os.startfile(item_content)
+                else:  # macOS/Linux
+                    import subprocess
+                    if sys.platform == 'darwin':  # macOS
+                        subprocess.run(['open', item_content])
+                    else:  # Linux
+                        subprocess.run(['xdg-open', item_content])
+                
+                self._log(f"Bestand geopend: {os.path.basename(item_content)}")
+                
+            except Exception as e:
+                self._log(f"Fout bij openen van bestand: {e}")
+                messagebox.showerror("Fout bij openen", 
+                                   f"Kon het bestand niet openen:\n{item_content}\n\nFout: {e}")
+                
+        except Exception as e:
+            self._log(f"Fout bij dubbelklik verwerking: {e}")
+            print(f"[ERROR] Double-click handler error: {e}")
+    
     def shutdown(self):
         """Ruimt resources op bij het afsluiten van de applicatie."""
         self._stop_usb_listener()

@@ -179,7 +179,7 @@ class DatabasePanel(ttk.Frame):
         print(f"[DBLCLICK DEBUG] User: '{log_user}'")
         print(f"[DBLCLICK DEBUG] File path from DB: '{file_path_from_db}'")
 
-        if log_status == 'OPEN' or log_status == 'EXCEL_GENERATED':
+        if log_status in ['OPEN', 'EXCEL_GENERATED', 'BEZIG']:
             if not project_name:
                 print("[DBLCLICK DEBUG] No project name found")
                 messagebox.showwarning("Geen project", "Geen projectnaam gevonden voor deze log entry.")
@@ -235,8 +235,46 @@ class DatabasePanel(ttk.Frame):
 
                 print(f"[DBLCLICK] Excel not found in DB directory '{file_path_from_db}'. Proceeding to fallbacks.")
 
-            # PRIORITY 3: Parse path from log_details (Fallback for older logs)
-            print(f"[DBLCLICK DEBUG] PRIORITY 3: Parsing path from log details")
+            # PRIORITY 3: Check config for last Excel file (especially useful for ACCURA/BOERE)
+            print(f"[DBLCLICK DEBUG] PRIORITY 3: Checking config last_excel_file")
+            app_config = self.main_app.load_app_config()
+            last_excel_file = app_config.get('Paths', {}).get('last_excel_file', '')
+            print(f"[DBLCLICK DEBUG] last_excel_file from config: '{last_excel_file}'")
+            
+            if last_excel_file and os.path.exists(last_excel_file):
+                # Check if this file matches the current project by MO number
+                mo_match = project_name.split('_')[0] if '_' in project_name else project_name
+                if mo_match in os.path.basename(last_excel_file):
+                    print(f"[DBLCLICK] Found matching Excel from config: {last_excel_file}")
+                    self.main_app.switch_to_scanner_and_load(last_excel_file)
+                    return
+
+            # PRIORITY 4: Handle ACCURA/BOERE type users with dedicated directories
+            print(f"[DBLCLICK DEBUG] PRIORITY 4: Checking ACCURA/BOERE type directories")
+            if log_user in ['ACCURA', 'BOERE']:
+                # For ACCURA/BOERE, files are typically in C:/ACCURA/ or C:/BOERE/ directories
+                user_directory = f"C:/{log_user}"
+                print(f"[DBLCLICK DEBUG] Checking {log_user} directory: {user_directory}")
+                
+                if os.path.isdir(user_directory):
+                    # Look for files matching project pattern
+                    import glob
+                    pattern = f"{user_directory}/*{project_name.split('_')[0]}*.xlsx"  # Match by MO number
+                    print(f"[DBLCLICK DEBUG] Search pattern: {pattern}")
+                    
+                    matching_files = glob.glob(pattern)
+                    print(f"[DBLCLICK DEBUG] Found {len(matching_files)} matching files")
+                    
+                    if matching_files:
+                        # Sort by modification time (newest first)
+                        matching_files.sort(key=os.path.getmtime, reverse=True)
+                        path_to_load = matching_files[0]
+                        print(f"[DBLCLICK] Found {log_user} Excel file: {path_to_load}")
+                        self.main_app.switch_to_scanner_and_load(path_to_load)
+                        return
+
+            # PRIORITY 5: Parse path from log_details (Fallback for older logs)
+            print(f"[DBLCLICK DEBUG] PRIORITY 5: Parsing path from log details")
             parsed_path_used = False
             # Updated regex to find any path-like string, matching new and old log formats.
             path_match = re.search(r"([A-Za-z]:\\[\S]+|[A-Za-z]:/[\S]+|\\\\\\[\S]+)", log_details)
@@ -287,12 +325,10 @@ class DatabasePanel(ttk.Frame):
                                        f"Excel-bestand niet gevonden op het pad vermeld in de log details:\n{parsed_base_path}")
                 return # Stop if we used parsed path and failed
 
-            # PRIORITY 4: Fallback to BarcodeMatch 'default_base_dir' (Basis map)
-            print(f"[DBLCLICK DEBUG] PRIORITY 4: Checking fallback 'default_base_dir'")
+            # PRIORITY 6: Fallback to BarcodeMatch 'default_base_dir' (Basis map)
+            print(f"[DBLCLICK DEBUG] PRIORITY 6: Checking fallback 'default_base_dir'")
             print(f"[DBLCLICK] Path not found in log details or file not at parsed path. Falling back to 'default_base_dir'.")
             
-            app_config = self.main_app.load_app_config()
-            print(f"[DBLCLICK DEBUG] App config loaded: {app_config}")
             default_bm_base_dir = app_config.get('default_base_dir', '')
             print(f"[DBLCLICK DEBUG] default_base_dir: '{default_bm_base_dir}'")
 
@@ -327,9 +363,73 @@ class DatabasePanel(ttk.Frame):
                 print(f"[DBLCLICK DEBUG] No Excel file found in any location")
                 messagebox.showwarning("Bestand niet gevonden (Fallback)",
                                        f"Excel-bestand '{excel_filename_original_fallback}' of '{excel_filename_updated_fallback}'\nniet gevonden in de geconfigureerde 'Basis map':\n{default_bm_base_dir}")
+        elif log_status == 'AFGEMELD':
+            print(f"[DBLCLICK DEBUG] Project is AFGEMELD, showing confirmation dialog")
+            # Show confirmation dialog for AFGEMELD projects
+            result = messagebox.askyesno(
+                "Project Afgemeld", 
+                f"Project '{project_name}' is al afgemeld.\nWilt u het nog steeds openen?",
+                icon='question'
+            )
+            
+            if result:  # User clicked Yes
+                print(f"[DBLCLICK DEBUG] User chose to open AFGEMELD project")
+                # Try to find the Excel file - it might be archived
+                path_to_load = None
+                
+                # First check if file still exists at original location
+                if file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')) and os.path.exists(file_path_from_db):
+                    path_to_load = file_path_from_db
+                    print(f"[DBLCLICK] Found Excel file at original location: {path_to_load}")
+                else:
+                    # Check archive location - BarcodeMatch creates "Archief" subdirectory
+                    print(f"[DBLCLICK DEBUG] Checking for archived files")
+                    excel_filename_base = project_name
+                    potential_archive_files = [
+                        f"{excel_filename_base}_updated.xlsx",
+                        f"{excel_filename_base}.xlsx"
+                    ]
+                    
+                    # Check multiple possible archive locations
+                    archive_locations = []
+                    
+                    # 1. If we have a directory path from DB, check "Archief" subdirectory
+                    if file_path_from_db and os.path.isdir(file_path_from_db):
+                        archive_locations.append(os.path.join(file_path_from_db, "Archief"))
+                    
+                    # 2. Check default_base_dir/Archief
+                    app_config = self.main_app.load_app_config()
+                    default_base_dir = app_config.get('default_base_dir', '')
+                    if default_base_dir and os.path.exists(default_base_dir):
+                        archive_locations.append(os.path.join(default_base_dir, "Archief"))
+                    
+                    print(f"[DBLCLICK DEBUG] Archive locations to check: {archive_locations}")
+                    
+                    for archive_dir in archive_locations:
+                        if os.path.exists(archive_dir):
+                            print(f"[DBLCLICK DEBUG] Checking archive directory: {archive_dir}")
+                            for filename in potential_archive_files:
+                                archive_path = os.path.join(archive_dir, filename)
+                                if os.path.exists(archive_path):
+                                    path_to_load = archive_path
+                                    print(f"[DBLCLICK] Found Excel in archive: {path_to_load}")
+                                    break
+                            if path_to_load:
+                                break
+                
+                if path_to_load:
+                    self.main_app.switch_to_scanner_and_load(path_to_load)
+                else:
+                    messagebox.showwarning(
+                        "Bestand niet gevonden",
+                        f"Excel-bestand voor project '{project_name}' niet gevonden.\n"
+                        "Het bestand is mogelijk gearchiveerd of verplaatst."
+                    )
+            else:
+                print(f"[DBLCLICK DEBUG] User chose not to open AFGEMELD project")
         else:
-            print(f"[DBLCLICK DEBUG] Not an OPEN or EXCEL_GENERATED status: {log_status}")
-            # Optionally, provide feedback if a non-OPEN item is double-clicked
+            print(f"[DBLCLICK DEBUG] Not a supported status for double-click: {log_status}")
+            # Optionally, provide feedback if a non-supported item is double-clicked
             pass
 
     def _sort_logs_tree(self, col):
@@ -699,6 +799,16 @@ class DatabasePanel(ttk.Frame):
             # Check if widget still exists
             if not self.logs_tree.winfo_exists():
                 return
+            
+            # Store the currently selected item's data for restoration
+            selected_item_data = None
+            selected_items = self.logs_tree.selection()
+            if selected_items:
+                try:
+                    # Get the values of the first selected item
+                    selected_item_data = self.logs_tree.item(selected_items[0], 'values')
+                except (tk.TclError, IndexError):
+                    selected_item_data = None
                 
             # Clear the tree
             for row in self.logs_tree.get_children():
@@ -739,7 +849,7 @@ class DatabasePanel(ttk.Frame):
                     continue
                 
                 # If status is not OPEN or AFGEMELD, skip (unless you want to include others)
-                if status not in ['OPEN', 'AFGEMELD', 'EXCEL_GENERATED']:
+                if status not in ['OPEN', 'AFGEMELD', 'EXCEL_GENERATED', 'BEZIG']:
                     continue
 
                 # Logic to keep the most relevant log: latest OPEN, or today's latest AFGEMELD
@@ -769,18 +879,38 @@ class DatabasePanel(ttk.Frame):
             if not sorted_log_items:
                 self.logs_tree.insert("", "end", values=("", "Geen relevante logs gevonden", "", "", user, ""))
             else:
+                new_item_to_select = None
                 for log_item in sorted_log_items:
                     # Format timestamp for display if needed, e.g., to exclude microseconds
                     display_ts = datetime.fromisoformat(log_item['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
                     file_path = log_item.get('file_path', '')
-                    self.logs_tree.insert("", "end", values=(
+                    item_values = (
                         display_ts,
                         log_item.get('status', ''),
                         log_item.get('project', ''),
                         log_item.get('details', ''),
                         log_item.get('user', ''),
                         file_path
-                    ))
+                    )
+                    new_item = self.logs_tree.insert("", "end", values=item_values)
+                    
+                    # Check if this item matches the previously selected item
+                    if (selected_item_data and len(selected_item_data) >= 3 and 
+                        len(item_values) >= 3 and
+                        # Match by project name and status (most reliable identifiers)
+                        selected_item_data[2] == item_values[2] and  # project
+                        selected_item_data[1] == item_values[1]):    # status
+                        new_item_to_select = new_item
+                
+                # Restore selection if we found a matching item
+                if new_item_to_select:
+                    try:
+                        self.logs_tree.selection_set(new_item_to_select)
+                        self.logs_tree.focus(new_item_to_select)
+                        # Ensure the selected item is visible
+                        self.logs_tree.see(new_item_to_select)
+                    except tk.TclError:
+                        pass  # Selection restoration failed, but that's okay
         except tk.TclError:
             # This can happen if the widget is destroyed while a refresh is pending
             pass # Silently ignore, as the panel is being closed

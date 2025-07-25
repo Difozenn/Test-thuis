@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/database)",
+      "Bash(python db_log_api.py)",
+      "Bash(python3 db_log_api.py)",
+      "Bash(python3 -m py_compile db_log_api.py)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cd /mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster)",
+      "Bash(python:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

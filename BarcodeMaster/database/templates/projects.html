@@ -1,8 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Projecten - BarcodeMaster{% endblock %}
+{% block title %}Projecten - Project Datalog{% endblock %}
 
 {% block extra_styles %}
+/* Section header styling (consistent with other pages) */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--secondary-blue);
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin: 0;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 5px 0 0 0;
+}
+
+/* Stats section styling (consistent with other pages) */
+.stats-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stats-section:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
 /* Search section */
 .search-section {
     background: white;
@@ -38,6 +88,47 @@
 .search-input:focus {
     border-color: var(--secondary-blue);
     box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Filter buttons */
+.filter-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+    background-color: var(--secondary-blue);
+    border-color: var(--secondary-blue);
+    color: white;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Enhanced search section */
+.search-section {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+}
+
+/* Table enhancements */
+.table-hover tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-display-name {
+    font-weight: 600;
+    color: var(--dark-blue);
 }
 
 /* Project stats */
@@ -159,180 +250,355 @@
     <p>Beheer en monitor alle projecten</p>
 </div>
 
-<!-- Search Section -->
+<!-- Enhanced Search Section -->
 <div class="search-section">
-    <div class="search-input-group">
-        <i class="fas fa-search"></i>
-        <input type="text" 
-               id="projectSearch" 
-               class="form-control search-input" 
-               placeholder="Zoek op project code, status of gebruiker...">
-    </div>
-</div>
-
-<!-- Statistics -->
-<div class="stats-row">
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
-            <i class="fas fa-folder"></i>
+    <div class="row g-3 align-items-center">
+        <div class="col-md-8">
+            <div class="search-input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       class="form-control search-input" 
+                       id="projectSearch" 
+                       placeholder="Zoek op project naam, klant, MO/SO nummer, status..."
+                       autocomplete="off"
+                       style="height: 55px; font-size: 1.2rem;">
+            </div>
         </div>
-        <div class="stat-value" id="total-projects">{{ total_projects|default(0) }}</div>
-        <div class="stat-label">Totaal Projecten</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(156, 39, 176, 0.1); color: #9c27b0;">
-            <i class="fas fa-repeat"></i>
+        <div class="col-md-4">
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary filter-btn active" data-filter="all">
+                    <i class="fas fa-list"></i> Alle
+                </button>
+                <button class="btn btn-outline-warning filter-btn" data-filter="active">
+                    <i class="fas fa-clock"></i> Actief
+                </button>
+                <button class="btn btn-outline-success filter-btn" data-filter="completed">
+                    <i class="fas fa-check"></i> Afgerond
+                </button>
+            </div>
         </div>
-        <div class="stat-value" id="rep-projects">{{ rep_variant_projects|default(0) }}</div>
-        <div class="stat-label">REP Projecten</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-value" id="in-progress">{{ in_progress|default(0) }}</div>
-        <div class="stat-label">In Behandeling</div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-value" id="completed-projects">{{ completed_projects|default(0) }}</div>
-        <div class="stat-label">Afgerond</div>
+    <!-- Search Results Summary -->
+    <div class="mt-3">
+        <small class="text-muted" id="search-summary">{{ projects|length }} projecten gevonden</small>
     </div>
 </div>
 
 <!-- Project List -->
-<div class="project-list">
-    <div class="card-header">
+<div class="project-list stats-section">
+    <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <div>
+            <h2 class="section-title">Alle Projecten</h2>
+            <p class="section-subtitle">Overzicht van alle geregistreerde projecten en hun voortgang</p>
+        </div>
+        <div style="margin-left: auto;">
+            <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
+                <option value="recent">Meest Recent</option>
+                <option value="oldest">Oudste Eerst</option>
+                <option value="code">Project Code</option>
+                <option value="customer">Klant</option>
+                <option value="status">Status</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-header" style="border-top: none;">
+    
+    <!-- Table view for better column layout -->
+    <div class="table-responsive">
+        <table class="table table-hover mb-0" id="projectsTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 30%;">Project</th>
+                    <th style="width: 20%;">Klant</th>
+                    <th style="width: 15%;">SO / MO</th>
+                    <th style="width: 10%;">Kleur</th>
+                    <th style="width: 10%;">Status</th>
+                    <th style="width: 15%;">Laatste Update</th>
+                </tr>
+            </thead>
+            <tbody id="projectListContent">
+                {% for project in projects %}
+                <tr onclick="window.location.href='/logs_project?project={{ project.code }}'" 
+                    style="cursor: pointer;" 
+                    data-project-code="{{ project.code }}"
+                    data-customer="{{ project.customer_name|default('') }}"
+                    data-mo="{{ project.mo_number|default('') }}"
+                    data-so="{{ project.so_number|default('') }}">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-folder me-2"></i>
+                            <div>
+                                <div class="fw-bold project-display-name" data-raw="{{ project.code }}">{{ project.code }}</div>
+                                <small class="text-muted">{{ project.event_count|default(0) }} events</small>
+                            </div>
+                            {% if project.is_rep_variant %}
+                            <span class="badge bg-primary ms-2" title="Repetitie Variant">REP</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if project.customer_name %}
+                            <strong>{{ project.customer_name }}</strong>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div>
+                            {% if project.so_number %}
+                                <div><small>SO:</small> <strong>{{ project.so_number }}</strong></div>
+                            {% endif %}
+                            {% if project.mo_number %}
+                                <div><small>MO:</small> <strong>{{ project.mo_number }}</strong></div>
+                            {% endif %}
+                            {% if not project.so_number and not project.mo_number %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if project.color %}
+                            <span class="badge bg-secondary">{{ project.color }}</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ project.status|lower }}">
+                            {{ project.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div>
+                            <div>{{ project.timestamp }}</div>
+                            <small class="text-muted">{{ project.user|default('Onbekend') }}</small>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="fas fa-folder-open mb-2"></i>
+                        <p class="mb-0">Geen projecten gevonden</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if pagination.total_pages > 1 %}
+    <div class="pagination-section">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Alle Projecten</h5>
-            <div>
-                <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
-                    <option value="recent">Meest Recent</option>
-                    <option value="oldest">Oudste Eerst</option>
-                    <option value="code">Project Code</option>
-                    <option value="status">Status</option>
+            <!-- Results info -->
+            <div class="text-muted">
+                <small>
+                    Pagina {{ pagination.page }} van {{ pagination.total_pages }} 
+                    ({{ ((pagination.page - 1) * pagination.per_page + 1) if pagination.total > 0 else 0 }}-{{ 
+                        (pagination.page * pagination.per_page) if (pagination.page * pagination.per_page) < pagination.total else pagination.total 
+                    }} van {{ pagination.total }} projecten)
+                </small>
+            </div>
+            
+            <!-- Pagination controls -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- Previous button -->
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+                        <a class="page-link" 
+                           href="{{ '?page=' + (pagination.prev_num|string) + '&per_page=' + (pagination.per_page|string) if pagination.has_prev else '#' }}"
+                           {{ 'tabindex="-1"' if not pagination.has_prev else '' }}>
+                            <i class="fas fa-chevron-left me-1"></i>Vorige
+                        </a>
+                    </li>
+                    
+                    <!-- Page numbers -->
+                    {% for page_num in pagination.pages %}
+                        <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                            <a class="page-link" 
+                               href="?page={{ page_num }}&per_page={{ pagination.per_page }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    
+                    <!-- Next button -->
+                    <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+                        <a class="page-link" 
+                           href="{{ '?page=' + (pagination.next_num|string) + '&per_page=' + (pagination.per_page|string) if pagination.has_next else '#' }}"
+                           {{ 'tabindex="-1"' if not pagination.has_next else '' }}>
+                            Volgende<i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <!-- Items per page selector -->
+            <div class="d-flex align-items-center">
+                <small class="text-muted me-2">Items per pagina:</small>
+                <select class="form-select form-select-sm" id="perPageSelect" style="width: auto;">
+                    <option value="10" {{ 'selected' if pagination.per_page == 10 else '' }}>10</option>
+                    <option value="20" {{ 'selected' if pagination.per_page == 20 else '' }}>20</option>
+                    <option value="50" {{ 'selected' if pagination.per_page == 50 else '' }}>50</option>
+                    <option value="100" {{ 'selected' if pagination.per_page == 100 else '' }}>100</option>
                 </select>
             </div>
         </div>
     </div>
-    
-    <div id="projectListContent">
-        {% for project in projects %}
-        <div class="project-item" onclick="window.location.href='/logs_project?project={{ project.code }}'">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="project-code">
-                        <i class="fas fa-folder"></i> {{ project.code }}
-                        {% if project.is_rep_variant %}
-                        <span class="badge bg-primary ms-2" title="Repetitie Variant">REP</span>
-                        {% endif %}
-                    </div>
-                    <div class="project-info">
-                        <div class="project-stat">
-                            <i class="fas fa-user"></i> {{ project.user|default('Onbekend') }}
-                        </div>
-                        <div class="project-stat">
-                            <i class="far fa-clock"></i> {{ project.timestamp }}
-                        </div>
-                        <div class="project-stat">
-                            <i class="fas fa-tasks"></i> {{ project.event_count|default(0) }} events
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <span class="status-badge status-{{ project.status|lower }}">
-                        {{ project.status }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="no-results">
-            <i class="fas fa-folder-open"></i>
-            <p>Geen projecten gevonden</p>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <div class="pagination-section">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm mb-0 justify-content-center">
-                <li class="page-item"><a class="page-link" href="#">Vorige</a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">Volgende</a></li>
-            </ul>
-        </nav>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Search functionality
-    document.getElementById('projectSearch').addEventListener('keyup', function(e) {
-        const searchValue = e.target.value.toLowerCase();
-        const projectItems = document.querySelectorAll('.project-item');
+    // Project name formatting function
+    function formatProjectDisplayName(projectCode) {
+        // Extract clean project name from raw project code
+        // Example: "MO06787_Dressing_A_deel2_(5-16)" -> "Dressing A deel2 (5-16)"
         
-        projectItems.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            if (text.includes(searchValue)) {
-                item.style.display = '';
+        // Remove MO code prefix (MO followed by digits and underscore)
+        let cleanName = projectCode.replace(/^MO\d+_/, '');
+        
+        // Replace underscores with spaces
+        cleanName = cleanName.replace(/_/g, ' ');
+        
+        // Capitalize first letter of each word
+        cleanName = cleanName.replace(/\b\w/g, letter => letter.toUpperCase());
+        
+        return cleanName;
+    }
+
+    // Initialize project display names
+    document.addEventListener('DOMContentLoaded', function() {
+        const projectDisplayNames = document.querySelectorAll('.project-display-name');
+        projectDisplayNames.forEach(element => {
+            const rawCode = element.getAttribute('data-raw');
+            const displayName = formatProjectDisplayName(rawCode);
+            element.textContent = displayName;
+        });
+    });
+
+    // Enhanced search functionality with filter support
+    let currentFilter = 'all';
+    
+    function filterAndSearch() {
+        const searchValue = document.getElementById('projectSearch').value.toLowerCase();
+        const projectRows = document.querySelectorAll('#projectsTable tbody tr:not(.no-results-row)');
+        let visibleCount = 0;
+        
+        projectRows.forEach(row => {
+            const projectCode = row.getAttribute('data-project-code') || '';
+            const customer = row.getAttribute('data-customer') || '';
+            const moNumber = row.getAttribute('data-mo') || '';
+            const soNumber = row.getAttribute('data-so') || '';
+            const displayName = row.querySelector('.project-display-name')?.textContent || '';
+            const status = row.querySelector('.status-badge')?.textContent.trim().toLowerCase() || '';
+            
+            // Apply filter
+            let matchesFilter = true;
+            if (currentFilter === 'active') {
+                matchesFilter = ['open', 'bezig'].includes(status);
+            } else if (currentFilter === 'completed') {
+                matchesFilter = ['afgemeld', 'afgerond'].includes(status);
+            }
+            
+            // Apply search
+            const searchableText = (projectCode + ' ' + customer + ' ' + moNumber + ' ' + soNumber + ' ' + displayName + ' ' + status).toLowerCase();
+            const matchesSearch = !searchValue || searchableText.includes(searchValue);
+            
+            if (matchesFilter && matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
             } else {
-                item.style.display = 'none';
+                row.style.display = 'none';
             }
         });
         
-        // Check if no results
-        const visibleItems = document.querySelectorAll('.project-item:not([style*="display: none"])');
-        if (visibleItems.length === 0) {
-            if (!document.querySelector('.no-results')) {
-                document.getElementById('projectListContent').innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-search"></i>
-                        <p>Geen projecten gevonden voor "${e.target.value}"</p>
-                    </div>
-                `;
-            }
+        // Update search summary
+        const searchSummary = document.getElementById('search-summary');
+        if (searchValue) {
+            searchSummary.textContent = `${visibleCount} projecten gevonden voor "${searchValue}"`;
+        } else {
+            searchSummary.textContent = `${visibleCount} projecten ${currentFilter === 'all' ? 'gevonden' : `(${currentFilter === 'active' ? 'actief' : 'afgerond'})`}`;
         }
+        
+        // Handle no results
+        let noResultsRow = document.querySelector('.no-results-row');
+        if (visibleCount === 0) {
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-row';
+                noResultsRow.innerHTML = `
+                    <td colspan="6" class="text-center py-4">
+                        <i class="fas fa-search mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p class="mb-0">Geen projecten gevonden</p>
+                        <small class="text-muted">Probeer andere zoektermen of filters</small>
+                    </td>
+                `;
+                document.querySelector('#projectsTable tbody').appendChild(noResultsRow);
+            }
+            noResultsRow.style.display = '';
+        } else if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+    }
+    
+    // Search input handler
+    document.getElementById('projectSearch').addEventListener('input', filterAndSearch);
+    
+    // Filter button handlers
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Update active filter
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.getAttribute('data-filter');
+            
+            // Apply filter
+            filterAndSearch();
+        });
     });
 
-    // Sort functionality
+    // Sort functionality for table
     document.getElementById('sortSelect').addEventListener('change', function(e) {
         const sortBy = e.target.value;
-        const projectItems = Array.from(document.querySelectorAll('.project-item'));
-        const container = document.getElementById('projectListContent');
+        const tbody = document.querySelector('#projectsTable tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.no-results-row)'));
         
-        projectItems.sort((a, b) => {
+        rows.sort((a, b) => {
             switch(sortBy) {
                 case 'recent':
                     // Sort by timestamp (most recent first)
-                    const timestampA = a.querySelector('.project-stat:nth-child(2)').textContent;
-                    const timestampB = b.querySelector('.project-stat:nth-child(2)').textContent;
+                    const timestampA = a.cells[5].textContent.trim();
+                    const timestampB = b.cells[5].textContent.trim();
                     return timestampB.localeCompare(timestampA);
                 
                 case 'oldest':
                     // Sort by timestamp (oldest first)
-                    const timestampA2 = a.querySelector('.project-stat:nth-child(2)').textContent;
-                    const timestampB2 = b.querySelector('.project-stat:nth-child(2)').textContent;
+                    const timestampA2 = a.cells[5].textContent.trim();
+                    const timestampB2 = b.cells[5].textContent.trim();
                     return timestampA2.localeCompare(timestampB2);
                 
                 case 'code':
                     // Sort by project code
-                    const codeA = a.querySelector('.project-code').textContent.trim();
-                    const codeB = b.querySelector('.project-code').textContent.trim();
+                    const codeA = a.getAttribute('data-project-code') || '';
+                    const codeB = b.getAttribute('data-project-code') || '';
                     return codeA.localeCompare(codeB);
+                
+                case 'customer':
+                    // Sort by customer name
+                    const customerA = a.getAttribute('data-customer') || '';
+                    const customerB = b.getAttribute('data-customer') || '';
+                    return customerA.localeCompare(customerB);
                 
                 case 'status':
                     // Sort by status
-                    const statusA = a.querySelector('.status-badge').textContent.trim();
-                    const statusB = b.querySelector('.status-badge').textContent.trim();
+                    const statusA = a.cells[4].textContent.trim();
+                    const statusB = b.cells[4].textContent.trim();
                     return statusA.localeCompare(statusB);
                 
                 default:
@@ -340,9 +606,22 @@
             }
         });
         
-        // Clear container and re-append sorted items
-        container.innerHTML = '';
-        projectItems.forEach(item => container.appendChild(item));
+        // Reorder rows in table
+        rows.forEach(row => tbody.appendChild(row));
+        
+        // Apply current filter/search after sorting
+        filterAndSearch();
     });
+
+    // Handle per-page selector change
+    const perPageSelect = document.getElementById('perPageSelect');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function(e) {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('per_page', e.target.value);
+            currentUrl.searchParams.set('page', '1'); // Reset to first page when changing per_page
+            window.location.href = currentUrl.toString();
+        });
+    }
 </script>
 {% endblock %}

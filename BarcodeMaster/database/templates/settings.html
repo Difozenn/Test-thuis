@@ -1,9 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}Instellingen - BarcodeMaster{% endblock %}
+{% block title %}Instellingen - Project Datalog{% endblock %}
 
 {% block extra_styles %}
 /* Settings page specific styling using existing design system */
+
+/* Stats section styling (consistent with other pages) */
+.stats-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stats-section:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    color: white;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin: 0;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 5px 0 0 0;
+}
 .settings-section {
     margin-bottom: 35px;
 }
@@ -17,8 +58,8 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--secondary-blue);
 }
 
 .section-header h6 {
@@ -433,6 +474,251 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Holiday Calendar Styles */
+.holiday-calendar-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--secondary-blue);
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.calendar-nav button {
+    background: var(--secondary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.calendar-nav button:hover {
+    background: var(--dark-blue);
+    transform: translateY(-1px);
+}
+
+.calendar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-blue);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #e9ecef;
+}
+
+.calendar-day-header {
+    background: var(--secondary-blue);
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.calendar-day {
+    background: white;
+    padding: 8px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background: #f8f9fa;
+}
+
+.calendar-day.other-month {
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+.calendar-day.today {
+    background: rgba(52, 152, 219, 0.1);
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.calendar-day.holiday {
+    background: #dc3545;
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.holiday:hover {
+    background: #c82333;
+}
+
+.calendar-day.company-day {
+    background: #ffc107;
+    color: #212529;
+    font-weight: 600;
+}
+
+.calendar-day.company-day:hover {
+    background: #e0a800;
+}
+
+.calendar-day.maintenance {
+    background: #6c757d;
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.maintenance:hover {
+    background: #5a6268;
+}
+
+.holiday-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--danger-color);
+}
+
+/* Holiday Management Panel */
+.holiday-management-panel {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+}
+
+.holiday-management-panel h6 {
+    color: var(--dark-blue);
+    margin-bottom: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+
+.current-holidays-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.holiday-item {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-left: 4px solid var(--secondary-blue);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.holiday-item:hover {
+    transform: translateX(3px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.holiday-item.holiday-type-holiday {
+    border-left-color: #dc3545;
+}
+
+.holiday-item.holiday-type-company {
+    border-left-color: #ffc107;
+}
+
+.holiday-item.holiday-type-maintenance {
+    border-left-color: #6c757d;
+}
+
+.holiday-info {
+    flex: 1;
+}
+
+.holiday-name {
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 2px;
+}
+
+.holiday-date {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.holiday-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-holiday-delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-holiday-delete:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+/* Calendar Legend */
+.calendar-legend {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
 {% endblock %}
 
 {% block content %}
@@ -440,7 +726,7 @@
     <!-- Page Header using existing pattern -->
     <div class="page-header">
         <h1><i class="fas fa-cogs"></i> Instellingen</h1>
-        <p>Configureer systeeminstellingen voor optimale werking van BarcodeMaster</p>
+        <p>Configureer systeeminstellingen voor optimale werking van Project Datalog</p>
     </div>
 
     <!-- Success/Error Messages -->
@@ -466,18 +752,19 @@
         </div>
     </div>
 
-    <!-- Work Hours Configuration Card -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-clock"></i> Werkuren</h5>
+    <!-- Work Hours Configuration Section -->
+    <div class="stats-section">
+        <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Werkuren Configuratie</h2>
+                <p class="section-subtitle">Beheer werkdagen, tijden en pauzes voor het hele systeem</p>
+            </div>
         </div>
         <div class="card-body">
             <!-- Work Days Section -->
-            <div class="settings-section">
-                <div class="section-header">
-                    <i class="fas fa-calendar-week"></i>
-                    <h6>Werkdagen en tijden</h6>
-                </div>
                 
                 <div class="day-config-grid">
                     <!-- Monday -->
@@ -582,10 +869,10 @@
 
             <!-- Break Times Section -->
             <div class="settings-section">
-                <div class="section-header">
-                    <i class="fas fa-coffee"></i>
-                    <h6>Pauzetijden</h6>
-                </div>
+                <h4 style="color: var(--dark-blue); margin-bottom: 15px;">
+                    <i class="fas fa-coffee" style="color: var(--primary-blue); margin-right: 10px;"></i>
+                    Pauzetijden
+                </h4>
                 
                 <div class="break-config-grid">
                     <div class="break-input-group">
@@ -619,13 +906,86 @@
         </div>
     </div>
 
-    <!-- Efficiency Targets Section -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-target"></i> Gebruiker Efficiëntie Doelen</h5>
+    <!-- Holiday Calendar Management -->
+    <div class="stats-section">
+        <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Feestdagen & Vrije Dagen</h2>
+                <p class="section-subtitle">Beheer feestdagen en vrije dagen die de werkuur berekeningen beïnvloeden</p>
+            </div>
         </div>
         <div class="card-body">
-            <p class="text-muted">Stel efficiëntie doelen in voor elke gebruiker om prestaties te volgen en historische trends te analyseren.</p>
+            
+            <!-- Calendar Section -->
+            <div class="settings-section">
+                <h4 style="color: var(--dark-blue); margin-bottom: 15px;">
+                    <i class="fas fa-calendar" style="color: var(--primary-blue); margin-right: 10px;"></i>
+                    Kalender Overzicht
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Calendar will be rendered here -->
+                        <div id="holiday-calendar" class="holiday-calendar-container">
+                            <!-- Calendar will be dynamically generated -->
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <!-- Holiday Management Panel -->
+                        <div class="holiday-management-panel">
+                            <h6>Feestdag Toevoegen</h6>
+                            <form id="add-holiday-form">
+                                <div class="mb-3">
+                                    <label for="holiday-date" class="form-label">Datum</label>
+                                    <input type="date" class="form-control" id="holiday-date" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="holiday-name" class="form-label">Naam</label>
+                                    <input type="text" class="form-control" id="holiday-name" placeholder="Bijv. Kerstmis" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="holiday-type" class="form-label">Type</label>
+                                    <select class="form-control" id="holiday-type">
+                                        <option value="holiday">Feestdag</option>
+                                        <option value="company">Vakantie</option>
+                                        <option value="maintenance">Onderhoud</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="holiday-recurring">
+                                        <label class="form-check-label" for="holiday-recurring">
+                                            Jaarlijks terugkerende feestdag
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Feestdag Toevoegen
+                                </button>
+                            </form>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Efficiency Targets Section -->
+    <div class="stats-section">
+        <div class="section-header">
+            <div class="section-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                <i class="fas fa-bullseye"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Gebruiker Efficiëntie Doelen</h2>
+                <p class="section-subtitle">Stel efficiëntie doelen in voor elke gebruiker om prestaties te volgen</p>
+            </div>
+        </div>
+        <div class="card-body">
             
             <!-- Efficiency Targets Grid -->
             <div id="efficiency-targets-container">
@@ -641,27 +1001,6 @@
         </div>
     </div>
 
-    <!-- User Management Section -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-users"></i> Gebruikersbeheer</h5>
-        </div>
-        <div class="card-body">
-            <p class="text-muted">Beheer gebruikers en hun configuratie-instellingen voor het systeem.</p>
-            
-            <!-- User Configuration Grid -->
-            <div id="user-management-container">
-                <!-- Dynamic user management will be loaded here -->
-            </div>
-            
-            <!-- Save Button -->
-            <div class="d-flex justify-content-end mt-4">
-                <button type="button" class="btn btn-primary" onclick="saveUserConfiguration()">
-                    <i class="fas fa-save"></i> Gebruikersconfiguratie Opslaan
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Future Settings Sections -->
     <!-- Additional settings cards can be added here -->
@@ -924,8 +1263,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load efficiency targets
     loadEfficiencyTargets();
     
-    // Load user management
-    loadUserManagement();
+    // Load holiday calendar
+    loadHolidayCalendar();
 });
 
 // Load efficiency targets from backend
@@ -956,32 +1295,20 @@ async function loadEfficiencyTargets() {
 // Display efficiency targets in UI
 async function displayEfficiencyTargets(targets) {
     const container = document.getElementById('efficiency-targets-container');
-    
-    // Get configured users from user config API
+
+    // Get users from scanner panel configuration
     let configuredUsers = [];
     try {
-        const response = await fetch('/api/settings/user-config');
-        const data = await response.json();
-        console.log('User config API response:', data); // Debug
-        if (data.success && data.users) {
-            // Get active users who have dashboard role
-            configuredUsers = data.users
-                .filter(user => user.active && user.roles && user.roles.includes('dashboard'))
-                .map(user => user.name);
-            console.log('Using configured users from user config:', configuredUsers); // Debug
-        }
+        const config = await fetch('/api/config');
+        const data = await config.json();
+        configuredUsers = data.scanner_panel_open_event_users || ['GANNOMAT', 'OPUS'];
     } catch (error) {
-        console.error('Could not load user configuration:', error);
+        console.error('Could not load users from config:', error);
+        configuredUsers = ['GANNOMAT', 'OPUS']; // Fallback
     }
-    
-    // If no users found, don't display anything
-    if (configuredUsers.length === 0) {
-        container.innerHTML = '<p class="text-muted">Geen actieve gebruikers gevonden. Configureer eerst gebruikers in de Gebruikersbeheer sectie.</p>';
-        return;
-    }
-    
+
     let html = '<div class="row">';
-    
+
     configuredUsers.forEach(user => {
         const currentTarget = targets[user] ? targets[user].target_items_per_hour : '';
         const lastUpdated = targets[user] ? new Date(targets[user].updated_date).toLocaleDateString('nl-NL') : 'Nooit';
@@ -1078,28 +1405,15 @@ function calculateTrend(history) {
 async function saveEfficiencyTargets() {
     console.log('SaveEfficiencyTargets function called'); // Debug
     
-    // Get configured users from user config API
+    // Get users from scanner panel configuration
     let configuredUsers = [];
     try {
-        const response = await fetch('/api/settings/user-config');
-        const data = await response.json();
-        console.log('User config response:', data); // Debug
-        if (data.success && data.users) {
-            // Get active users who have dashboard role
-            configuredUsers = data.users
-                .filter(user => user.active && user.roles && user.roles.includes('dashboard'))
-                .map(user => user.name);
-            console.log('Configured users with dashboard role:', configuredUsers); // Debug
-        }
+        const config = await fetch('/api/config');
+        const data = await config.json();
+        configuredUsers = data.scanner_panel_open_event_users || ['GANNOMAT', 'OPUS'];
     } catch (error) {
-        console.error('Could not load user configuration:', error);
-        showAlert('danger', 'Fout bij laden gebruikersconfiguratie');
-        return;
-    }
-    
-    if (configuredUsers.length === 0) {
-        showAlert('warning', 'Geen actieve gebruikers gevonden. Configureer eerst gebruikers in de Gebruikersbeheer sectie.');
-        return;
+        console.error('Could not load users from config:', error);
+        configuredUsers = ['GANNOMAT', 'OPUS']; // Fallback
     }
     
     const targets = {};
@@ -1148,202 +1462,262 @@ async function saveEfficiencyTargets() {
     });
 }
 
-// User Management Functions
-async function loadUserManagement() {
-    console.log('Loading user management...'); // Debug
+
+// Holiday Calendar Management Functions
+let currentCalendarDate = new Date();
+let holidays = {};
+
+async function loadHolidayCalendar() {
+    console.log('Loading holiday calendar...');
     try {
-        const response = await fetch('/api/settings/user-config');
+        // Load holidays for current year
+        const year = currentCalendarDate.getFullYear();
+        const response = await fetch(`/api/holidays?year=${year}`);
         const data = await response.json();
-        console.log('User config API response:', data); // Debug
-        if (data.success && data.users) {
-            displayUserManagement(data.users);
-        } else {
-            console.log('No user config data, displaying empty users'); // Debug
-            displayUserManagement([]);
+        
+        if (data.success) {
+            holidays = {};
+            data.holidays.forEach(holiday => {
+                holidays[holiday.date] = holiday;
+            });
+            console.log('Holidays loaded:', holidays);
         }
+        
+        // Render calendar
+        renderHolidayCalendar();
+        
     } catch (error) {
-        console.error('Error loading user management:', error);
-        showAlert('danger', 'Fout bij laden gebruikersbeheer');
-        // Still try to display empty users so the UI shows
-        displayUserManagement([]);
+        console.error('Error loading holiday calendar:', error);
+        showAlert('danger', 'Fout bij laden feestdagenkalender');
     }
 }
 
-async function displayUserManagement(users) {
-    const container = document.getElementById('user-management-container');
+function renderHolidayCalendar() {
+    const container = document.getElementById('holiday-calendar');
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
     
-    // Available processing types based on system architecture
-    const availableProcessingTypes = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING'];
+    // Month names in Dutch
+    const monthNames = [
+        'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+        'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
+    ];
     
-    let html = '<div class="user-management-content">';
-    html += '<div class="user-management-header">';
-    html += '<h6>Gebruikers Configuratie</h6>';
-    html += '<button type="button" class="btn btn-sm btn-primary" onclick="addNewUser()">';
-    html += '<i class="fas fa-plus"></i> Gebruiker Toevoegen';
-    html += '</button>';
-    html += '</div>';
+    // Day names in Dutch
+    const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
     
-    html += '<div class="user-list" id="user-list">';
-    
-    users.forEach((user, index) => {
-        html += '<div class="user-item" data-index="' + index + '">';
-        html += '<div class="user-item-content">';
-        html += '<div class="user-name">';
-        html += '<input type="text" class="form-control user-name-input" value="' + (user.name || '') + '" placeholder="Gebruikersnaam">';
-        html += '</div>';
-        html += '<div class="user-settings">';
-        html += '<div class="user-setting-item">';
-        html += '<label>Actief:</label>';
-        html += '<input type="checkbox" class="user-active-checkbox" ' + (user.active ? 'checked' : '') + '>';
-        html += '</div>';
-        html += '<div class="user-setting-item">';
-        html += '<label>Processing Type:</label>';
-        html += '<select class="form-control user-type-select">';
-        availableProcessingTypes.forEach(type => {
-            html += '<option value="' + type + '" ' + (user.type === type ? 'selected' : '') + '>' + type + '</option>';
-        });
-        html += '</select>';
-        html += '</div>';
-        html += '<div class="user-setting-item">';
-        html += '<label>Rollen:</label>';
-        html += '<div class="user-roles">';
-        html += '<label><input type="checkbox" class="user-role-scanner" ' + (user.roles && user.roles.includes('scanner') ? 'checked' : '') + '> Scanner</label>';
-        html += '<label><input type="checkbox" class="user-role-dashboard" ' + (user.roles && user.roles.includes('dashboard') ? 'checked' : '') + '> Dashboard</label>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '<div class="user-actions">';
-        html += '<button type="button" class="btn btn-sm btn-danger" onclick="removeUser(' + index + ')">';
-        html += '<i class="fas fa-trash"></i>';
-        html += '</button>';
-        html += '</div>';
-        html += '</div>';
-    });
-    
-    html += '</div>';
-    html += '</div>';
-    
-    container.innerHTML = html;
-}
-
-async function addNewUser() {
-    const userList = document.getElementById('user-list');
-    const userCount = userList.children.length;
-    
-    // Available processing types based on system architecture
-    const availableProcessingTypes = ['GEEN_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING'];
-    
-    let typeOptions = '';
-    availableProcessingTypes.forEach(type => {
-        typeOptions += `<option value="${type}">${type}</option>`;
-    });
-    
-    const newUserHtml = `
-        <div class="user-item" data-index="${userCount}">
-            <div class="user-item-content">
-                <div class="user-name">
-                    <input type="text" class="form-control user-name-input" value="" placeholder="Gebruikersnaam">
-                </div>
-                <div class="user-settings">
-                    <div class="user-setting-item">
-                        <label>Actief:</label>
-                        <input type="checkbox" class="user-active-checkbox" checked>
-                    </div>
-                    <div class="user-setting-item">
-                        <label>Processing Type:</label>
-                        <select class="form-control user-type-select">
-                            ${typeOptions}
-                        </select>
-                    </div>
-                    <div class="user-setting-item">
-                        <label>Rollen:</label>
-                        <div class="user-roles">
-                            <label><input type="checkbox" class="user-role-scanner" checked> Scanner</label>
-                            <label><input type="checkbox" class="user-role-dashboard" checked> Dashboard</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeUser(${userCount})">
-                    <i class="fas fa-trash"></i>
+    let html = `
+        <div class="calendar-header">
+            <div class="calendar-nav">
+                <button onclick="navigateCalendar(-1)" title="Vorige maand">
+                    <i class="fas fa-chevron-left"></i>
                 </button>
+            </div>
+            <div class="calendar-title">
+                ${monthNames[month]} ${year}
+            </div>
+            <div class="calendar-nav">
+                <button onclick="navigateCalendar(1)" title="Volgende maand">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="calendar-grid">
+    `;
+    
+    // Add day headers
+    dayNames.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+    });
+    
+    // Get first day of month and adjust for Monday start
+    const firstDay = new Date(year, month, 1);
+    let startDay = firstDay.getDay();
+    startDay = startDay === 0 ? 6 : startDay - 1; // Convert Sunday=0 to Monday=0
+    
+    // Get last day of month
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    
+    // Add previous month's trailing days
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const prevLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
+    
+    for (let i = startDay - 1; i >= 0; i--) {
+        const day = prevLastDay - i;
+        html += `<div class="calendar-day other-month">${day}</div>`;
+    }
+    
+    // Add current month days
+    const today = new Date();
+    for (let day = 1; day <= lastDay; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+        
+        let classes = ['calendar-day'];
+        if (isToday) classes.push('today');
+        
+        // Check if this date is a holiday
+        if (holidays[dateStr]) {
+            const holiday = holidays[dateStr];
+            classes.push(`${holiday.type === 'holiday' ? 'holiday' : holiday.type === 'company' ? 'company-day' : 'maintenance'}`);
+        }
+        
+        html += `<div class="${classes.join(' ')}" onclick="selectCalendarDate('${dateStr}')" title="${holidays[dateStr] ? holidays[dateStr].name : ''}">${day}</div>`;
+    }
+    
+    // Add next month's leading days
+    const totalCells = startDay + lastDay;
+    const remainingCells = 42 - totalCells; // 6 rows × 7 days = 42 cells
+    
+    for (let day = 1; day <= remainingCells && day <= 14; day++) {
+        html += `<div class="calendar-day other-month">${day}</div>`;
+    }
+    
+    html += `</div>`;
+    
+    // Add legend
+    html += `
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #dc3545;"></div>
+                <span>Feestdag</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffc107;"></div>
+                <span>Vakantie</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #6c757d;"></div>
+                <span>Onderhoud</span>
             </div>
         </div>
     `;
     
-    userList.insertAdjacentHTML('beforeend', newUserHtml);
+    container.innerHTML = html;
 }
 
-function removeUser(index) {
-    const userItem = document.querySelector(`[data-index="${index}"]`);
-    if (userItem) {
-        userItem.remove();
-        // Update indices of remaining items
-        const remainingItems = document.querySelectorAll('.user-item');
-        remainingItems.forEach((item, newIndex) => {
-            item.setAttribute('data-index', newIndex);
-            const removeBtn = item.querySelector('.btn-danger');
-            if (removeBtn) {
-                removeBtn.setAttribute('onclick', `removeUser(${newIndex})`);
-            }
-        });
+function navigateCalendar(direction) {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+    renderHolidayCalendar();
+}
+
+function selectCalendarDate(dateStr) {
+    // Fill the add holiday form with selected date
+    // Check if this date already has a holiday
+    if (holidays[dateStr]) {
+        // Show edit/delete options for existing holiday
+        const holiday = holidays[dateStr];
+        const confirmAction = confirm(`"${holiday.name}" (${holiday.type})\n\nKlik OK om te verwijderen, Cancel om te bewerken`);
+        
+        if (confirmAction) {
+            // Delete holiday
+            deleteHoliday(holiday.id);
+        } else {
+            // Edit holiday - fill form with existing data
+            document.getElementById('holiday-date').value = dateStr;
+            document.getElementById('holiday-name').value = holiday.name;
+            document.getElementById('holiday-type').value = holiday.type;
+            document.getElementById('holiday-recurring').checked = holiday.is_recurring || false;
+            
+            // Scroll to form
+            document.getElementById('add-holiday-form').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('holiday-name').focus();
+            
+            // Store holiday ID for updating instead of creating new
+            document.getElementById('add-holiday-form').dataset.editingId = holiday.id;
+        }
+    } else {
+        // Fill the add holiday form with selected date for new holiday
+        document.getElementById('holiday-date').value = dateStr;
+        document.getElementById('add-holiday-form').reset();
+        document.getElementById('holiday-date').value = dateStr; // Restore date after reset
+        delete document.getElementById('add-holiday-form').dataset.editingId;
     }
 }
 
-async function saveUserConfiguration() {
-    const userItems = document.querySelectorAll('.user-item');
-    const users = [];
-    
-    userItems.forEach(item => {
-        const nameInput = item.querySelector('.user-name-input');
-        const activeCheckbox = item.querySelector('.user-active-checkbox');
-        const typeSelect = item.querySelector('.user-type-select');
-        const scannerRole = item.querySelector('.user-role-scanner');
-        const dashboardRole = item.querySelector('.user-role-dashboard');
-        
-        if (nameInput.value.trim()) {
-            const roles = [];
-            if (scannerRole && scannerRole.checked) roles.push('scanner');
-            if (dashboardRole && dashboardRole.checked) roles.push('dashboard');
+
+// Add holiday form handler
+document.addEventListener('DOMContentLoaded', function() {
+    const addHolidayForm = document.getElementById('add-holiday-form');
+    if (addHolidayForm) {
+        addHolidayForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            users.push({
-                name: nameInput.value.trim(),
-                active: activeCheckbox.checked,
-                type: typeSelect.value,
-                roles: roles
-            });
-        }
-    });
+            const formData = {
+                date: document.getElementById('holiday-date').value,
+                name: document.getElementById('holiday-name').value,
+                type: document.getElementById('holiday-type').value,
+                is_recurring: document.getElementById('holiday-recurring').checked
+            };
+            
+            if (!formData.date || !formData.name) {
+                showAlert('warning', 'Vul alle verplichte velden in');
+                return;
+            }
+            
+            try {
+                showLoadingOverlay();
+                
+                const response = await fetch('/api/holidays', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                hideLoadingOverlay();
+                
+                if (data.success) {
+                    showAlert('success', 'Feestdag succesvol toegevoegd!');
+                    // Reset form
+                    addHolidayForm.reset();
+                    // Reload calendar
+                    loadHolidayCalendar();
+                } else {
+                    showAlert('danger', 'Fout bij toevoegen feestdag: ' + (data.error || 'Onbekende fout'));
+                }
+                
+            } catch (error) {
+                hideLoadingOverlay();
+                console.error('Error adding holiday:', error);
+                showAlert('danger', 'Netwerkfout bij toevoegen feestdag');
+            }
+        });
+    }
+});
+
+async function deleteHoliday(holidayId) {
+    if (!confirm('Weet je zeker dat je deze feestdag wilt verwijderen?')) {
+        return;
+    }
     
-    console.log('Saving user configuration:', users); // Debug
-    
-    showLoadingOverlay();
-    
-    fetch('/api/settings/user-config', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ users: users })
-    })
-    .then(response => response.json())
-    .then(data => {
+    try {
+        showLoadingOverlay();
+        
+        const response = await fetch(`/api/holidays/${holidayId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
         hideLoadingOverlay();
+        
         if (data.success) {
-            showAlert('success', 'Gebruikersconfiguratie succesvol opgeslagen');
-            // Reload user management to show updated data
-            loadUserManagement();
+            showAlert('success', 'Feestdag succesvol verwijderd!');
+            // Reload calendar
+            loadHolidayCalendar();
         } else {
-            showAlert('danger', 'Fout bij opslaan gebruikersconfiguratie: ' + (data.message || 'Onbekende fout'));
+            showAlert('danger', 'Fout bij verwijderen feestdag: ' + (data.error || 'Onbekende fout'));
         }
-    })
-    .catch(error => {
+        
+    } catch (error) {
         hideLoadingOverlay();
-        console.error('Error saving user configuration:', error);
-        showAlert('danger', 'Netwerkfout bij opslaan gebruikersconfiguratie');
-    });
+        console.error('Error deleting holiday:', error);
+        showAlert('danger', 'Netwerkfout bij verwijderen feestdag');
+    }
 }
 </script>
 {% endblock %}

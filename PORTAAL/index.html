@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="MINTJENS Database Portaal - Centraal toegangspunt voor HoutAnalyse, CNC DataLog en Project DataLog">
+    <meta name="author" content="MINTJENS">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;">
+    
+    <title>MINTJENS Database Portaal</title>
+    
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Header Bar -->
+        <div class="header-bar">
+            <div class="header-content">
+                <div class="company-brand">
+                    <img src="Mintjens.png" alt="MINTJENS" class="brand-logo">
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <main>
+                <div class="apps-grid">
+                    <!-- HoutAnalyse -->
+                    <a href="#" class="app-item" data-app="houtanalyse">
+                        <img src="HOUTANALYSE.png" alt="Hout Analyse" class="app-icon-image">
+                        <h3>Hout Analyse</h3>
+                    </a>
+
+                    <!-- CNC DataLog -->
+                    <a href="#" class="app-item" data-app="cnc-datalog">
+                        <img src="cnc_datalog.png" alt="CNC Datalog" class="app-icon-image">
+                        <h3>CNC Datalog</h3>
+                    </a>
+
+                    <!-- Project DataLog -->
+                    <a href="#" class="app-item" data-app="project-datalog">
+                        <img src="project_datalog.png" alt="Project Datalog" class="app-icon-image">
+                        <h3>Project Datalog</h3>
+                    </a>
+
+                    <!-- Future Expansion -->
+                    <a href="#" class="app-item placeholder" id="addNewModule">
+                        <div class="app-icon-placeholder">+</div>
+                        <h3>Nieuwe Module</h3>
+                    </a>
+                </div>
+            </main>
+
+            <footer>
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <p class="copyright">&copy; 2025 RVL. Alle rechten voorbehouden.</p>
+                    </div>
+                    <div class="footer-section">
+                        <span class="footer-item">
+                            <svg class="footer-icon" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 2L2 5V8C2 11.5 4.5 14.5 8 15C11.5 14.5 14 11.5 14 8V5L8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M6 8L7.5 9.5L10 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Beveiligde verbinding
+                        </span>
+                        <span class="footer-item">Versie 1.0.0</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Systeem Informatie</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-section">
+                    <h3>Over MINTJENS Database Portaal</h3>
+                    <p>Dit portaal biedt gecentraliseerde toegang tot alle MINTJENS database systemen. Elk systeem is geoptimaliseerd voor specifieke bedrijfsprocessen.</p>
+                </div>
+                <div class="info-section">
+                    <h3>Beschikbare Systemen</h3>
+                    <ul class="system-list">
+                        <li><strong>Hout Analyse:</strong> AI-gestuurde houtdetectie en kwaliteitsanalyse</li>
+                        <li><strong>CNC Datalog:</strong> Real-time machine monitoring en productiedata</li>
+                        <li><strong>Project Datalog:</strong> Geïntegreerd project- en resource management</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <h3>Support</h3>
+                    <p>Voor technische ondersteuning, neem contact op met de IT-afdeling.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Module Modal -->
+    <div id="newModuleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nieuwe Module Toevoegen</h2>
+                <button class="modal-close" id="closeNewModuleModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newModuleForm">
+                    <div class="form-group">
+                        <label for="moduleName">Module Naam</label>
+                        <input type="text" id="moduleName" name="moduleName" required placeholder="Bijv. INVENTORY MANAGER">
+                    </div>
+                    <div class="form-group">
+                        <label for="moduleUrl">Module URL</label>
+                        <input type="url" id="moduleUrl" name="moduleUrl" required placeholder="https://example.com/module">
+                    </div>
+                    <div class="form-group">
+                        <label for="moduleIcon">Icon Afbeelding</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="moduleIcon" name="moduleIcon" accept="image/*" required>
+                            <div class="file-upload-preview" id="iconPreview">
+                                <span>Klik om een afbeelding te selecteren</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelNewModule">Annuleren</button>
+                        <button type="submit" class="btn btn-primary">Module Toevoegen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

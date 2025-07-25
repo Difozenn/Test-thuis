@@ -60,6 +60,29 @@ def create_menu(root, main_app):
                 btn.config(bg=MENU_BG, relief=tk.FLAT)
 
     def open_panel_idx(idx):
+        # Get the current and new panel names
+        current_panel_name = None
+        if root._active_panel is not None:
+            # Find current panel name
+            for opt in MENU_OPTIONS:
+                if isinstance(root._active_panel, opt["panel"]):
+                    current_panel_name = opt["name"]
+                    break
+        
+        new_panel_name = MENU_OPTIONS[idx]["name"]
+        
+        # Handle session pause/resume for Scanner panel
+        from gui.panels.scanner_panel import ScannerPanel
+        
+        # If switching away from Scanner panel, pause the session
+        if (current_panel_name == "Scanner" and new_panel_name != "Scanner" and 
+            root._active_panel is not None and isinstance(root._active_panel, ScannerPanel)):
+            try:
+                if hasattr(root._active_panel, '_pause_session'):
+                    root._active_panel._pause_session()
+            except Exception as e:
+                print(f"[ERROR] Failed to pause scanner session: {e}")
+        
         # Hide any existing panel
         if root._active_panel is not None:
             try:
@@ -69,15 +92,25 @@ def create_menu(root, main_app):
                 pass  # Widget already destroyed
         
         # Show the persistent panel instance
-        panel_name = MENU_OPTIONS[idx]["name"]
-        panel = main_app.get_panel_by_name(panel_name)
+        panel = main_app.get_panel_by_name(new_panel_name)
         if panel:
             root._active_panel = panel  # Assign before pack!
             panel.pack(fill=tk.BOTH, expand=True)
+            
+            # If switching to Scanner panel, resume the session
+            if (new_panel_name == "Scanner" and current_panel_name != "Scanner" and 
+                isinstance(panel, ScannerPanel)):
+                try:
+                    if hasattr(panel, '_resume_session'):
+                        panel._resume_session()
+                except Exception as e:
+                    print(f"[ERROR] Failed to resume scanner session: {e}")
+            
             # If this is the DatabasePanel, start auto-refresh after packing
             from gui.panels.database_panel import DatabasePanel
             if isinstance(panel, DatabasePanel):
                 panel.start_auto_refresh()
+                
             root.active_tab.set(idx)
             update_tabs()
 

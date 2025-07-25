@@ -106,7 +106,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='BarcodeMaster',
+    name='ProjectDatalog',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}BarcodeMaster - Project {{ project }} Dashboard{% endblock %}
+{% block title %}Project Datalog - Project {{ project }} Dashboard{% endblock %}
 
 {% block extra_head %}
 <!-- Chart.js -->
@@ -68,6 +68,35 @@
     font-size: 0.8rem;
     color: #6c757d;
     margin-top: 8px;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    color: white;
+}
+
+/* Clickable metadata links */
+.text-muted a {
+    color: var(--primary-blue);
+    transition: all 0.2s ease;
+}
+
+.text-muted a:hover {
+    color: var(--secondary-blue);
+    text-decoration: underline !important;
+    transform: translateX(2px);
+    display: inline-block;
+}
+
+.text-muted a strong {
+    font-weight: 600;
 }
 
 /* Status badges consistent with other pages */
@@ -666,21 +695,21 @@
 <div class="enterprise-section">
     <div class="d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <div class="metric-icon" style="background-color: rgba(52, 152, 219, 0.1); color: var(--secondary-blue); margin-right: 15px;">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; margin-right: 15px;">
                 <i class="fas fa-project-diagram"></i>
             </div>
             <div>
-                <h3 class="mb-0" style="color: var(--dark-blue); font-weight: 600;">{{ project }}</h3>
+                <h3 class="mb-0" style="color: var(--dark-blue); font-weight: 600;" id="project-display-name">{{ project }}</h3>
                 <div class="mb-0">
                     {% if so_number or mo_number %}
                         <p class="mb-1 text-muted">
-                            {% if so_number %}Sales Order: <strong>{{ so_number }}</strong>{% endif %}
+                            {% if so_number %}Sales Order: <a href="/projects?search={{ so_number }}" class="text-decoration-none"><strong>{{ so_number }}</strong></a>{% endif %}
                             {% if so_number and mo_number %} | {% endif %}
                             {% if mo_number %}Manufacturing Order: <strong>{{ mo_number }}</strong>{% endif %}
                         </p>
                     {% endif %}
                     {% if customer_name %}
-                        <p class="mb-1 text-muted">Klant: <strong>{{ customer_name }}</strong></p>
+                        <p class="mb-1 text-muted">Klant: <a href="/projects?search={{ customer_name | urlencode }}" class="text-decoration-none"><strong>{{ customer_name }}</strong></a></p>
                     {% endif %}
                     {% if color %}
                         <p class="mb-1 text-muted">Kleur: <strong>{{ color }}</strong></p>
@@ -707,7 +736,7 @@
 <div class="enterprise-grid section-spacing">
     <div class="enterprise-card">
         <div class="metric-header">
-            <div class="metric-icon" style="background-color: rgba(26, 115, 232, 0.1); color: var(--info-color);">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white;">
                 <i class="fas fa-clock"></i>
             </div>
             <div class="metric-content">
@@ -720,7 +749,7 @@
     
     <div class="enterprise-card">
         <div class="metric-header">
-            <div class="metric-icon" style="background-color: rgba(255, 193, 7, 0.1); color: var(--warning-color);">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white;">
                 <i class="fas fa-pause-circle"></i>
             </div>
             <div class="metric-content">
@@ -728,12 +757,12 @@
                 <p>Totale Idle Tijd</p>
             </div>
         </div>
-        <div class="metric-trend text-muted small" id="idle-time-info" style="line-height: 1.4;">Tijd tussen werk handoffs</div>
+        <div class="metric-trend text-muted small" id="idle-time-info" style="line-height: 1.4;">Totale project tijd minus werk tijd</div>
     </div>
     
     <div class="enterprise-card">
         <div class="metric-header">
-            <div class="metric-icon" style="background-color: rgba(30, 142, 62, 0.1); color: var(--success-color);">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;">
                 <i class="fas fa-user-clock"></i>
             </div>
             <div class="metric-content">
@@ -746,12 +775,12 @@
     
     <div class="enterprise-card">
         <div class="metric-header">
-            <div class="metric-icon" style="background-color: rgba(156, 39, 176, 0.1); color: #9c27b0;">
-                <i class="fas fa-boxes"></i>
+            <div class="metric-icon" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white;">
+                <i class="fas fa-cogs"></i>
             </div>
             <div class="metric-content">
                 <h3 id="total-items-completed">-</h3>
-                <p>Items</p>
+                <p>Aantal bewerkingen</p>
             </div>
         </div>
         <div class="metric-trend" id="items-breakdown">Verdeling per gebruiker</div>
@@ -759,23 +788,29 @@
     
     <div class="enterprise-card">
         <div class="metric-header">
-            <div class="metric-icon" style="background-color: rgba(249, 171, 0, 0.1); color: var(--warning-color);">
-                <i class="fas fa-trophy"></i>
+            <div class="metric-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                <i class="fas fa-boxes"></i>
             </div>
             <div class="metric-content">
-                <h3 id="performance-score">-</h3>
-                <p>Performance Score</p>
+                <h3 id="final-items-count">-</h3>
+                <p>Items</p>
             </div>
         </div>
-        <div class="metric-trend" id="performance-info" style="font-size: 0.75rem;">-</div>
+        <div class="metric-trend" id="final-items-info">Laatste gebruiker in keten</div>
     </div>
+    
 </div>
 
 <!-- Enterprise Workflow Status -->
 <div class="enterprise-section section-spacing">
     <div class="section-header">
         <div class="d-flex justify-content-between align-items-center">
-            <h4><i class="fas fa-sitemap"></i> Workflow Status & Progress</h4>
+            <div class="d-flex align-items-center">
+                <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; margin-right: 15px;">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <h4 class="mb-0">Workflow Status & Progress</h4>
+            </div>
             <div id="overall-status" class="badge bg-secondary">Analyseren...</div>
         </div>
     </div>
@@ -822,7 +857,12 @@
 <!-- Gebruiker Performance Analyse -->
 <div class="enterprise-section section-spacing">
     <div class="section-header">
-        <h4><i class="fas fa-user-chart"></i> Gebruiker Performance Analyse</h4>
+        <div class="d-flex align-items-center">
+            <div class="section-icon" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; margin-right: 15px;">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h4 class="mb-0">Gebruiker Performance Analyse</h4>
+        </div>
     </div>
     <div id="user-performance-grid" class="row">
         <!-- Dynamically populated user performance cards -->
@@ -838,7 +878,12 @@
             <!-- Professional Header with Controls -->
             <div class="section-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4><i class="fas fa-list-alt"></i> Project Activiteiten Log</h4>
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; margin-right: 15px;">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <h4 class="mb-0">Project Activiteiten Log</h4>
+                    </div>
                     <div class="d-flex align-items-center gap-3">
                         <div class="text-muted small">
                             <span id="results-count">{{ log_entries|length }}</span> events
@@ -898,15 +943,13 @@
 
             <!-- Pagination -->
             <nav aria-label="Pagination">
-                <ul class="pagination">
+                <ul class="pagination" id="pagination-container">
                     <li class="page-item" id="prev-page">
                         <a class="page-link" href="#" onclick="changePage(-1)">
                             <i class="fas fa-chevron-left"></i> Vorige
                         </a>
                     </li>
-                    <li class="page-item active">
-                        <span class="page-link" id="current-page">1</span>
-                    </li>
+                    <!-- Page numbers will be dynamically inserted here -->
                     <li class="page-item" id="next-page">
                         <a class="page-link" href="#" onclick="changePage(1)">
                             Volgende <i class="fas fa-chevron-right"></i>
@@ -922,7 +965,12 @@
         <div class="enterprise-section">
             <div class="section-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4><i class="fas fa-rss"></i> Live Activiteit</h4>
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-right: 15px;">
+                            <i class="fas fa-rss"></i>
+                        </div>
+                        <h4 class="mb-0">Live Activiteit</h4>
+                    </div>
                     <span class="badge bg-success d-flex align-items-center gap-1" id="live-indicator">
                         <i class="fas fa-circle" style="font-size: 0.6rem;"></i> LIVE
                     </span>
@@ -956,6 +1004,22 @@ let efficiencyTargets = {};
 
 // Helper Functions
 let userProcessingTypes = {}; // Will be loaded from config
+
+function formatProjectDisplayName(projectCode) {
+    // Extract clean project name from raw project code
+    // Example: "MO06787_Dressing_A_deel2_(5-16)" -> "Dressing A deel2 (5-16)"
+    
+    // Remove MO code prefix (MO followed by digits and underscore)
+    let cleanName = projectCode.replace(/^MO\d+_/, '');
+    
+    // Replace underscores with spaces
+    cleanName = cleanName.replace(/_/g, ' ');
+    
+    // Capitalize first letter of each word
+    cleanName = cleanName.replace(/\b\w/g, letter => letter.toUpperCase());
+    
+    return cleanName;
+}
 
 async function loadUserProcessingTypes() {
     try {
@@ -1078,6 +1142,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializePage() {
     console.log('Initializing Logs Project Page');
+    
+    // Format project display name
+    const projectCode = '{{ project }}';
+    const displayName = formatProjectDisplayName(projectCode);
+    document.getElementById('project-display-name').textContent = displayName;
     
     // Load user processing types first
     await loadUserProcessingTypes();
@@ -1367,13 +1436,47 @@ function renderTimelineView() {
 
 function updatePagination() {
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    
-    document.getElementById('current-page').textContent = currentPage;
-    
-    // Update prev/next buttons
+    const paginationContainer = document.getElementById('pagination-container');
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
     
+    // Remove existing page number items except prev and next buttons
+    const pageItems = paginationContainer.querySelectorAll('.page-item:not(#prev-page):not(#next-page)');
+    pageItems.forEach(item => item.remove());
+    
+    // Create page number items
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if end page is at maximum
+    if (endPage === totalPages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Insert page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.classList.add('page-item');
+        if (i === currentPage) {
+            pageItem.classList.add('active');
+        }
+        
+        const pageLink = document.createElement('a');
+        pageLink.classList.add('page-link');
+        pageLink.href = '#';
+        pageLink.textContent = i;
+        pageLink.onclick = function() {
+            currentPage = i;
+            renderCurrentView();
+            return false;
+        };
+        
+        pageItem.appendChild(pageLink);
+        paginationContainer.insertBefore(pageItem, nextBtn);
+    }
+    
+    // Update prev/next buttons
     if (currentPage <= 1) {
         prevBtn.classList.add('disabled');
     } else {
@@ -1645,11 +1748,7 @@ function updateWorkflowStatus() {
                     event.event === 'OPEN' || event.status === 'OPEN'
                 );
                 
-                if (hasOpenEvent) {
-                    // User has OPEN status - work received but not started
-                    stepElement.classList.add('processing');
-                    stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
-                } else if (latestEvent.status === 'BEZIG' || latestEvent.event === 'PROJECT_START' || latestEvent.event === 'SESSION_START') {
+                if (latestEvent.status === 'BEZIG' || latestEvent.event === 'PROJECT_START' || latestEvent.event === 'SESSION_START') {
                     // Check if user has an active batch session
                     const hasActiveBatchSession = sessionsData.some(session => 
                         session.user === user && 
@@ -1669,6 +1768,10 @@ function updateWorkflowStatus() {
                     if (!currentActiveUser) {
                         currentActiveUser = user;
                     }
+                } else if (hasOpenEvent) {
+                    // User has OPEN status - work received but not started
+                    stepElement.classList.add('processing');
+                    stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
                 } else {
                     // Check if user has an active session to determine if they're actually working
                     const hasActiveSession = sessionsData.some(session => 
@@ -1736,80 +1839,119 @@ async function updatePerformanceMetrics() {
     
     // Calculate from sessions data for accuracy
     const totalItems = sessionsData.reduce((sum, session) => sum + (session.item_count || 0), 0);
-    const uniqueUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
+    // Get users from logs and ensure all configured users are included
+    const logUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
+    const uniqueUsers = [...new Set([...logUsers, ...configuredUsers])];
     
-    // Bereken totale projecttijd (eerste log tot laatste AFGEROND binnen werktijden)
+    // Bereken totale projecttijd (eerste event van eerste user tot laatste AFGEMELD event van alle users binnen werktijden)
     let projectStartTime = null;
     let projectEndTime = null;
     
-    // Calculate project time using ONLY session times (not events)
+    // Calculate project time using EVENT LOGS (not session times) as per user requirements
     const sortedLogs = [...logData].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    if (sessionsData.length > 0) {
-        // Sort all sessions by start time
-        const sortedSessions = [...sessionsData].sort((a, b) => 
-            new Date(a.start_time) - new Date(b.start_time)
+    if (sortedLogs.length > 0) {
+        // Project start: first event from any user
+        projectStartTime = new Date(sortedLogs[0].timestamp);
+        
+        // Project end: find the last AFGEMELD event from all users
+        let lastAfgemeldTime = null;
+        let hasActiveWork = false;
+        
+        // Look for the latest AFGEMELD event from any user
+        const afgemeldLogs = sortedLogs.filter(log => 
+            log.event === 'AFGEMELD' || log.event === 'CLOSED'
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        if (afgemeldLogs.length > 0) {
+            lastAfgemeldTime = new Date(afgemeldLogs[0].timestamp);
+        }
+        
+        // Check if there are any active sessions or recent activity after the last AFGEMELD
+        const hasActiveSessions = sessionsData.some(session => 
+            session.status === 'active' || !session.end_time
         );
         
-        // Project start: earliest session start
-        projectStartTime = new Date(sortedSessions[0].start_time);
+        // Check for recent activity (logs after last AFGEMELD)
+        const recentActivityAfterAfgemeld = lastAfgemeldTime ? 
+            sortedLogs.some(log => new Date(log.timestamp) > lastAfgemeldTime && 
+                           log.event !== 'AFGEMELD' && log.event !== 'CLOSED') : false;
         
-        // Project end: latest session end (or current time if any session is active)
-        let latestEndTime = null;
-        let hasActiveSessions = false;
-        
-        sortedSessions.forEach(session => {
-            // Only consider active sessions that are actually relevant to this project
-            const isProjectSpecificSession = session.project === '{{ project }}';
-            const isBatchSessionThatProcessedProject = session.session_type === 'SCANNER' && 
-                (session.project === null || session.project === '') &&
-                // Check if this SCANNER session actually processed this project
-                logData.some(log => log.user === session.user && 
-                            log.project === '{{ project }}' &&
-                            new Date(log.timestamp) >= new Date(session.start_time) &&
-                            (!session.end_time || new Date(log.timestamp) <= new Date(session.end_time)));
-            
-            const isRelevantActiveSession = (session.status === 'active' || !session.end_time) && 
-                (isProjectSpecificSession || isBatchSessionThatProcessedProject);
-            
-            if (isRelevantActiveSession) {
-                hasActiveSessions = true;
-            } else if (session.end_time) {
-                const endTime = new Date(session.end_time);
-                if (!latestEndTime || endTime > latestEndTime) {
-                    latestEndTime = endTime;
-                }
-            }
-        });
-        
-        if (hasActiveSessions) {
+        if (hasActiveSessions || recentActivityAfterAfgemeld || !lastAfgemeldTime) {
             // Project still in progress - use current time
             projectEndTime = new Date();
-        } else if (latestEndTime) {
-            // All sessions completed - use latest end time
-            projectEndTime = latestEndTime;
         } else {
-            // Fallback
-            projectEndTime = new Date();
+            // All users have AFGEMELD - use last AFGEMELD time
+            projectEndTime = lastAfgemeldTime;
         }
-    } else if (sortedLogs.length > 0) {
-        // No sessions - fallback to log times
-        projectStartTime = new Date(sortedLogs[0].timestamp);
-        projectEndTime = new Date(sortedLogs[sortedLogs.length - 1].timestamp);
+    } else {
+        // No logs - fallback to current time
+        projectStartTime = new Date();
+        projectEndTime = new Date();
     }
     
-    // Store wall clock time for later adjustment
-    const wallClockMinutes = calculateWorkMinutes(projectStartTime, projectEndTime);
+    // Get accurate project time from server using event logs and work hours
+    let actualProjectMinutes = 0;
+    console.log('Starting project time calculation...');
+    console.log('Project start time:', projectStartTime);
+    console.log('Project end time:', projectEndTime);
     
-    // Initially show wall clock time (will be adjusted after userStats calculation)
-    const wallClockHours = Math.floor(wallClockMinutes / 60);
-    const wallClockMins = wallClockMinutes % 60;
-    document.getElementById('total-project-time').textContent = `${wallClockHours}h ${wallClockMins}m`;
+    try {
+        const projectName = '{{ project }}';
+        console.log('Fetching time metrics for project:', projectName);
+        const timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics`);
+        console.log('API response status:', timeResponse.status);
+        
+        if (!timeResponse.ok) {
+            throw new Error(`API returned status ${timeResponse.status}`);
+        }
+        
+        const timeData = await timeResponse.json();
+        console.log('API response data:', timeData);
+        
+        if (timeData.success && typeof timeData.total_project_minutes === 'number') {
+            actualProjectMinutes = timeData.total_project_minutes;
+            console.log('Server-calculated project time:', actualProjectMinutes, 'minutes');
+        } else {
+            console.log('API did not return valid project time, using fallback');
+            // Fallback to client-side calculation
+            if (projectStartTime && projectEndTime) {
+                actualProjectMinutes = calculateWorkMinutes(projectStartTime, projectEndTime);
+                console.log('Fallback client-calculated project time:', actualProjectMinutes, 'minutes');
+            } else {
+                console.warn('No valid project times available, using 0');
+                actualProjectMinutes = 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching server project time:', error);
+        if (projectStartTime && projectEndTime) {
+            actualProjectMinutes = calculateWorkMinutes(projectStartTime, projectEndTime);
+            console.log('Exception fallback calculated time:', actualProjectMinutes, 'minutes');
+        } else {
+            console.warn('No fallback times available, using 0');
+            actualProjectMinutes = 0;
+        }
+    }
     
-    // Calculate idle time between sessions (not events)
-    const idleTimeAnalysis = calculateIdleTimeFromSessions(sessionsData);
-    console.log('Idle time analysis:', idleTimeAnalysis);
-    displayIdleTimeMetrics(idleTimeAnalysis);
+    // Ensure actualProjectMinutes is a valid number
+    if (isNaN(actualProjectMinutes) || actualProjectMinutes < 0) {
+        console.warn('Invalid project minutes calculated, setting to 0');
+        actualProjectMinutes = 0;
+    }
+    
+    // Display initial project time with safety checks
+    const projectHours = Math.floor(actualProjectMinutes / 60) || 0;
+    const projectMins = Math.round(actualProjectMinutes % 60) || 0;
+    document.getElementById('total-project-time').textContent = `${projectHours}h ${projectMins}m`;
+    
+    // Initial display - will be updated after API call
+    document.getElementById('total-work-time').textContent = '0h 0m';
+    document.getElementById('total-idle-time').textContent = `${projectHours}h ${projectMins}m`;
+    
+    // Idle time will be calculated and updated after API call
+    
+    // Idle time info will be updated after API call
     
     // Debug: Log sessions data to console for verification
     console.log('Sessions data for debugging:', sessionsData);
@@ -1959,43 +2101,99 @@ async function updatePerformanceMetrics() {
         });
     }
     
-    // Totale werktijd (som van alle sessietijden) - handle IN_PROGRESS values
-    const totalSessionMinutes = Object.values(userStats).reduce((sum, user) => {
-        // Skip IN_PROGRESS sessions in total time calculation
-        if (user.sessionMinutes === 'IN_PROGRESS') {
-            return sum;
+    // Calculate total session minutes NOW that userStats is populated
+    let totalSessionMinutes = 0;
+    console.log('Calculating total session minutes from userStats:', userStats);
+    
+    Object.entries(userStats).forEach(([userName, user]) => {
+        console.log(`Processing user ${userName}:`, user);
+        
+        if (typeof user.sessionMinutes === 'number' && !isNaN(user.sessionMinutes)) {
+            // Completed sessions - use actual work_duration_minutes
+            console.log(`  Adding ${user.sessionMinutes} minutes for ${userName}`);
+            totalSessionMinutes += user.sessionMinutes;
+        } else if (user.sessionMinutes === 'IN_PROGRESS') {
+            // Active sessions - calculate elapsed time from first log
+            const now = new Date();
+            const userLogs = logData.filter(log => log.user === userName).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            if (userLogs.length > 0) {
+                const startTime = new Date(userLogs[0].timestamp);
+                const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
+                console.log(`  Adding ${elapsedMinutes} elapsed minutes for active user ${userName}`);
+                totalSessionMinutes += elapsedMinutes;
+            }
+        } else {
+            console.log(`  Skipping user ${userName} - invalid sessionMinutes:`, user.sessionMinutes);
         }
-        return sum + (user.sessionMinutes || 0);
-    }, 0);
-    const sessionHours = Math.floor(totalSessionMinutes / 60);
-    const sessionMins = Math.round(totalSessionMinutes % 60);
-    document.getElementById('total-work-time').textContent = `${sessionHours}h ${sessionMins}m`;
-    
-    // Calculate adjusted project time using allocated times
-    // This accounts for batch processing overhead by using actual allocated time per user
-    let adjustedProjectMinutes = totalSessionMinutes + idleTimeAnalysis.totalIdleMinutes;
-    
-    // Add small transition gaps that aren't counted as major idle time
-    const transitionGaps = wallClockMinutes - (totalSessionMinutes + idleTimeAnalysis.totalIdleMinutes);
-    if (transitionGaps > 0 && transitionGaps < 10) {
-        // Only add reasonable transition gaps (under 10 minutes)
-        adjustedProjectMinutes += transitionGaps;
-    }
-    
-    // Update total project time with adjusted calculation
-    const adjustedHours = Math.floor(adjustedProjectMinutes / 60);
-    const adjustedMins = Math.round(adjustedProjectMinutes % 60);
-    document.getElementById('total-project-time').textContent = `${adjustedHours}h ${adjustedMins}m`;
-    
-    console.log('Project time calculation:', {
-        wallClockMinutes,
-        totalWorkMinutes: totalSessionMinutes,
-        idleMinutes: idleTimeAnalysis.totalIdleMinutes,
-        transitionGaps,
-        adjustedProjectMinutes
     });
     
-    // Items voltooid - sum up all user items from userStats
+    // Ensure totalSessionMinutes is a valid number
+    if (isNaN(totalSessionMinutes) || totalSessionMinutes < 0) {
+        console.warn('Invalid totalSessionMinutes calculated, setting to 0:', totalSessionMinutes);
+        totalSessionMinutes = 0;
+    }
+    
+    console.log('Final totalSessionMinutes:', totalSessionMinutes);
+    
+    // Display total work time with safety checks
+    const sessionHours = Math.floor(totalSessionMinutes / 60) || 0;
+    const sessionMins = Math.round(totalSessionMinutes % 60) || 0;
+    document.getElementById('total-work-time').textContent = `${sessionHours}h ${sessionMins}m`;
+    console.log('Displaying work time:', `${sessionHours}h ${sessionMins}m`);
+    
+    // Ensure totalSessionMinutes is valid
+    if (isNaN(totalSessionMinutes) || totalSessionMinutes < 0) {
+        console.warn('Invalid session minutes, setting to 0');
+        totalSessionMinutes = 0;
+    }
+    
+    // Calculate and display idle time using the accurate project time
+    const idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
+    const idleHours = Math.floor(idleMinutes / 60) || 0;
+    const idleMins = Math.round(idleMinutes % 60) || 0;
+    document.getElementById('total-idle-time').textContent = `${idleHours}h ${idleMins}m`;
+    
+    console.log('Idle time calculation:', {
+        actualProjectMinutes,
+        totalSessionMinutes,
+        idleMinutes,
+        displayedAs: `${idleHours}h ${idleMins}m`
+    });
+    
+    // Update idle time info percentage - use consistent logic
+    const idleTimeInfo = document.getElementById('idle-time-info');
+    if (idleTimeInfo) {
+        // If displayed idle time is 0h 0m, then percentage should also be 0%
+        let idlePercentage = 0;
+        if (idleHours > 0 || idleMins > 0) {
+            // Only calculate percentage if there's actually displayed idle time
+            idlePercentage = actualProjectMinutes > 0 ? Math.round((idleMinutes / actualProjectMinutes) * 100) : 0;
+        }
+        
+        console.log('Idle percentage calculation:', {
+            idleHours,
+            idleMins,
+            idleMinutes,
+            actualProjectMinutes,
+            calculatedPercentage: idlePercentage
+        });
+        
+        idleTimeInfo.innerHTML = `${idlePercentage}% van totale project tijd`;
+    }
+    
+    // Update total project time display (already set above, but ensure consistency)
+    const finalProjectHours = Math.floor(actualProjectMinutes / 60) || 0;
+    const finalProjectMins = Math.round(actualProjectMinutes % 60) || 0;
+    document.getElementById('total-project-time').textContent = `${finalProjectHours}h ${finalProjectMins}m`;
+    
+    console.log('Project time calculation:', {
+        actualProjectMinutes,
+        totalWorkMinutes: totalSessionMinutes,
+        idleMinutes: idleMinutes,
+        calculationMethod: 'server-side event-based'
+    });
+    
+    // Aantal bewerkingen - sum up all user items from userStats
     const actualTotalItems = Object.values(userStats).reduce((sum, user) => sum + (user.items || 0), 0);
     document.getElementById('total-items-completed').textContent = actualTotalItems.toString();
     const itemsBreakdown = Object.entries(userStats)
@@ -2004,57 +2202,41 @@ async function updatePerformanceMetrics() {
         .slice(0, 3)
         .map(([user, stats]) => `${user}: ${stats.items}`)
         .join(' | ');
-    document.getElementById('items-breakdown').textContent = itemsBreakdown || 'Geen items voltooid';
+    document.getElementById('items-breakdown').textContent = itemsBreakdown || 'Geen bewerkingen voltooid';
     
-    // Performance Score berekening op basis van team gemiddelde vs efficiency targets
-    // Use actualTotalItems instead of totalItems for accuracy
-    const avgItemsPerHour = totalSessionMinutes > 0 ? (actualTotalItems / totalSessionMinutes) * 60 : 0;
+    // Items - calculate final items count from the ACTUAL last user in the processing chain
+    // The chain is defined in config: ["NESTING", "ACCURA", "OPUS", "KL GANNOMAT", "BOERE"]
+    let finalItemCount = 0;
+    let finalItemUser = null;
     
-    // Calculate team baseline from efficiency targets instead of made-up numbers
-    let teamTargetAvg = 0;
-    if (efficiencyTargets && Object.keys(efficiencyTargets).length > 0) {
-        // Use average of all configured efficiency targets
-        const targetValues = Object.values(efficiencyTargets).map(target => target.target_items_per_hour);
-        teamTargetAvg = targetValues.reduce((sum, val) => sum + val, 0) / targetValues.length;
-        console.log('Team targets loaded:', efficiencyTargets);
-        console.log('Team target average:', teamTargetAvg.toFixed(1), 'items/hour');
-    } else {
-        // Fallback: if no targets configured, use current performance or reasonable default
-        teamTargetAvg = avgItemsPerHour > 0 ? avgItemsPerHour : 20;
-        console.log('No efficiency targets found, using fallback:', teamTargetAvg.toFixed(1), 'items/hour');
-    }
-    
-    // Score is gebaseerd op performance t.o.v. efficiency targets
-    let score;
-    if (totalSessionMinutes === 0 || actualTotalItems === 0) {
-        // No work done yet
-        score = 0;
-    } else if (avgItemsPerHour === 0) {
-        score = 0;
-    } else {
-        // Performance ratio compared to team target average
-        const performanceRatio = teamTargetAvg > 0 ? avgItemsPerHour / teamTargetAvg : 1;
+    // Check each configured user in reverse order (last to first in processing chain)
+    for (let i = configuredUsers.length - 1; i >= 0; i--) {
+        const user = configuredUsers[i];
         
-        // Score calculation: 100% when meeting target, higher when exceeding
-        if (performanceRatio >= 1.0) {
-            // Meeting or exceeding target: 100% + bonus for overperformance
-            score = Math.min(100, Math.round(100 * performanceRatio));
-        } else {
-            // Below target: proportional score (e.g., 80% of target = 80% score)
-            score = Math.round(100 * performanceRatio);
+        // First check userStats (from API)
+        if (userStats[user] && userStats[user].items > 0) {
+            finalItemCount = userStats[user].items;
+            finalItemUser = user;
+            break; // Found the last user with items
+        }
+        
+        // Fallback: check logData directly for this user
+        const userLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+        if (userLogs.length > 0) {
+            const latestLog = userLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+            const itemCount = getItemCountForLog(latestLog);
+            
+            if (itemCount > 0) {
+                finalItemCount = itemCount;
+                finalItemUser = user;
+                break; // Found the last user with items
+            }
         }
     }
     
-    // Bereken trend percentage
-    const trendPercentage = teamTargetAvg > 0 
-        ? Math.round(((avgItemsPerHour - teamTargetAvg) / teamTargetAvg) * 100)
-        : 0;
-    const trendIcon = trendPercentage >= 0 ? '↑' : '↓';
-    const trendColor = trendPercentage >= 0 ? 'text-success' : 'text-danger';
+    document.getElementById('final-items-count').textContent = finalItemCount.toString();
+    document.getElementById('final-items-info').textContent = '';
     
-    document.getElementById('performance-score').textContent = `${score}%`;
-    document.getElementById('performance-info').innerHTML = 
-        `${avgItemsPerHour.toFixed(1)} items/uur (doel: ${teamTargetAvg.toFixed(1)}) | <span class="${trendColor}">${trendIcon} ${Math.abs(trendPercentage)}%</span>`;
     
     // Update gebruiker performance kaarten
     updateUserPerformanceCards(userStats).catch(error => {
@@ -2245,8 +2427,21 @@ async function updateUserPerformanceCards(userStats) {
             const performanceColor = 'warning';
             const performanceLabel = 'Berekening in behandeling';
             const currentEfficiency = 'Wachten...';
-            const sessionHours = Math.floor((stats.sessionMinutes === 'IN_PROGRESS' ? 0 : stats.sessionMinutes) / 60);
-            const sessionMins = (stats.sessionMinutes === 'IN_PROGRESS' ? 0 : stats.sessionMinutes) % 60;
+            // Calculate session time for IN_PROGRESS sessions
+            let sessionMinutesCalc = 0;
+            if (stats.sessionMinutes === 'IN_PROGRESS') {
+                // Calculate elapsed time from first log for this user
+                const now = new Date();
+                const userLogs = logData.filter(log => log.user === user).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                if (userLogs.length > 0) {
+                    const startTime = new Date(userLogs[0].timestamp);
+                    sessionMinutesCalc = Math.floor((now - startTime) / (1000 * 60));
+                }
+            } else {
+                sessionMinutesCalc = stats.sessionMinutes || 0;
+            }
+            const sessionHours = Math.floor(sessionMinutesCalc / 60);
+            const sessionMins = sessionMinutesCalc % 60;
             
             html += `
                 <div class="col-md-6 col-lg-4 mb-3">
@@ -2262,7 +2457,7 @@ async function updateUserPerformanceCards(userStats) {
                             <div class="performance-score text-warning" style="font-size: 1.8rem; font-weight: 700;">
                                 <i class="fas fa-clock"></i>
                             </div>
-                            <div class="text-muted small">Batch sessie actief</div>
+                            <div class="text-muted small">${shortType === 'NESTING' ? 'Batch sessie actief' : 'BEZIG'}</div>
                         </div>
                         <hr>
                         <div class="metric-row">
@@ -2471,232 +2666,17 @@ function getTimeAgo(timestamp) {
     return `${days}d geleden`;
 }
 
-function calculateIdleTimeFromSessions(sessionsData) {
-    const handoffs = [];
-    
-    // Sort sessions by end time (completed sessions only)
-    const completedSessions = sessionsData.filter(s => s.status === 'completed' && s.end_time);
-    completedSessions.sort((a, b) => new Date(a.end_time) - new Date(b.end_time));
-    
-    // Find gaps between session end and next session start
-    for (let i = 0; i < completedSessions.length; i++) {
-        const currentSession = completedSessions[i];
-        const currentEndTime = new Date(currentSession.end_time);
-        
-        // Look for the next session that starts after this one ends
-        let nextStartTime = null;
-        let nextUser = null;
-        let nextSessionType = null;
-        
-        // Check all sessions (including the ones still in progress)
-        sessionsData.forEach(session => {
-            const sessionStart = new Date(session.start_time);
-            
-            // Must be a different user and start after current session ends
-            if (session.user !== currentSession.user && sessionStart > currentEndTime) {
-                if (!nextStartTime || sessionStart < nextStartTime) {
-                    nextStartTime = sessionStart;
-                    nextUser = session.user;
-                    nextSessionType = session.session_type;
-                }
-            }
-        });
-        
-        if (nextStartTime) {
-            const idleMinutes = calculateWorkMinutes(currentEndTime, nextStartTime);
-            
-            // Only count significant idle time (> 1 minute to avoid timing noise)
-            if (idleMinutes > 1) {
-                handoffs.push({
-                    fromUser: currentSession.user,
-                    toUser: nextUser,
-                    handoffTime: currentEndTime,
-                    pickupTime: nextStartTime,
-                    idleMinutes: idleMinutes,
-                    fromEvent: `${currentSession.session_type} session end`,
-                    toEvent: `${nextSessionType} session start`
-                });
-            }
-        }
-    }
-    
-    return {
-        handoffs: handoffs,
-        totalIdleMinutes: handoffs.reduce((sum, h) => sum + h.idleMinutes, 0),
-        longestIdleMinutes: handoffs.length > 0 ? Math.max(...handoffs.map(h => h.idleMinutes)) : 0,
-        averageIdleMinutes: handoffs.length > 0 ? 
-            handoffs.reduce((sum, h) => sum + h.idleMinutes, 0) / handoffs.length : 0
-    };
-}
+// Removed handoff calculation functions - using simple idle time calculation instead
 
-function calculateIdleTime(sortedLogs) {
-    const handoffs = [];
-    
-    // Find actual work handoff points
-    // Pattern: When work ends (AFGEMELD/SESSION_END) → When next work starts (SESSION_START)
-    
-    let lastWorkEndTime = null;
-    let lastWorkEndUser = null;
-    let lastWorkEndEvent = null;
-    
-    for (let i = 0; i < sortedLogs.length; i++) {
-        const log = sortedLogs[i];
-        
-        // Track when work actually ends
-        if (log.event === 'AFGEMELD' || log.event === 'SESSION_END') {
-            lastWorkEndTime = new Date(log.timestamp);
-            lastWorkEndUser = log.user;
-            lastWorkEndEvent = log.event;
-        }
-        
-        // Track when next work actually starts (different user)
-        if ((log.event === 'SESSION_START' || log.event === 'PROJECT_START' || log.event === 'OPEN') && lastWorkEndTime && 
-            log.user !== lastWorkEndUser && lastWorkEndUser) {
-            
-            const pickupTime = new Date(log.timestamp);
-            const idleMinutes = calculateWorkMinutes(lastWorkEndTime, pickupTime);
-            
-            // Only count significant idle time (> 1 minute to avoid timing noise)
-            if (idleMinutes > 1) {
-                handoffs.push({
-                    fromUser: lastWorkEndUser,
-                    toUser: log.user,
-                    handoffTime: lastWorkEndTime,
-                    pickupTime: pickupTime,
-                    idleMinutes: idleMinutes,
-                    fromEvent: lastWorkEndEvent,
-                    toEvent: log.event
-                });
-            }
-            
-            // Reset tracking for next handoff
-            lastWorkEndTime = null;
-            lastWorkEndUser = null;
-            lastWorkEndEvent = null;
+function findLastUserInChain(userStats, configuredUsers) {
+    // Find the last user in the configured chain who has actually processed items
+    for (let i = configuredUsers.length - 1; i >= 0; i--) {
+        const user = configuredUsers[i];
+        if (userStats[user] && userStats[user].items > 0) {
+            return user;
         }
     }
-    
-    return {
-        handoffs: handoffs,
-        totalIdleMinutes: handoffs.reduce((sum, h) => sum + h.idleMinutes, 0),
-        longestIdle: handoffs.length > 0 ? Math.max(...handoffs.map(h => h.idleMinutes)) : 0,
-        averageIdle: handoffs.length > 0 ? handoffs.reduce((sum, h) => sum + h.idleMinutes, 0) / handoffs.length : 0
-    };
-}
-
-function displayIdleTimeMetrics(idleAnalysis) {
-    // Update the dedicated idle time card
-    const totalIdleHours = Math.floor(idleAnalysis.totalIdleMinutes / 60);
-    const totalIdleMins = idleAnalysis.totalIdleMinutes % 60;
-    
-    // Update idle time card
-    const idleTimeElement = document.getElementById('total-idle-time');
-    if (idleTimeElement) {
-        if (totalIdleHours > 0 || totalIdleMins > 0) {
-            idleTimeElement.textContent = `${totalIdleHours}h ${totalIdleMins}m`;
-        } else {
-            idleTimeElement.textContent = '0m';
-        }
-    }
-    
-    // Update idle time info with workflow chain breakdown
-    const idleTimeInfo = document.getElementById('idle-time-info');
-    if (idleTimeInfo && idleAnalysis.handoffs.length > 0) {
-        // Build the complete workflow chain from handoffs
-        const users = [];
-        const idlePeriods = {};
-        
-        // Collect all users in order and their idle times
-        idleAnalysis.handoffs.forEach((handoff, index) => {
-            if (index === 0) {
-                users.push(handoff.fromUser);
-            }
-            users.push(handoff.toUser);
-            
-            // Store idle time for each transition
-            const key = `${handoff.fromUser}_${handoff.toUser}`;
-            idlePeriods[key] = handoff.idleMinutes;
-        });
-        
-        // Remove duplicates while preserving order
-        const uniqueUsers = [...new Set(users)];
-        
-        // Create the workflow visualization
-        let workflowHTML = '';
-        for (let i = 0; i < uniqueUsers.length; i++) {
-            if (i > 0) {
-                // Add idle time between users
-                const prevUser = uniqueUsers[i-1];
-                const currUser = uniqueUsers[i];
-                const idleMinutes = idlePeriods[`${prevUser}_${currUser}`];
-                if (idleMinutes) {
-                    const idleHours = Math.floor(idleMinutes / 60);
-                    const idleMins = Math.round(idleMinutes % 60);
-                    const timeStr = idleHours > 0 ? `${idleHours}h ${idleMins}m` : `${idleMins}m`;
-                    workflowHTML += `<i class="fas fa-arrow-right text-muted mx-2" title="Idle: ${timeStr}"></i>`;
-                }
-            }
-            workflowHTML += `<span class="badge bg-primary">${uniqueUsers[i]}</span>`;
-        }
-        
-        idleTimeInfo.innerHTML = `
-            <div>
-                <strong>Workflow:</strong> ${workflowHTML}
-            </div>
-            <div class="text-muted small mt-1">
-                ${idleAnalysis.handoffs.length} handoffs met idle tijd
-            </div>
-        `;
-    } else if (idleTimeInfo) {
-        idleTimeInfo.textContent = 'Geen werk handoffs gedetecteerd';
-    }
-    
-    // Add detailed handoff analysis to activity timeline if container exists
-    const timelineContainer = document.querySelector('.activity-timeline');
-    if (timelineContainer && idleAnalysis.handoffs.length > 0) {
-        const handoffHtml = `
-            <div class="idle-analysis mt-3 p-3 bg-light rounded">
-                <h6 class="text-muted mb-3"><i class="fas fa-clock"></i> Work Handoff Idle Time</h6>
-                ${idleAnalysis.handoffs.map((handoff, index) => {
-                    const idleHours = Math.floor(handoff.idleMinutes / 60);
-                    const idleMins = handoff.idleMinutes % 60;
-                    const severity = handoff.idleMinutes > 60 ? 'text-danger' : handoff.idleMinutes > 30 ? 'text-warning' : 'text-success';
-                    
-                    const handoffTime = new Date(handoff.handoffTime).toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit'});
-                    const pickupTime = new Date(handoff.pickupTime).toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit'});
-                    
-                    return `
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <div>
-                                <div>
-                                    <span class="badge bg-secondary">${handoff.fromUser}</span>
-                                    <i class="fas fa-arrow-right mx-2"></i>
-                                    <span class="badge bg-primary">${handoff.toUser}</span>
-                                    <span class="badge bg-light text-dark ms-2">Step ${index + 1}</span>
-                                </div>
-                                <div class="text-muted small mt-1">
-                                    ${handoffTime} → ${pickupTime}
-                                </div>
-                            </div>
-                            <div class="${severity} fw-bold text-end">
-                                ${idleHours > 0 ? `${idleHours}h ` : ''}${idleMins}m
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-                <div class="mt-2 text-muted small">
-                    <strong>Avg idle:</strong> ${Math.round(idleAnalysis.averageIdle)}m | 
-                    <strong>Longest:</strong> ${Math.floor(idleAnalysis.longestIdle / 60)}h ${idleAnalysis.longestIdle % 60}m
-                </div>
-            </div>
-        `;
-        
-        // Insert after timeline header or at end
-        const timelineHeader = timelineContainer.querySelector('.d-flex.justify-content-between');
-        if (timelineHeader) {
-            timelineHeader.insertAdjacentHTML('afterend', handoffHtml);
-        }
-    }
+    return null;
 }
 </script>
 {% endblock %}

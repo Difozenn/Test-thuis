@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec file for BarcodeMaster
+# PyInstaller spec file for Project Datalog
 
 block_cipher = None
 
@@ -68,7 +68,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='BarcodeMaster',
+    name='ProjectDatalog',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -93,5 +93,5 @@ exe = EXE(
 #     strip=False,
 #     upx=True,
 #     upx_exclude=[],
-#     name='BarcodeMaster',
+#     name='ProjectDatalog',
 # )

@@ -176,6 +176,9 @@ def find_excel_file_for_project(directory, project_code):
         print(f"[EXCEL_MATCH] Extracted MO code: '{mo_code}'")
         
         # Search for Excel files in directory
+        exact_match = None
+        mo_code_matches = []
+        
         for filename in os.listdir(directory):
             if filename.endswith(('.xlsx', '.xls')):
                 print(f"[EXCEL_MATCH] Checking file: '{filename}'")
@@ -184,16 +187,46 @@ def find_excel_file_for_project(directory, project_code):
                 if mo_code in filename.upper():
                     print(f"[EXCEL_MATCH] MO code '{mo_code}' found in filename")
                     
-                    # Additional check: see if the full project code pattern matches
+                    # Check if the full project code pattern matches
                     if project_code.upper() in filename.upper():
                         print(f"[EXCEL_MATCH] ✓ Full project code '{project_code}' matches filename '{filename}'")
-                        return os.path.join(directory, filename)
-                    # Fallback to just MO code match
+                        exact_match = os.path.join(directory, filename)
+                        break  # Found exact match, stop searching
                     else:
-                        print(f"[EXCEL_MATCH] ✓ MO code match fallback for '{filename}'")
-                        return os.path.join(directory, filename)
+                        # Store MO code match for fallback
+                        mo_code_matches.append((filename, os.path.join(directory, filename)))
+                        print(f"[EXCEL_MATCH] MO code match stored for fallback: '{filename}'")
                 else:
                     print(f"[EXCEL_MATCH] MO code '{mo_code}' not found in '{filename}'")
+        
+        # Return exact match if found
+        if exact_match:
+            return exact_match
+            
+        # If no exact match, try to find the best MO code match
+        if mo_code_matches:
+            # Try to find a match that contains more of the project code
+            best_match = None
+            best_score = 0
+            
+            for filename, filepath in mo_code_matches:
+                # Calculate how much of the project code matches
+                # Remove MO code to focus on the descriptive part
+                project_desc = project_code.upper().replace(mo_code, '').strip('_')
+                filename_upper = filename.upper()
+                
+                # Count matching characters in the descriptive part
+                score = sum(1 for char in project_desc if char in filename_upper)
+                
+                print(f"[EXCEL_MATCH] Scoring '{filename}' against '{project_code}': score={score}")
+                
+                if score > best_score:
+                    best_score = score
+                    best_match = filepath
+            
+            if best_match:
+                print(f"[EXCEL_MATCH] ✓ Best MO code match selected: '{os.path.basename(best_match)}'")
+                return best_match
                         
     except Exception as e:
         print(f"[EXCEL_MATCH] Error finding Excel file: {e}")

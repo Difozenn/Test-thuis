@@ -85,7 +85,7 @@ class BackgroundImportService:
             config = get_config()
             
             # Load ScannerPanel specific configurations for user monitoring
-            self.scanner_users = config.get('scanner_panel_open_event_users', ['GANNOMAT', 'OPUS']) # Default if not set
+            self.scanner_users = config.get('scanner_panel_open_event_users', []) # Default if not set
             self.scanner_user_paths = config.get('scanner_panel_open_event_user_paths', {})
             self.scanner_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
             self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {}) # Load the new map
@@ -150,6 +150,60 @@ class BackgroundImportService:
             'total_imports_triggered': self.stats['total_imports_triggered']
         }
         
+    def _start_processing_thread(self, user_type, project_code, event_details, timestamp):
+        """Start processing thread for HOPS/MDB users and return the thread object."""
+        processing_type = self.scanner_user_to_processing_type_map.get(user_type)
+        
+        if not self.scanner_user_logic_active.get(user_type, False):
+            self._log(f"{user_type} import overgeslagen: logica niet actief voor deze gebruiker.")
+            return None
+
+        if processing_type == 'GEEN_PROCESSING':
+            self._log(f"'{user_type}' is geconfigureerd voor 'GEEN_PROCESSING'. Import overgeslagen.")
+            return None
+
+        user_specific_path = self.scanner_user_paths.get(user_type)
+        if not user_specific_path or not os.path.isdir(user_specific_path):
+            self._log(f"{user_type} import overgeslagen: pad niet ingesteld of ongeldig ('{user_specific_path}').")
+            return None
+        
+        # Create and start thread based on processing type
+        thread = None
+        if processing_type == 'HOPS_PROCESSING':
+            # Find matching directory for HOPS processing
+            code_to_match = project_code
+            match_found = False
+            
+            try:
+                for item_name in os.listdir(user_specific_path):
+                    item_path = os.path.join(user_specific_path, item_name)
+                    if os.path.isdir(item_path):
+                        if item_name.upper().endswith(code_to_match.upper()):
+                            # Start HOPS processing thread
+                            thread = threading.Thread(
+                                target=self._execute_hops_import_with_stats,
+                                args=(user_type, project_code, event_details, timestamp, item_path)
+                            )
+                            thread.start()
+                            match_found = True
+                            break
+                            
+                if not match_found:
+                    self._log(f"HOPS_PROCESSING (voor user '{user_type}') overgeslagen: geen overeenkomende projectmap gevonden.")
+                    
+            except Exception as e:
+                self._log(f"Fout bij het zoeken naar HOPS map: {e}")
+                
+        elif processing_type == 'MDB_PROCESSING':
+            # Start MDB processing thread
+            thread = threading.Thread(
+                target=self._execute_mdb_import_with_stats,
+                args=(user_type, project_code, event_details, timestamp, user_specific_path)
+            )
+            thread.start()
+            
+        return thread
+
     def trigger_import_for_event(self, user_type, project_code, event_details, timestamp):
         """Verwerk een OPEN event en trigger automatische import indien nodig."""
         self.load_config() # Ensure config is up-to-date
@@ -292,6 +346,9 @@ class BackgroundImportService:
             user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
             user_to_processing_type = config_data.get('scanner_user_to_processing_type_map', {})
             
+            # Track processing threads to wait for completion
+            processing_threads = []
+            
             # Group users by their directory path to avoid duplicate searches
             path_to_users = {}
             excel_processing_users = {}  # Track which users need Excel processing
@@ -370,6 +427,54 @@ class BackgroundImportService:
                             if self.log_callback:
                                 self.log_callback(f"BACKGROUND_IO_ERROR:{project_code_to_log}:{user}:Error accessing dir {user_dir}: {e_os}")
                             continue # Skip to next user
+                    # For HOPS and MDB processing, use trigger_import_for_event instead
+                    if user_processing_type in ['HOPS_PROCESSING', 'MDB_PROCESSING']:
+                        self._log(f"[BG_TASK] Triggering {user_processing_type} for {user}")
+                        
+                        # Create OPEN event for HOPS/MDB users when match is found
+                        if match_found_for_this_user:
+                            self._log(f"[BG_TASK] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'. Creating OPEN event.")
+                            
+                            # Create OPEN event data
+                            data_open = {
+                                'event': 'OPEN',
+                                'details': f"Auto-detected from {current_user_scanner}'s scan",
+                                'project': project_code_to_log,
+                                'base_mo_code': self._extract_project_code(project_code_to_log),
+                                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
+                                'user': user,
+                                'session_type': self._get_session_type_for_processing(user_processing_type)
+                            }
+                            
+                            # Include original timestamp if provided
+                            if timestamp:
+                                data_open['timestamp'] = timestamp
+                            
+                            try:
+                                resp_open = requests.post(api_url, json=data_open, timeout=10)
+                                if resp_open.ok:
+                                    self._log(f"[BG_TASK] Successfully posted OPEN for {project_code_to_log} for user {user}.")
+                                    # Don't send BACKGROUND_PROJECT_OPENED for HOPS/MDB users - they'll send BACKGROUND_WORK_FOUND instead
+                                else:
+                                    self._log(f"[BG_TASK_ERR] API Error opening project {project_code_to_log} for {user}: {resp_open.status_code} - {resp_open.text}")
+                            except Exception as e:
+                                self._log(f"[BG_TASK_ERR] Error posting OPEN for {user}: {e}")
+                        else:
+                            self._log(f"[BG_TASK] No match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
+                            if self.log_callback:
+                                self.log_callback(f"BACKGROUND_NO_EXCEL_FILE:{project_code_to_log}:{user}")
+                        
+                        # Trigger the actual processing and track thread
+                        processing_thread = self._start_processing_thread(
+                            user_type=user,
+                            project_code=project_code_to_log,
+                            event_details=f"Auto-detected from {current_user_scanner}'s scan",
+                            timestamp=timestamp
+                        )
+                        if processing_thread:
+                            processing_threads.append(processing_thread)
+                        continue  # Skip the rest, trigger_import_for_event handles everything
+                    
                     if match_found_for_this_user:
                         self._log(f"[BG_TASK] Match found for '{project_code_to_log}' in '{user_dir}' for user '{user}'. Posting OPEN.")
 
@@ -418,9 +523,15 @@ class BackgroundImportService:
                     else:
                         self._log(f"[BG_TASK] No match for '{project_code_to_log}' in '{user_dir}' for user '{user}'.")
             
+            # Wait for all processing threads to complete before sending completion message
+            if processing_threads:
+                self._log(f"[BG_TASK] Waiting for {len(processing_threads)} processing threads to complete...")
+                for thread in processing_threads:
+                    thread.join(timeout=30)  # Wait up to 30 seconds per thread
+                self._log(f"[BG_TASK] All processing threads completed.")
+            
             self._log(f"[BG_TASK] Finished processing OPEN for {project_code_to_log}.")
-            if self.log_callback:
-                self.log_callback(f"BACKGROUND_PROCESSING_COMPLETE:{project_code_to_log}")
+            # Don't send completion message here - let unified Excel processing send it when truly done
 
         except Exception as e_task:
             self._log(f"[BG_TASK_FATAL_ERR] Unhandled exception in _process_scan_for_open_event_task for {project_code_to_log}: {e_task}\n{traceback.format_exc()}")
@@ -539,9 +650,50 @@ class BackgroundImportService:
                         # But still update the existing entry with the proper counts and file path
                         self._update_existing_entry_with_results(user, project_code_to_log, results[user], processing_type, api_url)
                         
-                        # Still call the callback to show progress in logviewer
+                        # Still call the callback to show progress in logviewer - use BACKGROUND_WORK_FOUND like other users
+                        self._log(f"[UNIFIED_EXCEL] Preparing callback for triggering user {user} (processing_type: {processing_type})")
                         if self.log_callback:
-                            self.log_callback(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{user}")
+                            self._log(f"[UNIFIED_EXCEL] Sending callback for triggering user {user}")
+                            if processing_type == 'NESTING_PROCESSING':
+                                nesting_count = results[user]['nesting_count']
+                                opdeelzaag_count = results[user]['opdeelzaag_count']
+                                total_count = nesting_count + opdeelzaag_count
+                                self._log(f"[UNIFIED_EXCEL] NESTING callback: {total_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{total_count}")
+                            elif processing_type == 'ACCURA_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self._log(f"[UNIFIED_EXCEL] ACCURA callback: {item_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'BOERE_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self._log(f"[UNIFIED_EXCEL] BOERE callback: {item_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                        else:
+                            self._log(f"[UNIFIED_EXCEL] No log_callback available for triggering user {user}")
+                        
+                        # Send BEZIG event for NESTING since scanning means they're already working
+                        if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                            self._log(f"[UNIFIED_EXCEL] Sending BEZIG event for {user} - scanning means already working")
+                            # Small delay before BEZIG event
+                            time.sleep(0.5)
+                            
+                            data_bezig = {
+                                'event': 'BEZIG',
+                                'details': f"Started processing scanned project",
+                                'project': project_code_to_log,
+                                'user': user,
+                                'status': 'BEZIG'
+                            }
+                            
+                            try:
+                                response = requests.post(api_url, json=data_bezig)
+                                if response.ok:
+                                    self._log(f"[UNIFIED_EXCEL] BEZIG event sent successfully for {user}")
+                                else:
+                                    self._log(f"[UNIFIED_EXCEL] Failed to send BEZIG event for {user}: {response.status_code}")
+                            except Exception as e:
+                                self._log(f"[UNIFIED_EXCEL] Error sending BEZIG event for {user}: {e}")
+                        
                         continue
                         
                     self._log(f"[UNIFIED_EXCEL] Work found for {user} ({processing_type})")
@@ -601,6 +753,27 @@ class BackgroundImportService:
                         if resp_open.ok:
                             self._log(f"[UNIFIED_EXCEL] Successfully posted OPEN for {project_code_to_log} for user {user}")
                             
+                            # Send callback message for logviewer
+                            self._log(f"[UNIFIED_EXCEL] Preparing callback for non-triggering user {user} (processing_type: {processing_type})")
+                            if self.log_callback:
+                                self._log(f"[UNIFIED_EXCEL] Sending callback for non-triggering user {user}")
+                                if processing_type == 'NESTING_PROCESSING':
+                                    nesting_count = results[user]['nesting_count']
+                                    opdeelzaag_count = results[user]['opdeelzaag_count']
+                                    total_count = nesting_count + opdeelzaag_count
+                                    self._log(f"[UNIFIED_EXCEL] NESTING callback: {total_count} items")
+                                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{total_count}")
+                                elif processing_type == 'ACCURA_PROCESSING':
+                                    item_count = results[user]['item_count']
+                                    self._log(f"[UNIFIED_EXCEL] ACCURA callback: {item_count} items")
+                                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                                elif processing_type == 'BOERE_PROCESSING':
+                                    item_count = results[user]['item_count']
+                                    self._log(f"[UNIFIED_EXCEL] BOERE callback: {item_count} items")
+                                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                            else:
+                                self._log(f"[UNIFIED_EXCEL] No log_callback available for non-triggering user {user}")
+                            
                             # Update counts based on processing type
                             if processing_type == 'ACCURA_PROCESSING':
                                 self._update_accura_counts_in_db(
@@ -646,8 +819,7 @@ class BackgroundImportService:
                                     results[user].get('color')
                                 )
                             
-                            if self.log_callback:
-                                self.log_callback(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{user}")
+                            # Callback messages already sent above - skip duplicates
                         else:
                             self._log(f"[UNIFIED_EXCEL] API Error: {resp_open.status_code} - {resp_open.text}")
                     except Exception as e:
@@ -655,14 +827,30 @@ class BackgroundImportService:
                 else:
                     if user in results:
                         self._log(f"[UNIFIED_EXCEL] No work found for {user} ({processing_type}) - has_work={results[user]['has_work']}")
-                        # Still call callback to show that processing was attempted
+                        # Send specific no work message with counts
                         if self.log_callback:
-                            self.log_callback(f"BACKGROUND_NO_WORK_FOUND:{project_code_to_log}:{user}")
+                            if processing_type == 'NESTING_PROCESSING':
+                                nesting_count = results[user]['nesting_count']
+                                opdeelzaag_count = results[user]['opdeelzaag_count']
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:0")
+                            elif processing_type == 'ACCURA_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'BOERE_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
+                            else:
+                                self.log_callback(f"BACKGROUND_NO_WORK_FOUND:{project_code_to_log}:{user}")
                     else:
                         self._log(f"[UNIFIED_EXCEL] {user} ({processing_type}) not in results at all")
-                        # Still call callback to show that processing was attempted  
+                        # Send specific no Excel file message
                         if self.log_callback:
-                            self.log_callback(f"BACKGROUND_NO_WORK_FOUND:{project_code_to_log}:{user}")
+                            self.log_callback(f"BACKGROUND_NO_EXCEL_FILE:{project_code_to_log}:{user}")
+            
+            # Send completion message when ALL users are truly done
+            self._log(f"[UNIFIED_EXCEL] Completed unified Excel processing for project '{project_code_to_log}'")
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_PROCESSING_COMPLETE:{project_code_to_log}")
                     
         except Exception as e:
             self._log(f"[UNIFIED_EXCEL] Error in unified Excel processing: {e}")
@@ -796,6 +984,9 @@ class BackgroundImportService:
         """Genereert een Excel-rapport van de verzamelde HOPS-bestanden."""
         if not collected_files:
             self._log("Geen HOPS-bestanden verzameld om rapport te genereren.")
+            # Send callback message for no work found
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code}:{user_name}:0")
             return
 
         try:
@@ -816,6 +1007,10 @@ class BackgroundImportService:
             item_count = len(df)
             self._log(f"HOPS Excel rapport bevat {item_count} items")
 
+            # Send callback message with item count
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code}:{user_name}:{item_count}")
+
             # Update the OPEN event with the Excel file path AND item count
             self._update_open_event_with_file_path_and_count(
                 user_name,
@@ -823,9 +1018,6 @@ class BackgroundImportService:
                 excel_path,
                 item_count
             )
-            
-            # Note: OPEN events for other users are already created by process_scan_for_open_event_async
-            # Sessions will be created when users actually start working (not here)
 
         except ImportError:
             self._log("Pandas is niet geïnstalleerd. Kan geen Excel rapport genereren.")
@@ -888,6 +1080,9 @@ class BackgroundImportService:
                 self._log(f"{processed_files_count} MDB bestand(en) verwerkt. {excel_reports_generated} Excel rapporten gegenereerd voor project '{project_event_code}'.")
             elif not match_found:
                 self._log(f"Geen overeenkomend .mdb/.accdb bestand gevonden in '{mdb_scan_path}' voor project '{project_event_code}'.")
+                # Send callback message for no work found
+                if self.log_callback:
+                    self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_event_code}:{user_name}:0")
 
         except Exception as e:
             self.logger.error(f"Algemene fout tijdens MDB import voor pad {mdb_scan_path} (project: {project_event_code}): {e}")
@@ -999,6 +1194,10 @@ class BackgroundImportService:
             item_count = len(df_export)
             self._log(f"MDB Excel rapport bevat {item_count} items")
             
+            # Send callback message with item count
+            if self.log_callback:
+                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code}:{user_name}:{item_count}")
+            
             # Update the OPEN event with the Excel file path AND item count
             self._update_open_event_with_file_path_and_count(
                 user_name,
@@ -1006,13 +1205,44 @@ class BackgroundImportService:
                 excel_path,
                 item_count
             )
-            
-            # Note: OPEN events for other users are already created by process_scan_for_open_event_async
-            # Sessions will be created when users actually start working (not here)
 
         except Exception as e:
             self._log(f"Fout bij opslaan van MDB Excel rapport voor {mdb_basename}: {e}")
             self.logger.error(f"Error saving MDB Excel report for {mdb_basename}: {e}")
+
+    def _create_open_event_for_processed_user(self, user_name, project_code, details, item_count, excel_path):
+        """Create an OPEN event for OPUS/KL GANNOMAT when they successfully process work."""
+        try:
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor event logging")
+                return
+                
+            # Create OPEN event data
+            data = {
+                'event': 'OPEN',
+                'details': details,
+                'project': project_code,
+                'base_mo_code': self._extract_project_code(project_code),
+                'user': user_name,
+                'session_type': 'SCANNER',  # Default session type for OPUS/KL GANNOMAT
+                'item_count': item_count,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = requests.post(api_url, json=data, timeout=10)
+            if response.ok:
+                self._log(f"OPEN event created for {user_name} on {project_code} with {item_count} items")
+                # Send callback message for logviewer
+                if self.log_callback:
+                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code}:{user_name}:{item_count}")
+            else:
+                self._log(f"Failed to create OPEN event for {user_name}: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            self._log(f"Error creating OPEN event for {user_name}: {e}")
 
     def _update_open_event_with_file_path_and_count(self, user_name, project, file_path, item_count):
         """Update the existing OPEN event with the Excel file path and item count."""
@@ -1609,10 +1839,53 @@ class BackgroundImportService:
         else:
             return 'XLSX_UPDATED'
 
+    def _update_log_metadata(self, project_code, user, result_data):
+        """Update metadata (mo_number, so_number, color, customer_name) for existing log entries."""
+        try:
+            self._log(f"[UPDATE_METADATA] Updating metadata for project {project_code}, user {user}")
+            
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            if not api_url:
+                self._log("No API URL configured for metadata update")
+                return
+                
+            # Prepare update data
+            update_data = {
+                'project': project_code,
+                'user': user
+            }
+            
+            # Add metadata fields if available
+            if result_data.get('mo_number'):
+                update_data['mo_number'] = result_data['mo_number']
+            if result_data.get('so_number'):
+                update_data['so_number'] = result_data['so_number']
+            if result_data.get('color'):
+                update_data['color'] = result_data['color']
+            if result_data.get('customer_name'):
+                update_data['customer_name'] = result_data['customer_name']
+                
+            # Use the update_metadata endpoint
+            update_url = api_url.replace('/log', '/update_metadata')
+            
+            response = requests.post(update_url, json=update_data, timeout=10)
+            if response.ok:
+                self._log(f"[UPDATE_METADATA] Successfully updated metadata for {project_code}, user {user}")
+            else:
+                self._log(f"[UPDATE_METADATA] Failed to update metadata: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            self._log(f"[UPDATE_METADATA] Error updating metadata: {e}")
+
     def _update_existing_entry_with_results(self, user, project_code, result_data, processing_type, api_url):
         """Update existing OPEN event with proper counts and file path for all processing types."""
         try:
             self._log(f"[UPDATE_EXISTING] {processing_type} for {user}: {result_data}")
+            
+            # First update metadata for all types if available
+            if any(result_data.get(field) for field in ['mo_number', 'so_number', 'color', 'customer_name']):
+                self._update_log_metadata(project_code, user, result_data)
             
             if processing_type == 'NESTING_PROCESSING':
                 # Update existing NESTING entry with item counts using the proper method

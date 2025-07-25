@@ -1,7 +1,7 @@
-BarcodeMaster: Detailed Program Analysis
+Project Datalog: Detailed Program Analysis
 
 1. Introduction
-BarcodeMaster is a comprehensive application designed to streamline the processing of barcode data, particularly for manufacturing and inventory management. It features a graphical user interface (GUI) for user interaction, a background service for automated data processing, a database for logging, and a COM port splitting utility for hardware integration. The application is designed to be robust, with features for configuration management, startup control, and detailed logging.
+Project Datalog is a comprehensive application designed to streamline the processing of barcode data, particularly for manufacturing and inventory management. It features a graphical user interface (GUI) for user interaction, a background service for automated data processing, a database for logging, and a COM port splitting utility for hardware integration. The application is designed to be robust, with features for configuration management, startup control, and detailed logging.
 
 2. Application Startup and Core Architecture (launch.py)
 The application's entry point is launch.py. This script is responsible for initializing the application's core components in the correct order and ensuring a clean shutdown.
@@ -77,4 +77,4 @@ E. The Help and Settings Panels
 - Help Panel: A placeholder for future documentation.
 - Settings Panel: An informational panel that directs users to the Scanner Panel for configuring user-specific import logic, centralizing the workflow settings.
 
-This concludes the comprehensive textual analysis of the BarcodeMaster program. The documentation now covers the application's architecture, core components, services, database interactions, and the complete GUI, fulfilling the user's request.
+This concludes the comprehensive textual analysis of the Project Datalog program. The documentation now covers the application's architecture, core components, services, database interactions, and the complete GUI, fulfilling the user's request.

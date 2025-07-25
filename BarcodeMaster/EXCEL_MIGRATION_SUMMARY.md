@@ -1,7 +1,7 @@
 # Excel Processing Migration Summary
 
 ## Overview
-Successfully migrated BarcodeMaster from PDF processing to Excel processing for all three scanner types: NESTING, ACCURA, and BOERE.
+Successfully migrated Project Datalog from PDF processing to Excel processing for all three scanner types: NESTING, ACCURA, and BOERE.
 
 ## Files Modified/Created
 

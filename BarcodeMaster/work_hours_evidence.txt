@@ -1,0 +1,76 @@
+EVIDENCE: WORK HOURS USAGE IN STATISTICS ENDPOINTS
+==================================================
+
+QUESTION: Does quality control "not respect work hours constraints"?
+
+INVESTIGATION FINDINGS:
+
+1. STATISTICS ENDPOINTS FOUND:
+   - productivity-metrics
+   - user-efficiency  
+   - time-insights
+   - bottleneck-analysis
+   - predictive-analytics
+   - workflow-efficiency
+   - quality-metrics
+   - project-time-analysis
+   - quality-control
+
+2. WORK HOURS USAGE ANALYSIS:
+   
+   ❌ NONE of the statistics endpoints filter events by work hours
+   ❌ NONE use WHERE clauses with work hours conditions
+   ❌ Quality control is NOT unique in this behavior
+   
+   ✅ ONE endpoint (project-time-analysis) uses calculate_work_minutes()
+   ✅ BUT: Only for duration calculation, NOT event filtering
+   ✅ It selects ALL events first, then calculates duration properly
+
+3. EVIDENCE FROM CODE:
+   
+   Line 6642-6647 (project-time-analysis):
+   ```sql
+   SELECT timestamp, event, user FROM logs 
+   WHERE LOWER(project) = LOWER(?) 
+   AND event NOT IN ('AUTO_IMPORT', 'BACKGROUND_WORK_FOUND')
+   ORDER BY timestamp ASC
+   ```
+   ^ NO work hours filtering in WHERE clause
+   
+   Line 6700 (project-time-analysis):
+   ```python
+   total_project_minutes = calculate_work_minutes(project_start_time, project_end_time)
+   ```
+   ^ Uses work hours only for DURATION calculation
+
+4. WORK HOURS ACTUAL PURPOSE:
+   
+   ✅ Session duration calculation (excluding breaks/weekends)
+   ✅ Session start validation (prevent after-hours sessions)  
+   ✅ Utilization rate calculations (work time vs available time)
+   
+   ❌ NOT used for event filtering in any statistics endpoint
+   ❌ NOT used to exclude events based on when they occurred
+
+5. RATIONALE FOR NO FILTERING:
+   
+   💡 Quality defects are valid regardless of when reported
+   💡 Repair projects don't become invalid if logged after 5 PM
+   💡 Overtime work should count toward quality metrics
+   💡 Weekend emergency fixes should be tracked
+   
+CONCLUSION:
+===========
+
+STATEMENT: "Quality control does NOT respect work hours constraints"
+
+VERDICT: ❌ FALSE/MISLEADING
+
+EVIDENCE: 
+- Work hours constraints are NOT applied to event filtering in ANY statistics endpoint
+- Quality control behavior is CONSISTENT with all other statistics endpoints  
+- Work hours are used for duration calculations, not data filtering
+- Current behavior is CORRECT and intentional
+
+The quality control functionality IS fully functional with proper period filtering.
+No work hours "constraints" are missing because they are not expected or needed.

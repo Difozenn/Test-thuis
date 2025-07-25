@@ -23,9 +23,13 @@ class ScannerPanel(tk.Frame):
         self.app_has_focus_var = app_has_focus_var
         self.background_import_service = background_service_instance
         
-        # Register callback for background service logs
-        if self.background_import_service:
-            self.background_import_service.log_callback = self.log_message_from_service
+        # Register callback with db_log_api for forwarding (only one callback needed)
+        try:
+            from database.db_log_api import register_scanner_callback
+            register_scanner_callback(self.log_message_from_service)
+            print("[SCANNER] Successfully registered callback with db_log_api")
+        except Exception as e:
+            print(f"[SCANNER] Could not register callback with db_log_api: {e}")
         
         config = get_config()
         
@@ -375,6 +379,20 @@ class ScannerPanel(tk.Frame):
         """Check if current time is within work hours using provided work hours data"""
         now = datetime.now()
         
+        # Holiday check first (most important)
+        try:
+            import requests
+            response = requests.get('http://localhost:5001/api/holidays', timeout=2)
+            if response.status_code == 200:
+                holidays_data = response.json()
+                today_str = now.strftime('%Y-%m-%d')
+                for holiday in holidays_data.get('holidays', []):
+                    if holiday.get('date') == today_str:
+                        return False, f"Feestdag - {holiday.get('name', 'Kantoor gesloten')}"
+        except:
+            # If holiday check fails, continue with other validations
+            pass
+        
         # Weekend check
         if now.weekday() not in work_hours['work_days']:
             return False, "Weekend - kantoor gesloten"
@@ -618,51 +636,67 @@ class ScannerPanel(tk.Frame):
             parts = message.split(":")
             if len(parts) >= 2:
                 project = parts[1]
-                self.log_message(f"🔄 Project {project} wordt verwerkt voor alle gebruikers...", "info")
+                self.log_message(f"🔄 Verwerking gestart voor project {project}", "info")
+        elif "BACKGROUND_WORK_FOUND:" in message:
+            parts = message.split(":")
+            if len(parts) >= 4:
+                project = parts[1]
+                user = parts[2]
+                count = parts[3]
+                item_text = "items" if int(count) != 1 else "item"
+                self.log_message(f"✓ {user}: {count} {item_text} gevonden en verwerkt", "success")
+        elif "BACKGROUND_NO_WORK_ITEMS:" in message:
+            parts = message.split(":")
+            if len(parts) >= 4:
+                project = parts[1]
+                user = parts[2]
+                count = parts[3]
+                self.log_message(f"○ {user}: {count} items gevonden (geen actie vereist)", "info")
+        elif "BACKGROUND_NO_EXCEL_FILE:" in message:
+            parts = message.split(":")
+            if len(parts) >= 3:
+                project = parts[1]
+                user = parts[2]
+                self.log_message(f"○ {user}: Geen Excel bestand beschikbaar", "info")
         elif "BACKGROUND_PROJECT_OPENED:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
                 project = parts[1]
                 user = parts[2]
-                self.log_message(f"✓ Project {project} geopend voor {user}", "success")
+                self.log_message(f"🔄 {user}: Project {project} wordt geopend...", "info")
         elif "BACKGROUND_NO_WORK_FOUND:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
                 project = parts[1]
                 user = parts[2]
-                self.log_message(f"○ Project {project} - geen werk voor {user}", "info")
+                self.log_message(f"○ {user}: Geen werk beschikbaar", "info")
         elif "BACKGROUND_PROJECT_OPEN_FAILED:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
                 project = parts[1]
                 user = parts[2]
-                self.log_message(f"✗ Kan project {project} niet openen voor {user}", "error")
+                self.log_message(f"❌ {user}: Kon project {project} niet openen", "error")
         elif "BACKGROUND_IO_ERROR:" in message:
             parts = message.split(":")
             if len(parts) >= 3:
                 project = parts[1]
                 user = parts[2]
-                self.log_message(f"⚠️ Map toegangsfout voor {user}", "warning")
+                self.log_message(f"⚠️ {user}: Map toegangsfout", "warning")
         elif "BACKGROUND_PROCESSING_COMPLETE:" in message:
             project = message.split(":")[1] if ":" in message else ""
-            self.log_message(f"✓ Verwerking voltooid voor {project}", "success")
+            self.log_message(f"✓ Alle verwerking voltooid voor project {project}", "success")
         elif "BACKGROUND_FATAL_ERROR:" in message:
             project = message.split(":")[1] if ":" in message else ""
-            self.log_message(f"❌ Kritieke fout bij verwerken {project}", "error")
-        elif "HOPS import gestart" in message:
-            self.log_message("📊 HOPS import gestart", "info")
-        elif "MDB import gestart" in message:
-            self.log_message("📊 MDB import gestart", "info")
+            self.log_message(f"❌ Kritieke fout bij verwerken project {project}", "error")
         elif "Excel rapport succesvol opgeslagen" in message:
-            if "HOPS" in message:
-                self.log_message("✓ HOPS Excel rapport aangemaakt", "success")
-            elif "MDB" in message:
-                self.log_message("✓ MDB Excel rapport aangemaakt", "success")
+            # Skip these - they're now handled by BACKGROUND_WORK_FOUND messages
+            pass
         elif "import thread voltooid" in message:
-            if "Totaal HOPS:" in message or "Totaal MDB:" in message:
-                self.log_message("✓ Import succesvol afgerond", "success")
+            # Skip these - they're redundant with Excel rapport messages
+            pass
         elif "OPEN event updated with Excel path" in message:
-            self.log_message("✓ Excel bestand gekoppeld aan project", "success")
+            # Skip these - they're internal file path updates
+            pass
 
     def _format_user_message(self, message):
         """Convert technical messages to user-friendly Dutch messages."""
@@ -778,13 +812,12 @@ class ScannerPanel(tk.Frame):
         self.add_user_frame_widget = None
 
         config = get_config()
-        open_users = config.get('scanner_panel_open_event_users', ['GANNOMAT', 'OPUS'])
+        open_users = config.get('scanner_panel_open_event_users', [])
         self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
         self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
 
         if not open_users:
             tk.Label(self.user_paths_frame, text="Geen gebruikers geconfigureerd voor OPEN event paden.", bg="#f0f0f0", fg="gray").pack(pady=5)
-            return
 
         for username in open_users:
             user_frame = tk.Frame(self.user_paths_frame, bg="#f0f0f0")
@@ -1107,20 +1140,16 @@ class ScannerPanel(tk.Frame):
             self.log_message(f"❌ Netwerkfout bij openen project", "error")
             all_ok = False
 
-        self.log_message(f"🔄 Project {project_code_to_log} wordt verwerkt voor alle gebruikers...", "info")
+        # Don't duplicate the processing message - it's already shown via callback
         
-        # Show progress for the current user immediately
-        self.after(500, lambda: self.log_message_from_service(f"BACKGROUND_PROJECT_OPENED:{project_code_to_log}:{current_user}"))
+        # Show immediate feedback for the current user
+        self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
         
-        # If current user is an Excel processor, show progress for other Excel processors too
+        # If current user is an Excel processor, show unified processing message
         excel_processors = ['NESTING', 'ACCURA', 'BOERE']
         if current_user in excel_processors:
-            # Show progress for all Excel processors after a delay
-            for i, processor in enumerate(excel_processors):
-                if processor != current_user and config.get('scanner_panel_open_event_user_logic_active', {}).get(processor, True):
-                    delay = 1000 + (i * 500)  # Stagger the messages
-                    self.after(delay, lambda p=processor, proj=project_code_to_log: 
-                              self.log_message_from_service(f"BACKGROUND_PROJECT_OPENED:{proj}:{p}"))
+            # Show unified processing message for Excel processors
+            self.after(500, lambda: self.log_message(f"🔄 Excel verwerking wordt gestart voor alle gebruikers...", "info"))
         
         # Trigger background service for other users
         self.background_import_service.process_scan_for_open_event_async(
@@ -1364,7 +1393,6 @@ class ScannerPanel(tk.Frame):
         """Process data received from COM port. Runs in main Tkinter thread."""
         print(f"[ScannerPanel] Verwerken van COM data: {data}")
         event_type = 'OPEN'  # Always use OPEN event type
-        self.log_message(f"📋 Project {data} wordt geopend...", "info")
         
         import threading
         threading.Thread(target=self.log_scan_event, args=(data,), daemon=True).start()
@@ -1375,7 +1403,6 @@ class ScannerPanel(tk.Frame):
             self.usb_code_var.set('')
             
             event_type = 'OPEN'  # Always use OPEN event type
-            self.log_message(f"📋 Project {code} wordt geopend...", "info")
             
             import threading
             threading.Thread(target=self.log_scan_event, args=(code,), daemon=True).start()

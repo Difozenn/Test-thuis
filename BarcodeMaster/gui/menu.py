@@ -3,19 +3,11 @@ from tkinter import PhotoImage
 from PIL import Image, ImageTk
 import os
 
-# Panel imports (placeholders)
-from .panels.settings_panel1 import SettingsPanel1
-from .panels.settings_panel2 import SettingsPanel2
-from .panels.settings_panel3 import SettingsPanel3
-from .panels.settings_panel4 import SettingsPanel4
-# from .panels.settings_panel5 import SettingsPanel5  # Temporarily hidden
+# Panel imports
+from .panels.settings_panel import SettingsPanel
 
 MENU_OPTIONS = [
-    {"name": "Panel 1", "panel": SettingsPanel1},
-    {"name": "Panel 2", "panel": SettingsPanel2},
-    {"name": "Panel 3", "panel": SettingsPanel3},
-    {"name": "Panel 4", "panel": SettingsPanel4},
-    # {"name": "Panel 5", "panel": SettingsPanel5},  # Temporarily hidden
+    {"name": "Settings", "panel": SettingsPanel},
 ]
 
 

@@ -1,6 +1,6 @@
-# BarcodeMaster Wijzigingslogboek
+# Project Datalog Wijzigingslogboek
 
-Alle belangrijke wijzigingen, verbeteringen en bugfixes voor BarcodeMaster worden hier bijgehouden. Elke vermelding bevat de datum, een samenvatting van de wijziging en de betreffende bestanden of modules.
+Alle belangrijke wijzigingen, verbeteringen en bugfixes voor Project Datalog worden hier bijgehouden. Elke vermelding bevat de datum, een samenvatting van de wijziging en de betreffende bestanden of modules.
 
 ---
 
@@ -31,7 +31,7 @@ Alle belangrijke wijzigingen, verbeteringen en bugfixes voor BarcodeMaster worde
 
 ## [Unreleased] - 2024-12-13
 ### Toegevoegd
-- **Nieuwe Instellingen Panel**: Geïntegreerde import functionaliteit van BarcodeMatch in BarcodeMaster
+- **Nieuwe Instellingen Panel**: Geïntegreerde import functionaliteit van BarcodeMatch in Project Datalog
   - Nieuwe settings menu knop met `settings.png` icoon
   - Automatische gebruikerstype detectie (OPUS/GANNOMAT) voor verschillende workflows
   - **Event-Based Background Service**: Automatische import getriggerd door OPEN events in database
@@ -54,7 +54,7 @@ Alle belangrijke wijzigingen, verbeteringen en bugfixes voor BarcodeMaster worde
   - Automatische API logging van import acties
   
 - **Geïntegreerde Project Code Extractie**:
-  - Hergebruik van BarcodeMaster scanner panel matching logica
+  - Hergebruik van Project Datalog scanner panel matching logica
   - Dynamische "_REP_" project code handling (case-insensitive)
   - Consistente project code extractie met regex patterns
 

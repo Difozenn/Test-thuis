@@ -1,0 +1,3 @@
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish\CNC DATALOG.pdb
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish\tray_config.json
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish\CNC DATALOG.exe

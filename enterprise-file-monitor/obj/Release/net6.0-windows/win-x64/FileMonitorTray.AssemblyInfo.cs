@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2025")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ec718b7a5e685ee5bee84f6d37b5bf75e802d741")]
 [assembly: System.Reflection.AssemblyProductAttribute("CNC DATALOG")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CNC DATALOG")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

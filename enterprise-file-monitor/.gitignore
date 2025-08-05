@@ -1,9 +1,0 @@
-*.pyc
-__pycache__/
-instance/
-.env
-*.db
-venv/
-env/
-*.log
-reports/*.xlsx

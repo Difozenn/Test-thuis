@@ -1,5 +1,0 @@
-# Optional dependencies for MINTJENS Portal Server
-# Install with: pip install -r requirements.txt
-
-# For automatic mintjens.lan resolution on the network
-zeroconf>=0.39.0

@@ -63,6 +63,11 @@ class AdminPanel(tk.Frame):
         self.backup_tab_frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.backup_tab_frame, text='Backup')
         self._create_backup_tab(self.backup_tab_frame)
+        
+        # Excel Output Tab
+        self.excel_output_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.excel_output_frame, text='Excel Output')
+        self._create_excel_output_tab(self.excel_output_frame)
 
         self._initial_backup_scheduler_start() # Start scheduler if enabled in config
 
@@ -655,6 +660,99 @@ class AdminPanel(tk.Frame):
             self._validate_and_save_backup_config() # Save the latest status
 
     # --- End of Backup Tab Methods ---
+    
+    def _create_excel_output_tab(self, tab):
+        """Create Excel output directories configuration tab"""
+        # Get current config
+        config = get_config()
+        
+        # --- Excel Output Settings Frame ---
+        settings_frame = ttk.LabelFrame(tab, text="Excel Output Directory Configuratie")
+        settings_frame.pack(fill='x', padx=5, pady=5)
+        settings_frame.columnconfigure(1, weight=1)
+        
+        # Info label
+        info_label = ttk.Label(
+            settings_frame,
+            text="Configureer de output directories voor ACCURA en BOERE Excel bestanden.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.",
+            wraplength=500
+        )
+        info_label.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 15), sticky='w')
+        
+        # ACCURA output directory
+        ttk.Label(settings_frame, text="ACCURA Output Directory:").grid(row=1, column=0, padx=5, pady=5, sticky='w')
+        
+        self.accura_output_var = tk.StringVar(value=config.get('accura_output_dir', 'C:/ACCURA' if os.name == 'nt' else '/tmp/ACCURA'))
+        self.accura_entry = ttk.Entry(settings_frame, textvariable=self.accura_output_var, state='readonly')
+        self.accura_entry.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
+        
+        self.accura_browse_btn = ttk.Button(settings_frame, text="Browse", command=lambda: self._browse_output_dir('ACCURA', self.accura_output_var))
+        self.accura_browse_btn.grid(row=1, column=2, padx=5, pady=5)
+        
+        # BOERE output directory
+        ttk.Label(settings_frame, text="BOERE Output Directory:").grid(row=2, column=0, padx=5, pady=5, sticky='w')
+        
+        self.boere_output_var = tk.StringVar(value=config.get('boere_output_dir', 'C:/BOERE' if os.name == 'nt' else '/tmp/BOERE'))
+        self.boere_entry = ttk.Entry(settings_frame, textvariable=self.boere_output_var, state='readonly')
+        self.boere_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
+        
+        self.boere_browse_btn = ttk.Button(settings_frame, text="Browse", command=lambda: self._browse_output_dir('BOERE', self.boere_output_var))
+        self.boere_browse_btn.grid(row=2, column=2, padx=5, pady=5)
+        
+        # Status Frame
+        status_frame = ttk.LabelFrame(tab, text="Directory Status")
+        status_frame.pack(fill='x', padx=5, pady=(10, 5))
+        status_frame.columnconfigure(1, weight=1)
+        
+        # Status labels
+        self.accura_status_label = ttk.Label(status_frame, text="")
+        self.accura_status_label.grid(row=0, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+        
+        self.boere_status_label = ttk.Label(status_frame, text="")
+        self.boere_status_label.grid(row=1, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+        
+        # Update status on creation
+        self._update_excel_output_status()
+    
+    def _browse_output_dir(self, user_type, path_var):
+        """Browse for output directory for ACCURA/BOERE Excel files"""
+        directory = filedialog.askdirectory(title=f"Select Output Directory for {user_type}")
+        if directory:
+            path_var.set(directory)
+            # Save to config
+            config_key = f'{user_type.lower()}_output_dir'
+            save_config({config_key: directory})
+            self.log_to_queue(f"Output directory voor {user_type} ingesteld: {directory}")
+            # Update status
+            self._update_excel_output_status()
+    
+    def _update_excel_output_status(self):
+        """Update the status labels for Excel output directories"""
+        # Check ACCURA directory
+        accura_dir = self.accura_output_var.get()
+        if os.path.exists(accura_dir) and os.path.isdir(accura_dir):
+            self.accura_status_label.config(
+                text=f"✓ ACCURA directory bestaat: {accura_dir}",
+                foreground="green"
+            )
+        else:
+            self.accura_status_label.config(
+                text=f"✗ ACCURA directory bestaat niet: {accura_dir}",
+                foreground="red"
+            )
+        
+        # Check BOERE directory
+        boere_dir = self.boere_output_var.get()
+        if os.path.exists(boere_dir) and os.path.isdir(boere_dir):
+            self.boere_status_label.config(
+                text=f"✓ BOERE directory bestaat: {boere_dir}",
+                foreground="green"
+            )
+        else:
+            self.boere_status_label.config(
+                text=f"✗ BOERE directory bestaat niet: {boere_dir}",
+                foreground="red"
+            )
 
     def process_log_queue(self):
         """Periodically called method to process messages from the log queue."""

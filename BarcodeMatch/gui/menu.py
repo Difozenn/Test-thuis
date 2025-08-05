@@ -77,9 +77,11 @@ def create_menu(root, main_app):
         # If switching away from Scanner panel, pause the session
         if (current_panel_name == "Scanner" and new_panel_name != "Scanner" and 
             root._active_panel is not None and isinstance(root._active_panel, ScannerPanel)):
+            print(f"[DEBUG MENU] Switching away from Scanner to {new_panel_name}, calling _pause_session")
             try:
                 if hasattr(root._active_panel, '_pause_session'):
                     root._active_panel._pause_session()
+                    print("[DEBUG MENU] _pause_session called successfully")
             except Exception as e:
                 print(f"[ERROR] Failed to pause scanner session: {e}")
         

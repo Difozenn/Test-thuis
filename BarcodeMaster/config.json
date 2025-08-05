@@ -33,11 +33,11 @@
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,
     "scanner_panel_open_event_user_paths": {
-        "NESTING": "C:/Rapporten",
-        "OPUS": "C:/OPUS/KORPUS",
-        "KL GANNOMAT": "C:/GANNOMAT",
-        "ACCURA": "C:/Rapporten",
-        "BOERE": "C:/Rapporten"
+        "NESTING": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "OPUS": "//WIN-D62BRA7BHMI/Server/OPUS/KORPUS",
+        "KL GANNOMAT": "//WIN-D62BRA7BHMI/Server/GANNOMAT",
+        "ACCURA": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "BOERE": "//WIN-D62BRA7BHMI/Server/Rapporten"
     },
     "master_background_service_active": true,
     "backup_enabled": true,
@@ -73,9 +73,14 @@
             2,
             3,
             4,
-            5
+            5,
+            6
         ],
         "saturday": {
+            "start": 0.0,
+            "end": 23.983333333333334
+        },
+        "sunday": {
             "start": 0.0,
             "end": 23.983333333333334
         }
@@ -88,5 +93,7 @@
         "BOERE": 20
     },
     "efficiency_targets_updated": "2025-07-19T22:14:03.443231",
-    "efficiency_targets_created": "2025-07-06T14:34:24.492524"
+    "efficiency_targets_created": "2025-07-06T14:34:24.492524",
+    "accura_output_dir": "//WIN-D62BRA7BHMI/Server/ACCURA",
+    "boere_output_dir": "//WIN-D62BRA7BHMI/Server/BOERE"
 }

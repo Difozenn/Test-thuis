@@ -247,17 +247,25 @@ class BarcodeMatchApp:
                     break
             
             if scanner_index is not None:
-                # Hide current panel if exists
-                if hasattr(self.root, '_active_panel') and self.root._active_panel is not None:
-                    if DEBUG:
-                        print(f"[SWITCH] Hiding current panel: {type(self.root._active_panel).__name__}")
-                    self.root._active_panel.pack_forget()
+                # Check if we're already on Scanner panel
+                already_on_scanner = (hasattr(self.root, '_active_panel') and 
+                                    self.root._active_panel is scanner_panel)
                 
-                # Show Scanner panel
-                self.root._active_panel = scanner_panel
-                if DEBUG:
-                    print(f"[SWITCH] Showing Scanner panel")
-                scanner_panel.pack(fill=tk.BOTH, expand=True)
+                if not already_on_scanner:
+                    # Hide current panel if exists
+                    if hasattr(self.root, '_active_panel') and self.root._active_panel is not None:
+                        if DEBUG:
+                            print(f"[SWITCH] Hiding current panel: {type(self.root._active_panel).__name__}")
+                        self.root._active_panel.pack_forget()
+                    
+                    # Show Scanner panel
+                    self.root._active_panel = scanner_panel
+                    if DEBUG:
+                        print(f"[SWITCH] Showing Scanner panel")
+                    scanner_panel.pack(fill=tk.BOTH, expand=True)
+                else:
+                    if DEBUG:
+                        print(f"[SWITCH] Already on Scanner panel, just loading Excel")
                 
                 # Update tab state if the menu system is initialized
                 if hasattr(self.root, 'active_tab'):

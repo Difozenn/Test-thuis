@@ -43,6 +43,8 @@ class ScannerPanel(ttk.Frame):
         self.session_start_time = None
         self.session_item_count = 0
         self.session_paused = False
+        self.pause_start_time = None
+        self.total_pause_duration = 0
 
         # --- Initialization ---
         self.build_tab()
@@ -236,6 +238,12 @@ class ScannerPanel(ttk.Frame):
                 self.log_text.see(tk.END)
         self.after(0, _do_log)
     
+    def _ensure_url_protocol(self, url):
+        """Ensure URL has http:// or https:// protocol"""
+        if url and not url.startswith(('http://', 'https://')):
+            return f'http://{url}'
+        return url
+    
     def _format_user_message(self, message):
         """Convert technical messages to clean, professional Dutch messages."""
         # Skip technical noise
@@ -354,6 +362,9 @@ class ScannerPanel(ttk.Frame):
     def _load_excel_data(self, file_path, update_config_path=True):
         """Laadt gegevens uit het geselecteerde Excel-bestand en vult de treeview."""
         try:
+            # Log current session state
+            self._log(f"[DEBUG] _load_excel_data - current session: {self.current_session_id}, paused: {self.session_paused}")
+            
             # Start session when Excel file is loaded (user begins working)
             self._start_session_for_excel_work(file_path)
             
@@ -443,13 +454,23 @@ class ScannerPanel(ttk.Frame):
 
     def _start_session_for_excel_work(self, excel_file_path):
         """Start a session when user begins working on Excel file"""
+        self._log(f"[DEBUG] _start_session_for_excel_work - existing session: {self.current_session_id}")
+        
+        # If we already have a session, don't create a new one
+        if self.current_session_id:
+            self._log(f"[DEBUG] Session already exists: {self.current_session_id}, not creating new one")
+            # If paused, resume it
+            if self.session_paused:
+                self._resume_session()
+            return
+            
         try:
             config_file_path = get_config_path()
             if os.path.exists(config_file_path):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
                     
-                api_url = config.get('api_url', '')
+                api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if not api_url:
                     return
                 
@@ -465,6 +486,11 @@ class ScannerPanel(ttk.Frame):
                 self.session_start_time = datetime.now()
                 self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 self.session_item_count = 0
+                self.session_paused = False
+                self.pause_start_time = None
+                self.total_pause_duration = 0
+                
+                self._log(f"[DEBUG] Created session: {self.current_session_id}")
                 
                 # Send session start event
                 data = {
@@ -523,7 +549,7 @@ class ScannerPanel(ttk.Frame):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
                     
-                api_url = config.get('api_url', '')
+                api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to find project by file path
                     logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
@@ -556,7 +582,7 @@ class ScannerPanel(ttk.Frame):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
                     
-                api_url = config.get('api_url', '')
+                api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract project information
                     logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
@@ -601,7 +627,7 @@ class ScannerPanel(ttk.Frame):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
                     
-                api_url = config.get('api_url', '')
+                api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract user information
                     logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
@@ -653,7 +679,7 @@ class ScannerPanel(ttk.Frame):
                 if os.path.exists(config_file_path):
                     with open(config_file_path, 'r') as f:
                         config = json.load(f)
-                        api_url = config.get('api_url', '')
+                        api_url = self._ensure_url_protocol(config.get('api_url', ''))
                         if api_url:
                             logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
                             if logs_response.ok:
@@ -677,7 +703,12 @@ class ScannerPanel(ttk.Frame):
 
     def _pause_session(self):
         """Pause the current session when panel is hidden"""
+        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
         if self.current_session_id and not self.session_paused:
+            # Mark as paused immediately to prevent duplicate pause attempts
+            self.session_paused = True
+            self.pause_start_time = datetime.now()
+            
             try:
                 config_file_path = get_config_path()
                 if os.path.exists(config_file_path):
@@ -688,7 +719,7 @@ class ScannerPanel(ttk.Frame):
                     if api_url:
                         data = {
                             'session_id': self.current_session_id,
-                            'timestamp': datetime.now().isoformat()
+                            'timestamp': self.pause_start_time.isoformat()
                         }
                         
                         def pause_session_api():
@@ -697,9 +728,13 @@ class ScannerPanel(ttk.Frame):
                                                        json=data, timeout=1)
                                 if response.ok:
                                     self._log(f"Session paused: {self.current_session_id}")
-                                    self.session_paused = True
+                                else:
+                                    # Reset flag if pause failed
+                                    self.session_paused = False
                             except Exception as e:
                                 self._log(f"Failed to pause session: {e}")
+                                # Reset flag if pause failed
+                                self.session_paused = False
                         
                         threading.Thread(target=pause_session_api, daemon=True).start()
                         
@@ -709,6 +744,11 @@ class ScannerPanel(ttk.Frame):
     def _resume_session(self):
         """Resume the current session when panel is shown"""
         if self.current_session_id and self.session_paused:
+            # Calculate pause duration
+            if self.pause_start_time:
+                pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
+                self.total_pause_duration += pause_duration
+            
             try:
                 config_file_path = get_config_path()
                 if os.path.exists(config_file_path):
@@ -719,7 +759,8 @@ class ScannerPanel(ttk.Frame):
                     if api_url:
                         data = {
                             'session_id': self.current_session_id,
-                            'timestamp': datetime.now().isoformat()
+                            'timestamp': datetime.now().isoformat(),
+                            'total_pause_duration': self.total_pause_duration
                         }
                         
                         def resume_session_api():
@@ -729,6 +770,7 @@ class ScannerPanel(ttk.Frame):
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
                                     self.session_paused = False
+                                    self.pause_start_time = None
                             except Exception as e:
                                 self._log(f"Failed to resume session: {e}")
                         
@@ -744,6 +786,7 @@ class ScannerPanel(ttk.Frame):
     
     def pack_forget(self):
         """Override pack_forget to detect when panel is hidden"""
+        self._log("[DEBUG] pack_forget called")
         self._pause_session()
         super().pack_forget()
 
@@ -758,14 +801,20 @@ class ScannerPanel(ttk.Frame):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
                     
-                api_url = config.get('api_url', '')
+                api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 
                 if api_url:
+                    # If session is paused, calculate final pause duration
+                    if self.session_paused and self.pause_start_time:
+                        pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
+                        self.total_pause_duration += pause_duration
+                    
                     # Send session end event
                     data = {
                         'session_id': self.current_session_id,
                         'timestamp': datetime.now().isoformat(),
-                        'item_count': self.session_item_count
+                        'item_count': self.session_item_count,
+                        'total_pause_duration': self.total_pause_duration
                     }
                     
                     # Make API call in background thread to avoid blocking UI
@@ -783,6 +832,9 @@ class ScannerPanel(ttk.Frame):
             self.current_session_id = None
             self.session_start_time = None
             self.session_item_count = 0
+            self.session_paused = False
+            self.pause_start_time = None
+            self.total_pause_duration = 0
                         
         except Exception as e:
             self._log(f"Error ending session: {e}")
@@ -850,6 +902,35 @@ class ScannerPanel(ttk.Frame):
             # Show completion message
             messagebox.showinfo("Scan Voltooid", "Alle items zijn nu gescand en gemarkeerd als OK!")
 
+    def _extract_project_info_from_excel(self, excel_path):
+        """
+        Extract project information from Excel metadata.
+        First tries to read from _ProjectInfo sheet, then falls back to filename.
+        Returns (project_name, mo_number) tuple.
+        """
+        try:
+            # Try to read metadata sheet
+            excel_file = pd.ExcelFile(excel_path)
+            if '_ProjectInfo' in excel_file.sheet_names:
+                metadata_df = pd.read_excel(excel_path, sheet_name='_ProjectInfo')
+                if not metadata_df.empty:
+                    # Convert to dictionary for easy access
+                    metadata = dict(zip(metadata_df['Property'], metadata_df['Value']))
+                    project_name = metadata.get('project_name', '')
+                    mo_number = metadata.get('mo_number', '')
+                    if project_name:
+                        self._log(f"[METADATA] Found project name from metadata: {project_name}")
+                        return mo_number, project_name
+        except Exception as e:
+            self._log(f"[METADATA] Error reading metadata: {e}")
+        
+        # Fallback to filename extraction
+        filename_base = os.path.splitext(os.path.basename(excel_path))[0]
+        # Strip "_updated" suffix if present before extracting project codes
+        if filename_base.endswith("_updated"):
+            filename_base = filename_base[:-8]  # Remove last 8 characters ("_updated")
+        return self._extract_project_codes_from_filename_base(filename_base)
+    
     def _extract_project_codes_from_filename_base(self, filename_base):
         """
         Extracts the base MO/Accura code and the full project code from a filename base.
@@ -901,14 +982,12 @@ class ScannerPanel(ttk.Frame):
             messagebox.showerror("Fout bij Afmelden", "Kan project niet afmelden: Excel-bestandspad niet beschikbaar.")
             return
 
-        filename_with_ext = os.path.basename(excel_full_path)
-        filename_base, _ = os.path.splitext(filename_with_ext)
-
-        base_mo_code, full_project_code = self._extract_project_codes_from_filename_base(filename_base)
+        # Extract project info from Excel metadata or filename
+        base_mo_code, full_project_code = self._extract_project_info_from_excel(excel_full_path)
 
         if not full_project_code:
-            self._log(f"[FOUT] Kan projectcode niet afleiden uit bestandsnaam: {filename_base}")
-            messagebox.showerror("Fout bij Afmelden", f"Kan projectcode niet afleiden uit bestandsnaam: {filename_base}")
+            self._log(f"[FOUT] Kan projectcode niet afleiden uit Excel bestand: {excel_full_path}")
+            messagebox.showerror("Fout bij Afmelden", f"Kan projectcode niet afleiden uit Excel bestand: {os.path.basename(excel_full_path)}")
             return
 
         config = {}
@@ -926,7 +1005,7 @@ class ScannerPanel(ttk.Frame):
             # Allow to proceed with defaults if config file is missing, api_url will be empty
 
         # Read API URL and username consistent with DatabasePanel
-        api_url = config.get('api_url', '') # Reads 'api_url' from the root of the config
+        api_url = self._ensure_url_protocol(config.get('api_url', '')) # Reads 'api_url' from the root of the config
         current_user = config.get('user', 'BarcodeMatchUser') # Reads 'user' from the root of the config
         
         # Include session_id in AFGEMELD event
@@ -1029,9 +1108,7 @@ class ScannerPanel(ttk.Frame):
             
             if save_successful:  # After successful save
                 # Use the SAME extraction logic as _perform_completion_actions
-                filename_with_ext = os.path.basename(original_file_path)
-                filename_base, _ = os.path.splitext(filename_with_ext)
-                base_mo_code, full_project_code = self._extract_project_codes_from_filename_base(filename_base)
+                base_mo_code, full_project_code = self._extract_project_info_from_excel(save_path)
                 
                 # Send XLSX_UPDATED event
                 config_file_path = get_config_path()
@@ -1280,30 +1357,48 @@ class ScannerPanel(ttk.Frame):
                 self._log(f"Item '{item_content}' is geen .HOP/.HOPS bestand")
                 return
             
+            # Normalize the path to handle different path formats
+            # Replace forward slashes with backslashes on Windows
+            normalized_path = item_content.replace('/', os.sep).replace('\\', os.sep)
+            
+            # Try to resolve the path
+            if os.path.isabs(normalized_path):
+                # It's an absolute path
+                final_path = os.path.normpath(normalized_path)
+            else:
+                # It's a relative path - try relative to the Excel file location
+                excel_path = self.excel_file_path_var.get()
+                if excel_path:
+                    excel_dir = os.path.dirname(excel_path)
+                    final_path = os.path.normpath(os.path.join(excel_dir, normalized_path))
+                else:
+                    final_path = os.path.normpath(normalized_path)
+            
             # Check if the file exists
-            if not os.path.exists(item_content):
-                self._log(f"Bestand niet gevonden: {item_content}")
+            if not os.path.exists(final_path):
+                self._log(f"Bestand niet gevonden: {final_path}")
+                self._log(f"Origineel pad: {item_content}")
                 messagebox.showwarning("Bestand niet gevonden", 
-                                     f"Het bestand kon niet worden gevonden:\n{item_content}")
+                                     f"Het bestand kon niet worden gevonden:\n{final_path}\n\nOrigineel pad:\n{item_content}")
                 return
             
             # Try to open the file with the default associated program
             try:
                 if os.name == 'nt':  # Windows
-                    os.startfile(item_content)
+                    os.startfile(final_path)
                 else:  # macOS/Linux
                     import subprocess
                     if sys.platform == 'darwin':  # macOS
-                        subprocess.run(['open', item_content])
+                        subprocess.run(['open', final_path])
                     else:  # Linux
-                        subprocess.run(['xdg-open', item_content])
+                        subprocess.run(['xdg-open', final_path])
                 
-                self._log(f"Bestand geopend: {os.path.basename(item_content)}")
+                self._log(f"Bestand geopend: {os.path.basename(final_path)}")
                 
             except Exception as e:
                 self._log(f"Fout bij openen van bestand: {e}")
                 messagebox.showerror("Fout bij openen", 
-                                   f"Kon het bestand niet openen:\n{item_content}\n\nFout: {e}")
+                                   f"Kon het bestand niet openen:\n{final_path}\n\nFout: {e}")
                 
         except Exception as e:
             self._log(f"Fout bij dubbelklik verwerking: {e}")
@@ -1313,5 +1408,6 @@ class ScannerPanel(ttk.Frame):
         """Ruimt resources op bij het afsluiten van de applicatie."""
         self._stop_usb_listener()
         self._disconnect_com_port()
-        self._end_session()  # End any active session
+        # Do NOT end session - sessions should persist across application restarts
+        # self._end_session()  # Removed - sessions continue next day
         self._log("Scannerpaneel afgesloten.")

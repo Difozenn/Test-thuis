@@ -236,6 +236,15 @@ hiddenimports = [
     'pkg_resources.py2_warn',
     'encodings',
     'encodings.utf_8',
+    
+    # Tkinter modules
+    'tkinter',
+    'tkinter.ttk',
+    'tkinter.filedialog',
+    'tkinter.messagebox',
+    'tkinter.font',
+    'tkinter.constants',
+    '_tkinter',
 ]
 
 # Add all submodules
@@ -272,7 +281,6 @@ a = Analysis(
         'pytest',
         'pandas.tests',
         'numpy.tests',
-        'tkinter',  # We use our own GUI
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

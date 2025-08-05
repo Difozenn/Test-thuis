@@ -11,6 +11,9 @@ from config_utils import get_config, save_config
 from ..utils import Tooltip
 import requests
 import json
+import signal
+import weakref
+import atexit
 
 class ScannerPanel(tk.Frame):
     
@@ -36,9 +39,15 @@ class ScannerPanel(tk.Frame):
         # Add session tracking
         self.current_session_id = None
         self.session_start_time = None
+        self.session_paused = False
+        self.pause_start_time = None
+        self.total_pause_duration = 0
         
         # Initialize work hours cache
         self._work_hours_cache = None
+        
+        # Check for and cleanup any orphaned sessions on startup
+        self.check_and_cleanup_orphaned_sessions()
         
         # --- USB Keyboard Frame ---
         self.usb_frame = tk.LabelFrame(self, text="USB Keyboard Scanner", bg="#f0f0f0", padx=10, pady=5)
@@ -191,6 +200,20 @@ class ScannerPanel(tk.Frame):
         )
         self.start_button.pack(side='left', padx=10)
         
+        # PAUSE/RESUME button
+        self.pause_button = tk.Button(
+            controls_frame, 
+            text="PAUZEER", 
+            command=self.toggle_pause_session,
+            bg="#FF9800", 
+            fg="white", 
+            font=('Arial', 12, 'bold'),
+            padx=20, 
+            pady=10,
+            state='disabled'  # Initially disabled
+        )
+        self.pause_button.pack(side='left', padx=5)
+        
         # Session status label
         self.session_status_label = tk.Label(
             controls_frame, 
@@ -208,6 +231,9 @@ class ScannerPanel(tk.Frame):
         
         # Start periodic work hours status updates (30 seconds)
         self.after(30000, self.update_work_hours_status)
+        
+        # Register signal handlers for better shutdown handling
+        self._register_shutdown_handlers()
 
     def _initial_work_hours_display(self):
         """Show initial work hours display without API call"""
@@ -309,6 +335,73 @@ class ScannerPanel(tk.Frame):
         
         # Update every 30 seconds for faster settings pickup
         self.after(30000, self.update_work_hours_status)
+
+    def check_and_cleanup_orphaned_sessions(self):
+        """Check for orphaned sessions from this user and close them on startup"""
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        try:
+            # Query database directly for active sessions from this user
+            response = requests.get(f"{api_url}/api/user/{current_user}/active-sessions", timeout=5)
+            if response.ok and response.json().get('success'):
+                active_sessions = response.json().get('sessions', [])
+                for session in active_sessions:
+                    # Close orphaned session
+                    end_data = {
+                        'session_id': session['session_id'],
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=3)
+                    if close_response.ok:
+                        print(f"[ScannerPanel] Cleaned up orphaned session: {session['session_id']}")
+                    else:
+                        print(f"[ScannerPanel] Failed to clean up session: {session['session_id']}")
+            elif response.status_code == 404:
+                # Endpoint doesn't exist yet, fallback to manual check
+                print("[ScannerPanel] Active sessions endpoint not available, skipping cleanup")
+        except requests.exceptions.RequestException as e:
+            print(f"[ScannerPanel] Error checking for orphaned sessions: {e}")
+        except Exception as e:
+            print(f"[ScannerPanel] Unexpected error during session cleanup: {e}")
+
+    def _register_shutdown_handlers(self):
+        """Register signal handlers to ensure sessions are closed on shutdown"""
+        # Store weak reference to avoid circular reference issues
+        weak_self = weakref.ref(self)
+        
+        def signal_handler(signum, frame):
+            """Handle shutdown signals"""
+            panel = weak_self()
+            if panel and panel.current_session_id:
+                print(f"[ScannerPanel] Caught signal {signum}, closing session...")
+                try:
+                    panel.close_current_session()
+                except Exception as e:
+                    print(f"[ScannerPanel] Error closing session on signal: {e}")
+        
+        def atexit_handler():
+            """Handle normal exit"""
+            panel = weak_self()
+            if panel and panel.current_session_id:
+                print("[ScannerPanel] Application exiting, closing session...")
+                try:
+                    panel.close_current_session()
+                except Exception as e:
+                    print(f"[ScannerPanel] Error closing session on exit: {e}")
+        
+        # Register signal handlers for various shutdown scenarios
+        try:
+            signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
+            signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
+            if hasattr(signal, 'SIGBREAK'):
+                signal.signal(signal.SIGBREAK, signal_handler)  # Windows Ctrl+Break
+        except Exception as e:
+            print(f"[ScannerPanel] Warning: Could not register signal handlers: {e}")
+        
+        # Register atexit handler for normal exits
+        atexit.register(atexit_handler)
 
     def get_work_hours_from_api(self):
         """Fetch work hours configuration from API with fallback handling"""
@@ -480,14 +573,17 @@ class ScannerPanel(tk.Frame):
                         self.log_message(f"✓ Werk sessie gestart voor {current_user}", "success")
                         self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
                         self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                        self.pause_button.config(state='normal')  # Enable pause button
                     else:
                         self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
                         self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
                         self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                        self.pause_button.config(state='normal')  # Enable pause button
                 except Exception as pe:
                     self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
                     self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
                     self.start_button.config(text="STOP SESSIE", bg="#f44336")
+                    self.pause_button.config(state='normal')  # Enable pause button
             else:
                 self.log_message("❌ Kon sessie niet starten", "error")
                 self.current_session_id = None
@@ -501,6 +597,10 @@ class ScannerPanel(tk.Frame):
         """Close the current active session and AFGEMELD all open projects"""
         if not self.current_session_id:
             return
+        
+        # If session is paused, resume it first to log the final pause duration
+        if self.session_paused:
+            self.resume_session()
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
@@ -539,7 +639,8 @@ class ScannerPanel(tk.Frame):
         # Then close the session
         data = {
             'session_id': self.current_session_id,
-            'timestamp': timestamp
+            'timestamp': timestamp,
+            'total_pause_duration': self.total_pause_duration  # Include pause duration for accurate work time calculation
         }
         
         try:
@@ -554,11 +655,94 @@ class ScannerPanel(tk.Frame):
         
         self.current_session_id = None
         self.session_start_time = None
+        self.session_paused = False
+        self.pause_start_time = None
+        self.total_pause_duration = 0
         self.session_status_label.config(text="Geen actieve sessie", fg="black")
         self.start_button.config(text="START NIEUWE SESSIE", bg="#4CAF50")
+        self.pause_button.config(text="PAUZEER", bg="#FF9800", state='disabled')
     
 
     # update_session_timer function removed - timer no longer displayed
+    
+    def toggle_pause_session(self):
+        """Toggle between pausing and resuming the current session"""
+        if not self.current_session_id:
+            return
+        
+        if self.session_paused:
+            self.resume_session()
+        else:
+            self.pause_session()
+    
+    def pause_session(self):
+        """Pause the current active session"""
+        if not self.current_session_id or self.session_paused:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Set pause state
+        self.session_paused = True
+        self.pause_start_time = datetime.now()
+        
+        data = {
+            'session_id': self.current_session_id,
+            'timestamp': self.pause_start_time.isoformat()
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=3)
+            if response.ok:
+                self.log_message(f"⏸️ Sessie gepauzeerd voor {current_user}", "info")
+                self.session_status_label.config(text=f"Sessie gepauzeerd: {current_user}", fg="orange")
+                self.pause_button.config(text="HERVAT", bg="#4CAF50")
+            else:
+                self.log_message("❌ Kon sessie niet pauzeren", "error")
+                # Revert pause state on failure
+                self.session_paused = False
+                self.pause_start_time = None
+        except Exception as e:
+            self.log_message(f"❌ Fout bij pauzeren sessie: {e}", "error")
+            # Revert pause state on failure
+            self.session_paused = False
+            self.pause_start_time = None
+    
+    def resume_session(self):
+        """Resume a paused session"""
+        if not self.current_session_id or not self.session_paused:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Calculate pause duration
+        if self.pause_start_time:
+            pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
+            self.total_pause_duration += pause_duration
+        
+        data = {
+            'session_id': self.current_session_id,
+            'timestamp': datetime.now().isoformat(),
+            'total_pause_duration': self.total_pause_duration
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/resume'), json=data, timeout=3)
+            if response.ok:
+                self.log_message(f"▶️ Sessie hervat voor {current_user}", "success")
+                self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
+                self.pause_button.config(text="PAUZEER", bg="#FF9800")
+                # Reset pause state
+                self.session_paused = False
+                self.pause_start_time = None
+            else:
+                self.log_message("❌ Kon sessie niet hervatten", "error")
+        except Exception as e:
+            self.log_message(f"❌ Fout bij hervatten sessie: {e}", "error")
 
     def calculate_work_minutes_local(self, start_time, end_time):
         """Calculate work minutes locally for display using dynamic work hours from settings"""

@@ -214,6 +214,34 @@
     background: #f8f9fa;
 }
 
+/* Dropdown styling for project links */
+.dropdown-toggle::after {
+    display: none;
+}
+
+.dropdown-menu {
+    min-width: 250px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: var(--secondary-blue);
+    color: white;
+}
+
+.dropdown-header {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .stats-controls {
@@ -450,6 +478,7 @@
             <thead>
                 <tr>
                     <th>Datum</th>
+                    <th>Project</th>
                     <th>Items Verwerkt</th>
                     <th>Tijd Gewerkt</th>
                     <th>Items/Uur</th>
@@ -460,6 +489,11 @@
                 {% for activity in user.activity_data %}
                 <tr>
                     <td>{{ activity.date }}</td>
+                    <td>
+                        <a href="/logs_project?project={{ activity.project|urlencode }}" target="_blank" class="text-decoration-none">
+                            <i class="fas fa-external-link-alt me-1"></i>{{ activity.project }}
+                        </a>
+                    </td>
                     <td>{{ activity.items }}</td>
                     <td><span class="activity-hours">{{ activity.hours }}</span></td>
                     <td>{{ activity.items_per_hour }}</td>
@@ -472,7 +506,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
+                    <td colspan="6" class="text-center text-muted py-4">
                         <i class="fas fa-info-circle me-2"></i>
                         Geen activiteit gevonden in de geselecteerde periode
                     </td>
@@ -815,7 +849,8 @@ async function exportUserPerformanceToPDF() {
         // Get current metrics values
         const currentItemsPerHour = document.getElementById('current-items-per-hour').textContent;
         const goalProgress = document.getElementById('goal-progress').textContent;
-        const activeDays = document.querySelector('.metric-card:nth-child(3) .metric-value').textContent;
+        const activeDaysElement = document.querySelector('.metric-card:nth-child(7) .metric-value');
+        const activeDays = activeDaysElement ? activeDaysElement.textContent : '{{ user.activity_data|length }}';
         
         // Get activity table data
         const activityTable = document.querySelector('.stats-table tbody');
@@ -828,6 +863,7 @@ async function exportUserPerformanceToPDF() {
                         <thead>
                             <tr style="background: #0071b4; color: white;">
                                 <th style="padding: 10px; border: 1px solid #ddd;">Datum</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Project</th>
                                 <th style="padding: 10px; border: 1px solid #ddd;">Items Verwerkt</th>
                                 <th style="padding: 10px; border: 1px solid #ddd;">Tijd Gewerkt</th>
                                 <th style="padding: 10px; border: 1px solid #ddd;">Items/Uur</th>
@@ -838,7 +874,7 @@ async function exportUserPerformanceToPDF() {
             
             for (let i = 0; i < activityTable.rows.length; i++) {
                 const row = activityTable.rows[i];
-                if (row.cells.length >= 5) {
+                if (row.cells.length >= 6) {
                     tableHTML += `
                         <tr>
                             <td style="padding: 8px; border: 1px solid #ddd;">${row.cells[0].textContent}</td>
@@ -846,6 +882,7 @@ async function exportUserPerformanceToPDF() {
                             <td style="padding: 8px; border: 1px solid #ddd;">${row.cells[2].textContent}</td>
                             <td style="padding: 8px; border: 1px solid #ddd;">${row.cells[3].textContent}</td>
                             <td style="padding: 8px; border: 1px solid #ddd;">${row.cells[4].textContent}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${row.cells[5].textContent}</td>
                         </tr>`;
                 }
             }
@@ -908,7 +945,7 @@ async function exportUserPerformanceToPDF() {
                             <div class="metric-label">Actieve Dagen (30d)</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value">${qualityScore}</div>
+                            <div class="metric-value">--</div>
                             <div class="metric-label">Kwaliteitsscore (%)</div>
                         </div>
                     </div>
@@ -965,16 +1002,16 @@ async function exportUserDataToExcel() {
         csvContent += "Metric,Waarde\n";
         csvContent += `Huidig Items/Uur,${document.getElementById('current-items-per-hour').textContent}\n`;
         csvContent += `Doel Progress (%),${document.getElementById('goal-progress').textContent}\n`;
-        csvContent += `Actieve Dagen,${document.querySelector('.metric-card:nth-child(3) .metric-value').textContent}\n\n`;
+        csvContent += `Actieve Dagen,${activeDays}\n\n`;
         
         // Detailed Activity Data
         csvContent += "GEDETAILLEERDE ACTIVITEIT\n";
-        csvContent += "Datum,Items Verwerkt,Tijd Gewerkt,Items/Uur,Performance %\n";
+        csvContent += "Datum,Project,Items Verwerkt,Tijd Gewerkt,Items/Uur,Performance %\n";
         
         activityData.forEach(activity => {
             const performance = Math.round((activity.items_per_hour / userTarget) * 100);
             const formattedHours = formatHumanTime(activity.hours);
-            csvContent += `${activity.date},${activity.items},${formattedHours},${activity.items_per_hour},${performance}\n`;
+            csvContent += `${activity.date},"${activity.project}",${activity.items},${formattedHours},${activity.items_per_hour},${performance}\n`;
         });
         
         // Create and download file

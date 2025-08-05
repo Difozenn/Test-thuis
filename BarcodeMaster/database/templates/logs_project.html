@@ -682,6 +682,46 @@
         font-size: 0.65rem;
     }
 }
+
+/* Idle Details Button Style */
+#idle-details-btn {
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+#idle-details-btn:hover {
+    opacity: 1;
+}
+
+/* Modal Enhancements */
+#idleGapsModal .modal-header {
+    border-bottom: 2px solid var(--secondary-blue);
+}
+
+#idleGapsModal .gap-item {
+    background: #f8f9fa;
+    border-left: 3px solid #f39c12;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+#idleGapsModal .gap-item.pause-gap {
+    border-left-color: #3498db;
+}
+
+#idleGapsModal .gap-item.ongoing {
+    border-left-color: #e74c3c;
+}
+
+#idleGapsModal .gap-summary {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
 {% endblock %}
 
 {% block content %}
@@ -757,7 +797,12 @@
                 <p>Totale Idle Tijd</p>
             </div>
         </div>
-        <div class="metric-trend text-muted small" id="idle-time-info" style="line-height: 1.4;">Totale project tijd minus werk tijd</div>
+        <div class="metric-trend text-muted small" id="idle-time-info" style="line-height: 1.4;">
+            Totale project tijd minus werk tijd
+            <button id="idle-details-btn" class="btn btn-link btn-sm p-0 ms-2" style="display: none;" onclick="showIdleGapsModal()">
+                <i class="fas fa-info-circle"></i> Details
+            </button>
+        </div>
     </div>
     
     <div class="enterprise-card">
@@ -1019,6 +1064,589 @@ function formatProjectDisplayName(projectCode) {
     cleanName = cleanName.replace(/\b\w/g, letter => letter.toUpperCase());
     
     return cleanName;
+}
+
+// Calculate idle time by analyzing gaps in the work timeline
+function calculateIdleTime(logData, sessionsData, totalProjectMinutes, totalWorkMinutes) {
+    // Clear previous user pause times
+    window.userPauseTimes = {};
+    
+    console.log(`=== calculateIdleTime called at ${new Date().toISOString()} ===`, {
+        logDataLength: logData?.length,
+        sessionsData: sessionsData,
+        totalProjectMinutes: totalProjectMinutes,
+        totalWorkMinutes: totalWorkMinutes
+    });
+    
+    // CORRECT IMPLEMENTATION:
+    // Idle time = Total project time - Total work time
+    // Work time (from sessions) already has pause time excluded, so we don't need to subtract it again
+    
+    // The totalWorkMinutes passed in is the sum of all session work_duration_minutes
+    // which already excludes pause time (pause time was subtracted when session ended)
+    
+    const idleMinutes = Math.max(0, totalProjectMinutes - totalWorkMinutes);
+    
+    // Log for debugging - show what we're actually calculating
+    console.log('Idle time calculation (corrected):', {
+        totalProjectMinutes,
+        totalWorkMinutes: totalWorkMinutes + ' (already excludes pause time)',
+        idleMinutes,
+        explanation: 'Idle = Project time - Work time (work time already excludes pauses)'
+    });
+    
+    // Also log if there are any overlapping sessions for awareness
+    // Build timeline of active sessions to detect overlaps
+    const timeline = [];
+    
+    // Track the very first activity in the project (from logs)
+    let projectFirstActivity = null;
+    if (logData && logData.length > 0) {
+        projectFirstActivity = new Date(logData[0].timestamp);
+        console.log(`Project first activity from logs: ${projectFirstActivity.toISOString()} (${logData[0].event} by ${logData[0].user})`);
+    }
+    
+    // Process session data to build timeline
+    console.log('Processing sessions for timeline:', {
+        sessionsData: sessionsData,
+        isArray: Array.isArray(sessionsData),
+        hasSessions: sessionsData?.sessions,
+        sessionsIsArray: Array.isArray(sessionsData?.sessions)
+    });
+    
+    // Handle both data structures: sessionsData as array or sessionsData.sessions
+    const sessionsArray = Array.isArray(sessionsData) ? sessionsData : (sessionsData?.sessions || []);
+    
+    if (sessionsArray && sessionsArray.length > 0) {
+        sessionsArray.forEach((session, idx) => {
+            console.log(`Session ${idx}:`, {
+                session: session,
+                hasStartTime: !!session.start_time,
+                hasEndTime: !!session.end_time,
+                startTime: session.start_time,
+                endTime: session.end_time,
+                user: session.user,
+                sessionId: session.session_id
+            });
+            
+            if (session.start_time) {
+                timeline.push({
+                    time: new Date(session.start_time),
+                    type: 'start',
+                    user: session.user,
+                    sessionId: session.session_id
+                });
+            }
+            if (session.end_time) {
+                timeline.push({
+                    time: new Date(session.end_time),
+                    type: 'end',
+                    user: session.user,
+                    sessionId: session.session_id
+                });
+            }
+        });
+    }
+    
+    // Also add pause/resume events to timeline to track paused idle time
+    if (logData) {
+        console.log('Checking logData for pause/resume events. Total logs:', logData.length);
+        console.log('Log events:');
+        logData.forEach((log, idx) => {
+            console.log(`  ${idx}: ${log.event} by ${log.user} at ${log.timestamp}`);
+        });
+        let pauseResumeCount = 0;
+        logData.forEach(log => {
+            if (log.event === 'SESSION_PAUSE') {
+                timeline.push({
+                    time: new Date(log.timestamp),
+                    type: 'pause',
+                    user: log.user,
+                    sessionId: log.session_id
+                });
+                pauseResumeCount++;
+                console.log(`Found SESSION_PAUSE event: ${log.timestamp} for ${log.user}`);
+            } else if (log.event === 'SESSION_RESUME') {
+                timeline.push({
+                    time: new Date(log.timestamp),
+                    type: 'resume',
+                    user: log.user,
+                    sessionId: log.session_id
+                });
+                pauseResumeCount++;
+                console.log(`Found SESSION_RESUME event: ${log.timestamp} for ${log.user}`);
+            }
+        });
+        if (pauseResumeCount > 0) {
+            console.log(`Total pause/resume events found: ${pauseResumeCount}`);
+        }
+    }
+    
+    // Sort timeline by time
+    timeline.sort((a, b) => a.time - b.time);
+    
+    console.log('Timeline length:', timeline.length);
+    console.log('Timeline after sorting:', timeline.map(e => ({
+        time: e.time.toISOString(),
+        type: e.type,
+        user: e.user,
+        sessionId: e.sessionId
+    })));
+    
+    // Analyze timeline to identify idle gaps
+    let activeUsers = new Set();
+    let pausedUsers = new Set();
+    let hasOverlaps = false;
+    let idleGaps = [];
+    let lastActiveTime = null;
+    let lastFinishedUser = null;
+    let projectStartTime = timeline.length > 0 ? timeline[0].time : null;
+    
+    // Check for gap between project first activity and first session
+    console.log('Checking for initial gap:', {
+        projectFirstActivity: projectFirstActivity?.toISOString(),
+        projectStartTime: projectStartTime?.toISOString(),
+        condition: projectFirstActivity && projectStartTime && projectFirstActivity < projectStartTime
+    });
+    
+    if (projectFirstActivity && projectStartTime && projectFirstActivity < projectStartTime) {
+        const initialGapMinutes = calculateWorkMinutes(projectFirstActivity, projectStartTime);
+        console.log(`Initial gap calculation: ${initialGapMinutes.toFixed(1)} minutes from ${projectFirstActivity.toISOString()} to ${projectStartTime.toISOString()}`);
+        if (initialGapMinutes >= 0.5) {
+            console.log(`Initial gap detected: ${initialGapMinutes.toFixed(1)} minutes from first log to first session`);
+            idleGaps.push({
+                start: projectFirstActivity,
+                end: projectStartTime,
+                duration: initialGapMinutes,
+                totalDuration: (projectStartTime - projectFirstActivity) / (1000 * 60),
+                afterUser: 'project created',
+                beforeUser: timeline[0].user || 'first session',
+                isInitialGap: true
+            });
+        }
+    }
+    
+    console.log(`About to process ${timeline.length} timeline events`);
+    timeline.forEach((event, index) => {
+        console.log(`Processing event ${index}:`, event);
+        if (event.type === 'start') {
+            console.log(`Start event for ${event.user} at ${event.time.toISOString()}`);
+            // Check for gaps when starting (either from empty state or all-paused state)
+            if (activeUsers.size === 0 && lastActiveTime !== null) {
+                const workMinutesInGap = calculateWorkMinutes(lastActiveTime, event.time);
+                console.log(`Gap check: ${workMinutesInGap.toFixed(2)} minutes from ${lastActiveTime.toISOString()} to ${event.time.toISOString()}`);
+                
+                if (workMinutesInGap >= 0.5) {  // Lowered threshold to catch smaller gaps
+                    const gapType = pausedUsers.size > 0 ? 'pause-to-start' : 'handoff';
+                    idleGaps.push({
+                        start: lastActiveTime,
+                        end: event.time,
+                        duration: workMinutesInGap,  // This is now work minutes only
+                        totalDuration: (event.time - lastActiveTime) / (1000 * 60), // Total elapsed time
+                        afterUser: lastFinishedUser || 'project start',
+                        beforeUser: event.user,
+                        isHandoffDelay: gapType === 'handoff',
+                        isPauseGap: gapType === 'pause-to-start'
+                    });
+                }
+            }
+            
+            if (activeUsers.size > 0) {
+                hasOverlaps = true;
+                console.log(`Session overlap detected: ${event.user} started while ${Array.from(activeUsers).join(', ')} still active`);
+            }
+            activeUsers.add(event.user);
+            pausedUsers.delete(event.user); // Remove from paused if starting
+        } else if (event.type === 'end') {
+            console.log(`End event for ${event.user} at ${event.time.toISOString()}`);
+            activeUsers.delete(event.user);
+            pausedUsers.delete(event.user); // Remove from paused if ending
+            if (activeUsers.size === 0 && pausedUsers.size === 0) {
+                // All users finished and none paused - potential idle period starts
+                lastActiveTime = event.time;
+                lastFinishedUser = event.user;
+                console.log(`All users finished - idle period starts at ${event.time.toISOString()}`);
+            }
+        } else if (event.type === 'pause') {
+            console.log(`Pause event for ${event.user}:`, {
+                beforePause: { active: Array.from(activeUsers), paused: Array.from(pausedUsers) },
+                time: event.time.toISOString()
+            });
+            
+            // IMPORTANT: Set lastActiveTime BEFORE removing user from activeUsers
+            // This ensures we capture when work actually stopped
+            if (activeUsers.size === 1 && activeUsers.has(event.user)) {
+                // This is the last active user pausing
+                lastActiveTime = event.time;
+                lastFinishedUser = event.user + ' (paused)';
+                console.log(`Last active user pausing - work stops at ${event.time.toISOString()}`);
+            }
+            
+            activeUsers.delete(event.user);
+            pausedUsers.add(event.user);
+        } else if (event.type === 'resume') {
+            // Check if we're resuming from an all-paused state (creating an idle gap)
+            if (activeUsers.size === 0 && pausedUsers.size > 0 && lastActiveTime !== null) {
+                // Calculate gap duration during pause
+                const workMinutesInGap = calculateWorkMinutes(lastActiveTime, event.time);
+                
+                // Enhanced debugging for pause gap detection
+                console.log(`Resume event - checking pause gap:`, {
+                    lastActiveTime: lastActiveTime?.toISOString(),
+                    resumeTime: event.time.toISOString(),
+                    workMinutesInGap: workMinutesInGap,
+                    activeUsers: activeUsers.size,
+                    pausedUsers: pausedUsers.size,
+                    willCreateGap: workMinutesInGap > 1
+                });
+                
+                if (workMinutesInGap >= 0.5) {  // Lowered threshold to catch smaller gaps
+                    idleGaps.push({
+                        start: lastActiveTime,
+                        end: event.time,
+                        duration: workMinutesInGap,
+                        totalDuration: (event.time - lastActiveTime) / (1000 * 60),
+                        afterUser: lastFinishedUser || 'all paused',
+                        beforeUser: event.user + ' (resumed)',
+                        isPauseGap: true
+                    });
+                }
+            }
+            
+            pausedUsers.delete(event.user);
+            activeUsers.add(event.user);
+        }
+    });
+    
+    // Check if there's ongoing idle time at the end
+    if (activeUsers.size === 0 && pausedUsers.size === 0 && lastActiveTime !== null) {
+        const now = new Date();
+        // Calculate work minutes in the gap (excludes non-work hours, weekends, breaks)
+        const workMinutesInGap = calculateWorkMinutes(lastActiveTime, now);
+        
+        if (workMinutesInGap > 1) {
+            idleGaps.push({
+                start: lastActiveTime,
+                end: now,
+                duration: workMinutesInGap,  // Work minutes only
+                totalDuration: (now - lastActiveTime) / (1000 * 60), // Total elapsed time
+                afterUser: lastFinishedUser || 'last active session',
+                beforeUser: 'ongoing',
+                isOngoing: true
+            });
+        }
+    } else if (activeUsers.size === 0 && pausedUsers.size > 0 && lastActiveTime !== null) {
+        // All users are paused - this is also idle time
+        const now = new Date();
+        const workMinutesInGap = calculateWorkMinutes(lastActiveTime, now);
+        
+        if (workMinutesInGap > 1) {
+            idleGaps.push({
+                start: lastActiveTime,
+                end: now,
+                duration: workMinutesInGap,
+                totalDuration: (now - lastActiveTime) / (1000 * 60),
+                afterUser: lastFinishedUser || 'all users paused',
+                beforeUser: 'ongoing (paused)',
+                isOngoing: true,
+                isPaused: true
+            });
+        }
+    }
+    
+    // Log idle gap analysis
+    if (idleGaps.length > 0) {
+        console.log('Idle gaps identified (only work time counted):');
+        idleGaps.forEach((gap, index) => {
+            const startTime = gap.start.toLocaleTimeString();
+            const endTime = gap.isOngoing ? 'ongoing' : gap.end.toLocaleTimeString();
+            const gapType = gap.isPauseGap ? '[PAUSE GAP]' : gap.isHandoffDelay ? '[HANDOFF]' : '[OTHER]';
+            console.log(`  Gap ${index + 1} ${gapType}: ${gap.duration.toFixed(1)} work minutes (${startTime} - ${endTime})`);
+            console.log(`    After: ${gap.afterUser}, Before: ${gap.beforeUser}`);
+            if (gap.totalDuration) {
+                const nonWorkTime = gap.totalDuration - gap.duration;
+                if (nonWorkTime > 0) {
+                    console.log(`    (Excluded ${nonWorkTime.toFixed(1)} minutes of non-work time)`);
+                }
+            }
+        });
+        
+        const totalIdleFromGaps = idleGaps.reduce((sum, gap) => sum + gap.duration, 0);
+        console.log(`Total idle time from gaps: ${totalIdleFromGaps.toFixed(1)} work minutes`);
+        console.log(`Expected idle time: ${idleMinutes.toFixed(1)} minutes`);
+        console.log(`Difference: ${(idleMinutes - totalIdleFromGaps).toFixed(1)} minutes unaccounted for`);
+    }
+    
+    // Always check session work durations for pause times
+    if (sessionsData && Array.isArray(sessionsData)) {
+        console.log('Session durations analysis:');
+        let totalWorkFromSessions = 0;
+        sessionsData.forEach((session, idx) => {
+            console.log(`  Session ${idx}: work_duration=${session.work_duration_minutes}, pause_duration=${session.pause_duration_minutes} (user: ${session.user})`);
+            if (session.work_duration_minutes) {
+                totalWorkFromSessions += session.work_duration_minutes;
+            }
+            if (session.pause_duration_minutes && session.pause_duration_minutes > 0) {
+                console.log(`    PAUSE DETECTED: ${session.pause_duration_minutes} minutes`);
+            }
+            // Check session times
+            if (session.start_time && session.end_time) {
+                const start = new Date(session.start_time);
+                const end = new Date(session.end_time);
+                const totalMinutes = (end - start) / (1000 * 60);
+                const workMinutesAvailable = calculateWorkMinutes(session.start_time, session.end_time);
+                console.log(`    Session duration: ${totalMinutes.toFixed(2)} total minutes, ${workMinutesAvailable.toFixed(2)} work minutes available`);
+                if (session.work_duration_minutes) {
+                    const impliedPause = totalMinutes - session.work_duration_minutes;
+                    const actualPauseTime = workMinutesAvailable - session.work_duration_minutes;
+                    if (impliedPause > 0.1) {
+                        console.log(`    IMPLIED PAUSE (raw): ${impliedPause.toFixed(2)} minutes (total - work)`);
+                    }
+                    if (actualPauseTime > 0.1) {
+                        console.log(`    ACTUAL PAUSE TIME: ${actualPauseTime.toFixed(2)} minutes during work hours`);
+                        
+                        // Store for display in modal
+                        if (!window.userPauseTimes) window.userPauseTimes = {};
+                        if (!window.userPauseTimes[session.user]) {
+                            window.userPauseTimes[session.user] = {
+                                totalPause: 0,
+                                sessions: []
+                            };
+                        }
+                        window.userPauseTimes[session.user].totalPause += actualPauseTime;
+                        window.userPauseTimes[session.user].sessions.push({
+                            sessionId: session.session_id,
+                            pauseMinutes: actualPauseTime,
+                            start: session.start_time,
+                            end: session.end_time
+                        });
+                    }
+                }
+            }
+        });
+        console.log(`Total work time from sessions: ${totalWorkFromSessions.toFixed(2)} minutes`);
+        console.log(`Total work time used in calculation: ${totalWorkMinutes} minutes`);
+        console.log(`Discrepancy: ${(totalWorkFromSessions - totalWorkMinutes).toFixed(2)} minutes`);
+        
+        // Debug user pause times
+        if (window.userPauseTimes) {
+            console.log('User pause times collected:');
+            Object.entries(window.userPauseTimes).forEach(([user, data]) => {
+                console.log(`  ${user}: ${data.totalPause.toFixed(2)} minutes pause across ${data.sessions.length} sessions`);
+            });
+        }
+    }
+    
+    if (hasOverlaps) {
+        console.log('Note: This project had overlapping sessions. Idle time only counts when NO users are working.');
+    }
+    
+    // Store idle gaps globally for potential UI display
+    window.projectIdleGaps = idleGaps;
+    console.log('Stored idle gaps in window.projectIdleGaps:', idleGaps);
+    
+    // Debug log if there's idle time but no gaps detected
+    if (idleMinutes > 1 && idleGaps.length === 0) {
+        console.warn(`IDLE TIME MISMATCH: ${idleMinutes.toFixed(1)} minutes of idle time but no gaps detected!`);
+        console.log('This can happen when:');
+        console.log('  1. Session was paused for less than 30 seconds of work time');
+        console.log('  2. Pause occurred entirely outside work hours');
+        console.log('  3. Session is still ongoing/paused');
+        console.log('  4. Project started before pause tracking was implemented');
+        console.log('  5. Multiple overlapping sessions (idle only when NO users active)');
+        console.log('Timeline events:', timeline);
+        console.log('First project activity:', projectFirstActivity);
+        console.log('Sessions data:', sessionsData);
+        
+        // If significant idle time with no gaps, show a generic explanation
+        if (idleMinutes > 5) {
+            window.projectIdleGaps = [{
+                start: projectFirstActivity || new Date(),
+                end: new Date(),
+                duration: idleMinutes,
+                totalDuration: idleMinutes,
+                afterUser: 'onbekend',
+                beforeUser: 'onbekend',
+                isUntracked: true,
+                explanation: 'Idle tijd gedetecteerd maar specifieke gaps konden niet worden bepaald. Dit kan gebeuren bij oudere projecten of overlappende sessies.'
+            }];
+        }
+    }
+    
+    return idleMinutes;
+}
+
+function showIdleGapsModal() {
+    console.log('showIdleGapsModal called');
+    console.log('Current projectIdleGaps:', window.projectIdleGaps);
+    const modal = document.getElementById('idleGapsModal');
+    if (modal) {
+        updateIdleGapsModalContent();
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    } else {
+        console.error('idleGapsModal element not found');
+    }
+}
+
+
+function updateIdleGapsModalContent() {
+    const modalBody = document.getElementById('idle-gaps-modal-body');
+    console.log('updateIdleGapsModalContent called, modalBody:', modalBody);
+    if (!modalBody) {
+        console.error('idle-gaps-modal-body not found');
+        return;
+    }
+    
+    const gaps = window.projectIdleGaps || [];
+    console.log('Gaps to display:', gaps);
+    
+    if (gaps.length === 0) {
+        modalBody.innerHTML = '<p class="text-muted">Geen idle gaps gedetecteerd ondanks idle tijd. Dit kan gebeuren wanneer de pauze korter was dan 30 seconden of volledig buiten werktijden viel.</p>';
+        return;
+    }
+    
+    let html = '';
+    
+    // Calculate summary statistics
+    const totalIdleMinutes = gaps.reduce((sum, gap) => sum + gap.duration, 0);
+    const pauseGaps = gaps.filter(g => g.isPauseGap && !g.isOngoing);
+    const handoffGaps = gaps.filter(g => g.isHandoffDelay && !g.isOngoing);
+    const pausedGaps = gaps.filter(g => g.isPaused);
+    const ongoingGaps = gaps.filter(g => g.isOngoing);
+    
+    // Summary section
+    html += '<div class="gap-summary">';
+    html += `<h6 class="mb-3"><strong>Totaal: ${Math.floor(totalIdleMinutes / 60)}h ${Math.round(totalIdleMinutes % 60)}m idle tijd</strong></h6>`;
+    html += '<div class="row">';
+    
+    if (handoffGaps.length > 0) {
+        html += '<div class="col-6 mb-2">';
+        html += `<i class="fas fa-exchange-alt text-muted"></i> <span class="text-muted">${handoffGaps.length} handoff delay${handoffGaps.length > 1 ? 's' : ''}</span>`;
+        html += '</div>';
+    }
+    if (pauseGaps.length > 0) {
+        html += '<div class="col-6 mb-2">';
+        html += `<i class="fas fa-pause text-info"></i> <span class="text-info">${pauseGaps.length} pauze periode${pauseGaps.length > 1 ? 's' : ''}</span>`;
+        html += '</div>';
+    }
+    if (pausedGaps.length > 0) {
+        html += '<div class="col-6 mb-2">';
+        html += `<i class="fas fa-pause-circle text-warning"></i> <span class="text-warning">${pausedGaps.length} lopende gepauzeerde sessie${pausedGaps.length > 1 ? 's' : ''}</span>`;
+        html += '</div>';
+    }
+    if (ongoingGaps.length > 0) {
+        html += '<div class="col-6 mb-2">';
+        const ongoingType = ongoingGaps[0].isPaused ? '(gepauzeerd)' : '';
+        html += `<i class="fas fa-clock text-danger"></i> <span class="text-danger">${ongoingGaps.length} lopende idle periode ${ongoingType}</span>`;
+        html += '</div>';
+    }
+    
+    html += '</div></div>';
+    
+    // Display per-user pause times
+    if (window.userPauseTimes && Object.keys(window.userPauseTimes).length > 0) {
+        console.log('Modal: User pause times before consolidation:', window.userPauseTimes);
+        
+        // For BarcodeMaster with single user, consolidate Scanner and NESTING entries
+        const pauseData = {...window.userPauseTimes};
+        if (pauseData['Scanner'] && pauseData['NESTING']) {
+            console.log('Modal: Found both Scanner and NESTING, consolidating...');
+            // Combine into single entry since it's the same person
+            pauseData['NESTING (enkele gebruiker)'] = {
+                totalPause: pauseData['Scanner'].totalPause + pauseData['NESTING'].totalPause,
+                sessions: [...pauseData['Scanner'].sessions, ...pauseData['NESTING'].sessions]
+            };
+            delete pauseData['Scanner'];
+            delete pauseData['NESTING'];
+        } else {
+            console.log('Modal: Not consolidating - Scanner present:', !!pauseData['Scanner'], 'NESTING present:', !!pauseData['NESTING']);
+        }
+        
+        html += '<div class="mt-4 p-3 bg-light rounded">';
+        html += '<h6 class="text-muted mb-3"><i class="fas fa-user-clock"></i> Pauze tijd tijdens sessies</h6>';
+        
+        let totalUserPauses = 0;
+        Object.entries(pauseData).forEach(([user, data]) => {
+            totalUserPauses += data.totalPause;
+            html += '<div class="user-pause-item mb-2">';
+            html += `<div class="d-flex justify-content-between align-items-center">`;
+            html += `<span><i class="fas fa-user text-muted"></i> ${user}</span>`;
+            const pauseMinutes = Math.round(data.totalPause);
+            html += `<span class="badge bg-warning">${pauseMinutes} min pauze</span>`;
+            html += `</div>`;
+            if (data.sessions.length > 1) {
+                html += `<small class="text-muted ms-3">Verdeeld over ${data.sessions.length} sessies</small>`;
+            }
+            html += '</div>';
+        });
+        
+        html += '<div class="mt-3 p-2 bg-white rounded">';
+        html += `<small class="text-muted">`;
+        html += `<i class="fas fa-info-circle"></i> `;
+        html += `Totaal <strong>${Math.round(totalUserPauses)} minuten</strong> pauze tijd tijdens werktijd.`;
+        html += `</small>`;
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    html += '<h6 class="mb-3 mt-4">Idle periodes detail (alleen binnen werktijden):</h6>';
+    
+    gaps.forEach((gap, index) => {
+        const startTime = gap.start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+        const endTime = gap.isOngoing ? 'nu' : gap.end.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+        const startDate = gap.start.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+        const endDate = gap.isOngoing ? new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) : gap.end.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+        const hours = Math.floor(gap.duration / 60);
+        const minutes = Math.round(gap.duration % 60);
+        const durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        
+        // Show date if gap spans multiple days
+        const dateDisplay = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+        
+        let gapClass = 'gap-item';
+        if (gap.isPauseGap) gapClass += ' pause-gap';
+        if (gap.isOngoing) gapClass += ' ongoing';
+        
+        html += `<div class="${gapClass}">`;
+        html += `<div class="d-flex justify-content-between align-items-center mb-1">`;
+        html += `<span><i class="fas fa-clock text-warning"></i> ${startTime} - ${endTime} (${dateDisplay})</span>`;
+        html += `<span class="fw-bold">${durationStr}</span>`;
+        html += `</div>`;
+        html += `<div class="text-muted small" style="margin-left: 20px;">`;
+        html += `Na: ${gap.afterUser} → Voor: ${gap.beforeUser}`;
+        
+        // Show gap type
+        if (gap.isUntracked) {
+            html += ` <span class="text-danger">(onbekende oorzaak)</span>`;
+        } else if (gap.isPaused) {
+            html += ` <span class="text-warning">(sessie gepauzeerd)</span>`;
+        } else if (gap.isPauseGap) {
+            html += ` <span class="text-info">(pauze periode)</span>`;
+        } else if (gap.isHandoffDelay) {
+            html += ` <span class="text-secondary">(handoff delay)</span>`;
+        } else if (gap.isInitialGap) {
+            html += ` <span class="text-primary">(voor eerste sessie)</span>`;
+        }
+        
+        // Show if this is during work hours vs spanning non-work time
+        if (gap.totalDuration && gap.totalDuration > gap.duration * 1.5) {
+            html += ` <span class="text-info">(bevat niet-werktijd)</span>`;
+        }
+        
+        // Show explanation if available
+        if (gap.explanation) {
+            html += `<div class="text-warning small mt-1">${gap.explanation}</div>`;
+        }
+        
+        html += `</div>`;
+        html += `</div>`; // Close gap-item div
+    });
+    
+    html += '</div>';
+    console.log('Setting modal content, HTML length:', html.length);
+    modalBody.innerHTML = html;
+    console.log('Modal content set successfully');
 }
 
 async function loadUserProcessingTypes() {
@@ -1973,6 +2601,18 @@ async function updatePerformanceMetrics() {
             
             console.log('Filtered project users:', projectUsers);
             
+            // Update sessionsData with the sessions from API response
+            console.log('Looking for sessions in API response. Available properties:', Object.keys(data));
+            if (data.sessions) {
+                sessionsData = data.sessions;
+                console.log('Updated sessionsData from API:', sessionsData);
+            } else if (data.sessions_data) {
+                sessionsData = data.sessions_data;
+                console.log('Updated sessionsData from API (sessions_data):', sessionsData);
+            } else {
+                console.log('No sessions found in API response');
+            }
+            
             // Calculate user stats using proportional time allocation from API
             uniqueUsers.forEach(user => {
                 const userMetric = projectUsers.find(u => u.user === user);
@@ -2109,19 +2749,14 @@ async function updatePerformanceMetrics() {
         console.log(`Processing user ${userName}:`, user);
         
         if (typeof user.sessionMinutes === 'number' && !isNaN(user.sessionMinutes)) {
-            // Completed sessions - use actual work_duration_minutes
+            // Sessions with calculated time - use actual work_duration_minutes
             console.log(`  Adding ${user.sessionMinutes} minutes for ${userName}`);
             totalSessionMinutes += user.sessionMinutes;
         } else if (user.sessionMinutes === 'IN_PROGRESS') {
-            // Active sessions - calculate elapsed time from first log
-            const now = new Date();
-            const userLogs = logData.filter(log => log.user === userName).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            if (userLogs.length > 0) {
-                const startTime = new Date(userLogs[0].timestamp);
-                const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
-                console.log(`  Adding ${elapsedMinutes} elapsed minutes for active user ${userName}`);
-                totalSessionMinutes += elapsedMinutes;
-            }
+            // For IN_PROGRESS sessions, don't add time here
+            // The API already includes active session time in the calculation when it returns a number
+            // If it returns 'IN_PROGRESS', it means there's no time to count yet
+            console.log(`  User ${userName} is IN_PROGRESS but has no countable time yet`);
         } else {
             console.log(`  Skipping user ${userName} - invalid sessionMinutes:`, user.sessionMinutes);
         }
@@ -2147,11 +2782,20 @@ async function updatePerformanceMetrics() {
         totalSessionMinutes = 0;
     }
     
-    // Calculate and display idle time using the accurate project time
-    const idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
+    // Calculate idle time correctly: Project time - Work time (work time already excludes pauses)
+    const idleMinutes = calculateIdleTime(logData, sessionsData, actualProjectMinutes, totalSessionMinutes);
     const idleHours = Math.floor(idleMinutes / 60) || 0;
     const idleMins = Math.round(idleMinutes % 60) || 0;
     document.getElementById('total-idle-time').textContent = `${idleHours}h ${idleMins}m`;
+    
+    // Show/hide details button based on idle time
+    const detailsBtn = document.getElementById('idle-details-btn');
+    if (detailsBtn) {
+        detailsBtn.style.display = idleMinutes > 0 ? 'inline-block' : 'none';
+        console.log('Details button visibility:', idleMinutes > 0 ? 'shown' : 'hidden', 'idleMinutes:', idleMinutes);
+    } else {
+        console.error('Details button not found!');
+    }
     
     console.log('Idle time calculation:', {
         actualProjectMinutes,
@@ -2178,7 +2822,14 @@ async function updatePerformanceMetrics() {
             calculatedPercentage: idlePercentage
         });
         
-        idleTimeInfo.innerHTML = `${idlePercentage}% van totale project tijd`;
+        // Update only the text, preserving buttons
+        const textNode = idleTimeInfo.childNodes[0];
+        if (textNode && textNode.nodeType === 3) {
+            textNode.textContent = `${idlePercentage}% van totale project tijd`;
+        } else {
+            // Fallback: prepend text if structure is different
+            idleTimeInfo.insertAdjacentHTML('afterbegin', `${idlePercentage}% van totale project tijd `);
+        }
     }
     
     // Update total project time display (already set above, but ensure consistency)
@@ -2679,4 +3330,26 @@ function findLastUserInChain(userStats, configuredUsers) {
     return null;
 }
 </script>
+
+<!-- Idle Gaps Detail Modal -->
+<div class="modal fade" id="idleGapsModal" tabindex="-1" aria-labelledby="idleGapsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="idleGapsModalLabel">
+                    <i class="fas fa-pause-circle text-warning me-2"></i>
+                    Idle Tijd Analyse
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="idle-gaps-modal-body">
+                <!-- Content will be populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Sluiten</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

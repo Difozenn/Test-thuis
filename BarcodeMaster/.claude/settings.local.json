@@ -9,7 +9,8 @@
       "Bash(find:*)",
       "Bash(cd /mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster)",
       "Bash(python:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": []
   }

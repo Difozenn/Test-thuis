@@ -599,7 +599,8 @@ class BackgroundImportService:
                                     result['items_list'],
                                     result['mo_number'],
                                     result['so_number'],
-                                    result['customer_name']
+                                    result['customer_name'],
+                                    project_code_to_log  # Pass the project name
                                 )
                                 if excel_path:
                                     self._log(f"[ACCURA] Generated Excel file: {excel_path}")
@@ -625,7 +626,8 @@ class BackgroundImportService:
                                     result['items_list'],
                                     result['mo_number'],
                                     result['so_number'],
-                                    result['customer_name']
+                                    result['customer_name'],
+                                    project_code_to_log  # Pass the project name
                                 )
                                 if excel_path:
                                     self._log(f"[BOERE] Generated Excel file: {excel_path}")

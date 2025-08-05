@@ -184,6 +184,29 @@ class DatabasePanel(ttk.Frame):
                 print("[DBLCLICK DEBUG] No project name found")
                 messagebox.showwarning("Geen project", "Geen projectnaam gevonden voor deze log entry.")
                 return
+            
+            # Special handling for BEZIG status - offer session control
+            if log_status == 'BEZIG':
+                print(f"[DBLCLICK DEBUG] Handling BEZIG status for {log_user}")
+                
+                # Show dialog for session control
+                result = messagebox.askyesnocancel(
+                    "Werk Sessie Actief", 
+                    f"Project '{project_name}' is momenteel BEZIG voor gebruiker {log_user}.\n\n"
+                    "Wilt u:\n"
+                    "YES - Het Excel bestand openen en doorgaan met werken\n"
+                    "NO - De sessie pauzeren\n"
+                    "CANCEL - Niets doen",
+                    icon='question'
+                )
+                
+                if result is None:  # Cancel clicked
+                    return
+                elif result is False:  # No clicked - pause session
+                    # Call API to pause the session
+                    self._pause_work_session(log_user, project_name)
+                    return
+                # If Yes clicked, continue to find and open the Excel file
 
             path_to_load = None
 
@@ -193,7 +216,14 @@ class DatabasePanel(ttk.Frame):
             print(f"[DBLCLICK DEBUG] Is Excel file: {file_path_from_db.lower().endswith(('.xlsx', '.xls')) if file_path_from_db else False}")
             print(f"[DBLCLICK DEBUG] File exists: {os.path.exists(file_path_from_db) if file_path_from_db else False}")
             
-            if file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')) and os.path.exists(file_path_from_db):
+            # Special handling when file_path is 'None' or empty - skip to more aggressive search
+            if file_path_from_db == 'None' or not file_path_from_db or not file_path_from_db.strip():
+                print(f"[DBLCLICK DEBUG] File path is None/empty, jumping to PRIORITY 4 for {log_user}")
+                # Skip directly to PRIORITY 4 for ACCURA/BOERE
+                if log_user in ['ACCURA', 'BOERE']:
+                    print(f"[DBLCLICK DEBUG] Jumping directly to ACCURA/BOERE directory search")
+                    # Continue to PRIORITY 4
+            elif file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')) and os.path.exists(file_path_from_db):
                 path_to_load = file_path_from_db
                 print(f"[DBLCLICK] Found Excel file directly from database: {path_to_load}")
                 self.main_app.switch_to_scanner_and_load(path_to_load)
@@ -252,18 +282,44 @@ class DatabasePanel(ttk.Frame):
             # PRIORITY 4: Handle ACCURA/BOERE type users with dedicated directories
             print(f"[DBLCLICK DEBUG] PRIORITY 4: Checking ACCURA/BOERE type directories")
             if log_user in ['ACCURA', 'BOERE']:
-                # For ACCURA/BOERE, files are typically in C:/ACCURA/ or C:/BOERE/ directories
-                user_directory = f"C:/{log_user}"
+                # Get configured directory from BarcodeMatch config
+                accura_dir = app_config.get('accura_output_dir', 'C:/ACCURA')
+                boere_dir = app_config.get('boere_output_dir', 'C:/BOERE')
+                
+                # Use the appropriate directory based on user
+                user_directory = accura_dir if log_user == 'ACCURA' else boere_dir
                 print(f"[DBLCLICK DEBUG] Checking {log_user} directory: {user_directory}")
                 
                 if os.path.isdir(user_directory):
                     # Look for files matching project pattern
                     import glob
-                    pattern = f"{user_directory}/*{project_name.split('_')[0]}*.xlsx"  # Match by MO number
-                    print(f"[DBLCLICK DEBUG] Search pattern: {pattern}")
+                    mo_number = project_name.split('_')[0] if '_' in project_name else project_name
                     
-                    matching_files = glob.glob(pattern)
-                    print(f"[DBLCLICK DEBUG] Found {len(matching_files)} matching files")
+                    # Try multiple patterns to find the Excel file
+                    patterns = [
+                        f"{user_directory}/*{mo_number}*.xlsx",  # Match by MO number anywhere in filename
+                        f"{user_directory}/{mo_number}_*.xlsx",  # Match starting with MO number
+                        f"{user_directory}/*_{mo_number}_*.xlsx" # Match with MO number in middle
+                    ]
+                    
+                    matching_files = []
+                    for pattern in patterns:
+                        print(f"[DBLCLICK DEBUG] Trying search pattern: {pattern}")
+                        files = glob.glob(pattern)
+                        if files:
+                            matching_files.extend(files)
+                            print(f"[DBLCLICK DEBUG] Found {len(files)} files with this pattern")
+                    
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    unique_files = []
+                    for f in matching_files:
+                        if f not in seen:
+                            seen.add(f)
+                            unique_files.append(f)
+                    matching_files = unique_files
+                    
+                    print(f"[DBLCLICK DEBUG] Found {len(matching_files)} unique matching files total")
                     
                     if matching_files:
                         # Sort by modification time (newest first)
@@ -272,6 +328,8 @@ class DatabasePanel(ttk.Frame):
                         print(f"[DBLCLICK] Found {log_user} Excel file: {path_to_load}")
                         self.main_app.switch_to_scanner_and_load(path_to_load)
                         return
+                    else:
+                        print(f"[DBLCLICK DEBUG] No Excel files found in {user_directory} for MO number {mo_number}")
 
             # PRIORITY 5: Parse path from log_details (Fallback for older logs)
             print(f"[DBLCLICK DEBUG] PRIORITY 5: Parsing path from log details")
@@ -449,6 +507,33 @@ class DatabasePanel(ttk.Frame):
         for idx, (val, k) in enumerate(data):
             self.logs_tree.move(k, '', idx)
 
+    def _pause_work_session(self, user, project):
+        """Pause a work session by sending PAUZE event to the API."""
+        try:
+            config = self.main_app.load_app_config()
+            api_url = config.get('api_url', 'http://localhost:5001/log')
+            
+            # Send PAUZE event
+            data = {
+                'event': 'PAUZE',
+                'project': project,
+                'user': user,
+                'details': 'Sessie gepauzeerd via database panel'
+            }
+            
+            response = requests.post(api_url, json=data, timeout=5)
+            if response.ok:
+                messagebox.showinfo("Sessie Gepauzeerd", 
+                    f"Werk sessie voor {user} op project '{project}' is gepauzeerd.\n\n"
+                    "De sessie kan hervat worden door opnieuw te scannen in BarcodeMaster.")
+                # Refresh the logs to show the updated status
+                self._on_logs_refresh()
+            else:
+                messagebox.showerror("Fout", f"Kon sessie niet pauzeren: {response.text}")
+                
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij pauzeren van sessie: {str(e)}")
+    
     def _show_tree_menu(self, event):
         """Display the context menu on right-click."""
         row_id = self.logs_tree.identify_row(event.y)

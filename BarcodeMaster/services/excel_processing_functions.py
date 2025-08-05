@@ -667,7 +667,7 @@ def process_excel_for_all_types(excel_path, processor_types):
     return results
 
 
-def generate_excel_for_accura(items_list, mo_number, so_number, customer_name):
+def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, project_name=None):
     """
     Generate Excel file for ACCURA processing with item list.
     
@@ -676,16 +676,23 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name):
         mo_number: MO number for filename
         so_number: SO number for filename
         customer_name: Customer name for filename
+        project_name: Optional project name from BarcodeMaster
     
     Returns:
         Path to generated Excel file or None if failed
     """
     try:
-        # Create directory if it doesn't exist - use system-appropriate path
+        # Get output directory from config or use default
+        from config_utils import get_config
+        config = get_config()
+        
         if os.name == 'nt':  # Windows
-            output_dir = "C:/ACCURA"
+            output_dir = config.get('accura_output_dir', "C:/ACCURA")
         else:  # Linux/Unix
-            output_dir = "/tmp/ACCURA"
+            output_dir = config.get('accura_output_dir', "/tmp/ACCURA")
+        
+        # Normalize path
+        output_dir = os.path.normpath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
         
         # Create filename similar to HOPS/MDB pattern
@@ -699,8 +706,26 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name):
             'Status': [''] * len(items_list)  # Empty status column
         })
         
-        # Save to Excel
-        df.to_excel(output_path, index=False, sheet_name='Items')
+        # Save to Excel with metadata if project_name provided
+        if project_name:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # Main data sheet
+                df.to_excel(writer, sheet_name='Items', index=False)
+                
+                # Add metadata sheet
+                metadata_df = pd.DataFrame({
+                    'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
+                    'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
+                })
+                metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+                
+                # Hide the metadata sheet
+                workbook = writer.book
+                worksheet = workbook['_ProjectInfo']
+                worksheet.sheet_state = 'hidden'
+        else:
+            # Fallback to simple Excel write
+            df.to_excel(output_path, index=False, sheet_name='Items')
         
         print(f"[ACCURA] Excel file generated: {output_path}")
         return output_path
@@ -711,7 +736,7 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name):
         return None
 
 
-def generate_excel_for_boere(items_list, mo_number, so_number, customer_name):
+def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, project_name=None):
     """
     Generate Excel file for BOERE processing with item list.
     
@@ -720,16 +745,23 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name):
         mo_number: MO number for filename
         so_number: SO number for filename
         customer_name: Customer name for filename
+        project_name: Optional project name from BarcodeMaster
     
     Returns:
         Path to generated Excel file or None if failed
     """
     try:
-        # Create directory if it doesn't exist - use system-appropriate path
+        # Get output directory from config or use default
+        from config_utils import get_config
+        config = get_config()
+        
         if os.name == 'nt':  # Windows
-            output_dir = "C:/BOERE"
+            output_dir = config.get('boere_output_dir', "C:/BOERE")
         else:  # Linux/Unix
-            output_dir = "/tmp/BOERE"
+            output_dir = config.get('boere_output_dir', "/tmp/BOERE")
+        
+        # Normalize path
+        output_dir = os.path.normpath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
         
         # Create filename similar to HOPS/MDB pattern
@@ -743,8 +775,26 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name):
             'Status': [''] * len(items_list)  # Empty status column
         })
         
-        # Save to Excel
-        df.to_excel(output_path, index=False, sheet_name='Items')
+        # Save to Excel with metadata if project_name provided
+        if project_name:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # Main data sheet
+                df.to_excel(writer, sheet_name='Items', index=False)
+                
+                # Add metadata sheet
+                metadata_df = pd.DataFrame({
+                    'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
+                    'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
+                })
+                metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+                
+                # Hide the metadata sheet
+                workbook = writer.book
+                worksheet = workbook['_ProjectInfo']
+                worksheet.sheet_state = 'hidden'
+        else:
+            # Fallback to simple Excel write
+            df.to_excel(output_path, index=False, sheet_name='Items')
         
         print(f"[BOERE] Excel file generated: {output_path}")
         return output_path

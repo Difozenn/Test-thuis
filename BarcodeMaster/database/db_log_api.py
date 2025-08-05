@@ -721,13 +721,17 @@ def calculate_avg_items_per_hour(user, start_date=None, end_date=None):
             date_filter = "AND s.start_time > datetime('now', '-90 days')"
             params = (user,)
         
-        # Get all work sessions with item counts
+        # Get all work sessions with item counts (including active sessions)
         cursor.execute(f"""
-            SELECT s.work_duration_minutes, s.item_count
+            SELECT 
+                s.work_duration_minutes, 
+                s.item_count,
+                s.status,
+                s.start_time,
+                s.end_time
             FROM sessions s
             WHERE s.user = ?
-            AND s.status = 'completed'
-            AND s.work_duration_minutes > 0
+            AND s.status IN ('completed', 'active')
             AND s.item_count > 0
             {date_filter}
         """, params)
@@ -740,7 +744,14 @@ def calculate_avg_items_per_hour(user, start_date=None, end_date=None):
             
             for session in sessions:
                 total_items += session['item_count']
-                total_minutes += session['work_duration_minutes']
+                
+                # For completed sessions, use stored work_duration_minutes
+                if session['status'] == 'completed' and session['work_duration_minutes']:
+                    total_minutes += session['work_duration_minutes']
+                # For active sessions, calculate duration from start to now
+                elif session['status'] == 'active' and session['start_time']:
+                    work_minutes = calculate_work_minutes(session['start_time'], datetime.now().isoformat())
+                    total_minutes += work_minutes
             
             if total_minutes > 0:
                 items_per_hour = (total_items / total_minutes) * 60
@@ -826,8 +837,8 @@ def calculate_total_items_in_period(user, start_date, end_date):
             SELECT SUM(item_count) as total_items
             FROM sessions 
             WHERE user = ? 
-            AND status = 'completed'
-            AND DATE(end_time) BETWEEN ? AND ?
+            AND status IN ('completed', 'active')
+            AND DATE(start_time) BETWEEN ? AND ?
         """, (user, start_date, end_date))
         result = cursor.fetchone()
         return result['total_items'] if result and result['total_items'] else 0
@@ -840,53 +851,178 @@ def calculate_avg_session_duration(user, start_date, end_date):
     try:
         cursor = get_db().cursor()
         cursor.execute("""
-            SELECT AVG(work_duration_minutes) as avg_duration
+            SELECT 
+                status,
+                start_time,
+                end_time,
+                work_duration_minutes
             FROM sessions 
             WHERE user = ? 
-            AND status = 'completed'
-            AND work_duration_minutes > 0
-            AND DATE(end_time) BETWEEN ? AND ?
+            AND status IN ('completed', 'active')
+            AND DATE(start_time) BETWEEN ? AND ?
         """, (user, start_date, end_date))
-        result = cursor.fetchone()
-        if result and result['avg_duration']:
-            # Convert minutes to hours:minutes format
-            avg_minutes = result['avg_duration']
+        
+        sessions = cursor.fetchall()
+        if not sessions:
+            return "--"
+            
+        total_minutes = 0
+        session_count = 0
+        
+        for session in sessions:
+            if session['status'] == 'completed' and session['work_duration_minutes'] and session['work_duration_minutes'] > 0:
+                total_minutes += session['work_duration_minutes']
+                session_count += 1
+            elif session['status'] == 'active' and session['start_time']:
+                # For active sessions, calculate duration
+                work_minutes = calculate_work_minutes(session['start_time'], datetime.now().isoformat())
+                if work_minutes > 0:
+                    total_minutes += work_minutes
+                    session_count += 1
+        
+        if session_count > 0:
+            avg_minutes = total_minutes / session_count
             hours = int(avg_minutes // 60)
             minutes = int(avg_minutes % 60)
             if hours > 0:
                 return f"{hours}u {minutes}m"
             else:
                 return f"{minutes}m"
+        
         return "--"
     except Exception as e:
         logging.error(f"Error calculating avg session duration for {user}: {e}")
         return "--"
 
 def get_user_activity_date_range(user, start_date, end_date):
-    """Get user activity data for a specific date range"""
+    """Get user activity data for a specific date range - one row per project"""
     try:
         cursor = get_db().cursor()
+        
+        # Get all projects this user worked on in the date range
         cursor.execute("""
-            SELECT DATE(start_time) as date, 
-                   SUM(item_count) as items, 
-                   SUM(work_duration_minutes) as minutes
-            FROM sessions
-            WHERE user = ?
-            AND status = 'completed'
-            AND DATE(start_time) BETWEEN ? AND ?
-            GROUP BY DATE(start_time)
-            ORDER BY date
+            SELECT DISTINCT 
+                l.project,
+                MIN(l.timestamp) as first_activity,
+                MAX(l.timestamp) as last_activity
+            FROM logs l
+            WHERE l.user = ?
+            AND l.project IS NOT NULL
+            AND l.project != ''
+            AND DATE(l.timestamp) BETWEEN ? AND ?
+            GROUP BY l.project
+            ORDER BY MIN(l.timestamp) DESC
         """, (user, start_date, end_date))
         
-        results = cursor.fetchall()
+        projects = cursor.fetchall()
         activity_data = []
         
-        for row in results:
-            items_per_hour = (row['items'] / row['minutes']) * 60 if row['minutes'] > 0 else 0
+        for project_row in projects:
+            project = project_row['project']
+            
+            # Get item count for this user/project
+            cursor.execute("""
+                SELECT MAX(COALESCE(item_count, 0)) as project_items
+                FROM logs
+                WHERE user = ? AND project = ?
+                AND item_count > 0
+                AND DATE(timestamp) BETWEEN ? AND ?
+            """, (user, project, start_date, end_date))
+            
+            result = cursor.fetchone()
+            project_items = result['project_items'] if result and result['project_items'] else 0
+            
+            # Get work time for this project from sessions
+            total_minutes = 0
+            
+            # First check individual sessions (XLSX_UPDATED, MANUAL)
+            cursor.execute("""
+                SELECT 
+                    status,
+                    start_time,
+                    end_time,
+                    work_duration_minutes
+                FROM sessions 
+                WHERE user = ? AND project = ?
+                AND session_type IN ('XLSX_UPDATED', 'MANUAL')
+                AND status IN ('completed', 'active')
+                AND DATE(start_time) BETWEEN ? AND ?
+            """, (user, project, start_date, end_date))
+            
+            individual_sessions = cursor.fetchall()
+            
+            for session in individual_sessions:
+                if session['status'] == 'completed' and session['work_duration_minutes']:
+                    total_minutes += session['work_duration_minutes']
+                elif session['status'] == 'active' and session['start_time']:
+                    # For active sessions, calculate work time
+                    work_minutes = calculate_work_minutes(session['start_time'], datetime.now().isoformat())
+                    total_minutes += work_minutes
+            
+            # Check for batch sessions that included this project
+            cursor.execute("""
+                SELECT 
+                    s.session_id,
+                    s.start_time,
+                    s.end_time,
+                    s.work_duration_minutes,
+                    s.status
+                FROM sessions s
+                WHERE s.user = ? 
+                AND s.session_type = 'SCANNER' 
+                AND (s.project IS NULL OR s.project = '') 
+                AND s.status IN ('completed', 'active')
+                AND DATE(s.start_time) BETWEEN ? AND ?
+                AND EXISTS (
+                    SELECT 1 FROM logs l
+                    WHERE l.user = s.user
+                    AND l.project = ?
+                    AND l.timestamp BETWEEN s.start_time AND COALESCE(s.end_time, datetime('now'))
+                )
+            """, (user, start_date, end_date, project))
+            
+            batch_sessions = cursor.fetchall()
+            
+            for batch in batch_sessions:
+                if batch['status'] == 'completed' and batch['work_duration_minutes'] and batch['work_duration_minutes'] > 0:
+                    # Get total items in this batch
+                    cursor.execute("""
+                        SELECT SUM(COALESCE(item_count, 0)) as batch_total
+                        FROM logs
+                        WHERE user = ?
+                        AND timestamp BETWEEN ? AND ?
+                        AND item_count > 0
+                    """, (user, batch['start_time'], batch['end_time']))
+                    
+                    batch_result = cursor.fetchone()
+                    batch_total_items = batch_result['batch_total'] if batch_result and batch_result['batch_total'] else 0
+                    
+                    # Calculate proportional time for this project
+                    if batch_total_items > 0 and project_items > 0:
+                        proportion = project_items / batch_total_items
+                        allocated_minutes = batch['work_duration_minutes'] * proportion
+                        total_minutes += allocated_minutes
+                elif batch['status'] == 'active':
+                    # For active batch sessions, calculate current work time
+                    work_minutes = calculate_work_minutes(batch['start_time'], datetime.now().isoformat())
+                    # Still need proportional allocation for active sessions
+                    # This is simplified - in reality would need more complex calculation
+                    total_minutes += work_minutes * 0.5  # Assume 50% allocation for now
+            
+            # Calculate items per hour
+            if total_minutes > 0:
+                items_per_hour = (project_items / total_minutes) * 60
+            else:
+                items_per_hour = 0
+            
+            # Get the date of first activity for this project
+            activity_date = project_row['first_activity'].split(' ')[0] if project_row['first_activity'] else start_date
+            
             activity_data.append({
-                'date': row['date'],
-                'items': row['items'],
-                'hours': round(row['minutes'] / 60, 1),
+                'date': activity_date,
+                'project': project,
+                'items': project_items,
+                'hours': round(total_minutes / 60, 1),
                 'items_per_hour': round(items_per_hour, 1)
             })
         
@@ -1274,9 +1410,40 @@ def end_session():
             # Calculate total work minutes
             total_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
             
-            # Subtract pause duration if provided (convert seconds to minutes)
-            pause_duration_minutes = data.get('total_pause_duration', 0) / 60.0
-            actual_work_minutes = max(0, total_minutes - pause_duration_minutes)
+            # Calculate pause duration from SESSION_PAUSE and SESSION_RESUME events
+            # This ensures we only count pause time during work hours
+            # IMPORTANT: Client sends total elapsed pause time including weekends/nights
+            # but we need to count only work hours pause time for accurate calculation
+            c.execute("""
+                SELECT timestamp, event 
+                FROM logs 
+                WHERE session_id = ? 
+                AND event IN ('SESSION_PAUSE', 'SESSION_RESUME')
+                ORDER BY timestamp
+            """, (data['session_id'],))
+            
+            pause_events = c.fetchall()
+            work_pause_minutes = 0
+            pause_start = None
+            
+            for event in pause_events:
+                if event['event'] == 'SESSION_PAUSE':
+                    pause_start = event['timestamp']
+                elif event['event'] == 'SESSION_RESUME' and pause_start:
+                    # Calculate work minutes during this pause period
+                    pause_work_minutes = calculate_work_minutes(pause_start, event['timestamp'])
+                    work_pause_minutes += pause_work_minutes
+                    pause_start = None
+            
+            # If there's an unclosed pause (user ended session while paused)
+            if pause_start:
+                pause_work_minutes = calculate_work_minutes(pause_start, data['timestamp'])
+                work_pause_minutes += pause_work_minutes
+            
+            # Now subtract only the work-hours pause time
+            actual_work_minutes = max(0, total_minutes - work_pause_minutes)
+            
+            logging.info(f"Session {data['session_id']}: total_work_minutes={total_minutes}, pause_work_minutes={work_pause_minutes}, actual={actual_work_minutes}")
             
             # Calculate total items processed during this session
             # Get all OPEN events for this user during the session timeframe
@@ -1476,6 +1643,44 @@ def start_manual_session():
         logging.error(f"Error starting manual session: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/user/<user>/active-sessions', methods=['GET'])
+def get_user_active_sessions(user):
+    """Get all active sessions for a specific user"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all active sessions for this user
+        c.execute("""
+            SELECT session_id, user, session_type, project, start_time
+            FROM sessions
+            WHERE user = ? AND status = 'active'
+            ORDER BY start_time DESC
+        """, (user,))
+        
+        sessions = []
+        for row in c.fetchall():
+            sessions.append({
+                'session_id': row['session_id'],
+                'user': row['user'],
+                'session_type': row['session_type'],
+                'project': row['project'] or '',
+                'start_time': row['start_time']
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'user': user,
+            'sessions': sessions,
+            'count': len(sessions)
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting active sessions for user {user}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/session/manual_finish', methods=['POST'])
 def finish_manual_session():
     """Finish a manual session with final item count"""
@@ -1636,6 +1841,9 @@ def log_event():
     base_mo_code = data.get('base_mo_code', '')
     is_rep_variant = 1 if data.get('is_rep_variant', False) else 0
     file_path = data.get('file_path', '') # Default to empty string if not provided
+    # Normalize file path if provided
+    if file_path:
+        file_path = os.path.normpath(file_path)
     item_count = data.get('item_count', None)  # New field
     session_id = data.get('session_id')
     timestamp = data.get('timestamp', datetime.now().isoformat())
@@ -1866,6 +2074,9 @@ def update_file_path():
     
     if not all([project, user, file_path]):
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    
+    # Normalize the file path to use consistent separators
+    file_path = os.path.normpath(file_path)
 
     try:
         conn = get_db()
@@ -7144,6 +7355,36 @@ def get_project_productivity_metrics(project):
                 else:
                     items_per_hour = 'IN_PROGRESS'
                     session_hours = 0
+            elif status == 'IN_PROGRESS' and has_active_xlsx_session:
+                # For active XLSX_UPDATED sessions, calculate elapsed time including active sessions
+                from datetime import datetime
+                active_work_minutes = 0
+                
+                # Calculate time for all active XLSX_UPDATED sessions
+                c.execute("""
+                    SELECT start_time, item_count
+                    FROM sessions 
+                    WHERE user = ? AND LOWER(project) = LOWER(?)
+                    AND session_type = 'XLSX_UPDATED'
+                    AND status = 'active'
+                """, (user, project))
+                
+                active_sessions = c.fetchall()
+                for active_session in active_sessions:
+                    start_time = datetime.fromisoformat(active_session['start_time'])
+                    current_time = datetime.now()
+                    work_minutes = calculate_work_minutes(active_session['start_time'], current_time.isoformat())
+                    active_work_minutes += work_minutes
+                
+                # Add completed session time
+                total_work_minutes = total_duration_minutes + active_work_minutes
+                
+                if total_work_minutes > 0 and total_items > 0:
+                    items_per_hour = round((total_items * 60.0) / total_work_minutes, 2)
+                    session_hours = round(total_work_minutes / 60.0, 2)
+                else:
+                    items_per_hour = 'IN_PROGRESS'
+                    session_hours = 'IN_PROGRESS'
             elif total_duration_minutes > 0 and total_items > 0:
                 items_per_hour = round((total_items * 60.0) / total_duration_minutes, 2)
                 session_hours = round(total_duration_minutes / 60.0, 2)

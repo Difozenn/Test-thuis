@@ -1,0 +1,210 @@
+<!-- templates/events.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ t('events') }} - CNC Datalog{% endblock %}
+
+{% block content %}
+<!-- Page Header with Blue Underline -->
+<div class="page-header">
+    <h1>{{ t('events') }}</h1>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            {% if current_user.role == 'admin' and users %}
+            <div class="col-md-3">
+                <label for="user_id" class="form-label">{{ t('user') }}</label>
+                <select class="form-select" id="user_id" name="user_id">
+                    <option value="">{{ t('all_users') }}</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if request.args.get('user_id')|int == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-3">
+                <label for="category" class="form-label">{{ t('category') }}</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">{{ t('all_categories') }}</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.args.get('category')|int == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">{{ t('from_date') }}</label>
+                <input type="datetime-local" class="form-control" id="date_from" name="date_from" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">{{ t('to_date') }}</label>
+                <input type="datetime-local" class="form-control" id="date_to" name="date_to" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">{{ t('filter') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Events Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ t('timestamp') }}</th>
+                        <th>{{ t('category') }}</th>
+                        <th>{{ t('file_path') }}</th>
+                        <th>{{ t('computer') }}</th>
+                        <th>{{ t('user') }}</th>
+                        <th>{{ t('type') }}</th>
+                        <th>{{ t('keyword') }}</th>
+                        {% if current_user.role == 'admin' %}
+                        <th>{{ t('actions') }}</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events.items %}
+                    <tr>
+                        <td>{{ format_local_time(event.timestamp, '%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if event.category %}
+                                <span class="badge" style="background-color: {{ event.category.color }}">
+                                    {{ event.category.name }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ t('uncategorized') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ event.file_path }}</small>
+                        </td>
+                        <td>{{ event.computer_name }}</td>
+                        <td>{{ event.user.username if event.user else t('system') }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ event.event_type }}</span>
+                        </td>
+                        <td>{{ event.matched_keyword or '-' }}</td>
+                        {% if current_user.role == 'admin' %}
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent({{ event.id }})" 
+                                    title="{{ t('delete_event') }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if current_user.role == 'admin' %}8{% else %}7{% endif %}" class="text-center text-muted">{{ t('no_events_found') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if events.pages > 1 %}
+        {% set args_without_page = dict(request.args.items()) %}
+        {% set _ = args_without_page.pop('page', None) %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not events.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.events', page=events.prev_num, **args_without_page) }}">{{ t('previous') }}</a>
+                </li>
+                {% for page_num in events.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == events.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('main.events', page=page_num, **args_without_page) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not events.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.events', page=events.next_num, **args_without_page) }}">{{ t('next') }}</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if current_user.role == 'admin' %}
+<script>
+function deleteEvent(eventId) {
+    if (confirm('{{ t('are_you_sure_delete_event') }}')) {
+        fetch(`/delete_event/${eventId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table
+                const row = document.querySelector(`button[onclick="deleteEvent(${eventId})"]`).closest('tr');
+                row.remove();
+                
+                // Show success message
+                showAlert('{{ t('event_deleted_successfully') }}', 'success');
+            } else {
+                showAlert(data.error || '{{ t('failed_to_delete_event') }}', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('{{ t('error_occurred_deleting_event') }}', 'danger');
+        });
+    }
+}
+
+function getCsrfToken() {
+    // Try to get CSRF token from meta tag or form
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    return '';
+}
+
+function showAlert(message, type) {
+    // Create and show a Bootstrap alert
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Insert at the top of the page content
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+        pageHeader.insertAdjacentHTML('afterend', alertHtml);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            const alert = document.querySelector(`.alert-${type}`);
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+}
+</script>
+{% endif %}
+{% endblock %}

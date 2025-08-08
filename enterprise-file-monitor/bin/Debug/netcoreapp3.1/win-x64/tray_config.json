@@ -1,0 +1,9 @@
+{
+  "Username": "admin",
+  "WebAppUrl": "http://localhost:5002",
+  "Language": "nl",
+  "ScanFileContents": true,
+  "EnableCNCAnalysis": true,
+  "MaxFileSizeMB": 10,
+  "MonitoringEnabled": true
+}

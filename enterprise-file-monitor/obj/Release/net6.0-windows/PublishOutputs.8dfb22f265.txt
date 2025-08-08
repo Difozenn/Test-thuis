@@ -1,0 +1,9 @@
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\FileMonitorTray.exe
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\app.py
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\icon.ico
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\tray_config.json
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\FileMonitorTray.dll
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\FileMonitorTray.deps.json
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\FileMonitorTray.runtimeconfig.json
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\FileMonitorTray.pdb
+C:\Users\Rob_v\Desktop\test-werk-main\CNC DATA LOG V3\enterprise-file-monitor\CNC DATALOG\System.Text.Json.dll

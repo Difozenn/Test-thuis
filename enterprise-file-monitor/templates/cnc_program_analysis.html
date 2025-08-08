@@ -1,0 +1,816 @@
+{% extends "base.html" %}
+
+{% block title %}CNC Program Analysis - {{ program.program_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease;
+    }
+    
+    .analysis-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .analysis-card h5 {
+        color: var(--dark-blue);
+        border-bottom: 2px solid var(--secondary-blue);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-weight: bold !important;
+    }
+    
+    .metric-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        height: 100%;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .metric-sublabel {
+        color: #adb5bd;
+        font-size: 0.8rem;
+    }
+    
+    .optimization-insight {
+        background: #f8f9fa;
+        border-left: 4px solid;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .optimization-insight.high {
+        border-left-color: #dc3545;
+        background: #fdf2f2;
+    }
+    
+    .optimization-insight.medium {
+        border-left-color: #ffc107;
+        background: #fffbf0;
+    }
+    
+    .optimization-insight.low {
+        border-left-color: #17a2b8;
+        background: #f0f9ff;
+    }
+    
+    .chart-container-small {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .progress-custom {
+        height: 25px;
+        border-radius: 15px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    
+    .progress-bar-custom {
+        height: 100%;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        transition: width 0.6s ease;
+    }
+    
+    .tool-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .tool-item {
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 3px solid #007bff;
+    }
+    
+    .tool-number {
+        font-weight: 500;
+    }
+    
+    .tool-duration {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+    
+    .tool-summary {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .timeline-item {
+        border-left: 3px solid var(--secondary-blue);
+        padding-left: 20px;
+        margin-left: 10px;
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--secondary-blue);
+    }
+    
+    .badge-custom {
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-cogs me-2"></i>{{ t('cnc_program_analysis') }}
+                    <span class="header-desc text-muted">{{ t('cnc_efficiency_analysis_desc') }}</span>
+                </h5>
+                <p class="text-muted mb-0">{{ program.program_name }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-info-circle me-2"></i>{{ t('program_overview') }}
+                    <span class="header-desc text-muted">{{ t('program_overview_desc') }}</span>
+                </h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-label">{{ t('cycle_time') }}</div>
+                            <div class="metric-value text-primary">{{ format_minutes_human(program.cycle_time_minutes) }}</div>
+                            <div class="metric-sublabel">{{ t('time') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-label">{{ t('overall_efficiency') }}</div>
+                            <div class="metric-value text-{{ program.efficiency_color }}">{{ "%.0f"|format(program.overall_efficiency) }}%</div>
+                            <div class="metric-sublabel">{{ program.efficiency_class.title() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-label">{{ t('tool_changes') }}</div>
+                            <div class="metric-value text-warning">{{ program.tool_changes }}</div>
+                            <div class="metric-sublabel">{{ "%.2f"|format(program.tool_changes_per_minute) }}/min</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-label">{{ t('machine_operations') }}</div>
+                            <div class="metric-value text-info">{{ format_minutes_human(program.machine_time_minutes) }}</div>
+                            <div class="metric-sublabel">{{ t('time') }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>{{ program.user }} • 
+                            <i class="fas fa-desktop me-1"></i>{{ program.computer }} • 
+                            <i class="fas fa-clock me-1"></i>{{ program.analysis_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">
+                            <i class="fas fa-file me-1"></i>{{ program.file_basename }}
+                            {% if program.file_size %}
+                                ({{ "%.1f"|format(program.file_size / 1024) }} KB)
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Breakdown Analysis -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="analysis-card">
+                <h5><i class="fas fa-chart-pie me-2"></i>{{ t('time_breakdown_analysis') }}
+                    <span class="header-desc text-muted">{{ t('time_breakdown_analysis_desc') }}</span>
+                </h5>
+                <div class="chart-container-small">
+                    <canvas id="timeBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="analysis-card">
+                <h5><i class="fas fa-percentage me-2"></i>{{ t('efficiency_breakdown') }}
+                    <span class="header-desc text-muted">{{ t('efficiency_breakdown_desc') }}</span>
+                </h5>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ t('cutting_efficiency') }}</span>
+                        <span class="fw-bold">{{ "%.1f"|format(program.cutting_efficiency) }}%</span>
+                    </div>
+                    <div class="progress-custom">
+                        <div class="progress-bar-custom 
+                            {% if program.cutting_efficiency >= 65 %}bg-success
+                            {% elif program.cutting_efficiency >= 40 %}bg-warning
+                            {% else %}bg-danger{% endif %}" 
+                            style="width: {{ program.cutting_efficiency }}%">
+                            60% {{ t('weight') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ t('tool_efficiency') }}</span>
+                        <span class="fw-bold">{{ "%.1f"|format(program.tool_efficiency) }}%</span>
+                    </div>
+                    <div class="progress-custom">
+                        <div class="progress-bar-custom 
+                            {% if program.tool_changes_per_minute < 1.0 %}bg-success
+                            {% elif program.tool_changes_per_minute <= 2.0 %}bg-warning
+                            {% else %}bg-danger{% endif %}" 
+                            style="width: {{ program.tool_efficiency }}%">
+                            40% {{ t('weight') }}
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="metric-label">{{ t('overall_score') }}</div>
+                    <div class="metric-value text-{{ program.efficiency_color }}">{{ "%.0f"|format(program.overall_efficiency) }}%</div>
+                    <span class="badge-custom bg-{{ program.efficiency_color }}">{{ program.efficiency_class.title() }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Tool Usage Analysis -->
+    {% if program.tools_used %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-tools me-2"></i>{{ t('detailed_tool_usage_analysis') }}
+                    <span class="header-desc text-muted">{{ t('detailed_tool_usage_analysis_desc') }}</span>
+                </h5>
+                
+                <!-- Tool Usage Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-primary mb-1">{{ program.unique_tools_count }}</h4>
+                            <small class="text-muted">{{ t('unique_tools_used') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            {% set total_tool_time = program.tools_used | sum(attribute='duration_seconds') %}
+                            <h4 class="text-success mb-1">{{ format_seconds_human(total_tool_time) }}</h4>
+                            <small class="text-muted">{{ t('total_tool_active_time') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            {% set total_cutting_time = program.tools_used | sum(attribute='cutting_time') %}
+                            <h4 class="text-warning mb-1">{{ format_seconds_human(total_cutting_time) }}</h4>
+                            <small class="text-muted">{{ t('total_cutting_time') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            {% set total_distance = program.tools_used | sum(attribute='total_distance') %}
+                            <h4 class="text-info mb-1">{{ "%.1f"|format(total_distance) }}m</h4>
+                            <small class="text-muted">{{ t('total_distance_traveled') }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comprehensive Tool Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>{{ t('tool_number') }}</th>
+                                <th>{{ t('total_time') }}</th>
+                                <th>{{ t('cutting_time') }}</th>
+                                <th>{{ t('rapid_time') }}</th>
+                                <th>{{ t('cutting_distance') }}</th>
+                                <th>{{ t('rapid_distance') }}</th>
+                                <th>{{ t('total_distance') }}</th>
+                                <th>{{ t('moves') }}</th>
+                                <th>{{ t('cutting_efficiency') }}</th>
+                                <th>{{ t('avg_speed') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool in program.tools_used | sort(attribute='duration_seconds', reverse=true) %}
+                            <tr>
+                                <td><strong class="text-primary">T{{ tool.tool_number }}</strong></td>
+                                <td><span class="badge bg-primary">{{ format_seconds_human(tool.duration_seconds) }}</span></td>
+                                <td><span class="badge bg-success">{{ format_seconds_human(tool.cutting_time) }}</span></td>
+                                <td><span class="badge bg-info">{{ format_seconds_human(tool.rapid_time) }}</span></td>
+                                <td>{{ "%.1f"|format(tool.cutting_distance / 1000) }}m</td>
+                                <td>{{ "%.1f"|format(tool.rapid_distance / 1000) }}m</td>
+                                <td><strong>{{ "%.1f"|format(tool.total_distance / 1000) }}m</strong></td>
+                                <td>{{ tool.move_count }}</td>
+                                <td>
+                                    {% set tool_cutting_eff = (tool.cutting_time / tool.duration_seconds * 100) if tool.duration_seconds > 0 else 0 %}
+                                    <span class="
+                                        {% if tool_cutting_eff >= 60 %}text-success
+                                        {% elif tool_cutting_eff >= 40 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ "%.1f"|format(tool_cutting_eff) }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    {% set avg_speed = (tool.total_distance / tool.duration_seconds * 60 / 1000) if tool.duration_seconds > 0 else 0 %}
+                                    {{ "%.1f"|format(avg_speed) }} m/min
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Tool Performance Chart -->
+                <div class="mt-4">
+                    <h6 class="mb-3">{{ t('tool_performance_comparison') }}</h6>
+                    <div class="chart-container-small">
+                        <canvas id="toolPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Optimization Insights -->
+    {% if optimization_insights %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-lightbulb me-2"></i>{{ t('optimization_insights') }}
+                    <span class="header-desc text-muted">{{ t('optimization_insights_desc') }}</span>
+                </h5>
+                {% for insight in optimization_insights %}
+                <div class="optimization-insight {{ insight.severity }}">
+                    <div class="d-flex align-items-center">
+                        <i class="{{ insight.icon }} me-3 fa-lg"></i>
+                        <div>
+                            <strong>{{ insight.type.replace('_', ' ').title() }}</strong>
+                            <div class="mt-1">{{ insight.message }}</div>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-{{ 'danger' if insight.severity == 'high' else 'warning' if insight.severity == 'medium' else 'info' }}">
+                                {{ insight.severity.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Historical Trends -->
+    {% if historical_trends %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="analysis-card">
+                <h5><i class="fas fa-chart-line me-2"></i>{{ t('historical_trends') }} ({{ t('last_30_days') }})
+                    <span class="header-desc text-muted">{{ t('historical_trends_desc') }}</span>
+                </h5>
+                <div class="chart-container-small">
+                    <canvas id="historicalTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="analysis-card">
+                <h5><i class="fas fa-history me-2"></i>{{ t('recent_runs') }}
+                    <span class="header-desc text-muted">{{ t('recent_runs_desc') }}</span>
+                </h5>
+                <div class="timeline-item" style="max-height: 280px; overflow-y: auto;">
+                    {% for trend in historical_trends[:5] %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ trend.timestamp.strftime('%m/%d %H:%M') }}</strong>
+                            <span class="badge bg-{{ 'success' if trend.efficiency >= 65 else 'warning' if trend.efficiency >= 40 else 'danger' }}">
+                                {{ "%.0f"|format(trend.efficiency) }}%
+                            </span>
+                        </div>
+                        <div class="text-muted small">
+                            Cycle: {{ "%.1f"|format(trend.cycle_time) }}min • 
+                            Tools: {{ trend.tool_changes }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Efficiency Classification Guide -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-info-circle me-2"></i>{{ t('efficiency_classification_guide') }}
+                    <span class="header-desc text-muted">{{ t('efficiency_classification_guide_desc') }}</span>
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">{{ t('cutting_efficiency_classification') }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td style="width: 120px;">
+                                            <span class="badge bg-success">🟢 {{ t('excellent') }}</span>
+                                        </td>
+                                        <td style="width: 80px;" class="text-center fw-bold">
+                                            >65%
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('cutting_excellent_desc') }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-warning">🟡 {{ t('good') }}</span>
+                                        </td>
+                                        <td class="text-center fw-bold">
+                                            40-65%
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('cutting_good_desc') }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger">🔴 {{ t('poor') }}</span>
+                                        </td>
+                                        <td class="text-center fw-bold">
+                                            &lt;40%
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('cutting_poor_desc') }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">{{ t('tool_efficiency_classification') }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td style="width: 120px;">
+                                            <span class="badge bg-success">🟢 {{ t('excellent') }}</span>
+                                        </td>
+                                        <td style="width: 100px;" class="text-center fw-bold">
+                                            &lt;1.0 {{ t('changes_per_min') }}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('tool_excellent_desc') }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-warning">🟡 {{ t('good') }}</span>
+                                        </td>
+                                        <td class="text-center fw-bold">
+                                            1.0-2.0 {{ t('changes_per_min') }}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('tool_good_desc') }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger">🔴 {{ t('poor') }}</span>
+                                        </td>
+                                        <td class="text-center fw-bold">
+                                            &gt;2.0 {{ t('changes_per_min') }}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ t('tool_poor_desc') }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Details -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-cog me-2"></i>{{ t('technical_details') }}
+                    <span class="header-desc text-muted">{{ t('technical_details_desc') }}</span>
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="text-muted">{{ t('file_path') }}:</td>
+                                <td><code>{{ program.file_path }}</code></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">{{ t('total_cycle_time') }}:</td>
+                                <td>{{ format_duration_human(program.cycle_time_seconds) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">{{ t('cutting_time') }}:</td>
+                                <td>{{ format_minutes_human(program.cutting_time_minutes) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="text-muted">{{ t('machine_operations') }}:</td>
+                                <td>{{ format_minutes_human(program.machine_time_minutes) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">{{ t('tool_changes') }}:</td>
+                                <td>{{ program.tool_changes }} ({{ format_duration_human(program.tool_changes * 20) }} {{ t('total') }})</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">{{ t('analysis_id') }}:</td>
+                                <td>#{{ program.event_id }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool Breakdown Section -->
+    {% if program.tools_used %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="analysis-card">
+                <h5><i class="fas fa-tools me-2"></i>{{ t('tool_breakdown') }}
+                    <span class="header-desc text-muted">{{ t('tool_breakdown_desc') }}</span>
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>{{ t('unique_tools_used') }}:</strong> {{ program.unique_tools_count }}
+                        </div>
+                        <div class="tool-list">
+                            {% for tool in program.tools_used %}
+                            <div class="tool-item d-flex justify-content-between align-items-center mb-2">
+                                <span class="tool-number">
+                                    <i class="fas fa-wrench text-primary me-2"></i>
+                                    {{ t('tool') }} #{{ tool.tool_number }}
+                                </span>
+                                <span class="tool-duration text-muted">
+                                    {{ format_duration_human(tool.duration_seconds) }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="tool-summary">
+                            <div class="mb-2">
+                                <strong>{{ t('total_tool_time') }}:</strong> 
+                                {{ format_duration_human(program.tools_used|length * 20) }}
+                            </div>
+                            <div class="mb-2">
+                                <strong>{{ t('avg_tool_duration') }}:</strong>
+                                {{ format_duration_human(20) }}
+                            </div>
+                            <div class="progress mt-3">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ ((program.tools_used|length * 20) / (program.cycle_time_seconds or 1) * 100)|round }}%">
+                                    {{ ((program.tools_used|length * 20) / (program.cycle_time_seconds or 1) * 100)|round }}% {{ t('of_cycle_time') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Time Breakdown Chart
+const timeCtx = document.getElementById('timeBreakdownChart').getContext('2d');
+const timeBreakdownChart = new Chart(timeCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['{{ t('cutting_time') }}', '{{ t('machine_operations') }}'],
+        datasets: [{
+            data: [{{ program.cutting_time_minutes }}, {{ program.machine_time_minutes }}],
+            backgroundColor: ['#28a745', '#ffc107'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const minutes = context.raw;
+                        return context.label + ': ' + formatMinutesHuman(minutes);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Tool Performance Chart
+{% if program.tools_used %}
+const toolPerformanceCtx = document.getElementById('toolPerformanceChart');
+if (toolPerformanceCtx) {
+    const toolData = [
+        {% for tool in program.tools_used | sort(attribute='duration_seconds', reverse=true) %}
+        {
+            tool: 'T{{ tool.tool_number }}',
+            total_time: {{ tool.duration_seconds }},
+            cutting_time: {{ tool.cutting_time }},
+            rapid_time: {{ tool.rapid_time }},
+            efficiency: {{ (tool.cutting_time / tool.duration_seconds * 100) if tool.duration_seconds > 0 else 0 }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(toolPerformanceCtx, {
+        type: 'bar',
+        data: {
+            labels: toolData.map(d => d.tool),
+            datasets: [{
+                label: '{{ t('cutting_time') }} (s)',
+                data: toolData.map(d => d.cutting_time),
+                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }, {
+                label: '{{ t('rapid_time') }} (s)',
+                data: toolData.map(d => d.rapid_time),
+                backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                borderColor: 'rgba(23, 162, 184, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        text: '{{ t('tools') }}'
+                    }
+                },
+                y: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        text: '{{ t('time') }} ({{ t('seconds') }})'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const toolIndex = context.dataIndex;
+                            const tool = toolData[toolIndex];
+                            return [
+                                `{{ t('cutting_efficiency') }}: ${tool.efficiency.toFixed(1)}%`,
+                                `{{ t('total_time') }}: ${tool.total_time.toFixed(1)}s`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+{% endif %}
+
+{% if historical_trends %}
+// Historical Trends Chart
+const trendsCtx = document.getElementById('historicalTrendsChart').getContext('2d');
+const trendsChart = new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for trend in historical_trends|reverse %}'{{ trend.timestamp.strftime('%m/%d') }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: '{{ t('efficiency_score') }} %',
+            data: [{% for trend in historical_trends|reverse %}{{ trend.efficiency }}{% if not loop.last %},{% endif %}{% endfor %}],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: '{{ t('cycle_time') }} ({{ t('minutes') }})',
+            data: [{% for trend in historical_trends|reverse %}{{ trend.cycle_time }}{% if not loop.last %},{% endif %}{% endfor %}],
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: '{{ t('efficiency_score') }} %'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: '{{ t('cycle_time') }} ({{ t('minutes') }})'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

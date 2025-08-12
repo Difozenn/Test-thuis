@@ -20,7 +20,11 @@
       "Bash(msbuild:*)",
       "Bash(tasklist.exe:*)",
       "Bash(touch:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(./filemonitortrayapp.exe:*)",
+      "Bash(pip3 list:*)",
+      "Bash(pip3 install:*)",
+      "Bash(\"./CNC DATALOG.exe\":*)"
     ],
     "deny": []
   }

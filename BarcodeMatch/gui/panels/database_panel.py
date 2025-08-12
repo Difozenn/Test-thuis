@@ -185,28 +185,23 @@ class DatabasePanel(ttk.Frame):
                 messagebox.showwarning("Geen project", "Geen projectnaam gevonden voor deze log entry.")
                 return
             
-            # Special handling for BEZIG status - offer session control
+            # Special handling for BEZIG status - session is already paused (we're on database panel)
             if log_status == 'BEZIG':
                 print(f"[DBLCLICK DEBUG] Handling BEZIG status for {log_user}")
                 
-                # Show dialog for session control
-                result = messagebox.askyesnocancel(
-                    "Werk Sessie Actief", 
-                    f"Project '{project_name}' is momenteel BEZIG voor gebruiker {log_user}.\n\n"
-                    "Wilt u:\n"
-                    "YES - Het Excel bestand openen en doorgaan met werken\n"
-                    "NO - De sessie pauzeren\n"
-                    "CANCEL - Niets doen",
+                # The session is already paused because we're on the database panel
+                # Just confirm if user wants to resume work
+                result = messagebox.askyesno(
+                    "Hervat Werk Sessie", 
+                    f"Project '{project_name}' heeft een gepauzeerde sessie voor gebruiker {log_user}.\n\n"
+                    "Wilt u de sessie hervatten en het Excel bestand openen?",
                     icon='question'
                 )
                 
-                if result is None:  # Cancel clicked
-                    return
-                elif result is False:  # No clicked - pause session
-                    # Call API to pause the session
-                    self._pause_work_session(log_user, project_name)
+                if not result:  # No clicked
                     return
                 # If Yes clicked, continue to find and open the Excel file
+                # The session will automatically resume when switching to scanner panel
 
             path_to_load = None
 
@@ -226,7 +221,7 @@ class DatabasePanel(ttk.Frame):
             elif file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')) and os.path.exists(file_path_from_db):
                 path_to_load = file_path_from_db
                 print(f"[DBLCLICK] Found Excel file directly from database: {path_to_load}")
-                self.main_app.switch_to_scanner_and_load(path_to_load)
+                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                 return
 
             # PRIORITY 2: If file_path_from_db is a directory, search for Excel files in it
@@ -260,7 +255,7 @@ class DatabasePanel(ttk.Frame):
                     if os.path.exists(p_path):
                         path_to_load = p_path
                         print(f"[DBLCLICK] Found Excel using DB directory path: {path_to_load}")
-                        self.main_app.switch_to_scanner_and_load(path_to_load)
+                        self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                         return
 
                 print(f"[DBLCLICK] Excel not found in DB directory '{file_path_from_db}'. Proceeding to fallbacks.")
@@ -276,7 +271,7 @@ class DatabasePanel(ttk.Frame):
                 mo_match = project_name.split('_')[0] if '_' in project_name else project_name
                 if mo_match in os.path.basename(last_excel_file):
                     print(f"[DBLCLICK] Found matching Excel from config: {last_excel_file}")
-                    self.main_app.switch_to_scanner_and_load(last_excel_file)
+                    self.main_app.switch_to_scanner_and_load(last_excel_file, user=log_user)
                     return
 
             # PRIORITY 4: Handle ACCURA/BOERE type users with dedicated directories
@@ -326,7 +321,7 @@ class DatabasePanel(ttk.Frame):
                         matching_files.sort(key=os.path.getmtime, reverse=True)
                         path_to_load = matching_files[0]
                         print(f"[DBLCLICK] Found {log_user} Excel file: {path_to_load}")
-                        self.main_app.switch_to_scanner_and_load(path_to_load)
+                        self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                         return
                     else:
                         print(f"[DBLCLICK DEBUG] No Excel files found in {user_directory} for MO number {mo_number}")
@@ -376,7 +371,7 @@ class DatabasePanel(ttk.Frame):
                     print(f"[DBLCLICK] Could not determine excel_filename_base from parsed path and user type.")
 
             if path_to_load:
-                self.main_app.switch_to_scanner_and_load(path_to_load)
+                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                 return
             elif parsed_path_used and not path_to_load: # Parsed path but file not found there
                 messagebox.showwarning("Bestand niet gevonden (Log Pad)",
@@ -416,7 +411,7 @@ class DatabasePanel(ttk.Frame):
                     break
             
             if path_to_load:
-                self.main_app.switch_to_scanner_and_load(path_to_load)
+                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
             else:
                 print(f"[DBLCLICK DEBUG] No Excel file found in any location")
                 messagebox.showwarning("Bestand niet gevonden (Fallback)",
@@ -476,7 +471,7 @@ class DatabasePanel(ttk.Frame):
                                 break
                 
                 if path_to_load:
-                    self.main_app.switch_to_scanner_and_load(path_to_load)
+                    self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                 else:
                     messagebox.showwarning(
                         "Bestand niet gevonden",

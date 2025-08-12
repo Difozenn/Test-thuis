@@ -1,0 +1,44 @@
+
+2025-08-07 22:33:19
+[TCALC MATH CHECK for Field1.spf]:
+  Cut time: 16,57509038042961s
+  Rapid time: 7,014101065885054s
+  Tool change time: 0s (from 0 changes × 13,05s)
+  Spindle time: 0s
+  Cycle overhead: 0s
+  Total overhead: 7,014101065885054s = rapids(7,014101065885054) + toolchange(0) + spindle(0) + cycle(0)
+  TOTAL: 23,589191446314665s = cut(16,57509038042961) + overhead(7,014101065885054)
+  TOTAL in minutes: 0,3932 min
+
+ExtractToolNumbers called at line 78: 'N790 C_WECHSEL'
+Found C_WECHSEL at line 78: N790 C_WECHSEL
+ExtractToolNumbers called at line 153: 'N1540 C_WECHSEL'
+Found C_WECHSEL at line 153: N1540 C_WECHSEL
+
+2025-08-08 06:31:04
+[TCALC MATH CHECK for Field1.spf]:
+  Cut time: 16,57509038042961s
+  Rapid time: 7,014101065885054s
+  Tool change time: 0s (from 0 changes × 13,05s)
+  Spindle time: 0s
+  Cycle overhead: 0s
+  Total overhead: 7,014101065885054s = rapids(7,014101065885054) + toolchange(0) + spindle(0) + cycle(0)
+  TOTAL: 23,589191446314665s = cut(16,57509038042961) + overhead(7,014101065885054)
+  TOTAL in minutes: 0,3932 min
+
+ExtractToolNumbers called at line 78: 'N790 C_WECHSEL(17,3,22000)'
+Found C_WECHSEL at line 78: N790 C_WECHSEL(17,3,22000)
+ExtractToolNumbers called at line 153: 'N1540 C_WECHSEL(10,3,20000)'
+Found C_WECHSEL at line 153: N1540 C_WECHSEL(10,3,20000)
+
+2025-08-08 06:37:02
+[TCALC MATH CHECK for Field1.spf]:
+  Cut time: 16,57509038042961s
+  Rapid time: 7,014101065885054s
+  Tool change time: 26,1s (from 2 changes × 13,05s)
+  Spindle time: 0s
+  Cycle overhead: 0s
+  Total overhead: 33,11410106588505s = rapids(7,014101065885054) + toolchange(26,1) + spindle(0) + cycle(0)
+  TOTAL: 49,689191446314666s = cut(16,57509038042961) + overhead(33,11410106588505)
+  TOTAL in minutes: 0,8282 min
+

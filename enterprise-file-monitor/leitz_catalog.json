@@ -1,0 +1,161 @@
+{
+  "comment": "Leitz Tool Catalog - Map your Box IDs to Leitz specifications",
+  "instructions": "Add your tool Box IDs as keys, with Leitz specifications as values",
+  
+  "191060": {
+    "leitz_id": "191060",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 28000,
+    "material_range": "13-20mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized", "Whisselende schering"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "191059": {
+    "leitz_id": "191059",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition 10mm",
+    "diameter": 10.0,
+    "max_speed": 24000,
+    "max_feed": 28000,
+    "material_range": "9-16mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "191061": {
+    "leitz_id": "191061",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition 12mm Long",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 28000,
+    "material_range": "19-25mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "191101": {
+    "leitz_id": "191101",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition 14mm",
+    "diameter": 14.0,
+    "max_speed": 24000,
+    "max_feed": 26000,
+    "material_range": "22-32mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "191105": {
+    "leitz_id": "191105",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition 16mm",
+    "diameter": 16.0,
+    "max_speed": 22000,
+    "max_feed": 25000,
+    "material_range": "22-32mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "240201": {
+    "leitz_id": "240201",
+    "name": "Marathon Spiral Roughing 12mm",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 24000,
+    "material_range": "10-25mm",
+    "spiral_type": "upcut",
+    "coating": "marathon",
+    "regrind_count": 2,
+    "special_features": [],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "191128": {
+    "leitz_id": "191128",
+    "name": "Diamaster EdgeExpert Vibration Damped",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 20000,
+    "material_range": "10-20mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 4,
+    "special_features": ["Vibration damping", "Edge finishing"],
+    "safe_plunge_factor": 1.2
+  },
+  
+  "091158": {
+    "leitz_id": "091158",
+    "name": "DP Z2 Negative Shear for Top Surface",
+    "diameter": 10.0,
+    "max_speed": 24000,
+    "max_feed": 18000,
+    "material_range": "8-18mm",
+    "spiral_type": "downcut",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["Top surface quality", "Workpiece hold-down"],
+    "safe_plunge_factor": 1.3
+  },
+  
+  "601": {
+    "comment": "Generic mapping for Box ID 601 to Leitz 191060",
+    "leitz_id": "191060",
+    "name": "Diamaster PRO DP Z2+2 Nesting Edition",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 28000,
+    "material_range": "13-20mm",
+    "spiral_type": "compression",
+    "coating": "diamond",
+    "regrind_count": 3,
+    "special_features": ["DFC", "Nesting optimized"],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "181": {
+    "comment": "Generic mapping for Box ID 181 - Marathon series",
+    "leitz_id": "240201",
+    "name": "Marathon Spiral Roughing",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 24000,
+    "material_range": "10-25mm",
+    "spiral_type": "upcut",
+    "coating": "marathon",
+    "regrind_count": 2,
+    "special_features": [],
+    "safe_plunge_factor": 1.5
+  },
+  
+  "template": {
+    "comment": "Copy this template and modify for your tools",
+    "leitz_id": "YOUR_LEITZ_ID",
+    "name": "Tool name from catalog",
+    "diameter": 12.0,
+    "max_speed": 24000,
+    "max_feed": 20000,
+    "material_range": "10-20mm",
+    "spiral_type": "compression|upcut|downcut|straight",
+    "coating": "diamond|marathon|hardmetal|HSS",
+    "regrind_count": 3,
+    "special_features": [],
+    "safe_plunge_factor": 1.5
+  }
+}

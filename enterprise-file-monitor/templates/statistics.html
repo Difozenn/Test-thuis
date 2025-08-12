@@ -149,7 +149,8 @@
             <div class="col-md-3">
                 <label class="form-label">{{ t('date_range') }}</label>
                 <select class="form-select" name="range" id="date-range" onchange="toggleCustomDate()">
-                    <option value="week" {% if date_range == 'week' %}selected{% endif %}>{{ t('last_7_days') }}</option>
+                    <option value="week" {% if date_range == 'week' %}selected{% endif %}>{{ t('current_week') }}</option>
+                    <option value="last7" {% if date_range == 'last7' %}selected{% endif %}>{{ t('last_7_days') }}</option>
                     <option value="month" {% if date_range == 'month' %}selected{% endif %}>{{ t('last_30_days') }}</option>
                     <option value="year" {% if date_range == 'year' %}selected{% endif %}>{{ t('last_year') }}</option>
                     <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>{{ t('custom_range') }}</option>
@@ -846,7 +847,7 @@ function displayDetailedToolUsage(tools) {
                 <td>${tool.usage_count}</td>
                 <td>${tool.programs_used}</td>
                 <td class="${efficiencyClass}"><strong>${tool.cutting_efficiency}%</strong></td>
-                <td>${tool.total_distance_mm.toLocaleString()} mm</td>
+                <td>${(tool.total_distance_mm / 1000).toFixed(3)} m</td>
                 <td>${tool.avg_time_per_use_formatted}</td>
             </tr>`;
     });

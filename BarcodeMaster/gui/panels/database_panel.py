@@ -20,6 +20,8 @@ class DatabasePanel(tk.Frame):
         self.config = get_config()
         self.api_base_url = self.config.get('api_url', 'http://localhost:5001/log').split('/log')[0]
         self._checking_connection = True
+        # Save root window reference for thread-safe GUI updates
+        self._root_window = self.winfo_toplevel()
         self.build_panel()
         self.start_api_status_check()
 
@@ -220,25 +222,25 @@ class DatabasePanel(tk.Frame):
                     response = requests.get(f"{self.api_base_url}/logs/count", timeout=2)
                     is_active = response.status_code == 200
                     
-                    # Use after_idle to ensure GUI update happens in main thread
+                    # Schedule GUI update in main thread using saved root reference
                     try:
-                        self.winfo_toplevel().after_idle(self.set_connection_status, is_active)
-                    except tk.TclError:
-                        # Widget might be destroyed
+                        self._root_window.after(0, self.set_connection_status, is_active)
+                    except (tk.TclError, RuntimeError):
+                        # Widget might be destroyed or app shutting down
                         break
                 else:
                     # Database is disabled
                     try:
-                        self.winfo_toplevel().after_idle(self.set_connection_status, False)
-                    except tk.TclError:
-                        # Widget might be destroyed
+                        self._root_window.after(0, self.set_connection_status, False)
+                    except (tk.TclError, RuntimeError):
+                        # Widget might be destroyed or app shutting down
                         break
             except Exception:
                 # Connection failed
                 try:
-                    self.winfo_toplevel().after_idle(self.set_connection_status, False)
-                except tk.TclError:
-                    # Widget might be destroyed
+                    self._root_window.after(0, self.set_connection_status, False)
+                except (tk.TclError, RuntimeError):
+                    # Widget might be destroyed or app shutting down
                     break
             
             # Sleep in the background thread

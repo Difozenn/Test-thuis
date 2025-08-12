@@ -226,8 +226,13 @@ class BarcodeMatchApp:
             print(f"[ERROR] Could not load app config: {e}")
             return {}
 
-    def switch_to_scanner_and_load(self, excel_file_path):
-        """Switches to the Scanner panel and loads the specified Excel file."""
+    def switch_to_scanner_and_load(self, excel_file_path, user=None):
+        """Switches to the Scanner panel and loads the specified Excel file.
+        
+        Args:
+            excel_file_path: Path to the Excel file to load
+            user: The user working on this project (passed from database panel)
+        """
         try:
             if DEBUG:
                 print(f"[SWITCH] Attempting to switch to Scanner and load: {excel_file_path}")
@@ -287,8 +292,8 @@ class BarcodeMatchApp:
             else:
                 print("[WARN] Could not find Scanner in menu options.")
             
-            # Load the Excel file
-            scanner_panel.load_project_excel(excel_file_path)
+            # Load the Excel file with user information
+            scanner_panel.load_project_excel(excel_file_path, user=user)
             if DEBUG:
                 print(f"[SWITCH] Successfully switched to Scanner and loaded: {excel_file_path}")
             

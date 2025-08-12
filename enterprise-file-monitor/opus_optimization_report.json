@@ -1,0 +1,111 @@
+{
+  "summary": {
+    "tools_analyzed": 2,
+    "violations_found": 5,
+    "optimizations_found": 3,
+    "efficiency_score": 0,
+    "grade": "F - Critical Issues"
+  },
+  "tools": [
+    {
+      "id": "601",
+      "number": "T0",
+      "diameter": 12.0,
+      "speed": 24000,
+      "feed": 10000,
+      "max_plunge": 0,
+      "catalog_match": true
+    },
+    {
+      "id": "181",
+      "number": "T1",
+      "diameter": 12.0,
+      "speed": 24000,
+      "feed": 10000,
+      "max_plunge": 21.0,
+      "catalog_match": true
+    }
+  ],
+  "violations": [
+    {
+      "type": "DANGEROUS_PLUNGE",
+      "severity": "CRITICAL",
+      "line": 121,
+      "tool": "601",
+      "message": "Plunge depth 20.0mm exceeds safe limit (18.0mm) by 17%",
+      "recommendation": "Use ramped entry (3-5\u00b0 angle) or helical interpolation instead of straight plunge"
+    },
+    {
+      "type": "DANGEROUS_PLUNGE",
+      "severity": "CRITICAL",
+      "line": 121,
+      "tool": "181",
+      "message": "Plunge depth 20.0mm exceeds safe limit (18.0mm) by 17%",
+      "recommendation": "Use ramped entry (3-5\u00b0 angle) or helical interpolation instead of straight plunge"
+    },
+    {
+      "type": "DANGEROUS_PLUNGE",
+      "severity": "CRITICAL",
+      "line": 169,
+      "tool": "601",
+      "message": "Plunge depth 21.0mm exceeds safe limit (18.0mm) by 25%",
+      "recommendation": "Use ramped entry (3-5\u00b0 angle) or helical interpolation instead of straight plunge"
+    },
+    {
+      "type": "DANGEROUS_PLUNGE",
+      "severity": "CRITICAL",
+      "line": 169,
+      "tool": "181",
+      "message": "Plunge depth 21.0mm exceeds safe limit (18.0mm) by 25%",
+      "recommendation": "Use ramped entry (3-5\u00b0 angle) or helical interpolation instead of straight plunge"
+    },
+    {
+      "type": "SPOILBOARD_DAMAGE",
+      "severity": "CRITICAL",
+      "tool": "181",
+      "message": "Tool cutting 2.0mm INTO SPOILBOARD (workpiece: 19.0mm, cutting: 21.0mm)",
+      "recommendation": "Limit cutting depth to 19.0mm or maximum 19.5mm",
+      "damage_risk": "Spoilboard damage, vacuum loss, tool damage"
+    }
+  ],
+  "optimizations": [
+    {
+      "type": "FEED_RATE_LOW",
+      "severity": "HIGH",
+      "tool": "601",
+      "current": 10000,
+      "optimal": 28000,
+      "utilization": 35.714285714285715,
+      "message": "Tool 601 running at 36% of maximum feed rate",
+      "potential_time_savings": "64%",
+      "recommendation": "Increase feed from 10000 to 25200 mm/min (90% of max for safety)"
+    },
+    {
+      "type": "FEED_RATE_LOW",
+      "severity": "HIGH",
+      "tool": "181",
+      "current": 10000,
+      "optimal": 24000,
+      "utilization": 41.66666666666667,
+      "message": "Tool 181 running at 42% of maximum feed rate",
+      "potential_time_savings": "58%",
+      "recommendation": "Increase feed from 10000 to 21600 mm/min (90% of max for safety)"
+    },
+    {
+      "type": "CONSOLIDATION_OPPORTUNITY",
+      "severity": "MEDIUM",
+      "message": "Found 2 tools with 12mm diameter",
+      "tools": [
+        "601",
+        "181"
+      ],
+      "recommendation": "Consolidate to single premium tool 601 with regrinding strategy",
+      "annual_savings": "\u20ac240"
+    }
+  ],
+  "cost_impact": {
+    "annual_waste": 20261.90476190476,
+    "potential_savings": 16209.52380952381,
+    "roi_months": 3
+  }
+}

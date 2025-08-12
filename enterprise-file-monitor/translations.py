@@ -642,6 +642,7 @@ TRANSLATIONS = {
         
         # Statistics page
         'comprehensive_cnc_data_analytics': 'Comprehensive CNC Data Analytics',
+        'current_week': 'Current Week',
         'last_7_days': 'Last 7 Days',
         'last_30_days': 'Last 30 Days',
         'last_year': 'Last Year',
@@ -1148,6 +1149,7 @@ TRANSLATIONS = {
         'comprehensive_cnc_data_analytics': 'Uitgebreide CNC Data Analytics',
         'filter_by_user': 'Filter op Gebruiker:',
         'all_users': 'Alle Gebruikers',
+        'current_week': 'Huidige Week',
         'last_7_days': 'Laatste 7 Dagen',
         'last_30_days': 'Laatste 30 Dagen',
         'last_year': 'Laatste Jaar',

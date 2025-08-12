@@ -950,7 +950,7 @@ class CNCAnalysis(db.Model):
     __tablename__ = 'cnc_analysis'
     
     id = db.Column(db.Integer, primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id', ondelete='CASCADE'), nullable=False)
     file_path = db.Column(db.Text, nullable=False)
     cycle_time_seconds = db.Column(db.Float)
     machine_time_minutes = db.Column(db.Float)
@@ -961,13 +961,13 @@ class CNCAnalysis(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    event = db.relationship('Event', backref='cnc_analysis')
+    event = db.relationship('Event', backref=db.backref('cnc_analysis', cascade='all, delete-orphan'))
 
 class ToolUsage(db.Model):
     __tablename__ = 'tool_usage'
     
     id = db.Column(db.Integer, primary_key=True)
-    cnc_analysis_id = db.Column(db.Integer, db.ForeignKey('cnc_analysis.id'), nullable=False)
+    cnc_analysis_id = db.Column(db.Integer, db.ForeignKey('cnc_analysis.id', ondelete='CASCADE'), nullable=False)
     tool_number = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
@@ -981,7 +981,12 @@ class ToolUsage(db.Model):
     move_count = db.Column(db.Integer, default=0)        # Number of movements with this tool
     
     # Relationships
-    cnc_analysis = db.relationship('CNCAnalysis', backref='tools_used')
+    cnc_analysis = db.relationship('CNCAnalysis', backref=db.backref('tools_used', cascade='all, delete-orphan'))
+    
+    # Constraints - prevent duplicate tool numbers in the same analysis
+    __table_args__ = (
+        db.UniqueConstraint('cnc_analysis_id', 'tool_number', name='_cnc_tool_uc'),
+    )
 
 class MachineConfiguration(db.Model):
     __tablename__ = 'machine_configuration'
@@ -1122,6 +1127,13 @@ class WorkScheduleConfig(db.Model):
         """Check if a specific weekday is a working day"""
         start, end = self.get_schedule_for_day(weekday)
         return start > 0.0 or end > 0.0
+    
+    def get_total_weekly_hours(self):
+        """Get total configured work hours for the week (including break deduction)"""
+        total = 0.0
+        for weekday in range(7):  # 0=Monday to 6=Sunday
+            total += self.get_work_hours_for_day(weekday)
+        return total
 
 class WorkScheduleTemplate(db.Model):
     """Reusable work schedule templates"""
@@ -1912,6 +1924,16 @@ def log_event():
         cnc_analysis_data = data.get('cnc_analysis')
         if cnc_analysis_data:
             try:
+                # DELETE ANY EXISTING CNC ANALYSIS FOR THIS EVENT TO PREVENT DUPLICATES
+                existing_analysis = CNCAnalysis.query.filter_by(event_id=event.id).first()
+                if existing_analysis:
+                    # Delete all tool usage for this analysis first
+                    ToolUsage.query.filter_by(cnc_analysis_id=existing_analysis.id).delete()
+                    # Delete the analysis itself
+                    db.session.delete(existing_analysis)
+                    db.session.flush()  # Ensure deletion happens before creating new records
+                    print(f"[DEBUG] Deleted existing CNC analysis ID {existing_analysis.id} for event {event.id}")
+                
                 # Map C# field names to database field names
                 # TotalTime is the complete cycle time (machine ops + movements) in minutes
                 total_time_minutes = cnc_analysis_data.get('TotalTime', 0.0)
@@ -1942,10 +1964,23 @@ def log_event():
                 tool_usage_details = cnc_analysis_data.get('ToolUsageDetails', [])
                 tools_used_fallback = cnc_analysis_data.get('ToolsUsed', [])
                 
+                # Log the file being analyzed and tools being stored
+                print(f"[DEBUG] Storing tool data for file: {file_path}")
+                print(f"[DEBUG] Tool numbers being stored: {[t.get('ToolNumber') for t in tool_usage_details] if tool_usage_details else tools_used_fallback}")
+                
                 if tool_usage_details:
                     # Use detailed tool usage data with timing information
                     print(f"[DEBUG] ToolUsageDetails data: {len(tool_usage_details)} tools with timing data")
+                    
+                    # Track which tools we've already added to prevent duplicates
+                    added_tools = set()
+                    
                     for tool_detail in tool_usage_details:
+                        tool_num = tool_detail.get('ToolNumber')
+                        if tool_num in added_tools:
+                            print(f"[WARNING] Duplicate tool T{tool_num} in ToolUsageDetails - skipping")
+                            continue
+                        added_tools.add(tool_num)
                         tool_usage = ToolUsage(
                             cnc_analysis_id=cnc_analysis.id,
                             tool_number=tool_detail.get('ToolNumber'),
@@ -2048,6 +2083,16 @@ def manual_entry_api():
             # Handle CNC analysis if provided (only for first entry to avoid duplicates)
             if cnc_analysis_data and i == 0:
                 try:
+                    # DELETE ANY EXISTING CNC ANALYSIS FOR THIS EVENT TO PREVENT DUPLICATES
+                    existing_analysis = CNCAnalysis.query.filter_by(event_id=event.id).first()
+                    if existing_analysis:
+                        # Delete all tool usage for this analysis first
+                        ToolUsage.query.filter_by(cnc_analysis_id=existing_analysis.id).delete()
+                        # Delete the analysis itself
+                        db.session.delete(existing_analysis)
+                        db.session.flush()  # Ensure deletion happens before creating new records
+                        print(f"[DEBUG] Deleted existing CNC analysis ID {existing_analysis.id} for manual entry event {event.id}")
+                    
                     # Map manual entry CNC analysis data to new schema
                     cycle_time_seconds = cnc_analysis_data.get('TotalTime', 0.0) * 60  # Convert minutes to seconds
                     machine_time_minutes = cnc_analysis_data.get('MachineTime', 0.0)
@@ -2321,7 +2366,7 @@ def change_language():
     return redirect(request.referrer or url_for('main.dashboard'))
 
 def extract_program_name_from_cnc_file(file_path):
-    """Extract .HOPS/.HOP program name from CNC file content"""
+    """Extract .HOP/.HOPS/.HOPX program name from CNC file content"""
     try:
         if not file_path or not os.path.exists(file_path):
             return None
@@ -2329,25 +2374,38 @@ def extract_program_name_from_cnc_file(file_path):
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
             
-        # Look for .HOPS or .HOP file references
+        # Look for .HOP, .HOPS, or .HOPX file references
         import re
         
-        # Pattern to match .HOPS or .HOP files
-        hop_pattern = r'([A-Za-z0-9_-]+\.HOP[S]?)'
-        matches = re.findall(hop_pattern, content, re.IGNORECASE)
+        # Pattern to match .HOP, .HOPS, or .HOPX files (including full paths)
+        hop_patterns = [
+            r'([A-Za-z]:[\\\/][^:*?"<>|\r\n]+\.HOPX?)',  # Full Windows path
+            r'([A-Za-z]:[\\\/][^:*?"<>|\r\n]+\.HOPS?)',  # Full Windows path with HOPS
+            r'([\w\-]+\.HOPX)',                          # Just filename.HOPX
+            r'([\w\-]+\.HOPS?)',                         # Just filename.HOP or .HOPS
+            r';\s*---\s*([^:*?"<>|\r\n]+\.HOPX?)',      # In comment with ---
+            r';\s*---\s*([^:*?"<>|\r\n]+\.HOPS?)',      # In comment with ---
+        ]
         
-        if matches:
-            # Return the first .HOP/.HOPS file found
-            return matches[0]
+        for pattern in hop_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                # Extract just the filename from full path if needed
+                hop_file = matches[0]
+                if '\\' in hop_file or '/' in hop_file:
+                    hop_file = os.path.basename(hop_file)
+                return hop_file
         
-        # If no .HOP/.HOPS found, try to find program name in comments
+        # If no .HOP/.HOPS/.HOPX found, try to find program name in comments
         # Look for common CNC program name patterns
         program_patterns = [
             r'PROGRAM\s*[:=]\s*([A-Za-z0-9_-]+)',
             r'PROGRAM\s+([A-Za-z0-9_-]+)',
             r';\s*PROGRAM\s*[:=]\s*([A-Za-z0-9_-]+)',
-            r';\s*([A-Za-z0-9_-]+\.HOP[S]?)',
-            r'\(([A-Za-z0-9_-]+\.HOP[S]?)\)'
+            r';\s*([A-Za-z0-9_-]+\.HOPX?)',
+            r';\s*([A-Za-z0-9_-]+\.HOPS?)',
+            r'\(([A-Za-z0-9_-]+\.HOPX?)\)',
+            r'\(([A-Za-z0-9_-]+\.HOPS?)\)'
         ]
         
         for pattern in program_patterns:
@@ -2399,7 +2457,8 @@ def calculate_daily_cnc_efficiency(today_start_utc, user_filter=None):
             
         # Calculate metrics - use total cycle time as "total machine time"
         total_machine_time_minutes = cycle_time_seconds / 60
-        overhead_time_minutes = machine_time_minutes or 0
+        overhead_time_minutes = machine_time_minutes or 0  # machine_time_minutes is actually overhead from C#
+        # For dashboard/statistics, we don't have detailed tool data, so estimate cutting time
         cutting_time_minutes = total_machine_time_minutes - overhead_time_minutes
         
         # Woodworking efficiency formula
@@ -2493,7 +2552,8 @@ def calculate_cnc_efficiency_for_period(start_date_utc, end_date_utc, user_filte
             
         # Calculate metrics - use total cycle time as "total machine time"
         total_machine_time_minutes = cycle_time_seconds / 60
-        overhead_time_minutes = machine_time_minutes or 0
+        overhead_time_minutes = machine_time_minutes or 0  # machine_time_minutes is actually overhead from C#
+        # For dashboard/statistics, we don't have detailed tool data, so estimate cutting time
         cutting_time_minutes = total_machine_time_minutes - overhead_time_minutes
         
         # Woodworking efficiency formula
@@ -2565,6 +2625,50 @@ def calculate_cnc_efficiency_for_period(start_date_utc, end_date_utc, user_filte
         'daily_efficiency': daily_trend
     }
 
+@main_bp.route('/cleanup_tool_duplicates')
+@login_required
+def cleanup_tool_duplicates():
+    """Clean up duplicate tool usage entries in the database"""
+    if current_user.role != 'admin':
+        flash('Admin access required', 'error')
+        return redirect(url_for('main.dashboard'))
+    
+    try:
+        # Find all CNC analyses
+        analyses = CNCAnalysis.query.all()
+        total_deleted = 0
+        
+        for analysis in analyses:
+            # Get all tool usage for this analysis
+            tools = ToolUsage.query.filter_by(cnc_analysis_id=analysis.id).order_by(ToolUsage.tool_number, ToolUsage.id.desc()).all()
+            
+            # Group by tool number
+            tool_dict = {}
+            for tool in tools:
+                if tool.tool_number not in tool_dict:
+                    tool_dict[tool.tool_number] = []
+                tool_dict[tool.tool_number].append(tool)
+            
+            # Check for duplicates
+            for tool_number, tool_list in tool_dict.items():
+                if len(tool_list) > 1:
+                    # Keep the newest (highest ID)
+                    tool_list.sort(key=lambda x: x.id, reverse=True)
+                    
+                    # Delete the duplicates
+                    for duplicate in tool_list[1:]:
+                        db.session.delete(duplicate)
+                        total_deleted += 1
+        
+        db.session.commit()
+        flash(f'Successfully cleaned up {total_deleted} duplicate tool entries', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error during cleanup: {str(e)}', 'error')
+    
+    return redirect(request.referrer or url_for('main.dashboard'))
+
 @main_bp.route('/cnc_program_analysis/<int:event_id>')
 @login_required
 def cnc_program_analysis(event_id):
@@ -2594,8 +2698,12 @@ def cnc_program_analysis(event_id):
     
     # Calculate derived metrics
     cycle_time_minutes = cycle_time_seconds / 60
-    cutting_time_minutes = cycle_time_minutes - machine_time_minutes
-    cutting_time_minutes = max(0, cutting_time_minutes)  # Ensure non-negative
+    # machine_time_minutes from C# is actually the OVERHEAD time (rapids + tool changes + spindle + cycles)
+    overhead_time_minutes = machine_time_minutes
+    
+    # Get actual cutting time from the sum of all tool cutting times (in seconds)
+    total_cutting_seconds = sum(tool.cutting_time for tool in cnc_analysis.tools_used)
+    cutting_time_minutes = total_cutting_seconds / 60
     
     # Calculate efficiency metrics (matching FileMonitorTrayApp.cs logic)
     cutting_efficiency = (cutting_time_minutes / cycle_time_minutes) * 100 if cycle_time_minutes > 0 else 0
@@ -2703,8 +2811,9 @@ def cnc_program_analysis(event_id):
         # Time analysis
         'cycle_time_seconds': cycle_time_seconds,
         'cycle_time_minutes': cycle_time_minutes,
-        'machine_time_minutes': machine_time_minutes,
+        'machine_time_minutes': overhead_time_minutes,  # This is actually overhead (rapids + tool changes + spindle)
         'cutting_time_minutes': cutting_time_minutes,
+        'overhead_time_minutes': overhead_time_minutes,  # Added for clarity
         
         # Efficiency metrics
         'cutting_efficiency': cutting_efficiency,
@@ -2752,31 +2861,26 @@ def dashboard():
     # Get work hours for calculations (legacy support)
     work_hours = get_user_work_hours(target_user_id)
     
+    # Get configured work schedule
+    schedule_config = get_active_schedule_config()
+    
     # Get current week's work calendar data
     now = datetime.now()
     week_start = now - timedelta(days=now.weekday())
+    
+    # Use CONFIGURED weekly hours, not calculated from actual days
     work_calendar_summary = {
-        'total_weekly_hours': 0,
-        'working_days': 0,
+        'total_weekly_hours': schedule_config.get_total_weekly_hours(),  # Use configured total
+        'working_days': sum(1 for i in range(7) if schedule_config.is_working_day(i)),
         'average_daily_hours': 0,
         'today_hours': 0
     }
     
-    # Calculate current week summary from work calendar
-    for i in range(7):
-        day_date = (week_start + timedelta(days=i)).date()
-        # Calculate work hours using new holiday/schedule system
-        day_hours = get_work_hours_for_date(day_date)
-        
-        if day_hours and day_hours > 0:
-            work_calendar_summary['total_weekly_hours'] += day_hours
-            work_calendar_summary['working_days'] += 1
-            
-            # If today, store today's hours
-            if day_date == now.date():
-                work_calendar_summary['today_hours'] = day_hours
+    # Get today's configured hours (checking for holidays)
+    today_hours = get_work_hours_for_date(now.date())
+    work_calendar_summary['today_hours'] = today_hours
     
-    # Calculate average
+    # Calculate average based on configured working days
     if work_calendar_summary['working_days'] > 0:
         work_calendar_summary['average_daily_hours'] = work_calendar_summary['total_weekly_hours'] / work_calendar_summary['working_days']
     
@@ -3339,8 +3443,13 @@ def delete_event(event_id):
     try:
         event = Event.query.get_or_404(event_id)
         
-        # Delete related CNC analysis records first
-        CNCAnalysis.query.filter_by(event_id=event_id).delete()
+        # Delete related CNC analysis and tool usage records first
+        cnc_analysis = CNCAnalysis.query.filter_by(event_id=event_id).first()
+        if cnc_analysis:
+            # Delete all tool usage records for this CNC analysis
+            ToolUsage.query.filter_by(cnc_analysis_id=cnc_analysis.id).delete()
+            # Delete the CNC analysis record
+            db.session.delete(cnc_analysis)
         
         # Delete the event
         db.session.delete(event)
@@ -3352,16 +3461,32 @@ def delete_event(event_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def calculate_work_minutes_in_range_calendar(start_date, end_date):
-    """Calculate total work minutes in a date range using new holiday/schedule system"""
+    """Calculate total work minutes in a date range using configured schedule and holidays"""
+    schedule_config = get_active_schedule_config()
     total_minutes = 0
     current = start_date.date() if hasattr(start_date, 'date') else start_date
     end = end_date.date() if hasattr(end_date, 'date') else end_date
     
+    # For a full week range, use the configured weekly hours
+    days_in_range = (end - current).days + 1
+    if days_in_range == 7:
+        # Use configured weekly hours directly
+        return schedule_config.get_total_weekly_hours() * 60
+    
+    # For other ranges, calculate based on configured schedule and holidays
     while current <= end:
-        # Get work hours for this date using new system
-        work_hours = get_work_hours_for_date(current)
+        # Check if it's a holiday first
+        holiday_entry = WorkCalendar.query.filter_by(date=current).first()
+        if holiday_entry and holiday_entry.is_holiday:
+            # Skip holidays
+            current = current + timedelta(days=1)
+            continue
+            
+        # Get configured work hours for this weekday
+        weekday = current.weekday()
+        work_hours = schedule_config.get_work_hours_for_day(weekday)
         
-        # Add to total if it's a working day
+        # Add to total if it's a configured working day
         if work_hours > 0:
             total_minutes += work_hours * 60
         
@@ -3467,6 +3592,12 @@ def statistics():
         start_date = datetime.strptime(custom_start, '%Y-%m-%d').replace(tzinfo=local_tz)
         end_date = datetime.strptime(custom_end, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=local_tz)
     elif date_range == 'week':
+        # Use current calendar week (Monday to Sunday) to match dashboard
+        start_date = now - timedelta(days=now.weekday())  # Start of week (Monday)
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + timedelta(days=6, hours=23, minutes=59, seconds=59)  # End of week (Sunday)
+    elif date_range == 'last7':
+        # Rolling last 7 days
         start_date = now - timedelta(days=7)
         end_date = now
     elif date_range == 'month':

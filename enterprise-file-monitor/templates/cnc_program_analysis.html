@@ -316,7 +316,7 @@
                     <div class="col-md-3">
                         <div class="text-center p-3 bg-light rounded">
                             {% set total_distance = program.tools_used | sum(attribute='total_distance') %}
-                            <h4 class="text-info mb-1">{{ "%.1f"|format(total_distance) }}m</h4>
+                            <h4 class="text-info mb-1">{{ "%.3f"|format(total_distance / 1000) }}m</h4>
                             <small class="text-muted">{{ t('total_distance_traveled') }}</small>
                         </div>
                     </div>
@@ -646,13 +646,22 @@
 <script>
 // Time Breakdown Chart
 const timeCtx = document.getElementById('timeBreakdownChart').getContext('2d');
+// Use the actual cutting time from tools (sum of all tool cutting times)
+const cuttingTimeSeconds = {{ program.tools_used | sum(attribute='cutting_time') }};
+// Use the actual rapid time from tools (sum of all tool rapid times)  
+const rapidTimeSeconds = {{ program.tools_used | sum(attribute='rapid_time') }};
+// Calculate tool change time (tool changes × 13.05 seconds per change)
+const toolChangeSeconds = {{ (program.tool_changes or 0) }} * 13.05;
+// Spindle and cycle overhead (spindle startup/shutdown + L CYCLE commands)
+const spindleCycleOverhead = {{ program.cycle_time_seconds }} - cuttingTimeSeconds - rapidTimeSeconds - toolChangeSeconds;
+
 const timeBreakdownChart = new Chart(timeCtx, {
     type: 'doughnut',
     data: {
-        labels: ['{{ t('cutting_time') }}', '{{ t('machine_operations') }}'],
+        labels: ['{{ t('cutting_time') }}', '{{ t('rapid_moves') }}', '{{ t('tool_changes') }}', '{{ t('spindle_cycles') }}'],
         datasets: [{
-            data: [{{ program.cutting_time_minutes }}, {{ program.machine_time_minutes }}],
-            backgroundColor: ['#28a745', '#ffc107'],
+            data: [cuttingTimeSeconds, rapidTimeSeconds, toolChangeSeconds, Math.max(0, spindleCycleOverhead)],
+            backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#6c757d'],
             borderWidth: 2,
             borderColor: '#fff'
         }]
@@ -667,8 +676,11 @@ const timeBreakdownChart = new Chart(timeCtx, {
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        const minutes = context.raw;
-                        return context.label + ': ' + formatMinutesHuman(minutes);
+                        const seconds = context.raw;
+                        const minutes = Math.floor(seconds / 60);
+                        const secs = Math.floor(seconds % 60);
+                        const timeStr = minutes > 0 ? `${minutes}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+                        return context.label + ': ' + timeStr;
                     }
                 }
             }

@@ -6,32 +6,32 @@ N50 ; --- Post:RB_OPUS_V7 V8.5.10.179 Script7.0.13.3 ---
 N60 ; ---  ---
 N70 ; --- Total Processes[#3] ---
 N80 ; ---  ---
-#VAR
+#VAR 
 V.P.LAENGE= 320
 V.P.BREITE= 250
 V.P.DICKE= 19
 V.P.OOX=0
-V.P.OOY=0
+V.P.OOY=0 
 V.P.OOZ=0
-V.P.MAXZ=0
-V.P.MAXX=0
+V.P.MAXZ=0  
+V.P.MAXX=0 
 V.P.MINX=0
-V.P.MAXY=0
+V.P.MAXY=0 
 V.P.MINY=0 
 #ENDVAR 
-N90 V.P.MAXZ=V.A.+SWE_MDS.Z-1
-N100 V.P.MAXX=V.A.+SWE_MDS.X-1
+N90 V.P.MAXZ=V.A.+SWE_MDS.Z-1 
+N100 V.P.MAXX=V.A.+SWE_MDS.X-1   
 N110 V.P.MINX=V.A.-SWE_MDS.X+1  
 N120 V.P.MAXY=V.A.+SWE_MDS.Y-1
 N130 V.P.MINY=V.A.-SWE_MDS.Y+1  
-N140 ; ---  ---
+N140 ; ---  ---  
 N150 ; --- used tools ---
-N160 ; ---  ---
+N160 ; ---  --- 
 N170 ; ---  ---
 N180 ; --- BOX:  601 TCID:100 TCPlace:1   HId:1001  VF 12 R P/N                    MaxRotSpeed S24000 ---
 N190 L CYCLE [NAME=CH_CHECK_TOOL.NC @P1=601 @P2=2 @P3=110 @P4=5.35 @P5=24000]    ; ---  ---
 N200 ; --- BOX:  181 TCID:100 TCPlace:1   HId:1001  VF 12 R P/N                    MaxRotSpeed S24000 ---
-N210 L CYCLE [NAME=CH_CHECK_TOOL.NC @P1=181 @P2=1 @P3=110 @P4=5.35 @P5=24000]    ; ---  ---
+N210 L CYCLE [NAME=CH_CHECK_TOOL.NC @P1=181 @P2=1 @P3=110 @P4=5.35 @P5=24000]    ; ---  --- 
 N220 ; ---  ---
 N230 ; ---  ---
 N240 ; ---  ---

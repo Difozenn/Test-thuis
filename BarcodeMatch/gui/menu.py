@@ -74,22 +74,14 @@ def create_menu(root, main_app):
         # Handle session pause/resume for Scanner panel
         from gui.panels.scanner_panel import ScannerPanel
         
-        # If switching away from Scanner panel, pause the session
-        if (current_panel_name == "Scanner" and new_panel_name != "Scanner" and 
-            root._active_panel is not None and isinstance(root._active_panel, ScannerPanel)):
-            print(f"[DEBUG MENU] Switching away from Scanner to {new_panel_name}, calling _pause_session")
-            try:
-                if hasattr(root._active_panel, '_pause_session'):
-                    root._active_panel._pause_session()
-                    print("[DEBUG MENU] _pause_session called successfully")
-            except Exception as e:
-                print(f"[ERROR] Failed to pause scanner session: {e}")
+        # NOTE: The Scanner panel's pack_forget() method will handle pausing
+        # We don't need to manually call _pause_session here
         
-        # Hide any existing panel
+        # Hide any existing panel - this will trigger pack_forget which handles pause
         if root._active_panel is not None:
             try:
                 if hasattr(root._active_panel, 'winfo_exists') and root._active_panel.winfo_exists():
-                    root._active_panel.pack_forget()
+                    root._active_panel.pack_forget()  # This calls the overridden pack_forget in ScannerPanel
             except tk.TclError:
                 pass  # Widget already destroyed
         
@@ -97,16 +89,7 @@ def create_menu(root, main_app):
         panel = main_app.get_panel_by_name(new_panel_name)
         if panel:
             root._active_panel = panel  # Assign before pack!
-            panel.pack(fill=tk.BOTH, expand=True)
-            
-            # If switching to Scanner panel, resume the session
-            if (new_panel_name == "Scanner" and current_panel_name != "Scanner" and 
-                isinstance(panel, ScannerPanel)):
-                try:
-                    if hasattr(panel, '_resume_session'):
-                        panel._resume_session()
-                except Exception as e:
-                    print(f"[ERROR] Failed to resume scanner session: {e}")
+            panel.pack(fill=tk.BOTH, expand=True)  # This calls the overridden pack() in ScannerPanel which handles resume
             
             # If this is the DatabasePanel, start auto-refresh after packing
             from gui.panels.database_panel import DatabasePanel

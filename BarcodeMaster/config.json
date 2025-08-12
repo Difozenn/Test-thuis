@@ -47,7 +47,7 @@
     "work_hours": {
         "monday": {
             "start": 7.5,
-            "end": 16.0
+            "end": 23.983333333333334
         },
         "tuesday": {
             "start": 7.5,

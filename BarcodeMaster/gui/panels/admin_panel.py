@@ -68,6 +68,11 @@ class AdminPanel(tk.Frame):
         self.excel_output_frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.excel_output_frame, text='Excel Output')
         self._create_excel_output_tab(self.excel_output_frame)
+        
+        # User Configuration Tab
+        self.user_config_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.user_config_frame, text='Gebruiker Configuratie')
+        self._create_user_config_tab(self.user_config_frame)
 
         self._initial_backup_scheduler_start() # Start scheduler if enabled in config
 
@@ -781,6 +786,294 @@ class AdminPanel(tk.Frame):
             self.lock_button_frame.pack(side='bottom', fill='x')
         elif self.winfo_exists():
             self.lock_button_frame.pack_forget()
+    
+    # --- User Configuration Tab Methods ---
+    def _create_user_config_tab(self, tab):
+        """Create user configuration tab for managing user paths and processing types"""
+        # Get current config
+        config = get_config()
+        
+        # Main container with scrollbar
+        canvas = tk.Canvas(tab, bg="#f0f0f0")
+        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # --- User Settings Frame ---
+        settings_frame = ttk.LabelFrame(scrollable_frame, text="Gebruiker Path Configuratie")
+        settings_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Info label
+        info_label = ttk.Label(
+            settings_frame,
+            text="Configureer gebruikers en hun Excel import paden.\nElke gebruiker kan een eigen pad hebben waar Excel bestanden automatisch worden geïmporteerd.",
+            wraplength=600
+        )
+        info_label.pack(padx=5, pady=(5, 15))
+        
+        # User list frame
+        self.user_list_frame = tk.Frame(settings_frame, bg="#f0f0f0")
+        self.user_list_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Initialize variables
+        self.user_specific_paths_vars = {}
+        self.user_logic_active_vars = {}
+        self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
+        self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
+        self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {})
+        self.available_processing_types = ["GEEN_PROCESSING", "MDB_PROCESSING", "HOPS_PROCESSING", "NESTING_PROCESSING", "ACCURA_PROCESSING", "BOERE_PROCESSING"]
+        
+        # Build user list
+        self._build_user_list_ui()
+        
+        # Add new user frame
+        add_frame = ttk.LabelFrame(scrollable_frame, text="Nieuwe Gebruiker Toevoegen")
+        add_frame.pack(fill='x', padx=5, pady=(10, 5))
+        
+        add_container = tk.Frame(add_frame, bg="#f0f0f0")
+        add_container.pack(padx=10, pady=10)
+        
+        ttk.Label(add_container, text="Gebruikersnaam:").pack(side='left', padx=(0, 5))
+        self.new_username_entry = ttk.Entry(add_container, width=20)
+        self.new_username_entry.pack(side='left', padx=(0, 10))
+        
+        ttk.Label(add_container, text="Type:").pack(side='left', padx=(0, 5))
+        self.new_user_processing_type_var = tk.StringVar()
+        self.new_user_processing_type_combo = ttk.Combobox(
+            add_container, 
+            textvariable=self.new_user_processing_type_var, 
+            values=self.available_processing_types, 
+            width=20, 
+            state='readonly'
+        )
+        if self.available_processing_types:
+            self.new_user_processing_type_combo.current(0)
+        self.new_user_processing_type_combo.pack(side='left', padx=(0, 10))
+        
+        add_btn = ttk.Button(add_container, text="Toevoegen", command=self._add_user_config)
+        add_btn.pack(side='left')
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def _build_user_list_ui(self):
+        """Build the user list UI"""
+        # Clear existing widgets
+        for widget in self.user_list_frame.winfo_children():
+            widget.destroy()
+        
+        self.user_specific_paths_vars.clear()
+        self.user_logic_active_vars.clear()
+        
+        config = get_config()
+        open_users = config.get('scanner_panel_open_event_users', [])
+        
+        if not open_users:
+            tk.Label(self.user_list_frame, text="Geen gebruikers geconfigureerd.", bg="#f0f0f0", fg="gray").pack(pady=5)
+            return
+        
+        # Headers
+        header_frame = tk.Frame(self.user_list_frame, bg="#e0e0e0")
+        header_frame.pack(fill='x', pady=(0, 5))
+        tk.Label(header_frame, text="Actief", width=8, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Label(header_frame, text="Gebruiker", width=15, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Label(header_frame, text="Type", width=20, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Label(header_frame, text="Volgorde", width=10, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left')
+        tk.Label(header_frame, text="Import Pad", width=40, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left', expand=True, fill='x')
+        tk.Label(header_frame, text="Acties", width=20, bg="#e0e0e0", font=('Arial', 9, 'bold')).pack(side='left')
+        
+        # User rows
+        for idx, username in enumerate(open_users):
+            user_frame = tk.Frame(self.user_list_frame, bg="white" if idx % 2 == 0 else "#f8f8f8")
+            user_frame.pack(fill='x', pady=1)
+            
+            # Active checkbox
+            logic_active_var = tk.BooleanVar(value=self.scanner_panel_open_event_user_logic_active.get(username, True))
+            self.user_logic_active_vars[username] = logic_active_var
+            
+            logic_checkbox = tk.Checkbutton(
+                user_frame,
+                variable=logic_active_var,
+                bg="white" if idx % 2 == 0 else "#f8f8f8",
+                command=lambda u=username, v=logic_active_var: self._save_user_logic_active(u, v.get())
+            )
+            logic_checkbox.pack(side='left', padx=10)
+            
+            # Username
+            tk.Label(user_frame, text=username, width=15, anchor='w', bg="white" if idx % 2 == 0 else "#f8f8f8").pack(side='left')
+            
+            # Processing type
+            processing_type = self.scanner_user_to_processing_type_map.get(username, "N/A")
+            tk.Label(user_frame, text=processing_type, width=20, anchor='w', bg="white" if idx % 2 == 0 else "#f8f8f8").pack(side='left')
+            
+            # Order arrows
+            arrow_frame = tk.Frame(user_frame, bg="white" if idx % 2 == 0 else "#f8f8f8")
+            arrow_frame.pack(side='left', padx=10)
+            
+            up_btn = tk.Button(arrow_frame, text="↑", command=lambda u=username: self._move_user_up(u), 
+                              width=2, state='normal' if idx > 0 else 'disabled')
+            up_btn.pack(side='left')
+            down_btn = tk.Button(arrow_frame, text="↓", command=lambda u=username: self._move_user_down(u), 
+                                width=2, state='normal' if idx < len(open_users)-1 else 'disabled')
+            down_btn.pack(side='left')
+            
+            # Path entry
+            path_var = tk.StringVar(value=self.scanner_panel_open_event_user_paths.get(username, "Niet ingesteld"))
+            self.user_specific_paths_vars[username] = path_var
+            
+            path_entry = ttk.Entry(user_frame, textvariable=path_var, state='readonly', width=40)
+            path_entry.pack(side='left', expand=True, fill='x', padx=5)
+            
+            # Browse button
+            browse_btn = ttk.Button(user_frame, text="Bladeren", 
+                                   command=lambda u=username, pv=path_var: self._browse_user_path(u, pv),
+                                   state='normal' if logic_active_var.get() else 'disabled')
+            browse_btn.pack(side='left', padx=2)
+            
+            # Remove button
+            remove_btn = ttk.Button(user_frame, text="Verwijderen", 
+                                   command=lambda u=username: self._remove_user_config(u))
+            remove_btn.pack(side='left', padx=5)
+    
+    def _browse_user_path(self, username, path_var):
+        """Browse for user import path"""
+        directory = filedialog.askdirectory(title=f"Selecteer Import Directory voor {username}")
+        if directory:
+            path_var.set(directory)
+            config_data = get_config()
+            user_paths = config_data.get('scanner_panel_open_event_user_paths', {})
+            user_paths[username] = directory
+            save_config({'scanner_panel_open_event_user_paths': user_paths})
+            self.scanner_panel_open_event_user_paths = user_paths
+            self.log_to_queue(f"Import pad ingesteld voor {username}: {directory}")
+    
+    def _save_user_logic_active(self, username, is_active):
+        """Save user active state"""
+        config_data = get_config()
+        user_logic_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
+        user_logic_states[username] = is_active
+        save_config({'scanner_panel_open_event_user_logic_active': user_logic_states})
+        self.scanner_panel_open_event_user_logic_active = user_logic_states
+        status = "geactiveerd" if is_active else "gedeactiveerd"
+        self.log_to_queue(f"Automatische import {status} voor {username}")
+    
+    def _move_user_up(self, username):
+        """Move user up in the order"""
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        
+        if username not in users:
+            return
+            
+        current_index = users.index(username)
+        if current_index > 0:
+            users[current_index], users[current_index - 1] = users[current_index - 1], users[current_index]
+            save_config({'scanner_panel_open_event_users': users})
+            self.log_to_queue(f"Gebruiker '{username}' omhoog verplaatst")
+            self._build_user_list_ui()
+    
+    def _move_user_down(self, username):
+        """Move user down in the order"""
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        
+        if username not in users:
+            return
+            
+        current_index = users.index(username)
+        if current_index < len(users) - 1:
+            users[current_index], users[current_index + 1] = users[current_index + 1], users[current_index]
+            save_config({'scanner_panel_open_event_users': users})
+            self.log_to_queue(f"Gebruiker '{username}' omlaag verplaatst")
+            self._build_user_list_ui()
+    
+    def _add_user_config(self):
+        """Add new user configuration"""
+        username = self.new_username_entry.get().strip()
+        processing_type = self.new_user_processing_type_var.get()
+        
+        if not username:
+            messagebox.showwarning("Invoer Fout", "Voer een gebruikersnaam in.")
+            return
+        
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        
+        if username in users:
+            messagebox.showwarning("Dubbele Gebruiker", f"Gebruiker '{username}' bestaat al.")
+            return
+        
+        # Add user to list
+        users.append(username)
+        save_config({'scanner_panel_open_event_users': users})
+        
+        # Save processing type
+        type_map = config.get('scanner_user_to_processing_type_map', {})
+        type_map[username] = processing_type
+        save_config({'scanner_user_to_processing_type_map': type_map})
+        self.scanner_user_to_processing_type_map = type_map
+        
+        # Set active by default
+        logic_states = config.get('scanner_panel_open_event_user_logic_active', {})
+        logic_states[username] = True
+        save_config({'scanner_panel_open_event_user_logic_active': logic_states})
+        self.scanner_panel_open_event_user_logic_active = logic_states
+        
+        self.log_to_queue(f"Gebruiker '{username}' toegevoegd met type '{processing_type}'")
+        
+        # Clear entry fields
+        self.new_username_entry.delete(0, tk.END)
+        if self.available_processing_types:
+            self.new_user_processing_type_combo.current(0)
+        
+        # Rebuild UI
+        self._build_user_list_ui()
+    
+    def _remove_user_config(self, username):
+        """Remove user configuration"""
+        if not messagebox.askyesno("Bevestig Verwijdering", 
+                                   f"Weet u zeker dat u gebruiker '{username}' en alle configuratie wilt verwijderen?"):
+            return
+        
+        config = get_config()
+        
+        # Remove from users list
+        users = config.get('scanner_panel_open_event_users', [])
+        if username in users:
+            users.remove(username)
+            save_config({'scanner_panel_open_event_users': users})
+        
+        # Remove from paths
+        paths = config.get('scanner_panel_open_event_user_paths', {})
+        if username in paths:
+            del paths[username]
+            save_config({'scanner_panel_open_event_user_paths': paths})
+            self.scanner_panel_open_event_user_paths = paths
+        
+        # Remove from logic states
+        logic_states = config.get('scanner_panel_open_event_user_logic_active', {})
+        if username in logic_states:
+            del logic_states[username]
+            save_config({'scanner_panel_open_event_user_logic_active': logic_states})
+            self.scanner_panel_open_event_user_logic_active = logic_states
+        
+        # Remove from processing type map
+        type_map = config.get('scanner_user_to_processing_type_map', {})
+        if username in type_map:
+            del type_map[username]
+            save_config({'scanner_user_to_processing_type_map': type_map})
+            self.scanner_user_to_processing_type_map = type_map
+        
+        self.log_to_queue(f"Gebruiker '{username}' verwijderd")
+        self._build_user_list_ui()
+    # --- End of User Configuration Tab Methods ---
 
     def shutdown(self):
         """Gracefully shut down services managed by AdminPanel."""

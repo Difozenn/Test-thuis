@@ -14,6 +14,8 @@ import json
 import signal
 import weakref
 import atexit
+from PIL import Image, ImageTk
+from path_utils import get_resource_path
 
 class ScannerPanel(tk.Frame):
     
@@ -36,12 +38,16 @@ class ScannerPanel(tk.Frame):
         
         config = get_config()
         
-        # Add session tracking
-        self.current_session_id = None
+        # Add session tracking - support for multiple sessions
+        self.current_session_id = None  # Primary session (for barcode scanning)
         self.session_start_time = None
         self.session_paused = False
         self.pause_start_time = None
         self.total_pause_duration = 0
+        
+        # Track background session (for opdeelzaag work)
+        self.background_session_id = None
+        self.background_session_start_time = None
         
         # Initialize work hours cache
         self._work_hours_cache = None
@@ -91,12 +97,8 @@ class ScannerPanel(tk.Frame):
         self.com_status_label = tk.Label(self.com_frame, text="Niet verbonden", fg="red", bg="#f0f0f0")
         self.com_status_label.grid(row=2, column=2, padx=5, pady=10, sticky='w')
 
-        # --- User Configuration ---
-        self.event_frame = tk.LabelFrame(self, text="Gebruiker Configuratie", bg="#f0f0f0", padx=10, pady=5)
-        self.event_frame.pack(pady=(0, 10), fill='x', padx=20)
-        
-        # Add START button frame after event type frame
-        self._create_session_controls()
+        # Create enhanced session display
+        self._create_enhanced_session_display()
 
         # --- Log Viewer Frame ---
         self.log_viewer_frame = tk.LabelFrame(self, text="Activiteitenlog", bg="#f0f0f0", padx=10, pady=5)
@@ -121,15 +123,11 @@ class ScannerPanel(tk.Frame):
         self.log_text.tag_config("error", foreground="red")
         self.log_text.tag_config("debug", foreground="gray")
 
-        # Frame for user-specific path settings
-        self.user_paths_frame = tk.Frame(self.event_frame, bg="#f0f0f0")
+        # User configuration moved to admin panel
+        # self.user_paths_frame = tk.Frame(self.event_frame, bg="#f0f0f0")
 
-        # Load user-specific paths from config
+        # Load user configuration from config (still needed for processing)
         self.user_specific_paths_vars = {}
-        self.remove_user_buttons = []
-        self.user_browse_buttons = []
-        self.user_logic_checkboxes = []
-        self.add_user_frame_widget = None
         self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
         self.user_logic_active_vars = {}
         self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
@@ -141,6 +139,18 @@ class ScannerPanel(tk.Frame):
         self.read_thread = None
 
         self.open_projects = set()
+        self.session1_project = None  # Current/last project for Session 1
+        self.session2_project = None  # Current/last project for Session 2
+        self.session1_projects = []  # All projects in Session 1 batch
+        self.session2_projects = []  # All projects in Session 2 batch
+        
+        # Separate pause states for each session
+        self.session1_paused = False
+        self.session2_paused = False
+        self.session1_pause_start = None
+        self.session2_pause_start = None
+        self.session1_total_pause = 0
+        self.session2_total_pause = 0
 
         self.load_config_values()
         
@@ -152,9 +162,9 @@ class ScannerPanel(tk.Frame):
             self._update_admin_dependent_ui()
 
         self.update_frame_visibility()
-        # Always show user configuration UI
-        self._build_open_event_user_paths_ui()
-        self.user_paths_frame.pack(fill='x', padx=5, pady=(5,0))
+        # User configuration now in admin panel
+        # self._build_open_event_user_paths_ui()
+        # self.user_paths_frame.pack(fill='x', padx=5, pady=(5,0))
 
         self._previous_scanner_type = self.scanner_type_var.get()
 
@@ -166,64 +176,393 @@ class ScannerPanel(tk.Frame):
 
         self._create_lock_button()
 
-    def _create_session_controls(self):
-        """Create session START button and status display with work hours indicator"""
-        self.session_frame = tk.LabelFrame(self, text="Werk Sessie", bg="#f0f0f0", padx=10, pady=5)
-        self.session_frame.pack(pady=(0, 10), fill='x', padx=20, after=self.event_frame)
+    def _create_enhanced_session_display(self):
+        """Create larger, more intuitive session display with timing information"""
+        # Load button images first
+        try:
+            # Load images for buttons
+            start_img_path = get_resource_path('assets/start.png')
+            stop_img_path = get_resource_path('assets/stop.png')
+            pauze_img_path = get_resource_path('assets/pauze.png')
+            
+            # Load and resize images to appropriate button size (75x75)
+            self.start_img = Image.open(start_img_path).resize((75, 75), Image.Resampling.LANCZOS)
+            self.start_photo = ImageTk.PhotoImage(self.start_img)
+            
+            self.stop_img = Image.open(stop_img_path).resize((75, 75), Image.Resampling.LANCZOS)
+            self.stop_photo = ImageTk.PhotoImage(self.stop_img)
+            
+            self.pauze_img = Image.open(pauze_img_path).resize((75, 75), Image.Resampling.LANCZOS)
+            self.pauze_photo = ImageTk.PhotoImage(self.pauze_img)
+            
+            images_loaded = True
+        except Exception as e:
+            print(f"Warning: Could not load button images: {e}")
+            images_loaded = False
+            # Fallback to text if images fail to load
+            self.start_photo = None
+            self.stop_photo = None
+            self.pauze_photo = None
         
-        # Work hours status
-        work_status_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
-        work_status_frame.pack(fill='x', pady=(0, 5))
+        # Main session container - much larger and clearer
+        self.session_frame = tk.LabelFrame(
+            self,
+            text="Werk Sessie Beheer",
+            bg="#f0f0f0",
+            padx=10,
+            pady=5
+        )
+        self.session_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Work hours indicator at top
+        self.work_hours_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
+        self.work_hours_frame.pack(fill='x', pady=(0, 10))
         
         self.work_hours_label = tk.Label(
-            work_status_frame,
-            text="",
+            self.work_hours_frame,
+            text="⏰ Werktijd laden...",
             bg="#f0f0f0",
-            font=('Arial', 9)
+            fg="#27ae60",
+            font=('Segoe UI', 10)
         )
-        self.work_hours_label.pack(side='left', padx=10)
+        self.work_hours_label.pack(side='left')
         
-        # Session controls frame
-        controls_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
-        controls_frame.pack(fill='x', pady=5)
+        # Main content area with two columns for sessions
+        content_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
+        content_frame.pack(fill='both', expand=True, pady=(0, 15))
         
-        # START button
-        self.start_button = tk.Button(
-            controls_frame, 
-            text="START NIEUWE SESSIE", 
-            command=self.start_new_session,
-            bg="#4CAF50", 
-            fg="white", 
-            font=('Arial', 12, 'bold'),
-            padx=20, 
-            pady=10
-        )
-        self.start_button.pack(side='left', padx=10)
+        # LEFT COLUMN - Active Session
+        left_frame = tk.Frame(content_frame, bg="#f0f0f0")
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
         
-        # PAUSE/RESUME button
-        self.pause_button = tk.Button(
-            controls_frame, 
-            text="PAUZEER", 
-            command=self.toggle_pause_session,
-            bg="#FF9800", 
-            fg="white", 
-            font=('Arial', 12, 'bold'),
-            padx=20, 
+        # Session 1 card
+        self.active_session_card = tk.LabelFrame(
+            left_frame,
+            text="Sessie 1",
+            bg="#f0f0f0",
+            fg="#2980b9",
+            font=('Segoe UI', 11, 'bold'),
+            padx=15,
             pady=10,
-            state='disabled'  # Initially disabled
+            relief=tk.SOLID,
+            borderwidth=2
         )
-        self.pause_button.pack(side='left', padx=5)
+        self.active_session_card.pack(fill='both', expand=True)
         
-        # Session status label
+        # Active session info
+        self.active_session_id = tk.Label(
+            self.active_session_card,
+            text="Geen actieve sessie",
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+            font=('Segoe UI', 10)
+        )
+        self.active_session_id.pack(anchor='w', pady=2)
+        
+        self.active_session_start = tk.Label(
+            self.active_session_card,
+            text="Start tijd: --:--",
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+            font=('Segoe UI', 10)
+        )
+        self.active_session_start.pack(anchor='w', pady=2)
+        
+        self.active_session_duration = tk.Label(
+            self.active_session_card,
+            text="Duur: 0h 0m",
+            bg="#f0f0f0",
+            fg="#2c3e50",
+            font=('Segoe UI', 11, 'bold')
+        )
+        self.active_session_duration.pack(anchor='w', pady=5)
+        
+        # Active project display for Session 1
+        self.active_project_label = tk.Label(
+            self.active_session_card,
+            text="Project: --",
+            bg="#f0f0f0",
+            fg="#2980b9",
+            font=('Segoe UI', 11, 'bold')
+        )
+        self.active_project_label.pack(anchor='w', pady=2)
+        
+        # Active session status indicator
+        self.active_status_frame = tk.Frame(self.active_session_card, bg="#f0f0f0")
+        self.active_status_frame.pack(fill='x', pady=5)
+        
+        self.active_status_indicator = tk.Label(
+            self.active_status_frame,
+            text="● INACTIEF",
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+            font=('Segoe UI', 10, 'bold')
+        )
+        self.active_status_indicator.pack(side='left')
+        
+        # Session 1 control buttons
+        session1_button_frame = tk.Frame(self.active_session_card, bg="#f0f0f0")
+        session1_button_frame.pack(fill='x', pady=(10, 5))
+        
+        # Container for Session 1 buttons
+        session1_buttons_container = tk.Frame(session1_button_frame, bg="#f0f0f0")
+        session1_buttons_container.pack()
+        
+        # START/STOP button for Session 1
+        self.start_button_frame = tk.Frame(session1_buttons_container, bg="#f0f0f0")
+        self.start_button_frame.pack(side='left', padx=5)
+        
+        if hasattr(self, 'start_photo') and self.start_photo:
+            self.start_button = tk.Button(
+                self.start_button_frame,
+                image=self.start_photo,
+                bg="#f0f0f0",
+                relief=tk.FLAT,
+                cursor="hand2",
+                bd=0,
+                command=self.start_new_session
+            )
+        else:
+            # Fallback to text button
+            self.start_button = tk.Button(
+                self.start_button_frame,
+                text="▶",
+                font=('Arial', 28, 'bold'),
+                bg="#27ae60",
+                fg="white",
+                width=4,
+                height=2,
+                relief=tk.FLAT,
+                cursor="hand2",
+                activebackground="#229954",
+                bd=2,
+                command=self.start_new_session
+            )
+        self.start_button.pack()
+        
+        self.start_label = tk.Label(
+            self.start_button_frame,
+            text="Start Sessie 1",
+            bg="#f0f0f0",
+            font=('Segoe UI', 10)
+        )
+        self.start_label.pack()
+        
+        # PAUSE button for Session 1
+        self.pause_button_frame = tk.Frame(session1_buttons_container, bg="#f0f0f0")
+        self.pause_button_frame.pack(side='left', padx=5)
+        
+        if images_loaded and self.pauze_photo:
+            self.pause_button = tk.Button(
+                self.pause_button_frame,
+                image=self.pauze_photo,
+                bg="#f0f0f0",
+                relief=tk.FLAT,
+                cursor="hand2",
+                bd=0,
+                state='disabled',
+                command=self.toggle_pause_session
+            )
+        else:
+            # Fallback to text button
+            self.pause_button = tk.Button(
+                self.pause_button_frame,
+                text="⏸",
+                font=('Arial', 20, 'bold'),
+                bg="#95a5a6",
+                fg="white",
+                width=3,
+                height=1,
+                relief=tk.FLAT,
+                cursor="hand2",
+                activebackground="#7f8c8d",
+                bd=2,
+                state='disabled',
+                command=self.toggle_pause_session
+            )
+        self.pause_button.pack()
+        
+        self.pause_label = tk.Label(
+            self.pause_button_frame,
+            text="Pauzeer S1",
+            bg="#f0f0f0",
+            font=('Segoe UI', 10)
+        )
+        self.pause_label.pack()
+        
+        # RIGHT COLUMN - Background Session
+        right_frame = tk.Frame(content_frame, bg="#f0f0f0")
+        right_frame.pack(side='right', fill='both', expand=True, padx=(10, 0))
+        
+        # Session 2 card
+        self.background_session_card = tk.LabelFrame(
+            right_frame,
+            text="Sessie 2",
+            bg="#f0f0f0",
+            fg="#8e44ad",
+            font=('Segoe UI', 11, 'bold'),
+            padx=15,
+            pady=10,
+            relief=tk.SOLID,
+            borderwidth=2
+        )
+        self.background_session_card.pack(fill='both', expand=True)
+        
+        # Background session info
+        self.background_session_id_label = tk.Label(
+            self.background_session_card,
+            text="Geen achtergrond sessie",
+            bg="#f0f0f0",
+            fg="#bdc3c7",
+            font=('Segoe UI', 10)
+        )
+        self.background_session_id_label.pack(anchor='w', pady=2)
+        
+        self.background_session_start = tk.Label(
+            self.background_session_card,
+            text="Start tijd: --:--",
+            bg="#f0f0f0",
+            fg="#bdc3c7",
+            font=('Segoe UI', 10)
+        )
+        self.background_session_start.pack(anchor='w', pady=2)
+        
+        self.background_session_duration = tk.Label(
+            self.background_session_card,
+            text="Duur: 0h 0m",
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+            font=('Segoe UI', 11, 'bold')
+        )
+        self.background_session_duration.pack(anchor='w', pady=5)
+        
+        # Active project display for Session 2
+        self.background_project_label = tk.Label(
+            self.background_session_card,
+            text="Project: --",
+            bg="#f0f0f0",
+            fg="#8e44ad",
+            font=('Segoe UI', 11, 'bold')
+        )
+        self.background_project_label.pack(anchor='w', pady=2)
+        
+        # Background session status
+        self.background_status_frame = tk.Frame(self.background_session_card, bg="#f0f0f0")
+        self.background_status_frame.pack(fill='x', pady=5)
+        
+        self.background_status_indicator = tk.Label(
+            self.background_status_frame,
+            text="● INACTIEF",
+            bg="#f0f0f0",
+            fg="#bdc3c7",
+            font=('Segoe UI', 10, 'bold')
+        )
+        self.background_status_indicator.pack(side='left')
+        
+        # Session 2 control buttons
+        session2_button_frame = tk.Frame(self.background_session_card, bg="#f0f0f0")
+        session2_button_frame.pack(fill='x', pady=(10, 5))
+        
+        # Container for Session 2 buttons
+        session2_buttons_container = tk.Frame(session2_button_frame, bg="#f0f0f0")
+        session2_buttons_container.pack()
+        
+        # START/STOP button for Session 2
+        self.start_button2_frame = tk.Frame(session2_buttons_container, bg="#f0f0f0")
+        self.start_button2_frame.pack(side='left', padx=5)
+        
+        if hasattr(self, 'start_photo') and self.start_photo:
+            self.start_button2 = tk.Button(
+                self.start_button2_frame,
+                image=self.start_photo,
+                bg="#f0f0f0",
+                relief=tk.FLAT,
+                cursor="hand2",
+                bd=0,
+                state='disabled',
+                command=self.start_session2
+            )
+        else:
+            # Fallback to text button
+            self.start_button2 = tk.Button(
+                self.start_button2_frame,
+                text="▶",
+                font=('Arial', 28, 'bold'),
+                bg="#27ae60",
+                fg="white",
+                width=4,
+                height=2,
+                relief=tk.FLAT,
+                cursor="hand2",
+                activebackground="#229954",
+                bd=2,
+                state='disabled',
+                command=self.start_session2
+            )
+        self.start_button2.pack()
+        
+        self.start_label2 = tk.Label(
+            self.start_button2_frame,
+            text="Start Sessie 2",
+            bg="#f0f0f0",
+            font=('Segoe UI', 10)
+        )
+        self.start_label2.pack()
+        
+        # PAUSE button for Session 2
+        self.pause_button2_frame = tk.Frame(session2_buttons_container, bg="#f0f0f0")
+        self.pause_button2_frame.pack(side='left', padx=5)
+        
+        if images_loaded and self.pauze_photo:
+            self.pause_button2 = tk.Button(
+                self.pause_button2_frame,
+                image=self.pauze_photo,
+                bg="#f0f0f0",
+                relief=tk.FLAT,
+                cursor="hand2",
+                bd=0,
+                state='disabled',
+                command=self.toggle_pause_session2
+            )
+        else:
+            # Fallback to text button
+            self.pause_button2 = tk.Button(
+                self.pause_button2_frame,
+                text="⏸",
+                font=('Arial', 20, 'bold'),
+                bg="#95a5a6",
+                fg="white",
+                width=3,
+                height=1,
+                relief=tk.FLAT,
+                cursor="hand2",
+                activebackground="#7f8c8d",
+                bd=2,
+                state='disabled',
+                command=self.toggle_pause_session2
+            )
+        self.pause_button2.pack()
+        
+        self.pause_label2 = tk.Label(
+            self.pause_button2_frame,
+            text="Pauzeer S2",
+            bg="#f0f0f0",
+            font=('Segoe UI', 10)
+        )
+        self.pause_label2.pack()
+        
+        # No more control buttons at the bottom - they're now in the session cards
+        
+        # Hidden status label - not needed with new design
         self.session_status_label = tk.Label(
-            controls_frame, 
-            text="Geen actieve sessie", 
-            bg="#f0f0f0", 
-            font=('Arial', 10)
+            self.session_frame,
+            text="",
+            fg="#2C3E50"
         )
-        self.session_status_label.pack(side='left', padx=20)
+        # Don't pack it - just create for compatibility
         
-        # Session timer removed per user request
+        # Start session timer updates
+        self.update_session_timers()
         
         # Load work hours asynchronously after panel is shown
         self._initial_work_hours_display()
@@ -293,7 +632,7 @@ class ScannerPanel(tk.Frame):
             
             self.work_hours_label.config(
                 text=f"✓ Werktijd: {now.strftime('%H:%M')} ({start_time}-{end_time})",
-                fg="green"
+                fg="#27AE60"
             )
             if hasattr(self, 'start_button'):
                 self.start_button.config(state='normal')
@@ -353,7 +692,7 @@ class ScannerPanel(tk.Frame):
                         'session_id': session['session_id'],
                         'timestamp': datetime.now().isoformat()
                     }
-                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=3)
+                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
                     if close_response.ok:
                         print(f"[ScannerPanel] Cleaned up orphaned session: {session['session_id']}")
                     else:
@@ -521,13 +860,401 @@ class ScannerPanel(tk.Frame):
             work_hours = self.get_work_hours_from_api()
             return self._check_work_status(work_hours)
 
+    def start_session2(self):
+        """Handle click on Session 2 start button - start or stop session 2"""
+        if self.background_session_id:
+            # Stop Session 2
+            self.stop_background_session()
+        elif self.current_session_id:
+            # Session 1 is active, start Session 2 as background
+            self.start_new_batch_session()
+        else:
+            # No Session 1 active, cannot start Session 2 alone
+            self.log_message("⚠️ Sessie 1 moet eerst actief zijn voordat Sessie 2 kan starten", "warning")
+            messagebox.showinfo("Info", "Start eerst Sessie 1 voordat u Sessie 2 kunt starten.")
+    
+    def update_session_display(self):
+        """Update the enhanced UI to show current session status with timing"""
+        config = get_config()
+        current_user = config.get('user', 'NESTING')
+        
+        # Update active session card
+        if self.current_session_id:
+            self.active_session_id.config(
+                text=f"Sessie ID: {self.current_session_id[-8:]}",
+                fg="#2c3e50"
+            )
+            if self.session_start_time:
+                self.active_session_start.config(
+                    text=f"Start tijd: {self.session_start_time.strftime('%H:%M')}",
+                    fg="#2c3e50"
+                )
+                # Calculate duration
+                duration = datetime.now() - self.session_start_time
+                hours = int(duration.total_seconds() // 3600)
+                minutes = int((duration.total_seconds() % 3600) // 60)
+                self.active_session_duration.config(
+                    text=f"Duur: {hours}h {minutes}m",
+                    fg="#2c3e50"
+                )
+            
+            if self.session1_paused:
+                self.active_status_indicator.config(
+                    text="● GEPAUZEERD",
+                    fg="#f39c12"
+                )
+            else:
+                self.active_status_indicator.config(
+                    text="● ACTIEF",
+                    fg="#27ae60"
+                )
+            
+            # Update buttons for active session
+            if hasattr(self, 'stop_photo') and self.stop_photo:
+                self.start_button.config(image=self.stop_photo)
+            else:
+                self.start_button.config(text="⏹", bg="#e74c3c", activebackground="#c0392b")  # Stop icon
+            self.start_label.config(text="Stop Sessie 1")
+            self.pause_button.config(state='normal')  # Enable pause button for Session 1
+            
+            # Enable Session 2 button when Session 1 is active
+            if not self.background_session_id:
+                self.start_button2.config(state='normal')
+            else:
+                # Keep Session 2 button enabled if it already has a session
+                self.start_button2.config(state='normal')
+        else:
+            # No active session
+            self.active_session_id.config(
+                text="Geen actieve sessie",
+                fg="#7f8c8d"
+            )
+            self.active_session_start.config(
+                text="Start tijd: --:--",
+                fg="#7f8c8d"
+            )
+            self.active_session_duration.config(
+                text="Duur: 0h 0m",
+                fg="#7f8c8d"
+            )
+            self.active_status_indicator.config(
+                text="● INACTIEF",
+                fg="#7f8c8d"
+            )
+            # Clear project when session ends
+            self.session1_project = None
+            self.session1_projects = []  # Clear batch list
+            self.active_project_label.config(text="Project: --")
+            
+            # Update buttons for no session
+            if hasattr(self, 'start_photo') and self.start_photo:
+                self.start_button.config(image=self.start_photo)
+            else:
+                self.start_button.config(text="▶", bg="#27ae60", activebackground="#229954")  # Play icon
+            self.start_label.config(text="Start Sessie 1")
+            # Disable Session 2 button when no Session 1 (unless Session 2 is running)
+            if self.background_session_id:
+                self.start_button2.config(state='normal')
+            else:
+                self.start_button2.config(state='disabled')
+            self.pause_button.config(state='disabled')  # Disable pause button when no Session 1
+        
+        # Update background session card
+        if self.background_session_id:
+            self.background_session_id_label.config(
+                text=f"Sessie ID: {self.background_session_id[-8:]}",
+                fg="#2c3e50"
+            )
+            if self.background_session_start_time:
+                self.background_session_start.config(
+                    text=f"Start tijd: {self.background_session_start_time.strftime('%H:%M')}",
+                    fg="#2c3e50"
+                )
+                # Calculate duration
+                duration = datetime.now() - self.background_session_start_time
+                hours = int(duration.total_seconds() // 3600)
+                minutes = int((duration.total_seconds() % 3600) // 60)
+                self.background_session_duration.config(
+                    text=f"Duur: {hours}h {minutes}m",
+                    fg="#2c3e50"
+                )
+            
+            if self.session2_paused:
+                self.background_status_indicator.config(
+                    text="● GEPAUZEERD",
+                    fg="#f39c12"
+                )
+            else:
+                self.background_status_indicator.config(
+                    text="● ACTIEF",
+                    fg="#8e44ad"
+                )
+            # Update Session 2 button to show stop
+            if hasattr(self, 'stop_photo') and self.stop_photo:
+                self.start_button2.config(image=self.stop_photo, state='normal')
+            else:
+                self.start_button2.config(text="⏹", bg="#e74c3c", activebackground="#c0392b", state='normal')
+            self.start_label2.config(text="Stop Sessie 2")
+            self.pause_button2.config(state='normal')  # Enable pause button for Session 2
+        else:
+            # No background session
+            self.background_session_id_label.config(
+                text="Geen sessie 2",
+                fg="#bdc3c7"
+            )
+            self.background_session_start.config(
+                text="Start tijd: --:--",
+                fg="#bdc3c7"
+            )
+            self.background_session_duration.config(
+                text="Duur: 0h 0m",
+                fg="#7f8c8d"
+            )
+            self.background_status_indicator.config(
+                text="● INACTIEF",
+                fg="#bdc3c7"
+            )
+            # Update Session 2 button to show start (disabled if Session 1 not active)
+            if self.current_session_id:
+                # Session 1 is active, allow starting Session 2
+                if hasattr(self, 'start_photo') and self.start_photo:
+                    self.start_button2.config(image=self.start_photo, state='normal')
+                else:
+                    self.start_button2.config(text="▶", bg="#27ae60", activebackground="#229954", state='normal')
+            else:
+                # Session 1 not active, disable Session 2
+                if hasattr(self, 'start_photo') and self.start_photo:
+                    self.start_button2.config(image=self.start_photo, state='disabled')
+                else:
+                    self.start_button2.config(text="▶", bg="#27ae60", activebackground="#229954", state='disabled')
+            self.start_label2.config(text="Start Sessie 2")
+            self.pause_button2.config(state='disabled')  # Disable pause button when no Session 2
+            # Clear project when session ends
+            self.session2_project = None
+            self.session2_projects = []  # Clear batch list
+            self.background_project_label.config(text="Project: --")
+    
+    def update_session_timers(self):
+        """Update session duration displays every minute"""
+        if self.current_session_id and self.session_start_time:
+            duration = datetime.now() - self.session_start_time
+            hours = int(duration.total_seconds() // 3600)
+            minutes = int((duration.total_seconds() % 3600) // 60)
+            self.active_session_duration.config(
+                text=f"Duur: {hours}h {minutes}m"
+            )
+        
+        if self.background_session_id and self.background_session_start_time:
+            duration = datetime.now() - self.background_session_start_time
+            hours = int(duration.total_seconds() // 3600)
+            minutes = int((duration.total_seconds() % 3600) // 60)
+            self.background_session_duration.config(
+                text=f"Duur: {hours}h {minutes}m"
+            )
+        
+        # Schedule next update in 30 seconds
+        self.after(30000, self.update_session_timers)
+    
+    def stop_background_session(self):
+        """Stop the background session (opdeelzaag work completed)"""
+        if not self.background_session_id:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Confirm with user
+        result = messagebox.askyesno(
+            "Stop Achtergrond Sessie",
+            f"Wilt u de achtergrond sessie {self.background_session_id} stoppen?\n\n"
+            "Dit betekent dat het opdeelzaag werk is afgerond.",
+            icon='question'
+        )
+        
+        if not result:
+            return
+        
+        try:
+            # End the background session
+            end_data = {
+                'session_id': self.background_session_id,
+                'timestamp': datetime.now().isoformat(),
+                'keep_projects_active': True  # Don't AFGEMELD yet, current session might still use them
+            }
+            
+            response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
+            if response.ok:
+                self.log_message(f"✓ Achtergrond sessie {self.background_session_id} gestopt", "success")
+                self.background_session_id = None
+                self.background_session_start_time = None
+                self.session2_project = None  # Clear Session 2 project
+                self.session2_projects = []  # Clear Session 2 batch list
+                
+                # Update display
+                self.update_session_display()
+            else:
+                self.log_message(f"❌ Kon achtergrond sessie niet stoppen: {response.text}", "error")
+                
+        except Exception as e:
+            self.log_message(f"❌ Fout bij stoppen achtergrond sessie: {e}", "error")
+    
+    def start_new_batch_session(self):
+        """Start a new batch session while keeping the old session running in background"""
+        # Run in background thread to prevent GUI freeze
+        threading.Thread(target=self._start_new_batch_session_async, daemon=True).start()
+    
+    def _start_new_batch_session_async(self):
+        """Async version of start_new_batch_session to prevent GUI blocking"""
+        if not self.current_session_id:
+            # No active session, just start a new one
+            self._start_new_session_async()
+            return
+        
+        # Check if we already have a background session
+        if self.background_session_id:
+            self.after(0, lambda: messagebox.showwarning(
+                "Achtergrond Sessie Actief",
+                f"Er is al een achtergrond sessie actief: {self.background_session_id}\n\n"
+                "Stop eerst de achtergrond sessie voordat u een nieuwe batch start.",
+                icon='warning'
+            ))
+            return
+        
+        # Check if within work hours
+        is_work_time, message = self.get_current_work_status()
+        if not is_work_time:
+            self.log_message(f"❌ {message}", "error")
+            messagebox.showwarning("Buiten Werktijd", f"Kan geen nieuwe batch starten: {message}")
+            return
+        
+        # Confirm with user
+        result = messagebox.askyesno(
+            "Nieuwe Batch Starten",
+            "Dit zal:\n"
+            "1. De huidige sessie naar de achtergrond verplaatsen (voor opdeelzaag werk)\n"
+            "2. Een nieuwe sessie starten voor de nieuwe batch (nesting machine)\n\n"
+            "Beide sessies blijven actief en moeten handmatig gestopt worden.\n"
+            "Barcode scans gaan naar de nieuwe sessie.\n\n"
+            "Wilt u doorgaan?",
+            icon='question'
+        )
+        
+        if not result:
+            return
+        
+        config = get_config()
+        current_user = config.get('user', 'NESTING')
+        api_url = config.get('api_url', '').rstrip('/')
+        
+        if not api_url:
+            self.log_message("❌ API URL niet geconfigureerd", "error")
+            return
+        
+        # Move current session to background (don't end it!)
+        self.background_session_id = self.current_session_id
+        self.background_session_start_time = self.session_start_time
+        
+        # Move Session 1 projects to Session 2
+        self.session2_project = self.session1_project
+        self.session2_projects = self.session1_projects.copy()  # Copy batch list
+        self.session1_project = None
+        self.session1_projects = []  # Clear Session 1 batch list
+        if self.session2_projects:
+            if len(self.session2_projects) > 1:
+                self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+            else:
+                self.background_project_label.config(text=f"Project: {self.session2_project}")
+        self.active_project_label.config(text="Project: --")
+        
+        self.log_message(f"↔️ Sessie {self.background_session_id} naar achtergrond verplaatst", "info")
+        
+        # Reset current session variables for new session
+        self.current_session_id = None
+        self.session_start_time = None
+        self.session_paused = False
+        self.pause_start_time = None
+        self.total_pause_duration = 0
+        
+        # Start a new session for the new batch
+        self.session_start_time = datetime.now()
+        self.current_session_id = f"{current_user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+        
+        data = {
+            'event': 'SESSION_START',
+            'user': current_user,
+            'session_id': self.current_session_id,
+            'timestamp': self.session_start_time.isoformat(),
+            'session_type': 'SCANNER',
+            'is_new_batch': True,
+            'background_session': self.background_session_id  # Track relationship
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=1)
+            if response.ok:
+                # Also create global project session
+                project_session_data = {
+                    'event': 'PROJECT_SESSION_START',
+                    'user': current_user,
+                    'session_id': self.current_session_id,
+                    'timestamp': self.session_start_time.isoformat(),
+                    'details': f'New batch session started (background: {self.background_session_id})'
+                }
+                
+                try:
+                    project_response = requests.post(api_url.replace('/log', '/project_session/start'), json=project_session_data, timeout=1)
+                    if project_response.ok:
+                        self.log_message(f"✓ Nieuwe batch sessie gestart: {self.current_session_id}", "success")
+                except Exception as e:
+                    self.log_message(f"⚠ Project sessie registratie mislukt: {e}", "warning")
+                
+                # Update UI to show both sessions
+                self.update_session_display()
+                
+                # Log the batch transition
+                log_data = {
+                    'event': 'BATCH_TRANSITION',
+                    'user': current_user,
+                    'session_id': self.current_session_id,
+                    'background_session': self.background_session_id,
+                    'details': 'Nieuwe batch gestart, vorige sessie loopt door in achtergrond',
+                    'timestamp': datetime.now().isoformat()
+                }
+                
+                try:
+                    requests.post(api_url, json=log_data, timeout=1)
+                except:
+                    pass  # Don't fail on logging error
+                
+            else:
+                self.log_message(f"❌ Kon nieuwe batch sessie niet starten: {response.text}", "error")
+                # Restore background session as current
+                self.current_session_id = self.background_session_id
+                self.session_start_time = self.background_session_start_time
+                self.background_session_id = None
+                self.background_session_start_time = None
+                
+        except Exception as e:
+            self.log_message(f"❌ Fout bij starten nieuwe batch: {e}", "error")
+            # Restore background session as current
+            self.current_session_id = self.background_session_id
+            self.session_start_time = self.background_session_start_time
+            self.background_session_id = None
+            self.background_session_start_time = None
+    
     def start_new_session(self):
         """Start a new work session for current user or close existing session"""
         if self.current_session_id:
-            # If there's an active session, stop it
-            self.close_current_session()
+            # If there's an active session, stop it (async)
+            threading.Thread(target=self._close_current_session_async, daemon=True).start()
             return
-            
+        
+        # Start session in background thread to prevent GUI freeze
+        threading.Thread(target=self._start_new_session_async, daemon=True).start()
+    
+    def _start_new_session_async(self):
+        """Async version of start_new_session to prevent GUI blocking"""
         config = get_config()
         current_user = config.get('user', 'NESTING')
         api_url = config.get('api_url', '').rstrip('/')
@@ -556,7 +1283,7 @@ class ScannerPanel(tk.Frame):
         }
         
         try:
-            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=3)
+            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=1)
             if response.ok:
                 # Also create global project session for production time tracking
                 project_session_data = {
@@ -568,22 +1295,16 @@ class ScannerPanel(tk.Frame):
                 }
                 
                 try:
-                    project_response = requests.post(api_url.replace('/log', '/project_session/start'), json=project_session_data, timeout=3)
+                    project_response = requests.post(api_url.replace('/log', '/project_session/start'), json=project_session_data, timeout=1)
                     if project_response.ok:
                         self.log_message(f"✓ Werk sessie gestart voor {current_user}", "success")
-                        self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
-                        self.start_button.config(text="STOP SESSIE", bg="#f44336")
-                        self.pause_button.config(state='normal')  # Enable pause button
+                        self.update_session_display()
                     else:
                         self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
-                        self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
-                        self.start_button.config(text="STOP SESSIE", bg="#f44336")
-                        self.pause_button.config(state='normal')  # Enable pause button
+                        self.update_session_display()
                 except Exception as pe:
                     self.log_message("⚠️ Sessie gestart, maar project tracking mislukt", "warning")
-                    self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
-                    self.start_button.config(text="STOP SESSIE", bg="#f44336")
-                    self.pause_button.config(state='normal')  # Enable pause button
+                    self.update_session_display()
             else:
                 self.log_message("❌ Kon sessie niet starten", "error")
                 self.current_session_id = None
@@ -595,12 +1316,69 @@ class ScannerPanel(tk.Frame):
 
     def close_current_session(self):
         """Close the current active session and AFGEMELD all open projects"""
+        # Run in background thread to prevent GUI freeze
+        threading.Thread(target=self._close_current_session_async, daemon=True).start()
+    
+    def _close_current_session_async(self):
+        """Async version of close_current_session to prevent GUI blocking"""
         if not self.current_session_id:
             return
         
+        # Check if we have a background session - if so, handle differently
+        if self.background_session_id:
+            # We have both sessions active
+            result = messagebox.askyesno(
+                "Stop Huidige Sessie",
+                f"Wilt u de huidige sessie {self.current_session_id} stoppen?\n\n"
+                f"De achtergrond sessie {self.background_session_id} blijft actief.\n"
+                f"Projecten worden NIET afgemeld (achtergrond sessie loopt nog).",
+                icon='question'
+            )
+            
+            if not result:
+                return
+            
+            # Stop current session but keep projects active
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            try:
+                end_data = {
+                    'session_id': self.current_session_id,
+                    'timestamp': datetime.now().isoformat(),
+                    'keep_projects_active': True  # Background session still needs projects
+                }
+                
+                response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
+                if response.ok:
+                    self.log_message(f"✓ Huidige sessie {self.current_session_id} gestopt", "success")
+                    
+                    # Move background session to current
+                    self.current_session_id = self.background_session_id
+                    self.session_start_time = self.background_session_start_time
+                    self.background_session_id = None
+                    self.background_session_start_time = None
+                    
+                    # Reset pause states for the now-current session
+                    self.session_paused = False
+                    self.pause_start_time = None
+                    self.total_pause_duration = 0
+                    
+                    self.log_message(f"↔️ Achtergrond sessie {self.current_session_id} is nu actief", "info")
+                    
+                    # Update display
+                    self.update_session_display()
+                else:
+                    self.log_message(f"❌ Kon huidige sessie niet stoppen: {response.text}", "error")
+            except Exception as e:
+                self.log_message(f"❌ Fout bij stoppen huidige sessie: {e}", "error")
+            
+            return
+        
+        # Normal case - no background session, so we can AFGEMELD projects
         # If session is paused, resume it first to log the final pause duration
-        if self.session_paused:
-            self.resume_session()
+        if self.session1_paused:
+            self.resume_session1()
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
@@ -627,7 +1405,7 @@ class ScannerPanel(tk.Frame):
                 }
                 
                 try:
-                    response = requests.post(api_url, json=data_afgemeld, timeout=3)
+                    response = requests.post(api_url, json=data_afgemeld, timeout=1)
                     if response.ok:
                         self.log_message(f"✓ Project {project} afgesloten", "success")
                         self.open_projects.discard(project)
@@ -644,7 +1422,7 @@ class ScannerPanel(tk.Frame):
         }
         
         try:
-            response = requests.post(api_url.replace('/log', '/session/end'), json=data, timeout=3)
+            response = requests.post(api_url.replace('/log', '/session/end'), json=data, timeout=1)
             if response.ok:
                 end_time = datetime.now()
                 # Use work minutes calculation that excludes breaks
@@ -658,91 +1436,300 @@ class ScannerPanel(tk.Frame):
         self.session_paused = False
         self.pause_start_time = None
         self.total_pause_duration = 0
-        self.session_status_label.config(text="Geen actieve sessie", fg="black")
-        self.start_button.config(text="START NIEUWE SESSIE", bg="#4CAF50")
-        self.pause_button.config(text="PAUZEER", bg="#FF9800", state='disabled')
+        self.session1_project = None  # Clear Session 1 project
+        self.session1_projects = []  # Clear batch list
+        self.update_session_display()
+        if hasattr(self, 'pauze_photo') and self.pauze_photo:
+            self.pause_button.config(image=self.pauze_photo)
+        else:
+            self.pause_button.config(text="⏸", bg="#34495E", activebackground="#2C3E50")  # Pause icon, gray
+        self.pause_label.config(text="Pauzeer")
     
 
     # update_session_timer function removed - timer no longer displayed
     
     def toggle_pause_session(self):
-        """Toggle between pausing and resuming the current session"""
+        """Toggle between pausing and resuming Session 1"""
         if not self.current_session_id:
             return
         
-        if self.session_paused:
-            self.resume_session()
+        if self.session1_paused:
+            self.resume_session1()
         else:
-            self.pause_session()
+            self.pause_session1()
     
-    def pause_session(self):
-        """Pause the current active session"""
-        if not self.current_session_id or self.session_paused:
+    def toggle_pause_session2(self):
+        """Toggle between pausing and resuming Session 2"""
+        if not self.background_session_id:
+            return
+        
+        if self.session2_paused:
+            self.resume_session2()
+        else:
+            self.pause_session2()
+    
+    def pause_session1(self):
+        """Pause Session 1 only"""
+        if not self.current_session_id or self.session1_paused:
             return
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
         current_user = config.get('user', 'NESTING')
         
-        # Set pause state
-        self.session_paused = True
-        self.pause_start_time = datetime.now()
+        # Set pause state for Session 1
+        self.session1_paused = True
+        self.session1_pause_start = datetime.now()
         
+        # Get current project for Session 1
+        current_project = self.session1_project
+        
+        # Pause Session 1
         data = {
             'session_id': self.current_session_id,
-            'timestamp': self.pause_start_time.isoformat()
+            'timestamp': self.session1_pause_start.isoformat(),
+            'user': current_user,
+            'project': current_project
         }
         
         try:
-            response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=3)
+            # Send pause event to session endpoint
+            response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=1)
             if response.ok:
-                self.log_message(f"⏸️ Sessie gepauzeerd voor {current_user}", "info")
-                self.session_status_label.config(text=f"Sessie gepauzeerd: {current_user}", fg="orange")
-                self.pause_button.config(text="HERVAT", bg="#4CAF50")
+                self.log_message(f"⏸️ Actieve sessie gepauzeerd voor {current_user}", "info")
+                
+                # Also log SESSION_PAUSE event for tracking
+                log_data = {
+                    'event': 'SESSION_PAUSE',
+                    'user': current_user,
+                    'project': current_project,
+                    'session_id': self.current_session_id,
+                    'details': 'Sessie 1 gepauzeerd',
+                    'timestamp': self.session1_pause_start.isoformat()
+                }
+                try:
+                    requests.post(api_url, json=log_data, timeout=1)
+                except:
+                    pass  # Don't fail the pause if event logging fails
+                
+                # Update UI for Session 1 pause
+                self.session_status_label.config(text=f"Sessie 1 gepauzeerd: {current_user}", fg="#F39C12")
+                    
+                # Change pause button to show resume (we'll use start image for resume)
+                if hasattr(self, 'start_photo') and self.start_photo:
+                    self.pause_button.config(image=self.start_photo)
+                else:
+                    self.pause_button.config(text="▶", bg="#27AE60", activebackground="#229954")  # Play icon, green
+                self.pause_label.config(text="Hervat S1")
+                
             else:
-                self.log_message("❌ Kon sessie niet pauzeren", "error")
+                self.log_message("❌ Kon sessie 1 niet pauzeren", "error")
                 # Revert pause state on failure
-                self.session_paused = False
-                self.pause_start_time = None
+                self.session1_paused = False
+                self.session1_pause_start = None
         except Exception as e:
-            self.log_message(f"❌ Fout bij pauzeren sessie: {e}", "error")
+            self.log_message(f"❌ Fout bij pauzeren sessie 1: {e}", "error")
             # Revert pause state on failure
-            self.session_paused = False
-            self.pause_start_time = None
+            self.session1_paused = False
+            self.session1_pause_start = None
     
-    def resume_session(self):
-        """Resume a paused session"""
-        if not self.current_session_id or not self.session_paused:
+    def pause_session2(self):
+        """Pause Session 2 only"""
+        if not self.background_session_id or self.session2_paused:
             return
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
         current_user = config.get('user', 'NESTING')
         
-        # Calculate pause duration
-        if self.pause_start_time:
-            pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
-            self.total_pause_duration += pause_duration
+        # Set pause state for Session 2
+        self.session2_paused = True
+        self.session2_pause_start = datetime.now()
+        
+        # Get current project for Session 2
+        current_project = self.session2_project
+        
+        # Pause Session 2
+        data = {
+            'session_id': self.background_session_id,
+            'timestamp': self.session2_pause_start.isoformat(),
+            'user': current_user,
+            'project': current_project
+        }
+        
+        try:
+            # Send pause event to session endpoint
+            response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=1)
+            if response.ok:
+                self.log_message(f"⏸️ Achtergrond sessie gepauzeerd voor {current_user}", "info")
+                
+                # Also log SESSION_PAUSE event for tracking
+                log_data = {
+                    'event': 'SESSION_PAUSE',
+                    'user': current_user,
+                    'project': current_project,
+                    'session_id': self.background_session_id,
+                    'details': 'Sessie 2 gepauzeerd',
+                    'timestamp': self.session2_pause_start.isoformat()
+                }
+                try:
+                    requests.post(api_url, json=log_data, timeout=1)
+                except:
+                    pass  # Don't fail the pause if event logging fails
+                
+                # Update UI for Session 2 pause
+                # Change pause button to show resume
+                if hasattr(self, 'start_photo') and self.start_photo:
+                    self.pause_button2.config(image=self.start_photo)
+                else:
+                    self.pause_button2.config(text="▶", bg="#27AE60", activebackground="#229954")  # Play icon, green
+                self.pause_label2.config(text="Hervat S2")
+                
+            else:
+                self.log_message("❌ Kon sessie 2 niet pauzeren", "error")
+                # Revert pause state on failure
+                self.session2_paused = False
+                self.session2_pause_start = None
+        except Exception as e:
+            self.log_message(f"❌ Fout bij pauzeren sessie 2: {e}", "error")
+            # Revert pause state on failure
+            self.session2_paused = False
+            self.session2_pause_start = None
+    
+    def resume_session1(self):
+        """Resume paused Session 1"""
+        threading.Thread(target=self._resume_session1_async, daemon=True).start()
+    
+    def _resume_session1_async(self):
+        """Async version of resume_session1 to prevent GUI blocking"""
+        if not self.current_session_id or not self.session1_paused:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Calculate pause duration for Session 1
+        pause_duration_seconds = 0
+        if self.session1_pause_start:
+            pause_duration_seconds = (datetime.now() - self.session1_pause_start).total_seconds()
+            self.session1_total_pause += pause_duration_seconds
+        
+        # Get current project for Session 1
+        current_project = self.session1_project
         
         data = {
             'session_id': self.current_session_id,
             'timestamp': datetime.now().isoformat(),
-            'total_pause_duration': self.total_pause_duration
+            'total_pause_duration': self.session1_total_pause,
+            'user': current_user,
+            'project': current_project
         }
         
         try:
-            response = requests.post(api_url.replace('/log', '/session/resume'), json=data, timeout=3)
+            response = requests.post(api_url.replace('/log', '/session/resume'), json=data, timeout=1)
             if response.ok:
-                self.log_message(f"▶️ Sessie hervat voor {current_user}", "success")
-                self.session_status_label.config(text=f"Actieve sessie: {current_user}", fg="green")
-                self.pause_button.config(text="PAUZEER", bg="#FF9800")
-                # Reset pause state
-                self.session_paused = False
-                self.pause_start_time = None
+                self.log_message(f"▶️ Actieve sessie hervat voor {current_user}", "success")
+                
+                # Also log SESSION_RESUME event for tracking
+                pause_minutes = round(pause_duration_seconds / 60, 1)
+                log_data = {
+                    'event': 'SESSION_RESUME',
+                    'user': current_user,
+                    'project': current_project,
+                    'session_id': self.current_session_id,
+                    'details': f'Sessie 1 hervat - pauze duur: {pause_minutes} minuten',
+                    'timestamp': datetime.now().isoformat()
+                }
+                try:
+                    requests.post(api_url, json=log_data, timeout=1)
+                except:
+                    pass  # Don't fail the resume if event logging fails
+                
+                # Update UI for Session 1 resume
+                self.session_status_label.config(text=f"Sessie 1 actief: {current_user}", fg="#27AE60")
+                
+                # Change pause button back to pause icon
+                if hasattr(self, 'pauze_photo') and self.pauze_photo:
+                    self.pause_button.config(image=self.pauze_photo)
+                else:
+                    self.pause_button.config(text="⏸", bg="#34495E", activebackground="#2C3E50")  # Pause icon, gray
+                self.pause_label.config(text="Pauzeer S1")
+                
+                # Clear pause state for Session 1
+                self.session1_paused = False
+                self.session1_pause_start = None
             else:
-                self.log_message("❌ Kon sessie niet hervatten", "error")
+                self.log_message("❌ Kon sessie 1 niet hervatten", "error")
         except Exception as e:
-            self.log_message(f"❌ Fout bij hervatten sessie: {e}", "error")
+            self.log_message(f"❌ Fout bij hervatten sessie 1: {e}", "error")
+    
+    def resume_session2(self):
+        """Resume paused Session 2"""
+        threading.Thread(target=self._resume_session2_async, daemon=True).start()
+    
+    def _resume_session2_async(self):
+        """Async version of resume_session2 to prevent GUI blocking"""
+        if not self.background_session_id or not self.session2_paused:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Calculate pause duration for Session 2
+        pause_duration_seconds = 0
+        if self.session2_pause_start:
+            pause_duration_seconds = (datetime.now() - self.session2_pause_start).total_seconds()
+            self.session2_total_pause += pause_duration_seconds
+        
+        # Get current project for Session 2
+        current_project = self.session2_project
+        
+        data = {
+            'session_id': self.background_session_id,
+            'timestamp': datetime.now().isoformat(),
+            'total_pause_duration': self.session2_total_pause,
+            'user': current_user,
+            'project': current_project
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/resume'), json=data, timeout=1)
+            if response.ok:
+                self.log_message(f"▶️ Achtergrond sessie hervat voor {current_user}", "success")
+                
+                # Also log SESSION_RESUME event for tracking
+                pause_minutes = round(pause_duration_seconds / 60, 1)
+                log_data = {
+                    'event': 'SESSION_RESUME',
+                    'user': current_user,
+                    'project': current_project,
+                    'session_id': self.background_session_id,
+                    'details': f'Sessie 2 hervat - pauze duur: {pause_minutes} minuten',
+                    'timestamp': datetime.now().isoformat()
+                }
+                try:
+                    requests.post(api_url, json=log_data, timeout=1)
+                except:
+                    pass  # Don't fail the resume if event logging fails
+                    
+                # Update UI for Session 2 resume
+                # Change pause button back to pause icon
+                if hasattr(self, 'pauze_photo') and self.pauze_photo:
+                    self.pause_button2.config(image=self.pauze_photo)
+                else:
+                    self.pause_button2.config(text="⏸", bg="#95a5a6", activebackground="#7f8c8d")  # Pause icon, gray
+                self.pause_label2.config(text="Pauzeer S2")
+                
+                # Clear pause state for Session 2
+                self.session2_paused = False
+                self.session2_pause_start = None
+                
+            else:
+                self.log_message("❌ Kon sessie 2 niet hervatten", "error")
+        except Exception as e:
+            self.log_message(f"❌ Fout bij hervatten sessie 2: {e}", "error")
 
     def calculate_work_minutes_local(self, start_time, end_time):
         """Calculate work minutes locally for display using dynamic work hours from settings"""
@@ -950,10 +1937,10 @@ class ScannerPanel(tk.Frame):
 
     def update_frame_visibility(self):
         if self.scanner_type_var.get() == 'COM':
-            self.com_frame.pack(fill='x', padx=20, pady=5, before=self.event_frame)
+            self.com_frame.pack(fill='x', padx=20, pady=5, before=self.session_frame)
             self.usb_frame.pack_forget()
         else:
-            self.usb_frame.pack(fill='x', padx=20, pady=5, before=self.event_frame)
+            self.usb_frame.pack(fill='x', padx=20, pady=5, before=self.session_frame)
             self.com_frame.pack_forget()
 
     def load_config_values(self):
@@ -986,282 +1973,12 @@ class ScannerPanel(tk.Frame):
         self.log_message(f"Mappen-check {status} voor {username}", "info")
 
     def _build_open_event_user_paths_ui(self):
-        for widget in self.user_paths_frame.winfo_children():
-            widget.destroy()
-        self.user_specific_paths_vars.clear()
-        self.user_logic_active_vars.clear()
-        self.remove_user_buttons.clear()
-        self.user_browse_buttons.clear()
-        self.user_logic_checkboxes.clear()
-        self.add_user_frame_widget = None
-
-        config = get_config()
-        open_users = config.get('scanner_panel_open_event_users', [])
-        self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
-        self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
-
-        if not open_users:
-            tk.Label(self.user_paths_frame, text="Geen gebruikers geconfigureerd voor OPEN event paden.", bg="#f0f0f0", fg="gray").pack(pady=5)
-
-        for username in open_users:
-            user_frame = tk.Frame(self.user_paths_frame, bg="#f0f0f0")
-            user_frame.pack(fill='x', pady=2)
-
-            logic_active_var = tk.BooleanVar(value=self.scanner_panel_open_event_user_logic_active.get(username, True))
-            self.user_logic_active_vars[username] = logic_active_var
-
-            path_var = tk.StringVar(value=self.scanner_panel_open_event_user_paths.get(username, "Niet ingesteld"))
-            self.user_specific_paths_vars[username] = path_var
-
-            path_display_entry = tk.Entry(user_frame, textvariable=path_var, width=30)
-            browse_button = tk.Button(user_frame, text="Bladeren...", command=lambda u=username, pv=path_var: self._browse_user_path(u, pv))
-            self.user_browse_buttons.append(browse_button)
-
-            def create_checkbox_command(u, lav, pde, bb, pv_for_clear):
-                def command():
-                    self._save_user_logic_active_state(u, lav.get())
-                    is_checked = lav.get()
-                    pde.config(state='readonly' if is_checked else 'disabled')
-                    bb.config(state='normal' if is_checked else 'disabled')
-                    if not is_checked:
-                        pv_for_clear.set("Niet ingesteld")
-                        current_paths_config = get_config().get('scanner_panel_open_event_user_paths', {})
-                        if u in current_paths_config:
-                            del current_paths_config[u]
-                            save_config({'scanner_panel_open_event_user_paths': current_paths_config})
-                            self.scanner_panel_open_event_user_paths = current_paths_config
-                return command
-
-            logic_checkbox = tk.Checkbutton(
-                user_frame,
-                variable=logic_active_var,
-                bg="#f0f0f0",
-                command=create_checkbox_command(username, logic_active_var, path_display_entry, browse_button, path_var)
-            )
-            self.user_logic_checkboxes.append(logic_checkbox)
-            Tooltip(logic_checkbox, "Activeer/Deactiveer automatische import voor deze gebruiker.")
-            user_label = tk.Label(user_frame, text=f"{username}:", width=15, anchor='w', bg="#f0f0f0")
-            
-            processing_type = self.scanner_user_to_processing_type_map.get(username, "N/A")
-            processing_type_label = tk.Label(user_frame, text=f"Type: {processing_type}", width=20, anchor='w', bg="#f0f0f0")
-
-            # Arrow buttons for reordering
-            user_index = open_users.index(username)
-            arrow_frame = tk.Frame(user_frame, bg="#f0f0f0")
-            
-            up_button = tk.Button(arrow_frame, text="↑", command=lambda u=username: self._move_user_up(u), 
-                                width=2, state='normal' if user_index > 0 else 'disabled')
-            down_button = tk.Button(arrow_frame, text="↓", command=lambda u=username: self._move_user_down(u), 
-                                  width=2, state='normal' if user_index < len(open_users)-1 else 'disabled')
-            
-            up_button.pack(side='top')
-            down_button.pack(side='top')
-
-            remove_button = tk.Button(user_frame, text="Verwijderen", command=lambda u=username: self._remove_user_config(u), bg="#ffdddd", fg="#990000")
-            self.remove_user_buttons.append(remove_button)
-
-            logic_checkbox.pack(side='left', padx=(0, 2))
-            user_label.pack(side='left', padx=(0, 5)) 
-            processing_type_label.pack(side='left', padx=(0,10)) 
-            arrow_frame.pack(side='left', padx=(0, 5))
-            path_display_entry.pack(side='left', expand=True, fill='x', padx=(0,5))
-            browse_button.pack(side='left', padx=(0, 2))
-            remove_button.pack(side='left', padx=(0,0)) 
-
-            is_initially_checked = logic_active_var.get()
-            path_display_entry.config(state='readonly' if is_initially_checked else 'disabled')
-            browse_button.config(state='normal' if is_initially_checked else 'disabled')
-            if not is_initially_checked:
-                path_var.set("Niet ingesteld")
-
-        self._update_admin_dependent_ui()
-
-        self.add_user_frame_widget = tk.Frame(self.user_paths_frame, bg="#e0e0e0", pady=10)
-
-        tk.Label(self.add_user_frame_widget, text="Nieuwe Gebruiker:", bg="#e0e0e0").pack(side='left', padx=(5,2))
-        self.new_username_entry = tk.Entry(self.add_user_frame_widget, width=15)
-        self.new_username_entry.pack(side='left', padx=2)
-
-        tk.Label(self.add_user_frame_widget, text="Type:", bg="#e0e0e0").pack(side='left', padx=(5,2))
-        self.new_user_processing_type_var = tk.StringVar()
-        self.new_user_processing_type_combo = ttk.Combobox(self.add_user_frame_widget, textvariable=self.new_user_processing_type_var, values=self.available_processing_types, width=20, state='readonly')
-        if self.available_processing_types:
-            self.new_user_processing_type_combo.current(0)
-        self.new_user_processing_type_combo.pack(side='left', padx=2)
-
-        add_button = tk.Button(self.add_user_frame_widget, text="Toevoegen", command=self._add_user_config, bg="#d0e0d0", fg="#006600")
-        add_button.pack(side='left', padx=(5,5))
-
-    def _browse_user_path(self, username, path_var):
-        directory = filedialog.askdirectory(title=f"Select Directory for {username}")
-        if directory:
-            path_var.set(directory)
-            config_data = get_config()
-            user_paths = config_data.get('scanner_panel_open_event_user_paths', {})
-            user_paths[username] = directory
-            save_config({'scanner_panel_open_event_user_paths': user_paths})
-            self.scanner_panel_open_event_user_paths = user_paths
-            self.log_message(f"Map ingesteld voor {username}: {directory}", "success")
-        else:
-            self.log_message(f"Map selectie geannuleerd voor {username}", "info")
-
-    def _remove_user_config(self, username_to_remove):
-        if not messagebox.askyesno("Bevestig Verwijdering", f"Weet u zeker dat u gebruiker '{username_to_remove}' en alle bijbehorende configuraties wilt verwijderen?"):
-            return
-
-        config_data = get_config()
-
-        open_users = config_data.get('scanner_panel_open_event_users', [])
-        if username_to_remove in open_users:
-            open_users.remove(username_to_remove)
-            config_data['scanner_panel_open_event_users'] = open_users
-
-        processing_map = config_data.get('scanner_user_to_processing_type_map', {})
-        if username_to_remove in processing_map:
-            del processing_map[username_to_remove]
-            config_data['scanner_user_to_processing_type_map'] = processing_map
-
-        logic_active_map = config_data.get('scanner_panel_open_event_user_logic_active', {})
-        if username_to_remove in logic_active_map:
-            del logic_active_map[username_to_remove]
-            config_data['scanner_panel_open_event_user_logic_active'] = logic_active_map
-
-        paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
-        if username_to_remove in paths_map:
-            del paths_map[username_to_remove]
-            config_data['scanner_panel_open_event_user_paths'] = paths_map
-        
-        save_config(config_data)
-        self.log_message(f"Gebruiker '{username_to_remove}' verwijderd", "success")
-
-        self.load_config_values()
-        self._build_open_event_user_paths_ui()
-        self._update_admin_dependent_ui()
-
-    def _add_user_config(self):
-        new_username = self.new_username_entry.get().strip()
-        selected_processing_type = self.new_user_processing_type_var.get()
-
-        if not new_username:
-            messagebox.showerror("Fout", "Gebruikersnaam mag niet leeg zijn.")
-            return
-
-        if not selected_processing_type:
-            messagebox.showerror("Fout", "Selecteer een processing type.")
-            return
-
-        config_data = get_config()
-        open_users = config_data.get('scanner_panel_open_event_users', [])
-
-        if new_username in open_users:
-            messagebox.showerror("Fout", f"Gebruiker '{new_username}' bestaat al.")
-            return
-
-        open_users.append(new_username)
-        config_data['scanner_panel_open_event_users'] = open_users
-
-        processing_map = config_data.get('scanner_user_to_processing_type_map', {})
-        processing_map[new_username] = selected_processing_type
-        config_data['scanner_user_to_processing_type_map'] = processing_map
-
-        logic_active_map = config_data.get('scanner_panel_open_event_user_logic_active', {})
-        logic_active_map[new_username] = True
-        config_data['scanner_panel_open_event_user_logic_active'] = logic_active_map
-
-        paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
-        paths_map[new_username] = "Niet ingesteld"
-        config_data['scanner_panel_open_event_user_paths'] = paths_map
-        
-        save_config(config_data)
-        self.log_message(f"Gebruiker '{new_username}' ({selected_processing_type}) toegevoegd", "success")
-
-        self.new_username_entry.delete(0, tk.END)
-        if self.available_processing_types:
-            self.new_user_processing_type_combo.current(0)
-
-        self.load_config_values()
-        self._build_open_event_user_paths_ui()
-        self._update_admin_dependent_ui()
-
-    def _move_user_up(self, username):
-        """Move user up in the order"""
-        config = get_config()
-        users = config.get('scanner_panel_open_event_users', [])
-        
-        if username not in users:
-            return
-            
-        current_index = users.index(username)
-        if current_index > 0:
-            # Swap with previous user
-            users[current_index], users[current_index - 1] = users[current_index - 1], users[current_index]
-            save_config({'scanner_panel_open_event_users': users})
-            self.log_message(f"Gebruiker '{username}' omhoog verplaatst", "info")
-            self._build_open_event_user_paths_ui()
-
-    def _move_user_down(self, username):
-        """Move user down in the order"""
-        config = get_config()
-        users = config.get('scanner_panel_open_event_users', [])
-        
-        if username not in users:
-            return
-            
-        current_index = users.index(username)
-        if current_index < len(users) - 1:
-            # Swap with next user
-            users[current_index], users[current_index + 1] = users[current_index + 1], users[current_index]
-            save_config({'scanner_panel_open_event_users': users})
-            self.log_message(f"Gebruiker '{username}' omlaag verplaatst", "info")
-            self._build_open_event_user_paths_ui()
-
+        # This method is now a stub - UI moved to admin panel
+        pass
+    
     def _update_admin_dependent_ui(self, *args):
-        is_locked = True
-        if hasattr(self.app, 'admin_config_locked_var') and isinstance(self.app.admin_config_locked_var, tk.BooleanVar):
-            try:
-                is_locked = self.app.admin_config_locked_var.get()
-            except tk.TclError:
-                self.log_message("Admin lock status onbekend", "warning")
-                is_locked = True
-
-        for btn in self.remove_user_buttons:
-            if btn.winfo_exists():
-                if is_locked:
-                    btn.pack_forget()
-                else:
-                    if not btn.winfo_manager(): 
-                        btn.pack(side='left', padx=(5,0))
-
-        if hasattr(self, 'add_user_frame_widget') and self.add_user_frame_widget and self.add_user_frame_widget.winfo_exists():
-            if is_locked:
-                self.add_user_frame_widget.pack_forget()
-            else:
-                if not self.add_user_frame_widget.winfo_manager():
-                    self.add_user_frame_widget.pack(fill='x', side='bottom', pady=(10,0), ipady=5)
-        elif not is_locked and hasattr(self, 'add_user_frame_widget') and self.add_user_frame_widget:
-            if not self.add_user_frame_widget.winfo_manager():
-                 self.add_user_frame_widget.pack(fill='x', side='bottom', pady=(10,0), ipady=5)
-
-    def _update_browse_button_states(self):
-        """Update browse button states based on checkbox state"""
-        open_users = sorted(self.scanner_panel_open_event_user_paths.keys())
-        for i, browse_btn in enumerate(self.user_browse_buttons):
-            if browse_btn.winfo_exists():
-                is_corresponding_logic_active = False
-                if i < len(self.user_logic_checkboxes) and self.user_logic_checkboxes[i].winfo_exists():
-                    username_for_logic_check = ""
-                    if i < len(open_users):
-                        username_for_logic_check = open_users[i]
-                    
-                    if username_for_logic_check and username_for_logic_check in self.user_logic_active_vars:
-                        logic_var = self.user_logic_active_vars[username_for_logic_check]
-                        if logic_var.get():
-                            is_corresponding_logic_active = True
-
-                browse_btn.config(state=tk.NORMAL if is_corresponding_logic_active else tk.DISABLED)
-
-    # get_item_count_dialog function removed - item counts now come from Excel files automatically
-
+        # This method is now a stub - UI moved to admin panel
+        pass
     def log_scan_event(self, code):
         import requests
         from config_utils import get_config
@@ -1316,18 +2033,67 @@ class ScannerPanel(tk.Frame):
             data_open['timestamp'] = scan_timestamp
         
         try:
-            resp_open = requests.post(api_url, json=data_open, timeout=3)
+            resp_open = requests.post(api_url, json=data_open, timeout=3)  # Increased timeout
             if not resp_open.ok:
-                all_ok = False
-                self.log_message(f"❌ Fout bij openen project voor {current_user}", "error")
-        except Exception:
-            self.log_message(f"❌ Netwerkfout bij openen project", "error")
-            all_ok = False
+                # Log the error but don't fail the operation - OPEN should always be recorded
+                self.log_message(f"⚠️ Waarschuwing: Project open event niet geregistreerd (HTTP {resp_open.status_code})", "warning")
+            
+            # Always show project opened and update session display
+            # Even if logging failed, the user DID open/scan the project
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            # Store current project for session tracking
+            self.current_project = project_code_to_log
+            
+            # Update project in session display - add to batch list
+            if self.current_session_id:
+                self.session1_project = project_code_to_log  # Keep track of last project
+                if project_code_to_log not in self.session1_projects:
+                    self.session1_projects.append(project_code_to_log)
+                # Show multiple projects if batch
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code_to_log}")
+            elif self.background_session_id:
+                self.session2_project = project_code_to_log  # Keep track of last project
+                if project_code_to_log not in self.session2_projects:
+                    self.session2_projects.append(project_code_to_log)
+                # Show multiple projects if batch
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code_to_log}")
+                
+        except requests.exceptions.Timeout:
+            # Timeout - log warning but continue
+            self.log_message(f"⚠️ Waarschuwing: Project open event timeout - werk wordt nog steeds verwerkt", "warning")
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            # Still update project tracking
+            self.current_project = project_code_to_log
+            if self.current_session_id:
+                self.session1_project = project_code_to_log
+                if project_code_to_log not in self.session1_projects:
+                    self.session1_projects.append(project_code_to_log)
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code_to_log}")
+        except Exception as e:
+            # Other network error - log but continue
+            self.log_message(f"⚠️ Netwerkwaarschuwing: {str(e)[:50]}", "warning")
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            # Still update project tracking
+            self.current_project = project_code_to_log
+            if self.current_session_id:
+                self.session1_project = project_code_to_log
+                if project_code_to_log not in self.session1_projects:
+                    self.session1_projects.append(project_code_to_log)
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code_to_log}")
 
         # Don't duplicate the processing message - it's already shown via callback
-        
-        # Show immediate feedback for the current user
-        self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
         
         # If current user is an Excel processor, show unified processing message
         excel_processors = ['NESTING', 'ACCURA', 'BOERE']
@@ -1348,6 +2114,27 @@ class ScannerPanel(tk.Frame):
         
         if all_ok:
             self.open_projects.add(project_code_to_log)
+            
+            # Assign project to the active session - add to batch list
+            if self.current_session_id:
+                self.session1_project = project_code_to_log  # Keep track of last project
+                if project_code_to_log not in self.session1_projects:
+                    self.session1_projects.append(project_code_to_log)
+                # Show multiple projects if batch
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code_to_log}")
+            elif self.background_session_id:
+                self.session2_project = project_code_to_log  # Keep track of last project
+                if project_code_to_log not in self.session2_projects:
+                    self.session2_projects.append(project_code_to_log)
+                # Show multiple projects if batch
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code_to_log}")
+            
             self.usb_entry.config(bg='light green')
         else:
             self.usb_entry.config(bg='red')
@@ -1454,7 +2241,7 @@ class ScannerPanel(tk.Frame):
             self.ser = serial.Serial(port, baud_rate, timeout=1)
             
             if self.ser.is_open:
-                self.com_status_label.config(text="Verbonden", fg="green")
+                self.com_status_label.config(text="VERBONDEN", fg="#27AE60")
                 self.connect_btn.config(state=tk.DISABLED)
                 self.disconnect_btn.config(state=tk.NORMAL)
                 self.com_port_combo.config(state='disabled')

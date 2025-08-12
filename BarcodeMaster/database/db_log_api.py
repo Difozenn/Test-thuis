@@ -12,6 +12,7 @@ import sys
 from collections import defaultdict
 import statistics
 import math
+import re
 
 # Add project root to path to allow imports from sibling directories
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -36,12 +37,42 @@ logging.basicConfig(
 )
 
 # --- Service Imports ---
-from services.background_import_service import BackgroundImportService
+try:
+    from services.background_import_service import BackgroundImportService
+except ImportError:
+    BackgroundImportService = None
+    print("Warning: BackgroundImportService not available due to missing dependencies")
 
 # --- Flask App Setup ---
 # Use the 'templates' directory in the same folder as this script
 template_dir = get_resource_path('database/templates')
 app = Flask(__name__, template_folder=template_dir)
+
+# --- Helper Functions ---
+def normalize_project_id(project_name):
+    """
+    Normalize project name to consistent ID for linking sessions.
+    Examples:
+    - MO07834_Boekenkast_REP_VL5 -> MO07834_REP
+    - MO07834_Boekenkast -> MO07834
+    - 0411_MO07834_TV-wand -> MO07834
+    """
+    if not project_name:
+        return None
+    
+    # Extract MO code
+    mo_match = re.search(r'(MO\d{5})', project_name, re.IGNORECASE)
+    if not mo_match:
+        # Not an MO project, return as-is
+        return project_name
+    
+    base_mo = mo_match.group(1).upper()
+    
+    # Check if it's a REP variant
+    if '_REP' in project_name.upper():
+        return f"{base_mo}_REP"
+    else:
+        return base_mo
 
 # --- Background Work Callback Definition ---
 # Store the original scanner panel callback  
@@ -95,7 +126,7 @@ def background_work_callback(message):
         logging.error(f"[BACKGROUND_CALLBACK] Error processing message: {e}")
 
 # --- Service Initialization ---
-background_service = BackgroundImportService()
+background_service = BackgroundImportService() if BackgroundImportService else None
 
 # Set up the callback immediately after service initialization
 if background_service:
@@ -428,6 +459,35 @@ def init_db():
         if 'opdeelzaag_count' not in sessions_columns:
             c.execute('ALTER TABLE sessions ADD COLUMN opdeelzaag_count INTEGER DEFAULT 0')
             logging.info("Added 'opdeelzaag_count' column to sessions table.")
+        if 'pause_duration_minutes' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN pause_duration_minutes REAL DEFAULT 0')
+            logging.info("Added 'pause_duration_minutes' column to sessions table.")
+        if 'project_id' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN project_id TEXT')
+            logging.info("Added 'project_id' column to sessions table.")
+            # Backfill project_id with normalized values
+            try:
+                c.execute("SELECT COUNT(*) FROM sessions WHERE project IS NOT NULL")
+                if c.fetchone()[0] > 0:
+                    # Update each session with normalized project_id
+                    c.execute("SELECT session_id, project FROM sessions WHERE project IS NOT NULL")
+                    sessions_to_update = c.fetchall()
+                    for session in sessions_to_update:
+                        normalized_id = normalize_project_id(session['project'])
+                        c.execute("UPDATE sessions SET project_id = ? WHERE session_id = ?", 
+                                (normalized_id, session['session_id']))
+                    logging.info(f"Backfilled project_id for {len(sessions_to_update)} sessions")
+            except Exception as e:
+                logging.warning(f"Could not backfill project_id: {e}")
+        if 'sequence_number' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN sequence_number INTEGER')
+            logging.info("Added 'sequence_number' column to sessions table.")
+        if 'previous_user' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN previous_user TEXT')
+            logging.info("Added 'previous_user' column to sessions table.")
+        if 'handoff_delay_minutes' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN handoff_delay_minutes REAL')
+            logging.info("Added 'handoff_delay_minutes' column to sessions table.")
         
         # Create project_sessions table
         c.execute('''
@@ -1224,6 +1284,89 @@ def calculate_user_work_minutes(start_time, end_time, user):
     # Use unified work minutes calculation excluding weekends and holidays
     return calculate_work_minutes(start_time, end_time)
 
+def determine_project_status(project_code, conn):
+    """Determine the current status of a project based on user events.
+    Simple logic: OPEN event = OPEN status, BEZIG event = BEZIG status, AFGEMELD event = AFGEMELD status
+    
+    Args:
+        project_code (str): The project code to check
+        conn: Database connection
+        
+    Returns:
+        tuple: (status, current_user) where status is one of 'OPEN', 'BEZIG', 'AFGEMELD', or 'AFGEROND'
+    """
+    c = conn.cursor()
+    
+    # Get configured users from config
+    config = get_config()
+    configured_users = config.get('scanner_panel_open_event_users', [])
+    
+    # Get all events for this project
+    c.execute("""
+        SELECT timestamp, event, user, status
+        FROM logs
+        WHERE project = ?
+        ORDER BY timestamp DESC
+    """, (project_code,))
+    
+    events = c.fetchall()
+    
+    if not events:
+        return ('ONBEKEND', None)
+    
+    # Get the most recent event
+    latest_event = events[0]
+    
+    # Track user events by type (most recent event per user per type)
+    user_open_events = {}
+    user_bezig_events = {}
+    user_afgemeld_events = {}
+    involved_users = set()
+    
+    for event in events:
+        user = event['user']
+        if not user:
+            continue
+            
+        involved_users.add(user)
+        
+        # Track most recent event of each type per user
+        if event['event'] == 'OPEN' and event['status'] == 'OPEN':
+            if user not in user_open_events:
+                user_open_events[user] = event
+        elif event['status'] == 'BEZIG':
+            if user not in user_bezig_events:
+                user_bezig_events[user] = event
+        elif event['event'] == 'AFGEMELD':
+            if user not in user_afgemeld_events:
+                user_afgemeld_events[user] = event
+    
+    # Get involved users in workflow order
+    active_workflow_order = [user for user in configured_users if user in involved_users]
+    
+    # Check if all involved users have completed (AFGEMELD)
+    all_completed = all(user in user_afgemeld_events for user in active_workflow_order)
+    if all_completed and active_workflow_order:
+        return ('AFGEROND', None)
+    
+    # Priority: BEZIG > OPEN > AFGEMELD
+    # Check for any user with BEZIG status
+    for user in active_workflow_order:
+        if user in user_bezig_events:
+            return ('BEZIG', user)
+    
+    # Check for any user with OPEN status  
+    for user in active_workflow_order:
+        if user in user_open_events:
+            return ('OPEN', user)
+    
+    # If latest event is AFGEMELD, return that
+    if latest_event['event'] == 'AFGEMELD':
+        return ('AFGEMELD', latest_event['user'])
+    
+    # Default fallback
+    return ('OPEN', latest_event['user'])
+
 # Add API endpoints for work hours configuration
 @app.route('/api/work_hours/<user>', methods=['GET'])
 def get_work_hours(user):
@@ -1340,13 +1483,16 @@ def start_session():
                 WHERE session_id = ? AND status = 'active'
             """, (data['timestamp'], work_minutes, active_session['session_id']))
         
-        # Create new session
+        # Create new session with project linking
         session_type = data.get('session_type', 'SCANNER')  # Default to SCANNER for scanner panel
         project = data.get('project', '')  # Get project if provided
+        project_id = normalize_project_id(project) if project else None
+        
+        # For SCANNER sessions, project_id might be None (batch work)
         c.execute("""
-            INSERT INTO sessions (session_id, user, project, start_time, status, session_type)
-            VALUES (?, ?, ?, ?, 'active', ?)
-        """, (data['session_id'], data['user'], project, data['timestamp'], session_type))
+            INSERT INTO sessions (session_id, user, project, project_id, start_time, status, session_type)
+            VALUES (?, ?, ?, ?, ?, 'active', ?)
+        """, (data['session_id'], data['user'], project, project_id, data['timestamp'], session_type))
         
         # IMPORTANT: Also log SESSION_START event in logs table for tracking
         c.execute("""
@@ -1395,52 +1541,37 @@ def end_session():
     """End an active session"""
     data = request.get_json(force=True)
     
+    # Check if we should keep projects active (for batch transitions)
+    keep_projects_active = data.get('keep_projects_active', False)
+    
     conn = get_db()
     c = conn.cursor()
     
     try:
-        # Get session start time
+        # Get session details including pause duration
         c.execute("""
-            SELECT start_time FROM sessions 
+            SELECT start_time, pause_start, pause_duration_minutes 
+            FROM sessions 
             WHERE session_id = ? AND status = 'active'
         """, (data['session_id'],))
         
         session = c.fetchone()
         if session:
+            # If session is currently paused, add final pause duration
+            if session['pause_start']:
+                final_pause = calculate_work_minutes(session['pause_start'], data['timestamp'])
+                total_pause_minutes = (session['pause_duration_minutes'] or 0) + final_pause
+            else:
+                total_pause_minutes = session['pause_duration_minutes'] or 0
+            
             # Calculate total work minutes
             total_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
             
-            # Calculate pause duration from SESSION_PAUSE and SESSION_RESUME events
-            # This ensures we only count pause time during work hours
-            # IMPORTANT: Client sends total elapsed pause time including weekends/nights
-            # but we need to count only work hours pause time for accurate calculation
-            c.execute("""
-                SELECT timestamp, event 
-                FROM logs 
-                WHERE session_id = ? 
-                AND event IN ('SESSION_PAUSE', 'SESSION_RESUME')
-                ORDER BY timestamp
-            """, (data['session_id'],))
+            # Use the stored pause duration which is already calculated in work minutes
+            # This is more reliable than recalculating from events
+            work_pause_minutes = total_pause_minutes
             
-            pause_events = c.fetchall()
-            work_pause_minutes = 0
-            pause_start = None
-            
-            for event in pause_events:
-                if event['event'] == 'SESSION_PAUSE':
-                    pause_start = event['timestamp']
-                elif event['event'] == 'SESSION_RESUME' and pause_start:
-                    # Calculate work minutes during this pause period
-                    pause_work_minutes = calculate_work_minutes(pause_start, event['timestamp'])
-                    work_pause_minutes += pause_work_minutes
-                    pause_start = None
-            
-            # If there's an unclosed pause (user ended session while paused)
-            if pause_start:
-                pause_work_minutes = calculate_work_minutes(pause_start, data['timestamp'])
-                work_pause_minutes += pause_work_minutes
-            
-            # Now subtract only the work-hours pause time
+            # Subtract pause time from total to get actual work time
             actual_work_minutes = max(0, total_minutes - work_pause_minutes)
             
             logging.info(f"Session {data['session_id']}: total_work_minutes={total_minutes}, pause_work_minutes={work_pause_minutes}, actual={actual_work_minutes}")
@@ -1473,9 +1604,11 @@ def end_session():
                 SET status = 'completed', 
                     end_time = ?,
                     work_duration_minutes = ?,
-                    item_count = ?
+                    pause_duration_minutes = ?,
+                    item_count = ?,
+                    pause_start = NULL
                 WHERE session_id = ? AND status = 'active'
-            """, (data['timestamp'], actual_work_minutes, total_items, data['session_id']))
+            """, (data['timestamp'], actual_work_minutes, work_pause_minutes, total_items, data['session_id']))
             
             conn.commit()
             logging.info(f"Session ended: {data['session_id']}")
@@ -1513,11 +1646,32 @@ def xlsx_updated():
         if not existing:
             # Create new ACTIVE session (work is starting now)
             session_id = f"{data['user']}_{data['project']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            project_id = normalize_project_id(data['project'])
+            
+            # Check for previous sessions in this project
+            c.execute("""
+                SELECT user, end_time, sequence_number
+                FROM sessions 
+                WHERE project_id = ? AND user != ?
+                ORDER BY start_time DESC
+                LIMIT 1
+            """, (project_id, data['user']))
+            
+            prev_session = c.fetchone()
+            sequence_number = (prev_session['sequence_number'] or 0) + 1 if prev_session else 1
+            previous_user = prev_session['user'] if prev_session else None
+            
+            # Calculate handoff delay
+            handoff_delay = None
+            if previous_user and prev_session['end_time']:
+                handoff_delay = calculate_work_minutes(prev_session['end_time'], data['timestamp'])
             
             c.execute("""
-                INSERT INTO sessions (session_id, user, project, start_time, status, item_count, session_type)
-                VALUES (?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED')
-            """, (session_id, data['user'], data['project'], data['timestamp']))
+                INSERT INTO sessions (session_id, user, project, project_id, start_time, status, 
+                                    item_count, session_type, sequence_number, previous_user, handoff_delay_minutes)
+                VALUES (?, ?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED', ?, ?, ?)
+            """, (session_id, data['user'], data['project'], project_id, data['timestamp'],
+                  sequence_number, previous_user, handoff_delay))
             
             # Create project session for this specific project using session start time
             # Find the session start time for the current user's active session
@@ -1728,11 +1882,65 @@ def finish_manual_session():
         logging.error(f"Error finishing manual session: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/session/check', methods=['GET'])
+def check_session():
+    """Check if there's an existing paused session for a user/project"""
+    try:
+        user = request.args.get('user')
+        project = request.args.get('project')
+        
+        if not user or not project:
+            return jsonify({'has_session': False, 'error': 'Missing user or project parameter'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Look for active sessions (including paused ones)
+        c.execute("""
+            SELECT session_id, start_time, item_count, pause_duration_minutes, pause_start
+            FROM sessions 
+            WHERE user = ? AND project = ? AND status = 'active'
+            ORDER BY start_time DESC
+            LIMIT 1
+        """, (user, project))
+        
+        session = c.fetchone()
+        
+        if session:
+            # Check if it's paused (has pause_start)
+            if session['pause_start']:
+                return jsonify({
+                    'has_session': True,
+                    'session_id': session['session_id'],
+                    'start_time': session['start_time'],
+                    'item_count': session['item_count'],
+                    'pause_duration_minutes': session['pause_duration_minutes'] or 0,
+                    'is_paused': True
+                })
+            else:
+                # Active but not paused - this shouldn't happen if we're on database panel
+                # but return the info anyway
+                return jsonify({
+                    'has_session': True,
+                    'session_id': session['session_id'],
+                    'start_time': session['start_time'],
+                    'item_count': session['item_count'],
+                    'pause_duration_minutes': session['pause_duration_minutes'] or 0,
+                    'is_paused': False
+                })
+        else:
+            return jsonify({'has_session': False})
+            
+    except Exception as e:
+        logging.error(f"Error checking session: {e}")
+        return jsonify({'has_session': False, 'error': str(e)}), 500
+
 @app.route('/session/pause', methods=['POST'])
 def pause_session():
     """Pause an active session"""
     try:
         data = request.get_json()
+        logging.info(f"[PAUSE_SESSION] Received pause request: {data}")
         required_fields = ['session_id', 'timestamp']
         
         if not all(field in data for field in required_fields):
@@ -1751,13 +1959,28 @@ def pause_session():
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
         
-        # Log the pause event
-        c.execute("""
-            INSERT INTO logs (timestamp, event, user, session_id, project, details)
-            VALUES (?, 'SESSION_PAUSE', ?, ?, ?, ?)
-        """, (data['timestamp'], session['user'], data['session_id'], session['project'], 
-              'Session paused - switched to different panel'))
+        # Store pause start time in session (add column if not exists)
+        c.execute("PRAGMA table_info(sessions)")
+        columns = [column[1] for column in c.fetchall()]
+        if 'pause_start' not in columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN pause_start TEXT')
+        if 'pause_duration_minutes' not in columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN pause_duration_minutes REAL DEFAULT 0')
         
+        # Update session with pause start time
+        c.execute("""
+            UPDATE sessions 
+            SET pause_start = ?
+            WHERE session_id = ?
+        """, (data['timestamp'], data['session_id']))
+        
+        # Log the pause event (already handled by scanner panels but kept for compatibility)
+        # Get user and project from data if provided, otherwise use session values
+        user = data.get('user', session['user'])
+        project = data.get('project', session['project'])
+        
+        # Don't insert SESSION_PAUSE here - scanner_panel already sends it separately
+        # This was causing duplicate events
         conn.commit()
         logging.info(f"Session paused: {data['session_id']}")
         return jsonify({'success': True})
@@ -1771,6 +1994,7 @@ def resume_session():
     """Resume a paused session"""
     try:
         data = request.get_json()
+        logging.info(f"[RESUME_SESSION] Received resume request: {data}")
         required_fields = ['session_id', 'timestamp']
         
         if not all(field in data for field in required_fields):
@@ -1781,7 +2005,8 @@ def resume_session():
         
         # Check if session exists and is active
         c.execute("""
-            SELECT session_id, user, project FROM sessions 
+            SELECT session_id, user, project, pause_start, pause_duration_minutes 
+            FROM sessions 
             WHERE session_id = ? AND status = 'active'
         """, (data['session_id'],))
         
@@ -1789,17 +2014,35 @@ def resume_session():
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
         
-        # Log the resume event
-        pause_duration = data.get('total_pause_duration', 0)
-        c.execute("""
-            INSERT INTO logs (timestamp, event, user, session_id, project, details)
-            VALUES (?, 'SESSION_RESUME', ?, ?, ?, ?)
-        """, (data['timestamp'], session['user'], data['session_id'], session['project'], 
-              f'Session resumed - total pause time: {pause_duration:.1f} seconds'))
+        # Calculate pause duration and update session
+        if session['pause_start']:
+            # Calculate pause duration in minutes
+            pause_minutes = calculate_work_minutes(session['pause_start'], data['timestamp'])
+            
+            # Add to total pause duration
+            current_pause_duration = session['pause_duration_minutes'] or 0
+            total_pause_duration = current_pause_duration + pause_minutes
+            
+            # Update session with accumulated pause time and clear pause_start
+            c.execute("""
+                UPDATE sessions 
+                SET pause_duration_minutes = ?,
+                    pause_start = NULL
+                WHERE session_id = ?
+            """, (total_pause_duration, data['session_id']))
+        else:
+            pause_minutes = 0
+            total_pause_duration = session['pause_duration_minutes'] or 0
         
+        # Get user and project from data if provided, otherwise use session values
+        user = data.get('user', session['user'])
+        project = data.get('project', session['project'])
+        
+        # Don't insert SESSION_RESUME here - scanner_panel already sends it separately
+        # This was causing duplicate events
         conn.commit()
-        logging.info(f"Session resumed: {data['session_id']} (total pause: {pause_duration:.1f}s)")
-        return jsonify({'success': True})
+        logging.info(f"Session resumed: {data['session_id']} (total pause: {total_pause_duration:.1f} minutes)")
+        return jsonify({'success': True, 'pause_minutes': pause_minutes, 'total_pause_minutes': total_pause_duration})
         
     except Exception as e:
         logging.error(f"Error resuming session: {e}")
@@ -1830,6 +2073,10 @@ def log_event():
     event = data.get('event')
     if not event:
         return jsonify({'success': False, 'error': 'Missing event'}), 400
+
+    # Debug SESSION events
+    if event in ['SESSION_PAUSE', 'SESSION_RESUME']:
+        logging.info(f"[SESSION_EVENT] Received {event} from {data.get('user')} for project {data.get('project')} session {data.get('session_id')}")
 
     user = data.get('user', 'unknown')
     if event == 'test_connect':
@@ -3661,7 +3908,7 @@ def get_performance_analysis():
 def run_api_server(host='0.0.0.0', port=5001):
     global _server_thread, _server
     init_db()  # Initialize database once when the server starts
-    initialize_efficiency_tracking()  # Initialize efficiency tracking system
+    # initialize_efficiency_tracking()  # Initialize efficiency tracking system - moved to after function definition
     
     try:
         # Try to use waitress for production
@@ -4045,6 +4292,75 @@ def optimize_database():
         logging.error(f"Error optimizing database: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/project/<project>/linked_sessions')
+def get_linked_sessions(project):
+    """Get all sessions linked to a project (normalized)"""
+    try:
+        project_id = normalize_project_id(project)
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all sessions for this project_id
+        c.execute("""
+            SELECT 
+                s.session_id,
+                s.user,
+                s.project,
+                s.project_id,
+                s.start_time,
+                s.end_time,
+                s.status,
+                s.session_type,
+                s.work_duration_minutes,
+                s.pause_duration_minutes,
+                s.item_count,
+                s.sequence_number,
+                s.previous_user,
+                s.handoff_delay_minutes
+            FROM sessions s
+            WHERE s.project_id = ?
+            ORDER BY s.sequence_number, s.start_time
+        """, (project_id,))
+        
+        sessions = [dict(row) for row in c.fetchall()]
+        
+        # Calculate aggregated metrics
+        total_work = sum(s['work_duration_minutes'] or 0 for s in sessions)
+        total_pause = sum(s['pause_duration_minutes'] or 0 for s in sessions)
+        total_handoff = sum(s['handoff_delay_minutes'] or 0 for s in sessions if s['handoff_delay_minutes'])
+        unique_users = list(set(s['user'] for s in sessions))
+        
+        # Build workflow chain
+        workflow = []
+        for session in sessions:
+            workflow.append({
+                'user': session['user'],
+                'sequence': session['sequence_number'],
+                'start': session['start_time'],
+                'end': session['end_time'],
+                'work_minutes': session['work_duration_minutes'],
+                'handoff_from': session['previous_user'],
+                'handoff_delay': session['handoff_delay_minutes']
+            })
+        
+        return jsonify({
+            'project_id': project_id,
+            'sessions': sessions,
+            'metrics': {
+                'total_work_minutes': total_work,
+                'total_pause_minutes': total_pause,
+                'total_handoff_minutes': total_handoff,
+                'unique_users': unique_users,
+                'session_count': len(sessions)
+            },
+            'workflow': workflow
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting linked sessions: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/logs_project')
 def logs_project():
     config = get_config()
@@ -4060,7 +4376,16 @@ def logs_project():
         c = conn.cursor()
 
         c.execute('SELECT * FROM logs WHERE lower(project) = ? AND event NOT IN (?, ?) ORDER BY id DESC', (project.lower(), 'AUTO_IMPORT', 'BACKGROUND_WORK_FOUND'))
-        log_entries = [dict(row) for row in c.fetchall()]
+        log_entries = []
+        for row in c.fetchall():
+            entry = dict(row)
+            # Ensure all values are JSON serializable
+            for key, value in entry.items():
+                if value is None:
+                    entry[key] = ''
+                elif isinstance(value, bytes):
+                    entry[key] = value.decode('utf-8', errors='replace')
+            log_entries.append(entry)
 
         c.execute('''
             SELECT user, status, timestamp as last_updated
@@ -4110,8 +4435,39 @@ def logs_project():
         # Get work hours configuration
         work_hours_config = WORK_HOURS.copy()
         
-        # Get sessions data for this project to provide accurate performance metrics
-        # Include both project-specific sessions AND batch sessions for users who worked on this project
+        # Get sessions data for this project using normalized project_id
+        project_id = normalize_project_id(project)
+        
+        # Get all linked sessions for this project
+        c.execute('''
+            SELECT 
+                s.session_id,
+                s.user,
+                s.project,
+                s.project_id,
+                s.start_time,
+                s.end_time,
+                s.status,
+                s.item_count,
+                s.work_duration_minutes,
+                s.pause_duration_minutes,
+                s.session_type,
+                s.sequence_number,
+                s.previous_user,
+                s.handoff_delay_minutes
+            FROM sessions s
+            WHERE s.project_id = ?
+            ORDER BY s.sequence_number, s.start_time ASC
+        ''', (project_id,))
+        linked_sessions = []
+        for row in c.fetchall():
+            session = dict(row)
+            # Ensure pause_duration_minutes has a valid value
+            if session.get('pause_duration_minutes') is None:
+                session['pause_duration_minutes'] = 0
+            linked_sessions.append(session)
+        
+        # Also get any SCANNER batch sessions for users who worked on this project
         c.execute('''
             SELECT 
                 session_id,
@@ -4122,23 +4478,47 @@ def logs_project():
                 status,
                 item_count,
                 work_duration_minutes,
+                pause_duration_minutes,
                 session_type
             FROM sessions 
-            WHERE (
-                lower(project) = ? 
-                OR (
-                    session_type = 'SCANNER' 
-                    AND (project IS NULL OR project = '') 
-                    AND user IN (
-                        SELECT DISTINCT user FROM logs 
-                        WHERE lower(project) = ? 
-                        AND user IS NOT NULL AND user != ''
-                    )
+            WHERE session_type = 'SCANNER' 
+                AND (project IS NULL OR project = '') 
+                AND user IN (
+                    SELECT DISTINCT user FROM sessions 
+                    WHERE project_id = ?
                 )
-            )
             ORDER BY start_time ASC
-        ''', (project.lower(), project.lower()))
-        sessions_data = [dict(row) for row in c.fetchall()]
+        ''', (project_id,))
+        batch_sessions = []
+        for row in c.fetchall():
+            session = dict(row)
+            # Ensure pause_duration_minutes has a valid value
+            if session.get('pause_duration_minutes') is None:
+                session['pause_duration_minutes'] = 0
+            batch_sessions.append(session)
+        
+        # Combine sessions for backward compatibility
+        sessions_data = linked_sessions + batch_sessions
+        
+        # Clean up data for JSON serialization
+        import math
+        def clean_for_json(obj):
+            if isinstance(obj, dict):
+                return {k: clean_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_for_json(v) for v in obj]
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return 0
+                return obj
+            elif obj is None:
+                return ''  # Return None instead of empty string for proper JSON null
+            return obj
+        
+        # Clean all data before sending to template
+        log_entries = clean_for_json(log_entries)
+        sessions_data = clean_for_json(sessions_data)
+        linked_sessions = clean_for_json(linked_sessions)
         
         # Get project metadata (SO number, MO number, customer name, color)
         so_number = None
@@ -4189,7 +4569,8 @@ def logs_project():
                     so_number = match.group(1)
         
         return render_template('logs_project.html', 
-                               project=project, 
+                               project=project,
+                               project_id=project_id,
                                so_number=so_number,
                                mo_number=mo_number,
                                customer_name=customer_name,
@@ -4201,94 +4582,12 @@ def logs_project():
                                users=users,
                                work_hours=work_hours_config,
                                sessions_data=sessions_data,
+                               linked_sessions=linked_sessions,
                                active_page='projects')
 
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}", exc_info=True)
         return render_template('error.html', message='An error occurred while loading the project.'), 500
-
-def determine_project_status(project_code, conn):
-    """Determine the current status of a project based on user events.
-    Simple logic: OPEN event = OPEN status, BEZIG event = BEZIG status, AFGEMELD event = AFGEMELD status
-    
-    Args:
-        project_code (str): The project code to check
-        conn: Database connection
-        
-    Returns:
-        tuple: (status, current_user) where status is one of 'OPEN', 'BEZIG', 'AFGEMELD', or 'AFGEROND'
-    """
-    c = conn.cursor()
-    
-    # Get configured users from config
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
-    
-    # Get all events for this project
-    c.execute("""
-        SELECT timestamp, event, user, status
-        FROM logs
-        WHERE project = ?
-        ORDER BY timestamp DESC
-    """, (project_code,))
-    
-    events = c.fetchall()
-    
-    if not events:
-        return ('ONBEKEND', None)
-    
-    # Get the most recent event
-    latest_event = events[0]
-    
-    # Track user events by type (most recent event per user per type)
-    user_open_events = {}
-    user_bezig_events = {}
-    user_afgemeld_events = {}
-    involved_users = set()
-    
-    for event in events:
-        user = event['user']
-        if not user:
-            continue
-            
-        involved_users.add(user)
-        
-        # Track most recent event of each type per user
-        if event['event'] == 'OPEN' and event['status'] == 'OPEN':
-            if user not in user_open_events:
-                user_open_events[user] = event
-        elif event['status'] == 'BEZIG':
-            if user not in user_bezig_events:
-                user_bezig_events[user] = event
-        elif event['event'] == 'AFGEMELD':
-            if user not in user_afgemeld_events:
-                user_afgemeld_events[user] = event
-    
-    # Get involved users in workflow order
-    active_workflow_order = [user for user in configured_users if user in involved_users]
-    
-    # Check if all involved users have completed (AFGEMELD)
-    all_completed = all(user in user_afgemeld_events for user in active_workflow_order)
-    if all_completed and active_workflow_order:
-        return ('AFGEROND', None)
-    
-    # Priority: BEZIG > OPEN > AFGEMELD
-    # Check for any user with BEZIG status
-    for user in active_workflow_order:
-        if user in user_bezig_events:
-            return ('BEZIG', user)
-    
-    # Check for any user with OPEN status  
-    for user in active_workflow_order:
-        if user in user_open_events:
-            return ('OPEN', user)
-    
-    # If latest event is AFGEMELD, return that
-    if latest_event['event'] == 'AFGEMELD':
-        return ('AFGEMELD', latest_event['user'])
-    
-    # Default fallback
-    return ('OPEN', latest_event['user'])
 
 # Update the projects route in db_log_api.py
 
@@ -7292,10 +7591,24 @@ def get_project_productivity_metrics(project):
             # Determine status: show user if they have OPEN event, but only show data if they have work sessions
             if afgemeld_check:
                 # User has manually set status to AFGEMELD
-                # But check if they have an active SCANNER session that should continue
+                # But check if they have an active SCANNER session for THIS project
                 if active_batch and user in ['NESTING']:  # SCANNER batch users
-                    # NESTING with active SCANNER session continues working after AFGEMELD
-                    status = 'IN_PROGRESS'
+                    # Check if this batch is actually processing THIS project
+                    c.execute("""
+                        SELECT COUNT(*) FROM logs 
+                        WHERE user = ? AND LOWER(project) = LOWER(?) 
+                        AND timestamp >= ?
+                        AND event IN ('OPEN', 'BEZIG')
+                    """, (user, project, active_batch[1]))  # active_batch[1] is start_time
+                    
+                    has_recent_activity = c.fetchone()[0] > 0
+                    
+                    if has_recent_activity:
+                        # NESTING with active SCANNER session for THIS project continues after AFGEMELD
+                        status = 'IN_PROGRESS'
+                    else:
+                        # Active batch but not for this project - show as COMPLETED
+                        status = 'COMPLETED'
                 else:
                     # Other users or no active batch - show as COMPLETED
                     status = 'COMPLETED'
@@ -7310,19 +7623,34 @@ def get_project_productivity_metrics(project):
                 status = 'COMPLETED'  
             elif active_batch:
                 # User has active batch session (SCANNER type like NESTING)
-                # For SCANNER sessions, if they have any OPEN event for the project, they're working on it
+                # Check if this batch is actually processing THIS project
+                # by looking for recent logs during the current batch session
                 c.execute("""
                     SELECT COUNT(*) FROM logs 
                     WHERE user = ? AND LOWER(project) = LOWER(?) 
-                    AND event = 'OPEN'
-                """, (user, project))
+                    AND timestamp >= ?
+                    AND event IN ('OPEN', 'BEZIG')
+                """, (user, project, active_batch[1]))  # active_batch[1] is start_time
                 
-                has_open_event = c.fetchone()[0] > 0
+                has_recent_activity = c.fetchone()[0] > 0
                 
-                if has_open_event:
+                if has_recent_activity:
+                    # This batch is actively processing THIS project
                     status = 'IN_PROGRESS'
                 else:
-                    status = 'WAITING'
+                    # This batch is not processing this project - check if project is completed
+                    c.execute("""
+                        SELECT COUNT(*) FROM logs 
+                        WHERE user = ? AND LOWER(project) = LOWER(?) 
+                        AND event = 'OPEN'
+                    """, (user, project))
+                    
+                    has_open_event = c.fetchone()[0] > 0
+                    if has_open_event:
+                        # User has worked on this project before, but not in current batch
+                        status = 'COMPLETED'
+                    else:
+                        status = 'WAITING'
             else:
                 # User has OPEN event but no work sessions yet - show blank data
                 status = 'WAITING'

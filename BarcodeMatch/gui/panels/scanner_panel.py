@@ -194,13 +194,14 @@ class ScannerPanel(ttk.Frame):
         self.scanner_type_var.set(self._get_config_setting('Scanner', 'type', 'USB'))
         self.com_port_var.set(self._get_config_setting('Scanner', 'com_port', ''))
         self.baud_rate_var.set(self._get_config_setting('Scanner', 'baud_rate', '9600'))
-        last_file = self._get_config_setting('Paths', 'last_excel_file', '')
-        if last_file and os.path.exists(last_file):
-            self.excel_file_path_var.set(last_file)
-            # Call _load_excel_data without triggering another config save immediately
-            # The config for last_file is already loaded here.
-            # _load_excel_data will still update the treeview.
-            super().after(10, lambda: self._load_excel_data(last_file, update_config_path=False))
+        # COMMENTED OUT: Don't auto-load last Excel file to prevent unintended sessions
+        # last_file = self._get_config_setting('Paths', 'last_excel_file', '')
+        # if last_file and os.path.exists(last_file):
+        #     self.excel_file_path_var.set(last_file)
+        #     # Call _load_excel_data without triggering another config save immediately
+        #     # The config for last_file is already loaded here.
+        #     # _load_excel_data will still update the treeview.
+        #     super().after(10, lambda: self._load_excel_data(last_file, update_config_path=False))
 
     def save_config(self):
         """Saves accumulated configuration settings and clears pending updates."""
@@ -208,6 +209,7 @@ class ScannerPanel(ttk.Frame):
         self._set_config_setting('Scanner', 'type', self.scanner_type_var.get())
         self._set_config_setting('Scanner', 'com_port', self.com_port_var.get())
         self._set_config_setting('Scanner', 'baud_rate', self.baud_rate_var.get())
+        # COMMENTED OUT: Don't save last Excel file to prevent auto-loading on startup
         # self._set_config_setting('Paths', 'last_excel_file', self.excel_file_path_var.get()) # Already handled by _load_excel_data
 
         if self._pending_config_updates:
@@ -327,9 +329,18 @@ class ScannerPanel(ttk.Frame):
             self.com_frame.grid_remove()
             self.usb_frame.grid_remove()
 
-    def load_project_excel(self, excel_file_path):
-        """Public method to load a project's Excel file into the scanner panel."""
+    def load_project_excel(self, excel_file_path, user=None):
+        """Public method to load a project's Excel file into the scanner panel.
+        
+        Args:
+            excel_file_path: Path to the Excel file to load
+            user: The user working on this project (e.g., 'NESTING', 'OPUS', etc.)
+        """
         self._log(f"Laden van project Excel via externe aanroep: {excel_file_path}")
+        
+        # Store the active user for this session
+        self.active_user = user
+        
         if excel_file_path and os.path.exists(excel_file_path):
             self._load_excel_data(excel_file_path, update_config_path=True)
         elif excel_file_path:
@@ -438,10 +449,11 @@ class ScannerPanel(ttk.Frame):
             # self.excel_file_path_var should store the original path selected by the user
             # or the path that was last loaded from config, to correctly derive _updated path for saving.
             self.excel_file_path_var.set(file_path) 
-            if update_config_path:
-                # Save the original user-selected path to config, not the potentially loaded _updated one.
-                self._set_config_setting('Paths', 'last_excel_file', file_path)
-                self.save_config() 
+            # COMMENTED OUT: Don't save Excel path to config to prevent auto-loading
+            # if update_config_path:
+            #     # Save the original user-selected path to config, not the potentially loaded _updated one.
+            #     self._set_config_setting('Paths', 'last_excel_file', file_path)
+            #     self.save_config() 
             # After loading, immediately save to ensure the loaded data (even from original) is in an _updated file if changes occur
             # Or, only save when a change actually occurs. Let's opt for saving on change.
             # self._save_updated_excel() # Consider if initial save is needed or only on change.
@@ -452,6 +464,36 @@ class ScannerPanel(ttk.Frame):
             messagebox.showerror("Fout", f"Lezen van Excel-bestand mislukt: {e}")
             self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}", "error")
 
+    def _check_for_existing_session(self, api_url, user, project_name):
+        """Check if there's an existing paused session for this user/project"""
+        try:
+            # Query the API for active sessions
+            base_url = api_url.replace('/log', '')
+            check_url = f"{base_url}/session/check"
+            
+            params = {
+                'user': user,
+                'project': project_name
+            }
+            
+            response = requests.get(check_url, params=params, timeout=2)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('has_session'):
+                    return {
+                        'session_id': result.get('session_id'),
+                        'start_time': result.get('start_time'),
+                        'item_count': result.get('item_count', 0),
+                        'pause_duration_minutes': result.get('pause_duration_minutes', 0)
+                    }
+            
+            return None
+            
+        except Exception as e:
+            self._log(f"[DEBUG] Could not check for existing session: {e}")
+            return None
+    
     def _start_session_for_excel_work(self, excel_file_path):
         """Start a session when user begins working on Excel file"""
         self._log(f"[DEBUG] _start_session_for_excel_work - existing session: {self.current_session_id}")
@@ -482,7 +524,25 @@ class ScannerPanel(ttk.Frame):
                 # Extract project from filename
                 project_name = self._extract_project_from_filename(excel_file_path)
                 
-                # Generate session ID
+                # Check if there's an existing paused session for this project/user
+                # This handles the case when switching from database panel with BEZIG project
+                existing_session = self._check_for_existing_session(api_url, user, project_name)
+                
+                if existing_session:
+                    # Resume the existing session
+                    self._log(f"[DEBUG] Found existing paused session: {existing_session['session_id']}")
+                    self.current_session_id = existing_session['session_id']
+                    self.session_start_time = datetime.fromisoformat(existing_session['start_time'])
+                    self.session_item_count = existing_session.get('item_count', 0)
+                    self.session_paused = True  # It was paused
+                    self.pause_start_time = datetime.now()  # Track when it was paused
+                    self.total_pause_duration = existing_session.get('pause_duration_minutes', 0)
+                    
+                    # Now resume it
+                    self._resume_session()
+                    return
+                
+                # No existing session, create a new one
                 self.session_start_time = datetime.now()
                 self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 self.session_item_count = 0
@@ -490,7 +550,7 @@ class ScannerPanel(ttk.Frame):
                 self.pause_start_time = None
                 self.total_pause_duration = 0
                 
-                self._log(f"[DEBUG] Created session: {self.current_session_id}")
+                self._log(f"[DEBUG] Created new session: {self.current_session_id}")
                 
                 # Send session start event
                 data = {
@@ -703,8 +763,10 @@ class ScannerPanel(ttk.Frame):
 
     def _pause_session(self):
         """Pause the current session when panel is hidden"""
-        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
-        if self.current_session_id and not self.session_paused:
+        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, excel_loaded: {hasattr(self, 'workbook') and self.workbook is not None}")
+        
+        # Only pause if we have an active session and Excel is loaded
+        if self.current_session_id and not self.session_paused and hasattr(self, 'workbook') and self.workbook:
             # Mark as paused immediately to prevent duplicate pause attempts
             self.session_paused = True
             self.pause_start_time = datetime.now()
@@ -715,22 +777,41 @@ class ScannerPanel(ttk.Frame):
                     with open(config_file_path, 'r') as f:
                         config = json.load(f)
                         
-                    api_url = config.get('api_url', '')
+                    api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
+                        # Get user and project for the pause event
+                        user = self._determine_user_from_path(self.excel_file_path_var.get()) or config.get('user', 'UNKNOWN')
+                        project = self._extract_project_from_filename(self.excel_file_path_var.get())
+                        
                         data = {
                             'session_id': self.current_session_id,
-                            'timestamp': self.pause_start_time.isoformat()
+                            'timestamp': self.pause_start_time.isoformat(),
+                            'user': user,
+                            'project': project
                         }
                         
                         def pause_session_api():
                             try:
+                                # Send pause event to session endpoint
                                 response = requests.post(api_url.replace('/log', '/session/pause'), 
                                                        json=data, timeout=1)
                                 if response.ok:
                                     self._log(f"Session paused: {self.current_session_id}")
+                                    
+                                    # Also log SESSION_PAUSE event for tracking
+                                    log_data = {
+                                        'event': 'SESSION_PAUSE',
+                                        'user': user,
+                                        'project': project,
+                                        'session_id': self.current_session_id,
+                                        'details': f'Session paused - panel hidden',
+                                        'timestamp': self.pause_start_time.isoformat()
+                                    }
+                                    requests.post(api_url, json=log_data, timeout=1)
                                 else:
                                     # Reset flag if pause failed
                                     self.session_paused = False
+                                    self._log(f"Failed to pause session: HTTP {response.status_code}")
                             except Exception as e:
                                 self._log(f"Failed to pause session: {e}")
                                 # Reset flag if pause failed
@@ -740,14 +821,16 @@ class ScannerPanel(ttk.Frame):
                         
             except Exception as e:
                 self._log(f"Error pausing session: {e}")
+                self.session_paused = False
     
     def _resume_session(self):
         """Resume the current session when panel is shown"""
         if self.current_session_id and self.session_paused:
             # Calculate pause duration
+            pause_duration_seconds = 0
             if self.pause_start_time:
-                pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
-                self.total_pause_duration += pause_duration
+                pause_duration_seconds = (datetime.now() - self.pause_start_time).total_seconds()
+                self.total_pause_duration += pause_duration_seconds
             
             try:
                 config_file_path = get_config_path()
@@ -755,22 +838,43 @@ class ScannerPanel(ttk.Frame):
                     with open(config_file_path, 'r') as f:
                         config = json.load(f)
                         
-                    api_url = config.get('api_url', '')
+                    api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
+                        # Get user and project for the resume event
+                        user = self._determine_user_from_path(self.excel_file_path_var.get()) or config.get('user', 'UNKNOWN')
+                        project = self._extract_project_from_filename(self.excel_file_path_var.get())
+                        
                         data = {
                             'session_id': self.current_session_id,
                             'timestamp': datetime.now().isoformat(),
-                            'total_pause_duration': self.total_pause_duration
+                            'total_pause_duration': self.total_pause_duration,
+                            'user': user,
+                            'project': project
                         }
                         
                         def resume_session_api():
                             try:
+                                # Send resume event to session endpoint
                                 response = requests.post(api_url.replace('/log', '/session/resume'), 
                                                        json=data, timeout=1)
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
                                     self.session_paused = False
                                     self.pause_start_time = None
+                                    
+                                    # Also log SESSION_RESUME event for tracking
+                                    pause_minutes = round(pause_duration_seconds / 60, 1)
+                                    log_data = {
+                                        'event': 'SESSION_RESUME',
+                                        'user': user,
+                                        'project': project,
+                                        'session_id': self.current_session_id,
+                                        'details': f'Session resumed - pause duration: {pause_minutes} minutes',
+                                        'timestamp': datetime.now().isoformat()
+                                    }
+                                    requests.post(api_url, json=log_data, timeout=1)
+                                else:
+                                    self._log(f"Failed to resume session: HTTP {response.status_code}")
                             except Exception as e:
                                 self._log(f"Failed to resume session: {e}")
                         
@@ -781,14 +885,39 @@ class ScannerPanel(ttk.Frame):
     
     def pack(self, **kwargs):
         """Override pack to detect when panel is shown"""
+        self._log(f"[DEBUG] pack() called - Panel is being shown. Session: {self.current_session_id}, Paused: {self.session_paused}")
         super().pack(**kwargs)
-        self._resume_session()
+        # Only resume if we have an active session that was paused
+        if self.current_session_id and self.session_paused:
+            self._log("[DEBUG] Resuming session on panel show")
+            self._resume_session()
+        else:
+            self._log(f"[DEBUG] No resume needed - Session: {self.current_session_id}, Paused: {self.session_paused}")
     
     def pack_forget(self):
         """Override pack_forget to detect when panel is hidden"""
-        self._log("[DEBUG] pack_forget called")
-        self._pause_session()
+        self._log(f"[DEBUG] pack_forget() called - Panel is being hidden. Session: {self.current_session_id}, Paused: {self.session_paused}")
+        # Only pause if we have an active session that's not already paused
+        if self.current_session_id and not self.session_paused:
+            self._log("[DEBUG] Pausing session on panel hide")
+            self._pause_session()
+        else:
+            self._log(f"[DEBUG] No pause needed - Session: {self.current_session_id}, Paused: {self.session_paused}")
         super().pack_forget()
+    
+    def grid_remove(self):
+        """Override grid_remove to detect when panel is hidden"""
+        self._log("[DEBUG] grid_remove() called")
+        if self.current_session_id and not self.session_paused:
+            self._pause_session()
+        super().grid_remove()
+    
+    def place_forget(self):
+        """Override place_forget to detect when panel is hidden"""
+        self._log("[DEBUG] place_forget() called")
+        if self.current_session_id and not self.session_paused:
+            self._pause_session()
+        super().place_forget()
 
     def _end_session(self):
         """End the current session"""
@@ -1076,6 +1205,9 @@ class ScannerPanel(ttk.Frame):
             self._log("[FOUT] Kon bijgewerkt bestandspad niet genereren.")
             return
             
+        # Check if this is the first time creating the _updated file
+        is_first_save = not os.path.exists(updated_file_path)
+        
         save_successful = False
         save_path = ""
         
@@ -1106,11 +1238,11 @@ class ScannerPanel(ttk.Frame):
             save_successful = True
             save_path = updated_file_path
             
-            if save_successful:  # After successful save
+            if save_successful and is_first_save:  # Only send XLSX_UPDATED on FIRST save
                 # Use the SAME extraction logic as _perform_completion_actions
                 base_mo_code, full_project_code = self._extract_project_info_from_excel(save_path)
                 
-                # Send XLSX_UPDATED event
+                # Send XLSX_UPDATED event to start a session
                 config_file_path = get_config_path()
                 if os.path.exists(config_file_path):
                     with open(config_file_path, 'r') as f:
@@ -1118,8 +1250,8 @@ class ScannerPanel(ttk.Frame):
                         
                     api_url = config.get('api_url', '')
                     if api_url:
-                        # Determine which user this is for based on file path
-                        user = self._determine_user_from_path(save_path)
+                        # Use the active user from database panel if available, otherwise try to determine from path
+                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(save_path)
                         
                         if user and full_project_code:
                             data = {

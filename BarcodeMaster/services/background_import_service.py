@@ -227,9 +227,15 @@ class BackgroundImportService:
 
         # Handle HOPS_PROCESSING for OPUS users
         if processing_type == 'HOPS_PROCESSING':
-            # The project_code passed in is now the one to use for matching,
-            # whether it's a base code or a full REP project name.
+            # Extract just the MO code and project description for matching
+            # Remove any additional text after the standard format
+            # Match pattern: MO#####_Description_(#-#)
             code_to_match = project_code
+            match = re.match(r'(MO\d+_[^_]+_\(\d+-\d+\))', project_code)
+            if match:
+                code_to_match = match.group(1)
+                self._log(f"  [HOPS] Extracted project code for matching: '{project_code}' -> '{code_to_match}'")
+            
             self._log(f"HOPS_PROCESSING voor user '{user_type}': Using '{code_to_match}' for directory matching.")
 
             if not code_to_match:
@@ -834,7 +840,8 @@ class BackgroundImportService:
                             if processing_type == 'NESTING_PROCESSING':
                                 nesting_count = results[user]['nesting_count']
                                 opdeelzaag_count = results[user]['opdeelzaag_count']
-                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:0")
+                                total_count = nesting_count + opdeelzaag_count
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{total_count}")
                             elif processing_type == 'ACCURA_PROCESSING':
                                 item_count = results[user]['item_count']
                                 self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
@@ -1041,7 +1048,16 @@ class BackgroundImportService:
         excel_reports_generated = 0
         match_found = False
         try:
-            is_rep_project_code = bool(re.search(r'_REP_?', project_event_code, re.IGNORECASE))
+            # Extract just the MO code and project description for matching
+            # Remove any additional text after the standard format
+            # Match pattern: MO#####_Description_(#-#)
+            project_code_for_matching = project_event_code
+            match = re.match(r'(MO\d+_[^_]+_\(\d+-\d+\))', project_event_code)
+            if match:
+                project_code_for_matching = match.group(1)
+                self._log(f"  [MDB] Extracted project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
+            
+            is_rep_project_code = bool(re.search(r'_REP_?', project_code_for_matching, re.IGNORECASE))
             for filename in os.listdir(mdb_scan_path):
                 file_basename, file_ext = os.path.splitext(filename)
                 if file_ext.lower() in ('.mdb', '.accdb'):
@@ -1049,17 +1065,17 @@ class BackgroundImportService:
                     db_file_path = "" # Define here to be accessible after condition
 
                     if is_rep_project_code:
-                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
-                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
-                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_code_for_matching: '{project_code_for_matching}' (Upper: '{project_code_for_matching.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_code_for_matching.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_code_for_matching.upper()}'? Result: {ends_with_result}")
                         if ends_with_result:
                             match_condition_met = True
                             db_file_path = os.path.join(mdb_scan_path, filename)
                             self._log(f"Overeenkomend MDB bestand (REP match) gevonden: {db_file_path}. Verwerken...")
                     else: # Not a REP variant, use endswith for robustness with prefixes
-                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_event_code: '{project_event_code}' (Upper: '{project_event_code.upper()}')")
-                        ends_with_result = file_basename.upper().endswith(project_event_code.upper())
-                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_event_code.upper()}'? Result: {ends_with_result}")
+                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_code_for_matching: '{project_code_for_matching}' (Upper: '{project_code_for_matching.upper()}')")
+                        ends_with_result = file_basename.upper().endswith(project_code_for_matching.upper())
+                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_code_for_matching.upper()}'? Result: {ends_with_result}")
                         if ends_with_result:
                             match_condition_met = True
                             db_file_path = os.path.join(mdb_scan_path, filename)
@@ -1084,7 +1100,7 @@ class BackgroundImportService:
                 self._log(f"Geen overeenkomend .mdb/.accdb bestand gevonden in '{mdb_scan_path}' voor project '{project_event_code}'.")
                 # Send callback message for no work found
                 if self.log_callback:
-                    self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_event_code}:{user_name}:0")
+                    self.log_callback(f"BACKGROUND_NO_EXCEL_FILE:{project_event_code}:{user_name}")
 
         except Exception as e:
             self.logger.error(f"Algemene fout tijdens MDB import voor pad {mdb_scan_path} (project: {project_event_code}): {e}")

@@ -23,7 +23,17 @@ namespace FileMonitorTray
     {
         Simple,     // Basic version - reliable, no server dependency
         Enhanced,   // Advanced version with server config and detailed tracking
-        Auto        // Try enhanced first, fallback to simple if needed
+        Auto,       // Try enhanced first, fallback to simple if needed
+        MachineSpecific // Use machine-specific analyzer based on detected type
+    }
+
+    // Machine type enum for different CNC machine types
+    public enum MachineType
+    {
+        Unknown,
+        HH7,        // HH7 machine - detected by Post:HH7 and CP_TCHECK.NC
+        Opus,       // OPUS machine - detected by Post:RB_OPUS and CH_CHECK_TOOL.NC  
+        Vision      // Vision/Field1 machine - detected by VISION/ARTIS and DEF REAL syntax
     }
 
     // Missing classes needed for compilation
@@ -54,7 +64,7 @@ namespace FileMonitorTray
 
     public class AnalyzerConfig
     {
-        public AnalysisMode Mode { get; set; } = AnalysisMode.Auto;
+        public AnalysisMode Mode { get; set; } = AnalysisMode.MachineSpecific;  // Default to machine-specific
         public bool EnableServerConfig { get; set; } = true;
         public int ServerTimeoutMs { get; set; } = 5000;
         public string PPIniPath { get; set; } = "";
@@ -225,10 +235,295 @@ namespace FileMonitorTray
         }
     }
     
+    // HH7 Machine Analyzer - optimized for HH7 postprocessor output
+    public class HH7Analyzer : ICNCAnalyzer
+    {
+        private readonly TCALCMachineConfig _config;
+        
+        public HH7Analyzer()
+        {
+            // HH7-specific configuration
+            _config = new TCALCMachineConfig
+            {
+                MAXFEEDRATE_XY = 20000.0,  // Rapid feedrate
+                MAXFEEDRATE_Z = 20000.0,
+                TC_51_51 = 20.0,  // HH7 tool change time
+                DHFeedrateG00 = 20000.0
+            };
+            Console.WriteLine($"[HH7] Initialized with HH7-specific configuration");
+        }
+        
+        public async Task<CNCAnalysis> AnalyzeFileAsync(string filePath)
+        {
+            var analyzer = new TCALCAnalyzer(_config);
+            var result = await analyzer.AnalyzeFileAsync(filePath);
+            result.ToolSessions = analyzer.GetToolSessions();
+            result.DetectedMachineType = MachineType.HH7;
+            
+            // HH7-specific analysis enhancements
+            var lines = await File.ReadAllLinesAsync(filePath);
+            
+            // Extract HH7-specific tool data and postprocessor version
+            foreach (var line in lines)
+            {
+                // Extract postprocessor version
+                if (line.Contains("Post:HH7"))
+                {
+                    var versionMatch = Regex.Match(line, @"Post:HH7\s+(V[\d.]+)", RegexOptions.IgnoreCase);
+                    if (versionMatch.Success)
+                        result.PostprocessorVersion = versionMatch.Groups[1].Value;
+                }
+                
+                // Extract Box IDs as tool identifiers
+                // Format 1: ; --- Box:  601 HId:1
+                if (line.Contains("Box:"))
+                {
+                    var boxMatch = Regex.Match(line, @"Box:\s*(\d+)");
+                    if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                    {
+                        if (!result.ToolsUsed.Contains(boxId))
+                            result.ToolsUsed.Add(boxId);
+                    }
+                }
+                
+                // Format 2: BOXID:<601> T:<601 VF 12 R P/N>
+                if (line.Contains("BOXID:"))
+                {
+                    var boxMatch = Regex.Match(line, @"BOXID:<(\d+)>");
+                    if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                    {
+                        if (!result.ToolsUsed.Contains(boxId))
+                            result.ToolsUsed.Add(boxId);
+                    }
+                }
+            }
+            
+            Console.WriteLine($"[HH7] Analysis complete: {result.ToolsUsed.Count} tools, {result.TotalTime:F2} min cycle time");
+            return result;
+        }
+        
+        public string GetAnalyzerVersion()
+        {
+            return "HH7 Analyzer v1.0 (Optimized for HH7 machines)";
+        }
+    }
+    
+    // Opus Machine Analyzer - optimized for RB_OPUS postprocessor output
+    public class OpusAnalyzer : ICNCAnalyzer
+    {
+        private readonly TCALCMachineConfig _config;
+        
+        public OpusAnalyzer()
+        {
+            // Opus-specific configuration
+            _config = new TCALCMachineConfig
+            {
+                MAXFEEDRATE_XY = 20000.0,  // Rapid feedrate
+                MAXFEEDRATE_Z = 20000.0,
+                TC_51_51 = 20.0,  // Opus tool change time
+                DHFeedrateG00 = 20000.0
+            };
+            Console.WriteLine($"[OPUS] Initialized with Opus-specific configuration");
+        }
+        
+        public async Task<CNCAnalysis> AnalyzeFileAsync(string filePath)
+        {
+            var analyzer = new TCALCAnalyzer(_config);
+            var result = await analyzer.AnalyzeFileAsync(filePath);
+            result.ToolSessions = analyzer.GetToolSessions();
+            result.DetectedMachineType = MachineType.Opus;
+            
+            // Opus-specific analysis enhancements
+            var lines = await File.ReadAllLinesAsync(filePath);
+            
+            // Track Box ID to extract from comments
+            Dictionary<int, int> boxToToolMap = new Dictionary<int, int>();
+            
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                
+                // Extract postprocessor version
+                if (line.Contains("Post:RB_OPUS"))
+                {
+                    var versionMatch = Regex.Match(line, @"Post:RB_OPUS_V\d+\s+(V[\d.]+)", RegexOptions.IgnoreCase);
+                    if (versionMatch.Success)
+                        result.PostprocessorVersion = versionMatch.Groups[1].Value;
+                }
+                
+                // First look for Box info in comments to get actual tool ID
+                // Format: ; --- BOX:  601 TCID:100 TCPlace:1   HId:1001  VF 12 R P/N
+                if (line.Contains("BOX:") && line.Contains("TCPlace:"))
+                {
+                    var boxMatch = Regex.Match(line, @"BOX:\s*(\d+)");
+                    
+                    if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                    {
+                        // Check next line for CH_CHECK_TOOL.NC which has the mapping
+                        if (i + 1 < lines.Length && lines[i + 1].Contains("CH_CHECK_TOOL.NC"))
+                        {
+                            // In Opus, the box ID is the tool ID we want
+                            if (!result.ToolsUsed.Contains(boxId))
+                                result.ToolsUsed.Add(boxId);
+                            
+                            // Also check for place mapping if needed
+                            var placeMatch = Regex.Match(line, @"TCPlace:(\d+)");
+                            if (placeMatch.Success && int.TryParse(placeMatch.Groups[1].Value, out int place))
+                            {
+                                boxToToolMap[place] = boxId;
+                            }
+                        }
+                    }
+                }
+                
+                // Process carrier position data for Opus machines
+                if (line.Contains("CH_CARRIER_POS.NC"))
+                {
+                    // Carrier position affects overhead time
+                    result.OverheadTime += 0.5; // Add carrier positioning time
+                }
+            }
+            
+            // If no tools found from BOX comments, use the existing tool detection
+            if (result.ToolsUsed.Count == 0 && result.ToolSessions.Count > 0)
+            {
+                result.ToolsUsed = result.ToolSessions.Keys.ToList();
+            }
+            
+            Console.WriteLine($"[OPUS] Analysis complete: Tools {string.Join(",", result.ToolsUsed)}, {result.TotalTime:F2} min cycle time");
+            return result;
+        }
+        
+        public string GetAnalyzerVersion()
+        {
+            return "Opus Analyzer v1.0 (Optimized for RB_OPUS machines)";
+        }
+    }
+    
+    // Vision/Field1 Machine Analyzer - optimized for Vision/Artis postprocessor output
+    public class VisionAnalyzer : ICNCAnalyzer
+    {
+        private readonly TCALCMachineConfig _config;
+        private Dictionary<int, int> _toolPlatzMapping = new Dictionary<int, int>();
+        
+        public VisionAnalyzer()
+        {
+            // Vision-specific configuration (Siemens control)
+            _config = new TCALCMachineConfig
+            {
+                MAXFEEDRATE_XY = 20000.0,  // Rapid feedrate
+                MAXFEEDRATE_Z = 20000.0,
+                TC_51_51 = 20.0,  // Vision tool change time
+                DHFeedrateG00 = 20000.0
+            };
+            Console.WriteLine($"[VISION] Initialized with Vision/Siemens-specific configuration");
+        }
+        
+        public async Task<CNCAnalysis> AnalyzeFileAsync(string filePath)
+        {
+            var analyzer = new TCALCAnalyzer(_config);
+            var result = await analyzer.AnalyzeFileAsync(filePath);
+            result.ToolSessions = analyzer.GetToolSessions();
+            result.DetectedMachineType = MachineType.Vision;
+            
+            // Vision-specific analysis enhancements
+            var lines = await File.ReadAllLinesAsync(filePath);
+            
+            foreach (var line in lines)
+            {
+                // Extract postprocessor version
+                if (line.Contains("Post:VISION") || line.Contains("POST FOR VISION/ARTIS"))
+                {
+                    var versionMatch = Regex.Match(line, @"V([\d.]+)", RegexOptions.IgnoreCase);
+                    if (versionMatch.Success)
+                        result.PostprocessorVersion = versionMatch.Groups[1].Value;
+                }
+                
+                // Extract Box IDs as tool identifiers for Vision
+                // Format: ; --- Box:  602 HId:1     VF 14 R P/N
+                if (line.Contains("Box:"))
+                {
+                    var boxMatch = Regex.Match(line, @"Box:\s*(\d+)");
+                    if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                    {
+                        if (!result.ToolsUsed.Contains(boxId))
+                        {
+                            result.ToolsUsed.Add(boxId);
+                            Console.WriteLine($"[VISION] Found tool Box:{boxId}");
+                        }
+                    }
+                }
+                
+                // Process Vision-specific commands
+                if (line.Contains("STOPRE"))
+                {
+                    result.OverheadTime += 0.1; // Add stop/restart time
+                }
+            }
+            
+            // Vision machines often have longer overhead due to Siemens control
+            result.OverheadTime *= 1.2; // 20% overhead increase for Vision
+            
+            Console.WriteLine($"[VISION] Analysis complete: {result.ToolsUsed.Count} tools, {result.TotalTime:F2} min cycle time");
+            return result;
+        }
+        
+        public string GetAnalyzerVersion()
+        {
+            return "Vision Analyzer v1.0 (Optimized for Vision/Artis machines)";
+        }
+    }
+    
     // Factory for creating analyzer instances
     public static class CNCAnalyzerFactory
     {
-        public static ICNCAnalyzer CreateAnalyzer(AnalyzerConfig config, string webAppUrl)
+        // Detect machine type based on file content patterns
+        public static MachineType DetectMachineType(string filePath)
+        {
+            try
+            {
+                // Read first 100 lines to detect machine type
+                var lines = File.ReadLines(filePath).Take(100).ToList();
+                var content = string.Join("\n", lines);
+                
+                // Check for HH7 machine patterns
+                if (content.Contains("Post:HH7", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("NAME=CP_TCHECK.NC", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[ANALYZER] Detected HH7 machine type from file content");
+                    return MachineType.HH7;
+                }
+                
+                // Check for Opus machine patterns  
+                if (content.Contains("Post:RB_OPUS", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("NAME=CH_CHECK_TOOL.NC", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("NAME=CH_CARRIER_POS.NC", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[ANALYZER] Detected Opus machine type from file content");
+                    return MachineType.Opus;
+                }
+                
+                // Check for Vision/Field1 machine patterns
+                if (content.Contains("POST FOR VISION/ARTIS", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("Post:VISION", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("DEF REAL", StringComparison.OrdinalIgnoreCase) ||
+                    content.Contains("STOPRE", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[ANALYZER] Detected Vision machine type from file content");
+                    return MachineType.Vision;
+                }
+                
+                Console.WriteLine($"[ANALYZER] Unable to detect machine type, using default");
+                return MachineType.Unknown;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ANALYZER] Error detecting machine type: {ex.Message}");
+                return MachineType.Unknown;
+            }
+        }
+        
+        public static ICNCAnalyzer CreateAnalyzer(AnalyzerConfig config, string webAppUrl, string filePath = null)
         {
             switch (config.Mode)
             {
@@ -240,6 +535,24 @@ namespace FileMonitorTray
                     if (!string.IsNullOrEmpty(config.PPIniPath))
                         enhanced.SetPPIniPath(config.PPIniPath);
                     return enhanced;
+                    
+                case AnalysisMode.MachineSpecific:
+                    if (!string.IsNullOrEmpty(filePath))
+                    {
+                        var machineType = DetectMachineType(filePath);
+                        switch (machineType)
+                        {
+                            case MachineType.HH7:
+                                return new HH7Analyzer();
+                            case MachineType.Opus:
+                                return new OpusAnalyzer();
+                            case MachineType.Vision:
+                                return new VisionAnalyzer();
+                            default:
+                                return new SimpleCNCAnalyzer();
+                        }
+                    }
+                    return new SimpleCNCAnalyzer();
                     
                 case AnalysisMode.Auto:
                 default:
@@ -275,6 +588,8 @@ namespace FileMonitorTray
         public DateTime AnalyzedAt { get; set; }
         public bool AnalysisSuccessful { get; set; }
         public string ErrorMessage { get; set; }
+        public MachineType DetectedMachineType { get; set; }  // Track which machine type was detected
+        public string PostprocessorVersion { get; set; }  // Store postprocessor version info
 
         public CNCAnalysis()
         {
@@ -312,9 +627,9 @@ namespace FileMonitorTray
     public class TCALCMachineConfig
     {
         // Core feedrate parameters (matching TCALC_HH7 defaults)
-        public double MAXFEEDRATE_XY { get; set; } = 30000.0;  // mm/min for G0 XY moves (more realistic)
+        public double MAXFEEDRATE_XY { get; set; } = 20000.0;  // mm/min for G0 XY moves (standard for all machines)
         public double MAXFEEDRATE_Z { get; set; } = 20000.0;   // mm/min for G0 Z moves
-        public double DHFeedrateG00 { get; set; } = 30000.0;   // Rapid feedrate - should match MAXFEEDRATE_XY
+        public double DHFeedrateG00 { get; set; } = 20000.0;   // Rapid feedrate - should match MAXFEEDRATE_XY
         
         // Properties for compatibility with simplified calculation
         public double RapidFeedrate => DHFeedrateG00;          // Alias for simple calculation
@@ -745,6 +1060,15 @@ namespace FileMonitorTray
                             if (feed > 0)
                             {
                                 _lastValidFeedrate = feed; // Remember last valid feedrate
+                                // DEBUG: Log unusual feedrates
+                                if (feed < 100 || feed > 20000)
+                                {
+                                    Console.WriteLine($"[TCALC FEEDRATE] F{feed} detected on line: {cleanLine.Substring(0, Math.Min(cleanLine.Length, 50))}");
+                                    if (feed < 100)
+                                    {
+                                        Console.WriteLine($"  WARNING: Feedrate {feed} mm/min seems extremely slow!");
+                                    }
+                                }
                             }
                         }
                     }
@@ -865,6 +1189,21 @@ namespace FileMonitorTray
                 
                 // Finalize tool usage sessions
                 FinalizeToolSessions();
+                
+                // DEBUG: Print summary of tool times
+                Console.WriteLine($"[TCALC] ========== TOOL TIME SUMMARY ==========");
+                Console.WriteLine($"[TCALC] File: {analysis.Filename}");
+                foreach (var session in _toolSessions.Values)
+                {
+                    Console.WriteLine($"[TCALC] T{session.ToolNumber}:");
+                    Console.WriteLine($"  Cutting: {session.CuttingTime*60:F1}s, Rapid: {session.RapidTime*60:F1}s, Total: {session.TotalTime*60:F1}s");
+                    Console.WriteLine($"  Distance: {session.TotalDistance:F1}mm, Moves: {session.MoveCount}");
+                    if (session.TotalTime * 60 > 60) // Flag if tool time > 1 minute
+                    {
+                        Console.WriteLine($"  WARNING: Tool time {session.TotalTime*60:F1}s seems excessive!");
+                    }
+                }
+                Console.WriteLine($"[TCALC] ========================================");
                 
                 analysis.AnalysisSuccessful = true;
                 return analysis;
@@ -1206,6 +1545,9 @@ namespace FileMonitorTray
                 foreach (var line in lines)
                 {
                     // Extract spindle speed to estimate rapid feedrate
+                    // DISABLED: The 2.5x spindle speed assumption doesn't match actual machine capabilities
+                    // Keeping the configured defaults (20000mm/min) instead
+                    /*
                     if (line.Contains("MaxRotSpeed S") || line.Contains("@P7=") || line.Contains("@P4=") && line.Contains("24000"))
                     {
                         var speedMatch = Regex.Match(line, @"S(\d+)|@P[47]=(\d+)");
@@ -1221,6 +1563,7 @@ namespace FileMonitorTray
                             }
                         }
                     }
+                    */
                     
                     // Check for postprocessor type and set appropriate defaults
                     if (line.Contains("Post:") || line.Contains("POST:"))
@@ -1460,6 +1803,11 @@ namespace FileMonitorTray
                 }
             }
 
+            // CRITICAL: Update current position after calculating distance
+            _currentX = newX;
+            _currentY = newY;
+            _currentZ = newZ;
+
             return new CNCMovement
             {
                 Code = code,
@@ -1501,6 +1849,11 @@ namespace FileMonitorTray
 
             // Calculate time in minutes
             var time = feedRate > 0 ? distance / feedRate : 0;
+
+            // CRITICAL: Update current position after calculating distance
+            _currentX = newX;
+            _currentY = newY;
+            _currentZ = newZ;
 
             return new CNCMovement
             {
@@ -1586,6 +1939,12 @@ namespace FileMonitorTray
                             session.CuttingTime += movement.Time; // Time is in minutes
                             session.CuttingDistance += movement.Distance;
                             session.MoveCount++;
+                            
+                            // Debug output for significant moves
+                            if (movement.Distance > 10)
+                            {
+                                Console.WriteLine($"[DEBUG] T{_currentActiveTool} G1: {movement.Distance:F1}mm @ {movement.Feedrate:F0}mm/min = {movement.Time*60:F2}s (total cutting: {session.CuttingTime*60:F1}s)");
+                            }
                         }
                     }
                         
@@ -1675,6 +2034,30 @@ namespace FileMonitorTray
 
             string cycleName = parts[0].Trim().Trim('"').Trim();
             
+            // Skip system cycles that don't add machining time
+            if (cycleName.Contains("CP_TC") ||      // Tool change cycle
+                cycleName.Contains("CP_TCHECK") ||  // Tool check cycle
+                cycleName.Contains("CP_TSPEED") ||  // Spindle speed cycle
+                cycleName.Contains("CP_CS") ||      // Coordinate system cycle
+                cycleName.Contains("CP_START") ||   // Start cycle
+                cycleName.Contains("CP_END") ||     // End cycle
+                cycleName.Contains("CP_CLEARDH") || // Clear cycle
+                cycleName.Contains("CP_DYNAMIC") || // Dynamic cycle
+                cycleName.Contains("CP_RELEASE") || // Release cycle
+                cycleName.Contains("CP_CONTOUR") || // Contour start/end markers
+                cycleName.Contains("CH_CHECK_TOOL") || // OPUS tool check cycle
+                cycleName.Contains("CH_CARRIER") || // OPUS carrier position cycle
+                cycleName.Contains("CH_TOOLCHANGE") || // OPUS tool change cycle
+                cycleName.Contains("CH_SPINDEL") || // OPUS spindle cycle
+                cycleName.Contains("CH_TCP") ||     // OPUS TCP cycle
+                cycleName.Contains("CH_CONTOUR") || // OPUS contour cycle
+                cycleName.Contains("CH_DYNAMIC"))   // OPUS dynamic cycle
+            {
+                // Debug: Log that we're skipping this system cycle
+                // Console.WriteLine($"[DEBUG] Skipping system cycle: {cycleName}");
+                return; // System cycles don't add to machining time
+            }
+            
             // Calculate cycle time based on TCALC_HH7 logic
             double cycleTime = 0;
             
@@ -1701,6 +2084,7 @@ namespace FileMonitorTray
                                 double plungeFeedrate = _currentFeedrate > 0 ? _currentFeedrate : 500; // Default drill feedrate
                                 double retractFeedrate = _config.MAXFEEDRATE_Z;
                                 
+                                // GetTimePath returns seconds, cycleTime is in seconds
                                 cycleTime += _engine.GetTimePath(Math.Abs(depth), plungeFeedrate);
                                 cycleTime += _engine.GetTimePath(Math.Abs(depth), retractFeedrate);
                             }
@@ -1728,7 +2112,7 @@ namespace FileMonitorTray
             if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
             {
                 var session = _toolSessions[_currentActiveTool];
-                session.CuttingTime += cycleTime; // Cycles are considered "cutting" time
+                session.CuttingTime += cycleTime / 60.0; // Convert seconds to minutes before adding
             }
         }
 
@@ -1775,18 +2159,24 @@ namespace FileMonitorTray
                 
                 if (zDistance > xyDistance * 2)  // Primarily Z movement
                 {
-                    feedrate = _config.MAXFEEDRATE_Z; // 20000 mm/min for Z rapids
+                    feedrate = _config.MAXFEEDRATE_Z; // Use configured Z rapid feedrate
                 }
                 else
                 {
-                    feedrate = _config.MAXFEEDRATE_XY; // 30000 mm/min for XY rapids  
+                    feedrate = _config.MAXFEEDRATE_XY; // Use configured XY rapid feedrate  
                 }
                 
                 timeMinutes = distance / feedrate; // Direct calculation in minutes
-                // Only log large Z movements for debugging
-                if (zDistance > 100)
+                
+                // DEBUG: Log ALL movements to find the issue
+                if (distance > 0.1)
                 {
-                    Console.WriteLine($"[DEBUG] TCALC G0 Large Z: {zDistance:F0}mm @ {feedrate}mm/min = {timeMinutes*60:F1}s");
+                    Console.WriteLine($"[TCALC DEBUG] G0: From ({_currentX:F1},{_currentY:F1},{_currentZ:F1}) to ({newX:F1},{newY:F1},{newZ:F1})");
+                    Console.WriteLine($"  Distance: {distance:F1}mm, Feedrate: {feedrate:F0}mm/min, Time: {timeMinutes*60:F2}s");
+                    if (timeMinutes * 60 > 10) // Flag suspiciously long movements
+                    {
+                        Console.WriteLine($"  WARNING: Movement taking {timeMinutes*60:F1}s seems too long!");
+                    }
                 }
             }
             else if (code == "G1")
@@ -1794,13 +2184,25 @@ namespace FileMonitorTray
                 // Linear move - use current feedrate or last valid feedrate
                 feedrate = _currentFeedrate > 0 ? _currentFeedrate : _lastValidFeedrate;
                 timeMinutes = distance / feedrate; // Direct calculation in minutes
-                // Only log significant cutting moves
-                if (distance > 50)
+                
+                // DEBUG: Log ALL cutting movements to find the issue
+                if (distance > 0.1)
                 {
-                    Console.WriteLine($"[DEBUG] TCALC G1: {distance:F0}mm @ {feedrate}mm/min = {timeMinutes*60:F1}s");
+                    Console.WriteLine($"[TCALC DEBUG] G1: From ({_currentX:F1},{_currentY:F1},{_currentZ:F1}) to ({newX:F1},{newY:F1},{newZ:F1})");
+                    Console.WriteLine($"  Distance: {distance:F1}mm, Feedrate: {feedrate:F0}mm/min, Time: {timeMinutes*60:F2}s");
+                    Console.WriteLine($"  Current tool: T{_currentActiveTool}");
+                    if (timeMinutes * 60 > 10) // Flag suspiciously long movements
+                    {
+                        Console.WriteLine($"  WARNING: Cutting movement taking {timeMinutes*60:F1}s seems too long!");
+                    }
                 }
             }
 
+            // Update current position after calculating distance
+            _currentX = newX;
+            _currentY = newY;
+            _currentZ = newZ;
+            
             return new CNCMovement
             {
                 Code = code,
@@ -1857,6 +2259,11 @@ namespace FileMonitorTray
             double feedrate = _currentFeedrate > 0 ? _currentFeedrate : _lastValidFeedrate;
             double timeMinutes = arcLength / feedrate; // Direct calculation in minutes
 
+            // Update current position after calculating distance
+            _currentX = newX;
+            _currentY = newY;
+            _currentZ = newZ;
+            
             return new CNCMovement
             {
                 Code = code,
@@ -3911,14 +4318,25 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                         // Wait a bit to ensure file is fully written
                         await Task.Delay(500);
                         
-                        // Use the dual-version analyzer system
-                        if (currentAnalyzer != null)
+                        // Use machine-specific analyzer if configured, otherwise use current analyzer
+                        ICNCAnalyzer analyzer = currentAnalyzer;
+                        
+                        // Create machine-specific analyzer if mode is set to MachineSpecific
+                        if (analyzerConfig.Mode == AnalysisMode.MachineSpecific)
                         {
-                            cncAnalysis = await currentAnalyzer.AnalyzeFileAsync(changeInfo.FullPath);
+                            analyzer = CNCAnalyzerFactory.CreateAnalyzer(analyzerConfig, config.WebAppUrl, changeInfo.FullPath);
+                        }
+                        
+                        if (analyzer != null)
+                        {
+                            cncAnalysis = await analyzer.AnalyzeFileAsync(changeInfo.FullPath);
                             
                             if (cncAnalysis.AnalysisSuccessful)
                             {
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis completed ({currentAnalyzer.GetAnalyzerVersion()}) for {Path.GetFileName(changeInfo.FullPath)} - Total Time: {cncAnalysis.GetFormattedTime()} ({cncAnalysis.TotalTime:F2} min)");
+                                string machineInfo = cncAnalysis.DetectedMachineType != MachineType.Unknown 
+                                    ? $" [{cncAnalysis.DetectedMachineType}]" 
+                                    : "";
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis completed{machineInfo} ({analyzer.GetAnalyzerVersion()}) for {Path.GetFileName(changeInfo.FullPath)} - Total Time: {cncAnalysis.GetFormattedTime()} ({cncAnalysis.TotalTime:F2} min)");
                             }
                             else
                             {

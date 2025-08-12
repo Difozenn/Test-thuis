@@ -1,0 +1,5 @@
+C:\Users\Rob_v\Desktop\test-werk-main\enterprise-file-monitor\obj\Debug\net6.0\FileMonitorConsole.csproj.AssemblyReference.cache
+C:\Users\Rob_v\Desktop\test-werk-main\enterprise-file-monitor\obj\Debug\net6.0\FileMonitorConsole.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Rob_v\Desktop\test-werk-main\enterprise-file-monitor\obj\Debug\net6.0\FileMonitorConsole.AssemblyInfoInputs.cache
+C:\Users\Rob_v\Desktop\test-werk-main\enterprise-file-monitor\obj\Debug\net6.0\FileMonitorConsole.AssemblyInfo.cs
+C:\Users\Rob_v\Desktop\test-werk-main\enterprise-file-monitor\obj\Debug\net6.0\FileMonitorConsole.csproj.CoreCompileInputs.cache

@@ -375,14 +375,17 @@ def run_app():
     splash.update_idletasks()
     splash.update()
 
+    app_instance = None  # Store app instance for cleanup
+    
     # This function will run in the background to initialize the app
     def background_init():
         """Initialize the application in a background thread."""
+        nonlocal app_instance
         try:
             if DEBUG:
                 print('[DIAG] Background initialization started')
             # Create the app instance. Its own __init__ will start background tasks.
-            BarcodeMatchApp(root)
+            app_instance = BarcodeMatchApp(root)
             if DEBUG:
                 print('[DIAG] Background initialization completed')
         except Exception as e:
@@ -401,6 +404,28 @@ def run_app():
 
     # Schedule the main window to appear after 2 seconds
     root.after(2000, show_main_window)
+    
+    # Setup cleanup on window close
+    def on_closing():
+        if DEBUG:
+            print('[DIAG] Window closing, shutting down panels...')
+        
+        # Shutdown all panels that have a shutdown method
+        if app_instance and hasattr(app_instance, 'panels'):
+            for panel_name, panel in app_instance.panels.items():
+                if panel and hasattr(panel, 'shutdown'):
+                    try:
+                        if DEBUG:
+                            print(f'[DIAG] Shutting down {panel_name} panel')
+                        panel.shutdown()
+                    except Exception as e:
+                        print(f"[DIAG ERROR] Error shutting down {panel_name}: {e}")
+        
+        if DEBUG:
+            print('[DIAG] Destroying window...')
+        root.destroy()
+    
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     
     root.mainloop()
     if DEBUG:

@@ -38,16 +38,27 @@ class ScannerPanel(tk.Frame):
         
         config = get_config()
         
-        # Add session tracking - support for multiple sessions
-        self.current_session_id = None  # Primary session (for barcode scanning)
-        self.session_start_time = None
-        self.session_paused = False
-        self.pause_start_time = None
-        self.total_pause_duration = 0
+        # Track two independent sessions
+        # Session 1
+        self.session1_id = None
+        self.session1_start_time = None
+        self.session1_paused = False
+        self.session1_pause_start = None
+        self.session1_total_pause = 0
         
-        # Track background session (for opdeelzaag work)
-        self.background_session_id = None
-        self.background_session_start_time = None
+        # Session 2  
+        self.session2_id = None
+        self.session2_start_time = None
+        self.session2_paused = False
+        self.session2_pause_start = None
+        self.session2_total_pause = 0
+        
+        # Track which session receives scans (1 or 2)
+        self.active_scan_session = 1  # Default to Session 1
+        
+        # For backward compatibility during transition
+        self.current_session_id = None  # Will point to session1_id
+        self.background_session_id = None  # Will point to session2_id
         
         # Initialize work hours cache
         self._work_hours_cache = None
@@ -227,6 +238,50 @@ class ScannerPanel(tk.Frame):
         )
         self.work_hours_label.pack(side='left')
         
+        # Scan target selector - which session receives scanned projects
+        scan_selector_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
+        scan_selector_frame.pack(fill='x', pady=(5, 10))
+        
+        tk.Label(
+            scan_selector_frame,
+            text="Scan naar:",
+            bg="#f0f0f0",
+            font=('Segoe UI', 11, 'bold'),
+            fg="#2c3e50"
+        ).pack(side='left', padx=(0, 10))
+        
+        self.scan_session_var = tk.IntVar(value=1)  # Default to Session 1
+        
+        self.scan_radio1 = tk.Radiobutton(
+            scan_selector_frame,
+            text="Sessie 1",
+            variable=self.scan_session_var,
+            value=1,
+            bg="#f0f0f0",
+            font=('Segoe UI', 10),
+            fg="#2980b9",  # Blue when selected (will be set in set_active_scan_session)
+            selectcolor="#f0f0f0",
+            activebackground="#f0f0f0",
+            state='disabled',  # Disabled until session is started
+            command=lambda: self.set_active_scan_session(1)
+        )
+        self.scan_radio1.pack(side='left', padx=5)
+        
+        self.scan_radio2 = tk.Radiobutton(
+            scan_selector_frame,
+            text="Sessie 2",
+            variable=self.scan_session_var,
+            value=2,
+            bg="#f0f0f0",
+            font=('Segoe UI', 10),
+            fg="#2c3e50",  # Black when not selected
+            selectcolor="#f0f0f0",
+            activebackground="#f0f0f0",
+            state='disabled',  # Disabled until session is started
+            command=lambda: self.set_active_scan_session(2)
+        )
+        self.scan_radio2.pack(side='left', padx=5)
+        
         # Main content area with two columns for sessions
         content_frame = tk.Frame(self.session_frame, bg="#f0f0f0")
         content_frame.pack(fill='both', expand=True, pady=(0, 15))
@@ -240,12 +295,12 @@ class ScannerPanel(tk.Frame):
             left_frame,
             text="Sessie 1",
             bg="#f0f0f0",
-            fg="#2980b9",
+            fg="#2980b9",  # Blue - selected by default
             font=('Segoe UI', 11, 'bold'),
             padx=15,
             pady=10,
             relief=tk.SOLID,
-            borderwidth=2
+            borderwidth=2  # Thicker border for selected
         )
         self.active_session_card.pack(fill='both', expand=True)
         
@@ -320,7 +375,7 @@ class ScannerPanel(tk.Frame):
                 relief=tk.FLAT,
                 cursor="hand2",
                 bd=0,
-                command=self.start_new_session
+                command=self.start_session1
             )
         else:
             # Fallback to text button
@@ -336,7 +391,7 @@ class ScannerPanel(tk.Frame):
                 cursor="hand2",
                 activebackground="#229954",
                 bd=2,
-                command=self.start_new_session
+                command=self.start_session1
             )
         self.start_button.pack()
         
@@ -399,12 +454,12 @@ class ScannerPanel(tk.Frame):
             right_frame,
             text="Sessie 2",
             bg="#f0f0f0",
-            fg="#8e44ad",
+            fg="#2c3e50",  # Black - not selected by default
             font=('Segoe UI', 11, 'bold'),
             padx=15,
             pady=10,
             relief=tk.SOLID,
-            borderwidth=2
+            borderwidth=1  # Thinner border for unselected
         )
         self.background_session_card.pack(fill='both', expand=True)
         
@@ -441,7 +496,7 @@ class ScannerPanel(tk.Frame):
             self.background_session_card,
             text="Project: --",
             bg="#f0f0f0",
-            fg="#8e44ad",
+            fg="#2c3e50",  # Black instead of purple
             font=('Segoe UI', 11, 'bold')
         )
         self.background_project_label.pack(anchor='w', pady=2)
@@ -860,37 +915,304 @@ class ScannerPanel(tk.Frame):
             work_hours = self.get_work_hours_from_api()
             return self._check_work_status(work_hours)
 
-    def start_session2(self):
-        """Handle click on Session 2 start button - start or stop session 2"""
-        if self.background_session_id:
-            # Stop Session 2
-            self.stop_background_session()
-        elif self.current_session_id:
-            # Session 1 is active, start Session 2 as background
-            self.start_new_batch_session()
+    def set_active_scan_session(self, session_number):
+        """Set which session (1 or 2) receives scanned projects"""
+        self.active_scan_session = session_number
+        
+        # Update radio button colors and session card borders
+        if session_number == 1:
+            # Radio buttons - Session 1 blue, Session 2 black
+            self.scan_radio1.config(fg="#2980b9")  # Blue for selected
+            self.scan_radio2.config(fg="#2c3e50")  # Black for unselected
+            
+            # Session cards - highlight Session 1
+            self.active_session_card.config(fg="#2980b9", relief=tk.SOLID, borderwidth=2)
+            self.background_session_card.config(fg="#2c3e50", relief=tk.SOLID, borderwidth=1)
+            
+            # Project labels - Session 1 blue, Session 2 black
+            self.active_project_label.config(fg="#2980b9")
+            self.background_project_label.config(fg="#2c3e50")
+            
+            self.log_message("✓ Scans gaan nu naar Sessie 1", "info")
         else:
-            # No Session 1 active, cannot start Session 2 alone
-            self.log_message("⚠️ Sessie 1 moet eerst actief zijn voordat Sessie 2 kan starten", "warning")
-            messagebox.showinfo("Info", "Start eerst Sessie 1 voordat u Sessie 2 kunt starten.")
+            # Radio buttons - Session 2 blue, Session 1 black
+            self.scan_radio1.config(fg="#2c3e50")  # Black for unselected
+            self.scan_radio2.config(fg="#2980b9")  # Blue for selected
+            
+            # Session cards - highlight Session 2
+            self.active_session_card.config(fg="#2c3e50", relief=tk.SOLID, borderwidth=1)
+            self.background_session_card.config(fg="#2980b9", relief=tk.SOLID, borderwidth=2)
+            
+            # Project labels - Session 2 blue, Session 1 black
+            self.active_project_label.config(fg="#2c3e50")
+            self.background_project_label.config(fg="#2980b9")
+            
+            self.log_message("✓ Scans gaan nu naar Sessie 2", "info")
+    
+    def start_session1(self):
+        """Start or stop Session 1"""
+        if self.session1_id:
+            self.stop_session1()
+        else:
+            self.start_new_session1()
+    
+    def start_session2(self):
+        """Start or stop Session 2"""
+        if self.session2_id:
+            self.stop_session2()
+        else:
+            self.start_new_session2()
+    
+    def start_new_session1(self):
+        """Start a new Session 1"""
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        if not api_url:
+            self.log_message("❌ API URL niet geconfigureerd", "error")
+            return
+        
+        # Create unique session ID
+        self.session1_start_time = datetime.now()
+        self.session1_id = f"{current_user}_S1_{self.session1_start_time.strftime('%Y%m%d_%H%M%S')}"
+        
+        # Reset session state
+        self.session1_paused = False
+        self.session1_pause_start = None
+        self.session1_total_pause = 0
+        self.session1_project = None
+        self.session1_projects = []
+        
+        # Update compatibility pointers
+        self.current_session_id = self.session1_id
+        self.session_start_time = self.session1_start_time
+        
+        # Start session in database
+        data = {
+            'event': 'SESSION_START',
+            'user': current_user,
+            'session_id': self.session1_id,
+            'timestamp': self.session1_start_time.isoformat(),
+            'session_type': 'SCANNER',
+            'session_number': 1
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=1)
+            if response.ok:
+                self.log_message(f"✓ Sessie 1 gestart: {self.session1_id}", "success")
+                self.update_session_display()
+            else:
+                self.log_message(f"❌ Kon Sessie 1 niet starten: {response.text}", "error")
+                self.session1_id = None
+                self.session1_start_time = None
+                self.current_session_id = None
+        except Exception as e:
+            self.log_message(f"❌ Fout bij starten Sessie 1: {e}", "error")
+            self.session1_id = None
+            self.session1_start_time = None
+            self.current_session_id = None
+    
+    def start_new_session2(self):
+        """Start a new Session 2"""
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        if not api_url:
+            self.log_message("❌ API URL niet geconfigureerd", "error")
+            return
+        
+        # Create unique session ID
+        self.session2_start_time = datetime.now()
+        self.session2_id = f"{current_user}_S2_{self.session2_start_time.strftime('%Y%m%d_%H%M%S')}"
+        
+        # Reset session state
+        self.session2_paused = False
+        self.session2_pause_start = None
+        self.session2_total_pause = 0
+        self.session2_project = None
+        self.session2_projects = []
+        
+        # Update compatibility pointer
+        self.background_session_id = self.session2_id
+        
+        # Start session in database
+        data = {
+            'event': 'SESSION_START',
+            'user': current_user,
+            'session_id': self.session2_id,
+            'timestamp': self.session2_start_time.isoformat(),
+            'session_type': 'SCANNER',
+            'session_number': 2,
+            'is_new_batch': True,  # Keep Session 1 active when starting Session 2
+            'background_session': self.session1_id if self.session1_id else None
+        }
+        
+        try:
+            response = requests.post(api_url.replace('/log', '/session/start'), json=data, timeout=1)
+            if response.ok:
+                self.log_message(f"✓ Sessie 2 gestart: {self.session2_id}", "success")
+                self.update_session_display()
+            else:
+                self.log_message(f"❌ Kon Sessie 2 niet starten: {response.text}", "error")
+                self.session2_id = None
+                self.session2_start_time = None
+                self.background_session_id = None
+        except Exception as e:
+            self.log_message(f"❌ Fout bij starten Sessie 2: {e}", "error")
+            self.session2_id = None
+            self.session2_start_time = None
+            self.background_session_id = None
+    
+    def stop_session1(self):
+        """Stop Session 1"""
+        if not self.session1_id:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Send AFGEMELD for all projects in Session 1
+        for project in self.session1_projects:
+            try:
+                afgemeld_data = {
+                    'event': 'AFGEMELD',
+                    'user': current_user,
+                    'project': project,
+                    'session_id': self.session1_id,
+                    'timestamp': datetime.now().isoformat()
+                }
+                # Ensure we use the correct /log endpoint for AFGEMELD
+                log_url = api_url if api_url.endswith('/log') else f"{api_url}/log"
+                requests.post(log_url, json=afgemeld_data, timeout=1)
+            except:
+                pass
+        
+        # End session
+        try:
+            end_data = {
+                'session_id': self.session1_id,
+                'timestamp': datetime.now().isoformat(),
+                'user': current_user
+            }
+            base_url = api_url if not api_url.endswith('/log') else api_url.replace('/log', '')
+            session_end_url = f"{base_url}/session/end"
+            response = requests.post(session_end_url, json=end_data, timeout=1)
+            if response.ok:
+                self.log_message(f"✓ Sessie 1 gestopt: {self.session1_id}", "success")
+            else:
+                error_msg = response.text if response.text else f"Status: {response.status_code}"
+                self.log_message(f"⚠️ Kon Sessie 1 niet netjes afsluiten: {error_msg}", "warning")
+        except Exception as e:
+            self.log_message(f"⚠️ Fout bij stoppen Sessie 1: {e}", "warning")
+        
+        # Clear session state
+        self.session1_id = None
+        self.session1_start_time = None
+        self.session1_paused = False
+        self.session1_pause_start = None
+        self.session1_total_pause = 0
+        self.session1_project = None
+        self.session1_projects = []
+        self.current_session_id = None
+        
+        self.update_session_display()
+    
+    def stop_session2(self):
+        """Stop Session 2"""
+        if not self.session2_id:
+            return
+        
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+        
+        # Send AFGEMELD for all projects in Session 2
+        for project in self.session2_projects:
+            try:
+                afgemeld_data = {
+                    'event': 'AFGEMELD',
+                    'user': current_user,
+                    'project': project,
+                    'session_id': self.session2_id,
+                    'timestamp': datetime.now().isoformat()
+                }
+                # Ensure we use the correct /log endpoint for AFGEMELD
+                log_url = api_url if api_url.endswith('/log') else f"{api_url}/log"
+                requests.post(log_url, json=afgemeld_data, timeout=1)
+            except:
+                pass
+        
+        # End session
+        try:
+            end_data = {
+                'session_id': self.session2_id,
+                'timestamp': datetime.now().isoformat(),
+                'user': current_user
+            }
+            base_url = api_url if not api_url.endswith('/log') else api_url.replace('/log', '')
+            session_end_url = f"{base_url}/session/end"
+            response = requests.post(session_end_url, json=end_data, timeout=1)
+            if response.ok:
+                self.log_message(f"✓ Sessie 2 gestopt: {self.session2_id}", "success")
+            else:
+                error_msg = response.text if response.text else f"Status: {response.status_code}"
+                self.log_message(f"⚠️ Kon Sessie 2 niet netjes afsluiten: {error_msg}", "warning")
+        except Exception as e:
+            self.log_message(f"⚠️ Fout bij stoppen Sessie 2: {e}", "warning")
+        
+        # Clear session state
+        self.session2_id = None
+        self.session2_start_time = None
+        self.session2_paused = False
+        self.session2_pause_start = None
+        self.session2_total_pause = 0
+        self.session2_project = None
+        self.session2_projects = []
+        self.background_session_id = None
+        
+        self.update_session_display()
     
     def update_session_display(self):
         """Update the enhanced UI to show current session status with timing"""
         config = get_config()
         current_user = config.get('user', 'NESTING')
         
-        # Update active session card
-        if self.current_session_id:
+        # Update radio button states based on active sessions
+        if self.session1_id:
+            self.scan_radio1.config(state='normal')
+        else:
+            self.scan_radio1.config(state='disabled')
+            # If Session 1 not active and currently selected, switch to Session 2 if available
+            if self.active_scan_session == 1 and self.session2_id:
+                self.scan_session_var.set(2)
+                self.set_active_scan_session(2)
+        
+        if self.session2_id:
+            self.scan_radio2.config(state='normal')
+        else:
+            self.scan_radio2.config(state='disabled')
+            # If Session 2 not active and currently selected, switch to Session 1 if available
+            if self.active_scan_session == 2 and self.session1_id:
+                self.scan_session_var.set(1)
+                self.set_active_scan_session(1)
+        
+        # Update Session 1 card
+        if self.session1_id:
             self.active_session_id.config(
-                text=f"Sessie ID: {self.current_session_id[-8:]}",
+                text=f"Sessie ID: {self.session1_id[-8:]}",
                 fg="#2c3e50"
             )
-            if self.session_start_time:
+            if self.session1_start_time:
                 self.active_session_start.config(
-                    text=f"Start tijd: {self.session_start_time.strftime('%H:%M')}",
+                    text=f"Start tijd: {self.session1_start_time.strftime('%H:%M')}",
                     fg="#2c3e50"
                 )
                 # Calculate duration
-                duration = datetime.now() - self.session_start_time
+                duration = datetime.now() - self.session1_start_time
                 hours = int(duration.total_seconds() // 3600)
                 minutes = int((duration.total_seconds() % 3600) // 60)
                 self.active_session_duration.config(
@@ -917,12 +1239,8 @@ class ScannerPanel(tk.Frame):
             self.start_label.config(text="Stop Sessie 1")
             self.pause_button.config(state='normal')  # Enable pause button for Session 1
             
-            # Enable Session 2 button when Session 1 is active
-            if not self.background_session_id:
-                self.start_button2.config(state='normal')
-            else:
-                # Keep Session 2 button enabled if it already has a session
-                self.start_button2.config(state='normal')
+            # Session 2 button is always enabled (independent sessions)
+            self.start_button2.config(state='normal')
         else:
             # No active session
             self.active_session_id.config(
@@ -952,26 +1270,23 @@ class ScannerPanel(tk.Frame):
             else:
                 self.start_button.config(text="▶", bg="#27ae60", activebackground="#229954")  # Play icon
             self.start_label.config(text="Start Sessie 1")
-            # Disable Session 2 button when no Session 1 (unless Session 2 is running)
-            if self.background_session_id:
-                self.start_button2.config(state='normal')
-            else:
-                self.start_button2.config(state='disabled')
+            # Session 2 button is always enabled (independent sessions)
+            self.start_button2.config(state='normal')
             self.pause_button.config(state='disabled')  # Disable pause button when no Session 1
         
-        # Update background session card
-        if self.background_session_id:
+        # Update Session 2 card
+        if self.session2_id:
             self.background_session_id_label.config(
-                text=f"Sessie ID: {self.background_session_id[-8:]}",
+                text=f"Sessie ID: {self.session2_id[-8:]}",
                 fg="#2c3e50"
             )
-            if self.background_session_start_time:
+            if self.session2_start_time:
                 self.background_session_start.config(
-                    text=f"Start tijd: {self.background_session_start_time.strftime('%H:%M')}",
+                    text=f"Start tijd: {self.session2_start_time.strftime('%H:%M')}",
                     fg="#2c3e50"
                 )
                 # Calculate duration
-                duration = datetime.now() - self.background_session_start_time
+                duration = datetime.now() - self.session2_start_time
                 hours = int(duration.total_seconds() // 3600)
                 minutes = int((duration.total_seconds() % 3600) // 60)
                 self.background_session_duration.config(
@@ -987,7 +1302,7 @@ class ScannerPanel(tk.Frame):
             else:
                 self.background_status_indicator.config(
                     text="● ACTIEF",
-                    fg="#8e44ad"
+                    fg="#27ae60"  # Green for active instead of purple
                 )
             # Update Session 2 button to show stop
             if hasattr(self, 'stop_photo') and self.stop_photo:
@@ -1014,19 +1329,11 @@ class ScannerPanel(tk.Frame):
                 text="● INACTIEF",
                 fg="#bdc3c7"
             )
-            # Update Session 2 button to show start (disabled if Session 1 not active)
-            if self.current_session_id:
-                # Session 1 is active, allow starting Session 2
-                if hasattr(self, 'start_photo') and self.start_photo:
-                    self.start_button2.config(image=self.start_photo, state='normal')
-                else:
-                    self.start_button2.config(text="▶", bg="#27ae60", activebackground="#229954", state='normal')
+            # Update Session 2 button to show start (always enabled for independent sessions)
+            if hasattr(self, 'start_photo') and self.start_photo:
+                self.start_button2.config(image=self.start_photo, state='normal')
             else:
-                # Session 1 not active, disable Session 2
-                if hasattr(self, 'start_photo') and self.start_photo:
-                    self.start_button2.config(image=self.start_photo, state='disabled')
-                else:
-                    self.start_button2.config(text="▶", bg="#27ae60", activebackground="#229954", state='disabled')
+                self.start_button2.config(text="▶", bg="#27ae60", activebackground="#229954", state='normal')
             self.start_label2.config(text="Start Sessie 2")
             self.pause_button2.config(state='disabled')  # Disable pause button when no Session 2
             # Clear project when session ends
@@ -1036,16 +1343,16 @@ class ScannerPanel(tk.Frame):
     
     def update_session_timers(self):
         """Update session duration displays every minute"""
-        if self.current_session_id and self.session_start_time:
-            duration = datetime.now() - self.session_start_time
+        if self.session1_id and self.session1_start_time:
+            duration = datetime.now() - self.session1_start_time
             hours = int(duration.total_seconds() // 3600)
             minutes = int((duration.total_seconds() % 3600) // 60)
             self.active_session_duration.config(
                 text=f"Duur: {hours}h {minutes}m"
             )
         
-        if self.background_session_id and self.background_session_start_time:
-            duration = datetime.now() - self.background_session_start_time
+        if self.session2_id and self.session2_start_time:
+            duration = datetime.now() - self.session2_start_time
             hours = int(duration.total_seconds() // 3600)
             minutes = int((duration.total_seconds() % 3600) // 60)
             self.background_session_duration.config(
@@ -1076,18 +1383,34 @@ class ScannerPanel(tk.Frame):
             return
         
         try:
+            # First send AFGEMELD for all projects in Session 2
+            if self.session2_projects:
+                for project in self.session2_projects:
+                    afgemeld_data = {
+                        'event': 'AFGEMELD',
+                        'user': current_user,
+                        'project': project,
+                        'timestamp': datetime.now().isoformat(),
+                        'details': 'Achtergrond sessie voltooid'
+                    }
+                    try:
+                        requests.post(api_url, json=afgemeld_data, timeout=1)
+                        self.log_message(f"✓ Project {project} afgemeld", "info")
+                    except:
+                        pass  # Don't fail if one AFGEMELD fails
+            
             # End the background session
             end_data = {
                 'session_id': self.background_session_id,
                 'timestamp': datetime.now().isoformat(),
-                'keep_projects_active': True  # Don't AFGEMELD yet, current session might still use them
+                'keep_projects_active': False  # Projects are AFGEMELD, session can close
             }
             
             response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
             if response.ok:
                 self.log_message(f"✓ Achtergrond sessie {self.background_session_id} gestopt", "success")
                 self.background_session_id = None
-                self.background_session_start_time = None
+                self.session2_start_time = None
                 self.session2_project = None  # Clear Session 2 project
                 self.session2_projects = []  # Clear Session 2 batch list
                 
@@ -1152,8 +1475,10 @@ class ScannerPanel(tk.Frame):
             return
         
         # Move current session to background (don't end it!)
+        # For now, keep the same session ID to avoid complications
+        # The API update endpoint would need to be available to change the ID
         self.background_session_id = self.current_session_id
-        self.background_session_start_time = self.session_start_time
+        self.session2_start_time = self.session_start_time
         
         # Move Session 1 projects to Session 2
         self.session2_project = self.session1_project
@@ -1231,17 +1556,17 @@ class ScannerPanel(tk.Frame):
                 self.log_message(f"❌ Kon nieuwe batch sessie niet starten: {response.text}", "error")
                 # Restore background session as current
                 self.current_session_id = self.background_session_id
-                self.session_start_time = self.background_session_start_time
+                self.session_start_time = self.session2_start_time
                 self.background_session_id = None
-                self.background_session_start_time = None
+                self.session2_start_time = None
                 
         except Exception as e:
             self.log_message(f"❌ Fout bij starten nieuwe batch: {e}", "error")
             # Restore background session as current
             self.current_session_id = self.background_session_id
-            self.session_start_time = self.background_session_start_time
+            self.session_start_time = self.session2_start_time
             self.background_session_id = None
-            self.background_session_start_time = None
+            self.session2_start_time = None
     
     def start_new_session(self):
         """Start a new work session for current user or close existing session"""
@@ -1355,9 +1680,9 @@ class ScannerPanel(tk.Frame):
                     
                     # Move background session to current
                     self.current_session_id = self.background_session_id
-                    self.session_start_time = self.background_session_start_time
+                    self.session_start_time = self.session2_start_time
                     self.background_session_id = None
-                    self.background_session_start_time = None
+                    self.session2_start_time = None
                     
                     # Reset pause states for the now-current session
                     self.session_paused = False
@@ -1376,9 +1701,11 @@ class ScannerPanel(tk.Frame):
             return
         
         # Normal case - no background session, so we can AFGEMELD projects
-        # If session is paused, resume it first to log the final pause duration
+        # If session is paused, just clear the pause state without sending resume event
+        # (we're stopping the session, so no need to log a resume)
         if self.session1_paused:
-            self.resume_session1()
+            self.session1_paused = False
+            self.session1_pause_start = None
         
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
@@ -1410,7 +1737,8 @@ class ScannerPanel(tk.Frame):
                         self.log_message(f"✓ Project {project} afgesloten", "success")
                         self.open_projects.discard(project)
                     else:
-                        self.log_message(f"⚠️ Fout bij afsluiten project {project}", "warning")
+                        error_msg = response.text[:200] if response.text else f"Status: {response.status_code}"
+                        self.log_message(f"⚠️ Fout bij afsluiten project {project}: {error_msg}", "warning")
                 except Exception as e:
                     self.log_message(f"⚠️ Netwerkfout bij afsluiten project {project}: {e}", "warning")
         
@@ -1612,8 +1940,9 @@ class ScannerPanel(tk.Frame):
         # Calculate pause duration for Session 1
         pause_duration_seconds = 0
         if self.session1_pause_start:
+            # Don't calculate pause duration locally - let the API do it with work-hours awareness
             pause_duration_seconds = (datetime.now() - self.session1_pause_start).total_seconds()
-            self.session1_total_pause += pause_duration_seconds
+            # Don't add to total - the API will track the correct work-hours-aware total
         
         # Get current project for Session 1
         current_project = self.session1_project
@@ -1639,6 +1968,7 @@ class ScannerPanel(tk.Frame):
                     'project': current_project,
                     'session_id': self.current_session_id,
                     'details': f'Sessie 1 hervat - pauze duur: {pause_minutes} minuten',
+                    'status': 'BEZIG',  # Show that work is continuing
                     'timestamp': datetime.now().isoformat()
                 }
                 try:
@@ -1680,8 +2010,9 @@ class ScannerPanel(tk.Frame):
         # Calculate pause duration for Session 2
         pause_duration_seconds = 0
         if self.session2_pause_start:
+            # Don't calculate pause duration locally - let the API do it with work-hours awareness
             pause_duration_seconds = (datetime.now() - self.session2_pause_start).total_seconds()
-            self.session2_total_pause += pause_duration_seconds
+            # Don't add to total - the API will track the correct work-hours-aware total
         
         # Get current project for Session 2
         current_project = self.session2_project
@@ -1707,6 +2038,7 @@ class ScannerPanel(tk.Frame):
                     'project': current_project,
                     'session_id': self.background_session_id,
                     'details': f'Sessie 2 hervat - pauze duur: {pause_minutes} minuten',
+                    'status': 'BEZIG',  # Show that work is continuing
                     'timestamp': datetime.now().isoformat()
                 }
                 try:
@@ -1784,6 +2116,37 @@ class ScannerPanel(tk.Frame):
         
         return round(total_minutes)
 
+    def _update_session_project_items(self, project, item_count):
+        """Update the item count for a project in session_projects table"""
+        try:
+            config = get_config()
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            # Determine which session this project belongs to
+            session_to_update = None
+            if project in self.session1_projects:
+                session_to_update = self.current_session_id
+            elif project in self.session2_projects:
+                session_to_update = self.background_session_id
+            
+            if session_to_update and api_url:
+                # Update the session_projects entry with actual item count
+                update_data = {
+                    'session_id': session_to_update,
+                    'project': project,
+                    'item_count': item_count,
+                    'timestamp': datetime.now().isoformat()
+                }
+                # Build the correct URL - api_url is base URL, not the /log endpoint
+                base_url = api_url.replace('/log', '') if '/log' in api_url else api_url
+                update_url = f"{base_url}/session/update_project_items"
+                response = requests.post(update_url, json=update_data, timeout=1)
+                if response.ok:
+                    self.log_message(f"✓ Items bijgewerkt voor {project}: {item_count}", "debug")
+        except Exception as e:
+            # Don't fail if update fails
+            self.log_message(f"⚠️ Kon items niet bijwerken: {e}", "debug")
+    
     def log_message(self, message, level="info", show_timestamp=True):
         """Adds a user-friendly message to the log viewer."""
         if level == "debug":
@@ -1816,6 +2179,12 @@ class ScannerPanel(tk.Frame):
                 count = parts[3]
                 item_text = "items" if int(count) != 1 else "item"
                 self.log_message(f"✓ {user}: {count} {item_text} gevonden en verwerkt", "success")
+                
+                # Update session_projects with actual item count if this is current user
+                config = get_config()
+                current_user = config.get('user', 'NESTING')
+                if user == current_user:
+                    self._update_session_project_items(project, int(count))
         elif "BACKGROUND_NO_WORK_ITEMS:" in message:
             parts = message.split(":")
             if len(parts) >= 4:
@@ -2004,7 +2373,13 @@ class ScannerPanel(tk.Frame):
 
         # Add session_id to data if available
         session_data = {}
-        if self.current_session_id:
+        # Use the correct session based on which one is the scan target
+        if self.active_scan_session == 2 and self.session2_id:
+            session_data['session_id'] = self.session2_id
+        elif self.active_scan_session == 1 and self.session1_id:
+            session_data['session_id'] = self.session1_id
+        elif self.current_session_id:
+            # Fallback to current_session_id for backward compatibility
             session_data['session_id'] = self.current_session_id
 
         # Check if project is already open
@@ -2014,8 +2389,8 @@ class ScannerPanel(tk.Frame):
             self.after(2000, lambda: self.usb_entry.config(bg='white'))
             return
 
-        # Use session start time if available, otherwise current time
-        scan_timestamp = self.session_start_time.isoformat() if self.session_start_time else None
+        # Use current time for the scan timestamp
+        scan_timestamp = datetime.now().isoformat()
         
         # Now send OPEN event for the current user
         data_open = {
@@ -2044,8 +2419,11 @@ class ScannerPanel(tk.Frame):
             # Store current project for session tracking
             self.current_project = project_code_to_log
             
-            # Update project in session display - add to batch list
-            if self.current_session_id:
+            # Update project in session display - add to the selected session
+            session_to_update = None
+            
+            if self.active_scan_session == 1 and self.session1_id:
+                session_to_update = self.session1_id
                 self.session1_project = project_code_to_log  # Keep track of last project
                 if project_code_to_log not in self.session1_projects:
                     self.session1_projects.append(project_code_to_log)
@@ -2054,7 +2432,8 @@ class ScannerPanel(tk.Frame):
                     self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
                 else:
                     self.active_project_label.config(text=f"Project: {project_code_to_log}")
-            elif self.background_session_id:
+            elif self.active_scan_session == 2 and self.session2_id:
+                session_to_update = self.session2_id
                 self.session2_project = project_code_to_log  # Keep track of last project
                 if project_code_to_log not in self.session2_projects:
                     self.session2_projects.append(project_code_to_log)
@@ -2063,14 +2442,41 @@ class ScannerPanel(tk.Frame):
                     self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
                 else:
                     self.background_project_label.config(text=f"Project: {project_code_to_log}")
+            else:
+                # No session active for the selected scan target
+                self.log_message(f"⚠️ Sessie {self.active_scan_session} is niet actief. Start eerst de sessie.", "warning")
+                return
+            
+            # Link project to session in database
+            if session_to_update and api_url:
+                try:
+                    # Item count is 0 when project opens, will be updated when items are scanned
+                    initial_item_count = 0
+                    link_data = {
+                        'session_id': session_to_update,
+                        'project': project_code_to_log,
+                        'item_count': initial_item_count,
+                        'timestamp': scan_timestamp
+                    }
+                    # Build the correct URL - api_url is base URL, not the /log endpoint
+                    base_url = api_url.replace('/log', '') if '/log' in api_url else api_url
+                    link_url = f"{base_url}/session/add_project"
+                    response = requests.post(link_url, json=link_data, timeout=1)
+                    if response.ok:
+                        self.log_message(f"✓ Project {project_code_to_log} gekoppeld aan sessie {session_to_update}", "debug")
+                    else:
+                        self.log_message(f"⚠️ Kon project niet koppelen: {response.text}", "warning")
+                except Exception as e:
+                    # Don't fail the scan if linking fails
+                    self.log_message(f"⚠️ Kon project niet koppelen aan sessie: {e}", "warning")
                 
         except requests.exceptions.Timeout:
             # Timeout - log warning but continue
             self.log_message(f"⚠️ Waarschuwing: Project open event timeout - werk wordt nog steeds verwerkt", "warning")
             self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
-            # Still update project tracking
+            # Still update project tracking - respect active_scan_session
             self.current_project = project_code_to_log
-            if self.current_session_id:
+            if self.active_scan_session == 1 and self.session1_id:
                 self.session1_project = project_code_to_log
                 if project_code_to_log not in self.session1_projects:
                     self.session1_projects.append(project_code_to_log)
@@ -2078,13 +2484,21 @@ class ScannerPanel(tk.Frame):
                     self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
                 else:
                     self.active_project_label.config(text=f"Project: {project_code_to_log}")
+            elif self.active_scan_session == 2 and self.session2_id:
+                self.session2_project = project_code_to_log
+                if project_code_to_log not in self.session2_projects:
+                    self.session2_projects.append(project_code_to_log)
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code_to_log}")
         except Exception as e:
             # Other network error - log but continue
             self.log_message(f"⚠️ Netwerkwaarschuwing: {str(e)[:50]}", "warning")
             self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
-            # Still update project tracking
+            # Still update project tracking - respect active_scan_session
             self.current_project = project_code_to_log
-            if self.current_session_id:
+            if self.active_scan_session == 1 and self.session1_id:
                 self.session1_project = project_code_to_log
                 if project_code_to_log not in self.session1_projects:
                     self.session1_projects.append(project_code_to_log)
@@ -2092,6 +2506,14 @@ class ScannerPanel(tk.Frame):
                     self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
                 else:
                     self.active_project_label.config(text=f"Project: {project_code_to_log}")
+            elif self.active_scan_session == 2 and self.session2_id:
+                self.session2_project = project_code_to_log
+                if project_code_to_log not in self.session2_projects:
+                    self.session2_projects.append(project_code_to_log)
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code_to_log}")
 
         # Don't duplicate the processing message - it's already shown via callback
         
@@ -2115,8 +2537,8 @@ class ScannerPanel(tk.Frame):
         if all_ok:
             self.open_projects.add(project_code_to_log)
             
-            # Assign project to the active session - add to batch list
-            if self.current_session_id:
+            # Assign project to the active scan session - respect active_scan_session
+            if self.active_scan_session == 1 and self.session1_id:
                 self.session1_project = project_code_to_log  # Keep track of last project
                 if project_code_to_log not in self.session1_projects:
                     self.session1_projects.append(project_code_to_log)
@@ -2125,7 +2547,7 @@ class ScannerPanel(tk.Frame):
                     self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
                 else:
                     self.active_project_label.config(text=f"Project: {project_code_to_log}")
-            elif self.background_session_id:
+            elif self.active_scan_session == 2 and self.session2_id:
                 self.session2_project = project_code_to_log  # Keep track of last project
                 if project_code_to_log not in self.session2_projects:
                     self.session2_projects.append(project_code_to_log)

@@ -229,13 +229,14 @@ def check_assets():
     required_templates = [
         'database/templates/base.html',
         'database/templates/dashboard.html',
-        'database/templates/projects.html',
-        'database/templates/users.html',
-        'database/templates/statistics.html',
-        'database/templates/settings.html',
-        'database/templates/logs_project.html',
         'database/templates/database.html',
-        'database/templates/user_performance.html'
+        'database/templates/error.html',
+        'database/templates/logs_project.html',
+        'database/templates/projects.html',
+        'database/templates/settings.html',
+        'database/templates/statistics.html',
+        'database/templates/user_performance.html',
+        'database/templates/users.html'
     ]
     
     required_configs = [
@@ -434,6 +435,7 @@ a = Analysis(
         'gui.panels.database_panel', 
         'gui.panels.help_panel',
         'gui.panels.scanner_panel',
+        'gui.panels.session_display_redesign',
         'gui.panels.settings_panel',
         
         # Project modules - Database

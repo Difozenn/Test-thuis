@@ -241,6 +241,23 @@
     background-color: #f8f9fa;
     border-top: 1px solid var(--border-color);
 }
+
+/* Delete button styling */
+.delete-project-btn {
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.delete-project-btn:hover {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.delete-project-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 {% endblock %}
 
 {% block content %}
@@ -312,23 +329,22 @@
         <table class="table table-hover mb-0" id="projectsTable">
             <thead class="table-light">
                 <tr>
-                    <th style="width: 30%;">Project</th>
-                    <th style="width: 20%;">Klant</th>
-                    <th style="width: 15%;">SO / MO</th>
-                    <th style="width: 10%;">Kleur</th>
-                    <th style="width: 10%;">Status</th>
-                    <th style="width: 15%;">Laatste Update</th>
+                    <th style="width: 25%;">Project</th>
+                    <th style="width: 18%;">Klant</th>
+                    <th style="width: 13%;">SO / MO</th>
+                    <th style="width: 9%;">Kleur</th>
+                    <th style="width: 9%;">Status</th>
+                    <th style="width: 13%;">Laatste Update</th>
+                    <th style="width: 13%;">Acties</th>
                 </tr>
             </thead>
             <tbody id="projectListContent">
                 {% for project in projects %}
-                <tr onclick="window.location.href='/logs_project?project={{ project.code }}'" 
-                    style="cursor: pointer;" 
-                    data-project-code="{{ project.code }}"
+                <tr data-project-code="{{ project.code }}"
                     data-customer="{{ project.customer_name|default('') }}"
                     data-mo="{{ project.mo_number|default('') }}"
                     data-so="{{ project.so_number|default('') }}">
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-folder me-2"></i>
                             <div>
@@ -340,14 +356,14 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         {% if project.customer_name %}
                             <strong>{{ project.customer_name }}</strong>
                         {% else %}
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         <div>
                             {% if project.so_number %}
                                 <div><small>SO:</small> <strong>{{ project.so_number }}</strong></div>
@@ -360,28 +376,35 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         {% if project.color %}
                             <span class="badge bg-secondary">{{ project.color }}</span>
                         {% else %}
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         <span class="status-badge status-{{ project.status|lower }}">
                             {{ project.status }}
                         </span>
                     </td>
-                    <td>
+                    <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         <div>
                             <div>{{ project.timestamp }}</div>
                             <small class="text-muted">{{ project.user|default('Onbekend') }}</small>
                         </div>
                     </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm delete-project-btn" 
+                                data-project-code="{{ project.code }}"
+                                title="Verwijder project en alle gerelateerde data">
+                            <i class="fas fa-trash-alt"></i> Verwijder
+                        </button>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <i class="fas fa-folder-open mb-2"></i>
                         <p class="mb-0">Geen projecten gevonden</p>
                     </td>
@@ -533,7 +556,7 @@
                 noResultsRow = document.createElement('tr');
                 noResultsRow.className = 'no-results-row';
                 noResultsRow.innerHTML = `
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <i class="fas fa-search mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
                         <p class="mb-0">Geen projecten gevonden</p>
                         <small class="text-muted">Probeer andere zoektermen of filters</small>
@@ -623,5 +646,80 @@
             window.location.href = currentUrl.toString();
         });
     }
+
+    // Handle project deletion
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-project-btn') || e.target.closest('.delete-project-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.classList.contains('delete-project-btn') ? e.target : e.target.closest('.delete-project-btn');
+            const projectCode = button.getAttribute('data-project-code');
+            
+            // Show confirmation dialog
+            if (confirm(`⚠️ WAARSCHUWING: Dit zal het project "${projectCode}" PERMANENT verwijderen!\n\nDit omvat:\n• Alle logboekregistraties\n• Alle sessiegegevens\n• Alle gerelateerde statistieken\n• Alle project metadata\n\nDeze actie kan NIET ongedaan worden gemaakt!\n\nWeet u zeker dat u door wilt gaan?`)) {
+                // Double confirmation for safety
+                if (confirm(`⚠️ LAATSTE WAARSCHUWING!\n\nU staat op het punt om project "${projectCode}" en ALLE gerelateerde data te verwijderen.\n\nTyp OK om te bevestigen.`)) {
+                    // Disable the button to prevent double-clicks
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verwijderen...';
+                    
+                    // Send delete request
+                    fetch(`/api/project/${encodeURIComponent(projectCode)}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the row from the table
+                            const row = button.closest('tr');
+                            row.style.transition = 'opacity 0.5s';
+                            row.style.opacity = '0';
+                            setTimeout(() => {
+                                row.remove();
+                                // Update the search summary
+                                filterAndSearch();
+                            }, 500);
+                            
+                            // Show success message
+                            alert(`✅ Project "${projectCode}" is succesvol verwijderd.`);
+                        } else {
+                            // Re-enable button on error
+                            button.disabled = false;
+                            button.innerHTML = '<i class="fas fa-trash-alt"></i> Verwijder';
+                            
+                            // Check if it's due to active sessions
+                            if (data.active_direct_sessions > 0 || data.active_batch_sessions > 0) {
+                                let message = `⚠️ ACTIEVE SESSIES GEDETECTEERD!\n\n`;
+                                message += `Project "${projectCode}" kan niet worden verwijderd omdat er actieve sessies zijn:\n\n`;
+                                
+                                if (data.active_direct_sessions > 0) {
+                                    message += `• ${data.active_direct_sessions} directe sessie(s) actief op dit project\n`;
+                                }
+                                if (data.active_batch_sessions > 0) {
+                                    message += `• ${data.active_batch_sessions} batch scanner sessie(s) die dit project bevatten\n`;
+                                }
+                                
+                                message += `\nSluit eerst alle actieve sessies voordat u dit project verwijdert.`;
+                                alert(message);
+                            } else {
+                                alert(`❌ Fout bij het verwijderen van project: ${data.error || 'Onbekende fout'}`);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        // Re-enable button on error
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-trash-alt"></i> Verwijder';
+                        console.error('Error:', error);
+                        alert('❌ Er is een fout opgetreden bij het verwijderen van het project.');
+                    });
+                }
+            }
+        }
+    });
 </script>
 {% endblock %}

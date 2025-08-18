@@ -695,9 +695,14 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
         output_dir = os.path.normpath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
         
-        # Create filename similar to HOPS/MDB pattern
+        # Use project name if provided to ensure consistency
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{mo_number}_{so_number}_{customer_name}_{timestamp}.xlsx"
+        if project_name:
+            # Use the actual project name to prevent duplicate project issues
+            filename = f"{project_name}_{timestamp}.xlsx"
+        else:
+            # Fallback: use only MO number to avoid confusion
+            filename = f"{mo_number}_{timestamp}.xlsx"
         output_path = os.path.join(output_dir, filename)
         
         # Create DataFrame with Item and Status columns
@@ -764,9 +769,14 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         output_dir = os.path.normpath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
         
-        # Create filename similar to HOPS/MDB pattern
+        # Use project name if provided to ensure consistency
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{mo_number}_{so_number}_{customer_name}_{timestamp}.xlsx"
+        if project_name:
+            # Use the actual project name to prevent duplicate project issues
+            filename = f"{project_name}_{timestamp}.xlsx"
+        else:
+            # Fallback: use only MO number to avoid confusion
+            filename = f"{mo_number}_{timestamp}.xlsx"
         output_path = os.path.join(output_dir, filename)
         
         # Create DataFrame with Item and Status columns

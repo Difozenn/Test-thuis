@@ -303,7 +303,30 @@ def create_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL;')
     conn.execute('PRAGMA synchronous=NORMAL;')
+    conn.execute('PRAGMA foreign_keys=ON;')  # Enable foreign key constraints
     return conn
+
+def execute_transaction(conn, operations):
+    """Execute multiple database operations in a transaction
+    
+    Args:
+        conn: Database connection
+        operations: List of (query, params) tuples
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    c = conn.cursor()
+    try:
+        conn.execute('BEGIN TRANSACTION')
+        for query, params in operations:
+            c.execute(query, params)
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Transaction failed: {e}")
+        raise
 
 def get_db():
     """
@@ -506,6 +529,19 @@ def init_db():
             )
         ''')
         
+        # Create session_projects table for linking SCANNER sessions to multiple projects
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS session_projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                project TEXT NOT NULL,
+                added_time TEXT NOT NULL,
+                item_count INTEGER DEFAULT 0,
+                UNIQUE(session_id, project),
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
+            )
+        ''')
+        
         # Create project_log table for XLSX_UPDATED workflow tracking
         c.execute('''
             CREATE TABLE IF NOT EXISTS project_log (
@@ -666,6 +702,57 @@ def count_active_projects(user):
     except Exception as e:
         logging.error(f"Error counting active projects for {user}: {e}")
         return 0
+
+def user_has_work_assigned(user, start_date=None, end_date=None):
+    """Check if user had any work assigned (OPEN events or sessions) in the period"""
+    try:
+        cursor = get_db().cursor()
+        
+        # Check for OPEN events in logs table
+        if start_date and end_date:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM logs 
+                WHERE user = ? 
+                AND event = 'OPEN'
+                AND DATE(timestamp) BETWEEN ? AND ?
+            """, (user, start_date, end_date))
+        else:
+            # Check last 30 days by default
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM logs 
+                WHERE user = ? 
+                AND event = 'OPEN'
+                AND timestamp > datetime('now', '-30 days')
+            """, (user,))
+        
+        open_events = cursor.fetchone()[0]
+        
+        # Also check for sessions with items
+        if start_date and end_date:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM sessions 
+                WHERE user = ? 
+                AND item_count > 0
+                AND DATE(start_time) BETWEEN ? AND ?
+            """, (user, start_date, end_date))
+        else:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM sessions 
+                WHERE user = ? 
+                AND item_count > 0
+                AND start_time > datetime('now', '-30 days')
+            """, (user,))
+        
+        sessions_with_items = cursor.fetchone()[0]
+        
+        return open_events > 0 or sessions_with_items > 0
+    except Exception as e:
+        logging.error(f"Error checking work assigned for {user}: {e}")
+        return False
 
 def count_completed_today(user):
     """Count projects completed today by user"""
@@ -1019,55 +1106,65 @@ def get_user_activity_date_range(user, start_date, end_date):
                     work_minutes = calculate_work_minutes(session['start_time'], datetime.now().isoformat())
                     total_minutes += work_minutes
             
-            # Check for batch sessions that included this project
+            # Check for batch sessions that included this project via session_projects
             cursor.execute("""
                 SELECT 
                     s.session_id,
                     s.start_time,
                     s.end_time,
                     s.work_duration_minutes,
-                    s.status
+                    s.status,
+                    sp.item_count as project_items_in_batch
                 FROM sessions s
+                JOIN session_projects sp ON s.session_id = sp.session_id
                 WHERE s.user = ? 
                 AND s.session_type = 'SCANNER' 
-                AND (s.project IS NULL OR s.project = '') 
+                AND sp.project = ?
                 AND s.status IN ('completed', 'active')
                 AND DATE(s.start_time) BETWEEN ? AND ?
-                AND EXISTS (
-                    SELECT 1 FROM logs l
-                    WHERE l.user = s.user
-                    AND l.project = ?
-                    AND l.timestamp BETWEEN s.start_time AND COALESCE(s.end_time, datetime('now'))
-                )
-            """, (user, start_date, end_date, project))
+            """, (user, project, start_date, end_date))
             
             batch_sessions = cursor.fetchall()
             
             for batch in batch_sessions:
                 if batch['status'] == 'completed' and batch['work_duration_minutes'] and batch['work_duration_minutes'] > 0:
-                    # Get total items in this batch
+                    # Get total items in this batch session from session_projects
                     cursor.execute("""
                         SELECT SUM(COALESCE(item_count, 0)) as batch_total
-                        FROM logs
-                        WHERE user = ?
-                        AND timestamp BETWEEN ? AND ?
-                        AND item_count > 0
-                    """, (user, batch['start_time'], batch['end_time']))
+                        FROM session_projects
+                        WHERE session_id = ?
+                    """, (batch['session_id'],))
                     
                     batch_result = cursor.fetchone()
                     batch_total_items = batch_result['batch_total'] if batch_result and batch_result['batch_total'] else 0
                     
                     # Calculate proportional time for this project
-                    if batch_total_items > 0 and project_items > 0:
-                        proportion = project_items / batch_total_items
+                    project_items_in_batch = batch['project_items_in_batch'] or project_items
+                    if batch_total_items > 0 and project_items_in_batch > 0:
+                        proportion = project_items_in_batch / batch_total_items
                         allocated_minutes = batch['work_duration_minutes'] * proportion
                         total_minutes += allocated_minutes
                 elif batch['status'] == 'active':
                     # For active batch sessions, calculate current work time
                     work_minutes = calculate_work_minutes(batch['start_time'], datetime.now().isoformat())
-                    # Still need proportional allocation for active sessions
-                    # This is simplified - in reality would need more complex calculation
-                    total_minutes += work_minutes * 0.5  # Assume 50% allocation for now
+                    
+                    # Get total items for proportional allocation
+                    cursor.execute("""
+                        SELECT SUM(COALESCE(item_count, 0)) as batch_total
+                        FROM session_projects
+                        WHERE session_id = ?
+                    """, (batch['session_id'],))
+                    
+                    batch_result = cursor.fetchone()
+                    batch_total_items = batch_result['batch_total'] if batch_result and batch_result['batch_total'] else 0
+                    
+                    project_items_in_batch = batch['project_items_in_batch'] or 0
+                    if batch_total_items > 0 and project_items_in_batch > 0:
+                        proportion = project_items_in_batch / batch_total_items
+                        total_minutes += work_minutes * proportion
+                    else:
+                        # Default allocation if no items tracked yet
+                        total_minutes += work_minutes * 0.5
             
             # Calculate items per hour
             if total_minutes > 0:
@@ -1466,22 +1563,30 @@ def start_session():
     c = conn.cursor()
     
     try:
-        # Close any active sessions for this user
-        c.execute("""
-            SELECT session_id, start_time FROM sessions 
-            WHERE user = ? AND status = 'active'
-        """, (data['user'],))
+        # Check if this is a new batch session (keeps previous session active)
+        is_new_batch = data.get('is_new_batch', False)
+        background_session = data.get('background_session', None)
         
-        active_session = c.fetchone()
-        if active_session:
-            work_minutes = calculate_work_minutes(active_session['start_time'], data['timestamp'])
+        if not is_new_batch:
+            # Normal behavior: Close any active sessions for this user
             c.execute("""
-                UPDATE sessions 
-                SET status = 'completed', 
-                    end_time = ?,
-                    work_duration_minutes = ?
-                WHERE session_id = ? AND status = 'active'
-            """, (data['timestamp'], work_minutes, active_session['session_id']))
+                SELECT session_id, start_time FROM sessions 
+                WHERE user = ? AND status = 'active' AND session_type = 'SCANNER'
+            """, (data['user'],))
+            
+            active_session = c.fetchone()
+            if active_session:
+                work_minutes = calculate_work_minutes(active_session['start_time'], data['timestamp'])
+                c.execute("""
+                    UPDATE sessions 
+                    SET status = 'completed', 
+                        end_time = ?,
+                        work_duration_minutes = ?
+                    WHERE session_id = ? AND status = 'active'
+                """, (data['timestamp'], work_minutes, active_session['session_id']))
+        else:
+            # New batch: Keep the background session active
+            logging.info(f"New batch session - keeping {background_session} active in background")
         
         # Create new session with project linking
         session_type = data.get('session_type', 'SCANNER')  # Default to SCANNER for scanner panel
@@ -1639,7 +1744,8 @@ def xlsx_updated():
         # Check if session already exists for this user/project
         c.execute("""
             SELECT session_id FROM sessions 
-            WHERE user = ? AND project = ? AND status = 'active'
+            WHERE user = ? AND project = ? AND status = 'active' 
+            AND session_type = 'XLSX_UPDATED'
         """, (data['user'], data['project']))
         
         existing = c.fetchone()
@@ -1666,14 +1772,6 @@ def xlsx_updated():
             if previous_user and prev_session['end_time']:
                 handoff_delay = calculate_work_minutes(prev_session['end_time'], data['timestamp'])
             
-            c.execute("""
-                INSERT INTO sessions (session_id, user, project, project_id, start_time, status, 
-                                    item_count, session_type, sequence_number, previous_user, handoff_delay_minutes)
-                VALUES (?, ?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED', ?, ?, ?)
-            """, (session_id, data['user'], data['project'], project_id, data['timestamp'],
-                  sequence_number, previous_user, handoff_delay))
-            
-            # Create project session for this specific project using session start time
             # Find the session start time for the current user's active session
             c.execute("""
                 SELECT start_time FROM sessions 
@@ -1683,39 +1781,6 @@ def xlsx_updated():
             
             session_result = c.fetchone()
             project_start_time = session_result['start_time'] if session_result else data['timestamp']
-            
-            # Create project session entry with session start time
-            c.execute("""
-                INSERT OR IGNORE INTO project_sessions (project, start_time, status)
-                VALUES (?, ?, 'active')
-            """, (data['project'], project_start_time))
-            
-            # Update project status from OPEN to BEZIG in project_log table (most recent entry)
-            c.execute("""
-                UPDATE project_log 
-                SET event = 'BEZIG', timestamp = ?, user = ?
-                WHERE id = (
-                    SELECT id FROM project_log 
-                    WHERE project = ? AND event = 'OPEN'
-                    ORDER BY id DESC LIMIT 1
-                )
-            """, (data['timestamp'], data['user'], data['project']))
-            
-            # Insert BEZIG event in project_log for tracking
-            c.execute("""
-                INSERT INTO project_log (project, event, user, timestamp, item_count)
-                VALUES (?, 'BEZIG', ?, ?, ?)
-            """, (data['project'], data['user'], data['timestamp'], data.get('item_count', 0)))
-            
-            # Update the corresponding OPEN log to BEZIG status (like PROJECT_START does)
-            c.execute("""
-                UPDATE logs 
-                SET status = 'BEZIG'
-                WHERE event = 'OPEN' AND status = 'OPEN' AND project = ? AND user = ?
-            """, (data['project'], data['user']))
-            
-            if c.rowcount > 0:
-                logging.info(f"Updated {c.rowcount} 'OPEN' log(s) to 'BEZIG' for user '{data['user']}' on project '{data['project']}'.")
             
             # Get the actual item count from the user's OPEN event
             c.execute("""
@@ -1727,17 +1792,54 @@ def xlsx_updated():
             open_event = c.fetchone()
             actual_item_count = open_event['item_count'] if open_event and open_event['item_count'] is not None else 0
             
-            # ALSO insert PROJECT_START event into logs table so logs_project page can see the activity
-            c.execute("""
-                INSERT INTO logs (timestamp, event, details, project, user, status, session_id)
-                VALUES (?, 'PROJECT_START', ?, ?, ?, 'BEZIG', ?)
-            """, (data['timestamp'], f"XLSX_UPDATED: {actual_item_count} items", 
+            # Use transaction for all related operations
+            operations = [
+                # 1. Insert new session
+                ("""INSERT INTO sessions (session_id, user, project, project_id, start_time, status, 
+                                        item_count, session_type, sequence_number, previous_user, handoff_delay_minutes)
+                    VALUES (?, ?, ?, ?, ?, 'active', 0, 'XLSX_UPDATED', ?, ?, ?)""",
+                 (session_id, data['user'], data['project'], project_id, data['timestamp'],
+                  sequence_number, previous_user, handoff_delay)),
+                
+                # 2. Create project session entry
+                ("""INSERT OR IGNORE INTO project_sessions (project, start_time, status)
+                    VALUES (?, ?, 'active')""",
+                 (data['project'], project_start_time)),
+                
+                # 3. Update project_log to BEZIG
+                ("""UPDATE project_log 
+                    SET event = 'BEZIG', timestamp = ?, user = ?
+                    WHERE id = (
+                        SELECT id FROM project_log 
+                        WHERE project = ? AND event = 'OPEN'
+                        ORDER BY id DESC LIMIT 1
+                    )""",
+                 (data['timestamp'], data['user'], data['project'])),
+                
+                # 4. Insert BEZIG event in project_log
+                ("""INSERT INTO project_log (project, event, user, timestamp, item_count)
+                    VALUES (?, 'BEZIG', ?, ?, ?)""",
+                 (data['project'], data['user'], data['timestamp'], data.get('item_count', 0))),
+                
+                # 5. Update logs status to BEZIG
+                ("""UPDATE logs 
+                    SET status = 'BEZIG'
+                    WHERE event = 'OPEN' AND status = 'OPEN' AND project = ? AND user = ?""",
+                 (data['project'], data['user'])),
+                
+                # 6. Insert PROJECT_START event
+                ("""INSERT INTO logs (timestamp, event, details, project, user, status, session_id)
+                    VALUES (?, 'PROJECT_START', ?, ?, ?, 'BEZIG', ?)""",
+                 (data['timestamp'], f"XLSX_UPDATED: {actual_item_count} items", 
                   data['project'], data['user'], session_id))
+            ]
             
-            conn.commit()
+            # Execute all operations in a transaction
+            execute_transaction(conn, operations)
             logging.info(f"XLSX_UPDATED session started for {data['user']} on project {data['project']} - Status changed to BEZIG")
             
-        return jsonify({'success': True})
+        # Return the session_id so the client knows what was created
+        return jsonify({'success': True, 'session_id': session_id if not existing else existing['session_id']})
         
     except Exception as e:
         logging.error(f"Error handling XLSX update: {e}")
@@ -1880,6 +1982,197 @@ def finish_manual_session():
         
     except Exception as e:
         logging.error(f"Error finishing manual session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/add_project', methods=['POST'])
+def add_project_to_session():
+    """Add a project to an active SCANNER session"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        project = data.get('project')
+        item_count = data.get('item_count', 0)
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        
+        if not session_id or not project:
+            return jsonify({'success': False, 'error': 'Missing session_id or project'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Verify session exists and is active
+        c.execute("""
+            SELECT session_id, session_type FROM sessions 
+            WHERE session_id = ? AND status = 'active'
+        """, (session_id,))
+        
+        session = c.fetchone()
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found or not active'}), 404
+        
+        # Add project to session_projects linking table
+        try:
+            c.execute("""
+                INSERT INTO session_projects (session_id, project, added_time, item_count)
+                VALUES (?, ?, ?, ?)
+            """, (session_id, project, timestamp, item_count))
+            
+            # Create or update project_sessions entry
+            # For batch sessions, we'll update the duration later when AFGEMELD is sent
+            # Check if project already has a completed session
+            c.execute("""
+                SELECT total_duration_minutes, status
+                FROM project_sessions
+                WHERE project = ?
+                ORDER BY start_time DESC
+                LIMIT 1
+            """, (project,))
+            
+            existing = c.fetchone()
+            
+            if not existing:
+                # First time working on this project
+                c.execute("""
+                    INSERT INTO project_sessions (project, start_time, status, total_duration_minutes)
+                    VALUES (?, ?, 'active', 0)
+                """, (project, timestamp))
+            elif existing['status'] == 'completed':
+                # Project was worked on before and completed, keep the existing total
+                # We'll add to it when this session completes
+                pass
+            else:
+                # Project is already active, update start time if earlier
+                c.execute("""
+                    UPDATE project_sessions
+                    SET start_time = MIN(start_time, ?)
+                    WHERE project = ? AND status = 'active'
+                """, (timestamp, project))
+            
+            # Don't update session's project field for SCANNER sessions - they use session_projects only
+            # The project field stays NULL for SCANNER sessions
+            
+            conn.commit()
+            logging.info(f"Added project {project} to session {session_id}")
+            return jsonify({'success': True, 'message': f'Project {project} added to session'})
+            
+        except sqlite3.IntegrityError:
+            # Project already linked to this session
+            return jsonify({'success': True, 'message': 'Project already linked to session'})
+        
+    except Exception as e:
+        logging.error(f"Error adding project to session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/update_project_items', methods=['POST'])
+def update_project_items():
+    """Update the item count for a project in session_projects table"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        project = data.get('project')
+        item_count = data.get('item_count', 0)
+        
+        if not session_id or not project:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Update the item count for this project in session_projects
+        c.execute("""
+            UPDATE session_projects 
+            SET item_count = ?
+            WHERE session_id = ? AND project = ?
+        """, (item_count, session_id, project))
+        
+        if c.rowcount == 0:
+            # Entry doesn't exist, create it
+            c.execute("""
+                INSERT INTO session_projects (session_id, project, added_time, item_count)
+                VALUES (?, ?, ?, ?)
+            """, (session_id, project, datetime.now().isoformat(), item_count))
+        
+        conn.commit()
+        logging.info(f"Updated item count for project {project} in session {session_id}: {item_count} items")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Updated {project} with {item_count} items'
+        })
+    
+    except Exception as e:
+        logging.error(f"Error updating project items: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/close', methods=['POST'])
+def close_session():
+    """Close an active session for AFGEMELD - handles paused sessions properly"""
+    try:
+        data = request.get_json()
+        user = data.get('user')
+        project = data.get('project')
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        item_count = data.get('item_count', 0)
+        
+        if not user or not project:
+            return jsonify({'success': False, 'error': 'Missing user or project'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Find active XLSX_UPDATED or MANUAL sessions for this user/project
+        # Use normalized project_id for better matching
+        project_id = normalize_project_id(project)
+        
+        c.execute("""
+            SELECT session_id, start_time, session_type, pause_start, pause_duration_minutes 
+            FROM sessions 
+            WHERE user = ? 
+            AND (project = ? OR project_id = ?)
+            AND status = 'active'
+            AND session_type IN ('XLSX_UPDATED', 'MANUAL')
+        """, (user, project, project_id))
+        
+        sessions_closed = 0
+        for session in c.fetchall():
+            # Handle paused sessions properly
+            total_pause_minutes = session['pause_duration_minutes'] or 0
+            
+            # If currently paused, add the final pause duration
+            if session['pause_start']:
+                final_pause = calculate_work_minutes(session['pause_start'], timestamp)
+                total_pause_minutes += final_pause
+            
+            # Calculate total work time
+            total_work_minutes = calculate_work_minutes(session['start_time'], timestamp)
+            actual_work_minutes = max(0, total_work_minutes - total_pause_minutes)
+            
+            # Close the session
+            c.execute("""
+                UPDATE sessions 
+                SET status = 'completed',
+                    end_time = ?,
+                    work_duration_minutes = ?,
+                    pause_duration_minutes = ?,
+                    item_count = ?,
+                    pause_start = NULL
+                WHERE session_id = ? AND status = 'active'
+            """, (timestamp, actual_work_minutes, total_pause_minutes, 
+                  item_count, session['session_id']))
+            
+            if c.rowcount > 0:
+                sessions_closed += 1
+                logging.info(f"Closed {session['session_type']} session {session['session_id']} for {user} on project {project}")
+        
+        conn.commit()
+        
+        if sessions_closed > 0:
+            return jsonify({'success': True, 'sessions_closed': sessions_closed})
+        else:
+            return jsonify({'success': True, 'message': 'No active sessions to close', 'sessions_closed': 0})
+            
+    except Exception as e:
+        logging.error(f"Error closing session: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/session/check', methods=['GET'])
@@ -2094,7 +2387,8 @@ def log_event():
     item_count = data.get('item_count', None)  # New field
     session_id = data.get('session_id')
     timestamp = data.get('timestamp', datetime.now().isoformat())
-    status = ''
+    # Get status from request data if provided, otherwise default to empty
+    status = data.get('status', '')
 
     try:
         conn = get_db()
@@ -2154,10 +2448,15 @@ def log_event():
             # XLSX_UPDATED/MANUAL sessions should complete on AFGEMELD
             
             # Find active sessions for this user/project
+            # Also check with normalized project_id for better matching
+            project_id = normalize_project_id(project)
             c.execute("""
-                SELECT session_id, start_time, session_type FROM sessions 
-                WHERE user = ? AND project = ? AND status = 'active'
-            """, (user, project))
+                SELECT session_id, start_time, session_type, pause_start, pause_duration_minutes 
+                FROM sessions 
+                WHERE user = ? 
+                AND (project = ? OR project_id = ?)
+                AND status = 'active'
+            """, (user, project, project_id))
             
             active_sessions = c.fetchall()
             for session in active_sessions:
@@ -2165,18 +2464,31 @@ def log_event():
                 
                 if session_type in ['XLSX_UPDATED', 'MANUAL']:
                     # Complete individual work sessions on AFGEMELD
-                    work_minutes = calculate_work_minutes(session['start_time'], timestamp)
+                    # Handle paused sessions properly
+                    total_pause_minutes = session['pause_duration_minutes'] or 0
+                    
+                    # If currently paused, add the final pause duration
+                    if session['pause_start']:
+                        final_pause = calculate_work_minutes(session['pause_start'], timestamp)
+                        total_pause_minutes += final_pause
+                    
+                    # Calculate total work time
+                    total_work_minutes = calculate_work_minutes(session['start_time'], timestamp)
+                    actual_work_minutes = max(0, total_work_minutes - total_pause_minutes)
                     
                     c.execute("""
                         UPDATE sessions 
                         SET status = 'completed',
                             end_time = ?,
                             work_duration_minutes = ?,
-                            item_count = ?
+                            pause_duration_minutes = ?,
+                            item_count = ?,
+                            pause_start = NULL
                         WHERE session_id = ? AND status = 'active'
-                    """, (timestamp, work_minutes, item_count or 0, session['session_id']))
+                    """, (timestamp, actual_work_minutes, total_pause_minutes, 
+                          item_count or 0, session['session_id']))
                     
-                    logging.info(f"Completed {session_type} session {session['session_id']} for {user} on project {project}")
+                    logging.info(f"Completed {session_type} session {session['session_id']} for {user} on project {project} (work: {actual_work_minutes:.1f} min, pause: {total_pause_minutes:.1f} min)")
                 
                 elif session_type == 'SCANNER':
                     # SCANNER sessions remain active - do not complete
@@ -2208,13 +2520,75 @@ def log_event():
             
             if active_count == 0:
                 # All users done - complete project session
+                # For batch sessions, calculate proportional duration
+                
+                # Check if this project is part of a batch session
                 c.execute("""
-                    UPDATE project_sessions 
-                    SET status = 'completed',
-                        end_time = ?,
-                        total_duration_minutes = (julianday(?) - julianday(start_time)) * 24 * 60
-                    WHERE project = ? AND status = 'active'
-                """, (timestamp, timestamp, project))
+                    SELECT 
+                        sp.session_id,
+                        sp.item_count,
+                        (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = sp.session_id) as total_items,
+                        s.work_duration_minutes,
+                        s.pause_duration_minutes
+                    FROM session_projects sp
+                    JOIN sessions s ON sp.session_id = s.session_id
+                    WHERE sp.project = ?
+                    AND s.session_type = 'SCANNER'
+                    ORDER BY s.start_time DESC
+                    LIMIT 1
+                """, (project,))
+                
+                batch_info = c.fetchone()
+                
+                if batch_info and batch_info['total_items'] > 1:
+                    # This is part of a batch - use proportional time
+                    proportion = batch_info['item_count'] / batch_info['total_items'] if batch_info['total_items'] > 0 else 1
+                    
+                    # If work_duration_minutes is None, the session is still active, calculate it
+                    if batch_info['work_duration_minutes'] is None:
+                        # Get session start time and calculate duration
+                        c.execute("SELECT start_time FROM sessions WHERE session_id = ?", (batch_info['session_id'],))
+                        session_start = c.fetchone()
+                        if session_start:
+                            work_minutes = calculate_work_minutes(session_start['start_time'], timestamp)
+                        else:
+                            work_minutes = 0
+                    else:
+                        work_minutes = batch_info['work_duration_minutes']
+                    
+                    total_session_time = work_minutes + (batch_info['pause_duration_minutes'] or 0)
+                    proportional_duration = total_session_time * proportion
+                    
+                    # Check if project already has completed time from previous sessions
+                    c.execute("""
+                        SELECT total_duration_minutes 
+                        FROM project_sessions 
+                        WHERE project = ?
+                    """, (project,))
+                    
+                    existing_duration = c.fetchone()
+                    if existing_duration and existing_duration['total_duration_minutes']:
+                        # Add to existing duration
+                        new_total_duration = existing_duration['total_duration_minutes'] + proportional_duration
+                    else:
+                        new_total_duration = proportional_duration
+                    
+                    c.execute("""
+                        UPDATE project_sessions 
+                        SET status = 'completed',
+                            end_time = ?,
+                            total_duration_minutes = ?
+                        WHERE project = ?
+                    """, (timestamp, new_total_duration, project))
+                else:
+                    # Not a batch or single-project session - use full duration
+                    c.execute("""
+                        UPDATE project_sessions 
+                        SET status = 'completed',
+                            end_time = ?,
+                            total_duration_minutes = (julianday(?) - julianday(start_time)) * 24 * 60
+                        WHERE project = ? AND status = 'active'
+                    """, (timestamp, timestamp, project))
                 
                 # Calculate individual user durations
                 c.execute("""
@@ -2440,6 +2814,168 @@ def update_project_metadata():
     except sqlite3.Error as e:
         logging.error(f"Database error on /project/metadata: {e}", exc_info=True)
         return jsonify({'error': 'Database operation failed'}), 500
+
+@app.route('/api/project/<path:project>/delete', methods=['DELETE'])
+def delete_project(project):
+    """Delete a project and ALL related data from the database."""
+    logging.info(f"[DELETE_PROJECT] Request to delete project: {project}")
+    
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # First check for active sessions working on this project
+        # Check direct project sessions
+        c.execute("""
+            SELECT COUNT(*) FROM sessions 
+            WHERE project = ? AND status = 'active'
+        """, (project,))
+        active_direct_sessions = c.fetchone()[0]
+        
+        # Check batch SCANNER sessions that might be working on this project
+        c.execute("""
+            SELECT COUNT(DISTINCT s.session_id) 
+            FROM sessions s
+            WHERE s.status = 'active' 
+            AND s.session_type = 'SCANNER'
+            AND EXISTS (
+                SELECT 1 FROM logs l
+                WHERE l.user = s.user
+                AND l.project = ?
+                AND l.timestamp >= s.start_time
+                AND l.event IN ('OPEN', 'BEZIG')
+                AND l.status IN ('OPEN', 'BEZIG')
+            )
+        """, (project,))
+        active_batch_sessions = c.fetchone()[0]
+        
+        if active_direct_sessions > 0 or active_batch_sessions > 0:
+            logging.warning(f"[DELETE_PROJECT] Cannot delete project '{project}' - has active sessions")
+            return jsonify({
+                'success': False,
+                'error': f'Cannot delete project with active sessions. Found {active_direct_sessions} direct sessions and {active_batch_sessions} batch sessions working on this project.',
+                'active_direct_sessions': active_direct_sessions,
+                'active_batch_sessions': active_batch_sessions
+            }), 400
+        
+        # Start transaction for atomic deletion
+        conn.execute('BEGIN TRANSACTION')
+        
+        # Count affected records for logging
+        counts = {}
+        
+        # Count and delete from logs table
+        c.execute('SELECT COUNT(*) FROM logs WHERE project = ?', (project,))
+        counts['logs'] = c.fetchone()[0]
+        c.execute('DELETE FROM logs WHERE project = ?', (project,))
+        
+        # For sessions: only delete direct project sessions, NOT batch SCANNER sessions
+        # Batch sessions may have worked on multiple projects
+        c.execute("""
+            SELECT COUNT(*) FROM sessions 
+            WHERE project = ? 
+            AND (session_type != 'SCANNER' OR session_type IS NULL)
+        """, (project,))
+        counts['direct_sessions'] = c.fetchone()[0]
+        
+        c.execute("""
+            DELETE FROM sessions 
+            WHERE project = ? 
+            AND (session_type != 'SCANNER' OR session_type IS NULL)
+        """, (project,))
+        
+        # For SCANNER batch sessions that ONLY worked on this project, we can delete them
+        c.execute("""
+            SELECT session_id FROM sessions s
+            WHERE s.session_type = 'SCANNER'
+            AND s.status = 'completed'
+            AND NOT EXISTS (
+                SELECT 1 FROM logs l
+                WHERE l.user = s.user
+                AND l.timestamp BETWEEN s.start_time AND COALESCE(s.end_time, datetime('now'))
+                AND l.project != ?
+            )
+            AND EXISTS (
+                SELECT 1 FROM logs l
+                WHERE l.user = s.user
+                AND l.timestamp BETWEEN s.start_time AND COALESCE(s.end_time, datetime('now'))
+                AND l.project = ?
+            )
+        """, (project, project))
+        
+        single_project_batch_sessions = [row[0] for row in c.fetchall()]
+        counts['single_project_batch_sessions'] = len(single_project_batch_sessions)
+        
+        if single_project_batch_sessions:
+            placeholders = ','.join('?' * len(single_project_batch_sessions))
+            c.execute(f"DELETE FROM sessions WHERE session_id IN ({placeholders})", single_project_batch_sessions)
+        
+        # Count and delete from project_metadata table (if exists)
+        try:
+            c.execute('SELECT COUNT(*) FROM project_metadata WHERE project_code = ?', (project,))
+            counts['metadata'] = c.fetchone()[0]
+            c.execute('DELETE FROM project_metadata WHERE project_code = ?', (project,))
+        except sqlite3.OperationalError:
+            counts['metadata'] = 0
+            logging.info(f"[DELETE_PROJECT] project_metadata table does not exist")
+        
+        # Count and delete from workflow_events table (if exists)
+        try:
+            c.execute('SELECT COUNT(*) FROM workflow_events WHERE project_code = ?', (project,))
+            counts['workflow_events'] = c.fetchone()[0]
+            c.execute('DELETE FROM workflow_events WHERE project_code = ?', (project,))
+        except sqlite3.OperationalError:
+            counts['workflow_events'] = 0
+            logging.info(f"[DELETE_PROJECT] workflow_events table does not exist")
+        
+        # Count and delete from efficiency_targets table (if exists and project-specific)
+        try:
+            c.execute('SELECT COUNT(*) FROM efficiency_targets WHERE project_code = ?', (project,))
+            counts['efficiency_targets'] = c.fetchone()[0]
+            c.execute('DELETE FROM efficiency_targets WHERE project_code = ?', (project,))
+        except sqlite3.OperationalError:
+            counts['efficiency_targets'] = 0
+            logging.info(f"[DELETE_PROJECT] efficiency_targets table does not exist or no project column")
+        
+        # Count and delete from user_stats table entries related to this project
+        try:
+            c.execute('SELECT COUNT(*) FROM user_stats WHERE project = ?', (project,))
+            counts['user_stats'] = c.fetchone()[0]
+            c.execute('DELETE FROM user_stats WHERE project = ?', (project,))
+        except sqlite3.OperationalError:
+            counts['user_stats'] = 0
+            logging.info(f"[DELETE_PROJECT] user_stats table does not exist or no project column")
+        
+        # Commit the transaction
+        conn.commit()
+        
+        # Log the deletion
+        total_deleted = sum(counts.values())
+        logging.info(f"[DELETE_PROJECT] Successfully deleted project '{project}':")
+        logging.info(f"  - Logs: {counts['logs']} records")
+        logging.info(f"  - Direct sessions: {counts['direct_sessions']} records")
+        logging.info(f"  - Single-project batch sessions: {counts['single_project_batch_sessions']} records")
+        logging.info(f"  - Metadata: {counts['metadata']} records")
+        logging.info(f"  - Workflow events: {counts['workflow_events']} records")
+        logging.info(f"  - Efficiency targets: {counts['efficiency_targets']} records")
+        logging.info(f"  - User stats: {counts['user_stats']} records")
+        logging.info(f"  - Total: {total_deleted} records deleted")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Project {project} and all related data deleted successfully',
+            'deleted_counts': counts,
+            'total_deleted': total_deleted
+        }), 200
+        
+    except Exception as e:
+        # Rollback on error
+        conn.rollback()
+        logging.error(f"[DELETE_PROJECT] Error deleting project '{project}': {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Failed to delete project: {str(e)}'
+        }), 500
 
 @app.route('/update_nesting_counts', methods=['POST'])
 def update_nesting_counts():
@@ -2735,6 +3271,223 @@ def delete_log(log_id):
         logging.error(f"Failed to delete log ID {log_id}: {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Database error.'}), 500
 
+@app.route('/api/sessions/active', methods=['GET'])
+def get_active_sessions():
+    """Get all active sessions"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get active sessions with project information
+        c.execute("""
+            SELECT 
+                s.session_id,
+                s.session_type,
+                s.user,
+                s.project,
+                s.start_time,
+                s.pause_start,
+                s.pause_duration_minutes,
+                s.item_count,
+                CASE 
+                    WHEN s.pause_start IS NOT NULL THEN
+                        (julianday('now') - julianday(s.start_time)) * 24 * 60 - COALESCE(s.pause_duration_minutes, 0)
+                    ELSE
+                        (julianday('now') - julianday(s.start_time)) * 24 * 60
+                END as duration_minutes,
+                GROUP_CONCAT(sp.project, ', ') as projects
+            FROM sessions s
+            LEFT JOIN session_projects sp ON s.session_id = sp.session_id
+            WHERE s.status = 'active'
+            GROUP BY s.session_id
+            ORDER BY s.start_time DESC
+        """)
+        
+        sessions = []
+        for row in c.fetchall():
+            session = dict(row)
+            # Use projects from session_projects if available (for SCANNER sessions)
+            if session['projects']:
+                session['project'] = None  # Clear single project field
+            sessions.append(session)
+        
+        return jsonify({'success': True, 'sessions': sessions})
+        
+    except Exception as e:
+        logging.error(f"Error getting active sessions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/sessions/recent', methods=['GET'])
+def get_recent_sessions():
+    """Get recent completed sessions"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get recent sessions (last 24 hours)
+        c.execute("""
+            SELECT 
+                s.session_id,
+                s.session_type,
+                s.user,
+                s.project,
+                s.start_time,
+                s.end_time,
+                s.work_duration_minutes,
+                s.pause_duration_minutes,
+                s.item_count,
+                GROUP_CONCAT(sp.project, ', ') as projects
+            FROM sessions s
+            LEFT JOIN session_projects sp ON s.session_id = sp.session_id
+            WHERE s.status = 'completed'
+            AND s.end_time >= datetime('now', '-24 hours')
+            GROUP BY s.session_id
+            ORDER BY s.end_time DESC
+            LIMIT 50
+        """)
+        
+        sessions = []
+        for row in c.fetchall():
+            session = dict(row)
+            # Use projects from session_projects if available (for SCANNER sessions)
+            if session['projects']:
+                session['project'] = None  # Clear single project field
+            sessions.append(session)
+        
+        return jsonify({'success': True, 'sessions': sessions})
+        
+    except Exception as e:
+        logging.error(f"Error getting recent sessions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/session/update_id', methods=['POST'])
+def update_session_id():
+    """Update a session's ID when moving to background (Session 1 -> Session 2)"""
+    try:
+        data = request.get_json()
+        old_session_id = data.get('old_session_id')
+        new_session_id = data.get('new_session_id')
+        session_number = data.get('session_number', 2)
+        
+        if not old_session_id or not new_session_id:
+            return jsonify({'success': False, 'error': 'Missing session IDs'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Update session ID in sessions table
+        c.execute("""
+            UPDATE sessions 
+            SET session_id = ?
+            WHERE session_id = ? AND status = 'active'
+        """, (new_session_id, old_session_id))
+        
+        # Update session ID in session_projects table
+        c.execute("""
+            UPDATE session_projects 
+            SET session_id = ?
+            WHERE session_id = ?
+        """, (new_session_id, old_session_id))
+        
+        # Update session ID in logs table
+        c.execute("""
+            UPDATE logs 
+            SET session_id = ?
+            WHERE session_id = ?
+        """, (new_session_id, old_session_id))
+        
+        conn.commit()
+        
+        logging.info(f"Updated session ID from {old_session_id} to {new_session_id} (Session {session_number})")
+        return jsonify({'success': True, 'message': 'Session ID updated successfully'})
+        
+    except Exception as e:
+        logging.error(f"Error updating session ID: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/sessions/end', methods=['POST'])
+def end_session_manually():
+    """Manually end an active session"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'success': False, 'error': 'Missing session_id'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get session details
+        c.execute("""
+            SELECT session_type, user, project, start_time, pause_start, pause_duration_minutes
+            FROM sessions 
+            WHERE session_id = ? AND status = 'active'
+        """, (session_id,))
+        
+        session = c.fetchone()
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found or already completed'}), 404
+        
+        # Calculate final work duration
+        end_time = datetime.now().isoformat()
+        total_minutes = calculate_work_minutes(session['start_time'], end_time)
+        
+        # Handle paused sessions
+        pause_minutes = session['pause_duration_minutes'] or 0
+        if session['pause_start']:
+            # Add current pause duration
+            pause_minutes += calculate_work_minutes(session['pause_start'], end_time)
+        
+        work_minutes = max(0, total_minutes - pause_minutes)
+        
+        # Update session to completed
+        c.execute("""
+            UPDATE sessions 
+            SET status = 'completed',
+                end_time = ?,
+                work_duration_minutes = ?,
+                pause_duration_minutes = ?,
+                pause_start = NULL
+            WHERE session_id = ?
+        """, (end_time, work_minutes, pause_minutes, session_id))
+        
+        # For SCANNER sessions, update project_sessions for all linked projects
+        if session['session_type'] == 'SCANNER':
+            c.execute("""
+                SELECT project, item_count 
+                FROM session_projects 
+                WHERE session_id = ?
+            """, (session_id,))
+            
+            projects = c.fetchall()
+            total_items = sum(p['item_count'] or 0 for p in projects)
+            
+            for project in projects:
+                if total_items > 0 and project['item_count']:
+                    # Calculate proportional time
+                    proportion = project['item_count'] / total_items
+                    project_work_minutes = work_minutes * proportion
+                    
+                    # Update or create project_sessions entry
+                    c.execute("""
+                        INSERT INTO project_sessions (project, status, duration_minutes, last_updated)
+                        VALUES (?, 'AFGEMELD', ?, ?)
+                        ON CONFLICT(project) DO UPDATE SET
+                            duration_minutes = duration_minutes + ?,
+                            last_updated = ?
+                    """, (project['project'], project_work_minutes, end_time, 
+                          project_work_minutes, end_time))
+        
+        conn.commit()
+        
+        logging.info(f"Manually ended session {session_id} for user {session['user']}")
+        return jsonify({'success': True, 'message': 'Session ended successfully'})
+        
+    except Exception as e:
+        logging.error(f"Error ending session: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/clear_logs', methods=['POST'])
 def clear_all_logs():
     logging.info("[db_log_api] /clear_logs POST request received.")
@@ -2743,7 +3496,7 @@ def clear_all_logs():
         c = conn.cursor()
         
         # Clear all project and session data for complete reset
-        tables_to_clear = ['logs', 'sessions', 'project_sessions']
+        tables_to_clear = ['logs', 'sessions', 'project_sessions', 'session_projects']
         
         for table in tables_to_clear:
             try:
@@ -2802,14 +3555,50 @@ def dashboard():
         conn = get_db()
         c = conn.cursor()
         
-        # Query all OPEN/BEZIG projects (regardless of date) and today's AFGEMELD projects
+        # First, identify which user-project combinations should be hidden
+        # Only hide if the LATEST STATUS (not just any event) for this user-project is AFGEMELD from more than a day ago
         c.execute("""
-            SELECT * FROM logs 
-            WHERE 
-                ((status = 'OPEN' OR status = 'BEZIG') AND event = 'OPEN')  -- All open/active projects regardless of date
-                OR (DATE(timestamp) = ? AND event = 'AFGEMELD')  -- Today's completed projects
-            ORDER BY timestamp DESC
+            WITH latest_status_per_user AS (
+                SELECT user, project, MAX(timestamp) as max_ts
+                FROM logs
+                WHERE user IS NOT NULL 
+                AND project IS NOT NULL
+                AND status IS NOT NULL
+                GROUP BY user, project
+            )
+            SELECT l.user, l.project
+            FROM logs l
+            INNER JOIN latest_status_per_user lspu
+                ON l.user = lspu.user 
+                AND l.project = lspu.project 
+                AND l.timestamp = lspu.max_ts
+            WHERE l.event = 'AFGEMELD'
+              AND DATE(l.timestamp) < ?
         """, (today.isoformat(),))
+        
+        completed_projects = set()
+        for row in c.fetchall():
+            completed_projects.add((row['user'], row['project']))
+        
+        # Query to get the latest meaningful status for each user-project combination
+        # We need the latest event that has a status (OPEN, BEZIG, AFGEMELD)
+        c.execute("""
+            WITH latest_status_events AS (
+                SELECT user, project, MAX(timestamp) as max_timestamp
+                FROM logs
+                WHERE user IS NOT NULL 
+                AND project IS NOT NULL 
+                AND status IS NOT NULL
+                GROUP BY user, project
+            )
+            SELECT l.*
+            FROM logs l
+            INNER JOIN latest_status_events lse 
+                ON l.user = lse.user 
+                AND l.project = lse.project 
+                AND l.timestamp = lse.max_timestamp
+            ORDER BY l.timestamp DESC
+        """)
         
         logs_for_display = c.fetchall()
         
@@ -2820,6 +3609,11 @@ def dashboard():
             log_dict = dict(log)
             user = log_dict.get('user')
             project = log_dict.get('project')
+            
+            # Skip if this user-project combination was completed more than a day ago
+            # AND has no newer activity
+            if (user, project) in completed_projects:
+                continue
             
             if user and project:
                 if user not in users_projects:
@@ -2837,15 +3631,14 @@ def dashboard():
                 except:
                     formatted_time = '--'
                 
-                # Add or update project info - use the latest status for each project
-                if project not in users_projects[user] or log_dict.get('event') == 'AFGEMELD':
-                    users_projects[user][project] = {
-                        'project_code': project,
-                        'status': log_dict.get('status', ''),
-                        'timestamp': formatted_time,
-                        'user': user,
-                        'raw_timestamp': timestamp_str  # Keep raw timestamp for sorting
-                    }
+                # Use the latest status for each user-project combination
+                users_projects[user][project] = {
+                    'project_code': project,
+                    'status': log_dict.get('status', ''),
+                    'timestamp': formatted_time,
+                    'user': user,
+                    'raw_timestamp': timestamp_str  # Keep raw timestamp for sorting
+                }
         
         # Convert to format expected by template
         formatted_users_projects = {}
@@ -4301,12 +5094,12 @@ def get_linked_sessions(project):
         conn = get_db()
         c = conn.cursor()
         
-        # Get all sessions for this project_id
+        # Get all sessions for this project_id (including batch sessions via session_projects)
         c.execute("""
-            SELECT 
+            SELECT DISTINCT
                 s.session_id,
                 s.user,
-                s.project,
+                COALESCE(sp.project, s.project) as project,
                 s.project_id,
                 s.start_time,
                 s.end_time,
@@ -4314,20 +5107,40 @@ def get_linked_sessions(project):
                 s.session_type,
                 s.work_duration_minutes,
                 s.pause_duration_minutes,
-                s.item_count,
+                COALESCE(sp.item_count, s.item_count) as item_count,
                 s.sequence_number,
                 s.previous_user,
-                s.handoff_delay_minutes
+                s.handoff_delay_minutes,
+                sp.item_count as batch_items,
+                (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) as batch_total_items
             FROM sessions s
-            WHERE s.project_id = ?
+            LEFT JOIN session_projects sp ON s.session_id = sp.session_id AND sp.project = ?
+            WHERE s.project_id = ? 
+               OR s.project = ?
+               OR sp.project = ?
             ORDER BY s.sequence_number, s.start_time
-        """, (project_id,))
+        """, (project, project_id, project, project))
         
-        sessions = [dict(row) for row in c.fetchall()]
+        sessions = []
+        for row in c.fetchall():
+            session = dict(row)
+            
+            # For SCANNER batch sessions, calculate proportional work time
+            if session['session_type'] == 'SCANNER' and session['batch_items'] and session['batch_total_items']:
+                # Calculate proportional time for this project in the batch
+                proportion = session['batch_items'] / session['batch_total_items']
+                session['allocated_work_minutes'] = session['work_duration_minutes'] * proportion
+                session['allocated_pause_minutes'] = (session['pause_duration_minutes'] or 0) * proportion
+            else:
+                # For non-batch sessions, use full time
+                session['allocated_work_minutes'] = session['work_duration_minutes']
+                session['allocated_pause_minutes'] = session['pause_duration_minutes'] or 0
+            
+            sessions.append(session)
         
-        # Calculate aggregated metrics
-        total_work = sum(s['work_duration_minutes'] or 0 for s in sessions)
-        total_pause = sum(s['pause_duration_minutes'] or 0 for s in sessions)
+        # Calculate aggregated metrics using allocated time for batch sessions
+        total_work = sum(s['allocated_work_minutes'] or 0 for s in sessions)
+        total_pause = sum(s['allocated_pause_minutes'] or 0 for s in sessions)
         total_handoff = sum(s['handoff_delay_minutes'] or 0 for s in sessions if s['handoff_delay_minutes'])
         unique_users = list(set(s['user'] for s in sessions))
         
@@ -4339,7 +5152,7 @@ def get_linked_sessions(project):
                 'sequence': session['sequence_number'],
                 'start': session['start_time'],
                 'end': session['end_time'],
-                'work_minutes': session['work_duration_minutes'],
+                'work_minutes': session['allocated_work_minutes'],
                 'handoff_from': session['previous_user'],
                 'handoff_delay': session['handoff_delay_minutes']
             })
@@ -4438,27 +5251,33 @@ def logs_project():
         # Get sessions data for this project using normalized project_id
         project_id = normalize_project_id(project)
         
-        # Get all linked sessions for this project
+        # Get all linked sessions for this project (including via session_projects)
         c.execute('''
-            SELECT 
+            SELECT DISTINCT
                 s.session_id,
                 s.user,
-                s.project,
+                s.project as original_project,
+                COALESCE(sp.project, s.project, ?) as project,
                 s.project_id,
                 s.start_time,
                 s.end_time,
                 s.status,
-                s.item_count,
+                COALESCE(sp.item_count, s.item_count) as item_count,
                 s.work_duration_minutes,
                 s.pause_duration_minutes,
                 s.session_type,
                 s.sequence_number,
                 s.previous_user,
-                s.handoff_delay_minutes
+                s.handoff_delay_minutes,
+                (SELECT COUNT(*) FROM session_projects WHERE session_id = s.session_id) as total_projects_in_session,
+                (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) as total_items_in_session
             FROM sessions s
-            WHERE s.project_id = ?
+            LEFT JOIN session_projects sp ON s.session_id = sp.session_id AND sp.project = ?
+            WHERE s.project_id = ? 
+               OR s.project = ?
+               OR sp.project = ?
             ORDER BY s.sequence_number, s.start_time ASC
-        ''', (project_id,))
+        ''', (project, project, project_id, project, project))
         linked_sessions = []
         for row in c.fetchall():
             session = dict(row)
@@ -4467,38 +5286,9 @@ def logs_project():
                 session['pause_duration_minutes'] = 0
             linked_sessions.append(session)
         
-        # Also get any SCANNER batch sessions for users who worked on this project
-        c.execute('''
-            SELECT 
-                session_id,
-                user,
-                project,
-                start_time,
-                end_time,
-                status,
-                item_count,
-                work_duration_minutes,
-                pause_duration_minutes,
-                session_type
-            FROM sessions 
-            WHERE session_type = 'SCANNER' 
-                AND (project IS NULL OR project = '') 
-                AND user IN (
-                    SELECT DISTINCT user FROM sessions 
-                    WHERE project_id = ?
-                )
-            ORDER BY start_time ASC
-        ''', (project_id,))
-        batch_sessions = []
-        for row in c.fetchall():
-            session = dict(row)
-            # Ensure pause_duration_minutes has a valid value
-            if session.get('pause_duration_minutes') is None:
-                session['pause_duration_minutes'] = 0
-            batch_sessions.append(session)
-        
-        # Combine sessions for backward compatibility
-        sessions_data = linked_sessions + batch_sessions
+        # Sessions are now properly linked via session_projects table
+        # No need for separate batch session query
+        sessions_data = linked_sessions
         
         # Clean up data for JSON serialization
         import math
@@ -4764,6 +5554,9 @@ def users():
         user_stats = []
         
         for user in configured_users:
+            # Check if user had any work assigned
+            has_work = user_has_work_assigned(user)
+            
             active = count_active_projects(user)
             completed = count_completed_today(user)
             avg_items_per_hour = calculate_avg_items_per_hour(user)
@@ -4780,7 +5573,8 @@ def users():
                 'avg_items_per_hour': avg_items_per_hour,
                 'items_hour_change': items_hour_change,
                 'active_projects_change': active_projects_change,
-                'activity_data': activity_data
+                'activity_data': activity_data,
+                'has_work_assigned': has_work  # Add flag to indicate if user had work
             }
             user_stats.append(stats)
         
@@ -4825,6 +5619,9 @@ def user_performance(username):
             end_date = datetime.now().strftime('%Y-%m-%d')
             start_date = (datetime.now() - timedelta(days=period_days)).strftime('%Y-%m-%d')
         
+        # Check if user had work assigned in this period
+        has_work = user_has_work_assigned(username, start_date, end_date)
+        
         # Get detailed user performance data for the specified date range
         user_data = {
             'name': username,
@@ -4833,7 +5630,8 @@ def user_performance(username):
             'avg_items_per_hour': calculate_avg_items_per_hour(username, start_date, end_date),
             'active_projects': count_active_projects(username),
             'completed_today': count_completed_today(username),
-            'completed_in_period': count_completed_in_period(username, start_date, end_date)
+            'completed_in_period': count_completed_in_period(username, start_date, end_date),
+            'has_work_assigned': has_work
         }
         
         # Get performance percentage
@@ -4989,53 +5787,65 @@ def get_productivity_metrics():
         
         # Items per hour per user with proportional time allocation for batch processing
         c.execute(f"""
-            WITH MainSessions AS (
-                -- Find all main batch sessions (SCANNER sessions without project)
-                SELECT user, session_id, start_time, end_time, work_duration_minutes
-                FROM sessions 
-                WHERE session_type = 'SCANNER' 
-                AND project IS NULL 
-                AND status = 'completed'
-                {date_filter.replace('timestamp', 'start_time')}
-            ),
-            BatchAllocation AS (
+            WITH BatchProjects AS (
+                -- Get all projects linked to SCANNER sessions via session_projects
                 SELECT 
                     s.user,
+                    s.session_id,
+                    sp.project,
+                    s.session_type,
+                    sp.item_count,
+                    s.work_duration_minutes,
+                    s.start_time,
+                    s.end_time
+                FROM sessions s
+                JOIN session_projects sp ON s.session_id = sp.session_id
+                WHERE s.session_type = 'SCANNER' 
+                AND s.status = 'completed'
+                {date_filter.replace('timestamp', 's.start_time')}
+            ),
+            OtherSessions AS (
+                -- Get non-SCANNER sessions (XLSX_UPDATED, MANUAL)
+                SELECT 
+                    s.user,
+                    s.session_id,
                     s.project,
                     s.session_type,
                     s.item_count,
-                    s.work_duration_minutes as original_duration,
-                    -- For batch processing (SCANNER), calculate proportional time based on batch session
-                    CASE 
-                        WHEN s.session_type = 'SCANNER' AND s.project IS NOT NULL THEN
-                            -- Get project's proportion of total batch items and allocate time proportionally
-                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
-                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
-                                 FROM sessions s2
-                                 JOIN MainSessions ms ON s2.user = ms.user
-                                 WHERE s2.session_type = 'SCANNER'
-                                 AND s2.project IS NOT NULL
-                                 AND s2.status = 'completed'
-                                 AND s2.start_time >= ms.start_time 
-                                 AND s2.start_time <= ms.end_time
-                                 AND ms.user = s.user
-                                 AND s.start_time >= ms.start_time 
-                                 AND s.start_time <= ms.end_time
-                                ), 0
-                            ) * (
-                                SELECT ms.work_duration_minutes
-                                FROM MainSessions ms
-                                WHERE ms.user = s.user
-                                AND s.start_time >= ms.start_time 
-                                AND s.start_time <= ms.end_time
-                                LIMIT 1
-                            )
-                        ELSE 
-                            -- For individual work (XLSX_UPDATED/MANUAL), use actual session time
-                            s.work_duration_minutes
-                    END as allocated_duration_minutes
+                    s.work_duration_minutes,
+                    s.start_time,
+                    s.end_time
                 FROM sessions s
-                WHERE s.status = 'completed' {date_filter.replace('timestamp', 's.start_time')}
+                WHERE s.session_type != 'SCANNER'
+                AND s.status = 'completed'
+                {date_filter.replace('timestamp', 's.start_time')}
+            ),
+            BatchAllocation AS (
+                -- For SCANNER sessions, allocate time proportionally based on items
+                SELECT 
+                    bp.user,
+                    bp.project,
+                    bp.session_type,
+                    bp.item_count,
+                    -- Calculate proportional time allocation
+                    CASE 
+                        WHEN (SELECT SUM(item_count) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id) > 0 THEN
+                            bp.item_count * 1.0 / (SELECT SUM(item_count) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id) * bp.work_duration_minutes
+                        ELSE 
+                            bp.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id), 0)
+                    END as allocated_duration_minutes
+                FROM BatchProjects bp
+                
+                UNION ALL
+                
+                -- For other sessions, use actual session time
+                SELECT 
+                    user,
+                    project,
+                    session_type,
+                    item_count,
+                    work_duration_minutes as allocated_duration_minutes
+                FROM OtherSessions
             )
             SELECT 
                 user,
@@ -5140,35 +5950,61 @@ def get_user_efficiency():
         
         # User efficiency metrics
         c.execute(f"""
-            WITH BatchAllocation AS (
+            WITH BatchProjects AS (
+                -- Get all projects linked to SCANNER sessions via session_projects
                 SELECT 
                     s.user,
+                    s.session_id,
+                    sp.project,
+                    s.session_type,
+                    sp.item_count,
+                    s.work_duration_minutes,
+                    s.start_time
+                FROM sessions s
+                JOIN session_projects sp ON s.session_id = sp.session_id
+                WHERE s.session_type = 'SCANNER' 
+                AND s.status = 'completed'
+                {date_filter.replace('timestamp', 's.start_time')}
+            ),
+            OtherSessions AS (
+                -- Get non-SCANNER sessions
+                SELECT 
+                    s.user,
+                    s.session_id,
+                    s.project,
                     s.session_type,
                     s.item_count,
-                    -- For batch processing (SCANNER), calculate proportional time
-                    CASE 
-                        WHEN s.session_type = 'SCANNER' THEN
-                            COALESCE(s.item_count, 0) * 1.0 / NULLIF(
-                                (SELECT SUM(COALESCE(s2.item_count, 0)) 
-                                 FROM sessions s2 
-                                 WHERE s2.user = s.user 
-                                 AND s2.session_type = 'SCANNER'
-                                 AND s2.status = 'completed'
-                                 AND DATE(s2.start_time) = DATE(s.start_time)
-                                ), 0
-                            ) * (
-                                SELECT SUM(s3.work_duration_minutes) 
-                                FROM sessions s3 
-                                WHERE s3.user = s.user 
-                                AND s3.session_type = 'SCANNER'
-                                AND s3.status = 'completed'
-                                AND DATE(s3.start_time) = DATE(s.start_time)
-                            )
-                        ELSE 
-                            s.work_duration_minutes
-                    END as allocated_duration_minutes
+                    s.work_duration_minutes,
+                    s.start_time
                 FROM sessions s
-                WHERE s.status = 'completed' {date_filter.replace('timestamp', 's.start_time')}
+                WHERE s.session_type != 'SCANNER'
+                AND s.status = 'completed'
+                {date_filter.replace('timestamp', 's.start_time')}
+            ),
+            BatchAllocation AS (
+                -- For SCANNER sessions, allocate time proportionally based on items
+                SELECT 
+                    bp.user,
+                    bp.session_type,
+                    bp.item_count,
+                    -- Calculate proportional time allocation
+                    CASE 
+                        WHEN (SELECT SUM(item_count) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id) > 0 THEN
+                            bp.item_count * 1.0 / (SELECT SUM(item_count) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id) * bp.work_duration_minutes
+                        ELSE 
+                            bp.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM BatchProjects bp2 WHERE bp2.session_id = bp.session_id), 0)
+                    END as allocated_duration_minutes
+                FROM BatchProjects bp
+                
+                UNION ALL
+                
+                -- For other sessions, use actual session time
+                SELECT 
+                    user,
+                    session_type,
+                    item_count,
+                    work_duration_minutes as allocated_duration_minutes
+                FROM OtherSessions
             )
             SELECT 
                 user,
@@ -5911,6 +6747,41 @@ def update_work_hours_settings():
         logging.error(f"Error updating work hours settings: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+def get_holidays_for_period(start_date=None, end_date=None):
+    """Helper function to get holidays for a specific period"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        if start_date and end_date:
+            c.execute("""
+                SELECT date, name, type FROM holidays 
+                WHERE date BETWEEN ? AND ?
+                ORDER BY date
+            """, (start_date, end_date))
+        else:
+            # Default to current year
+            from datetime import datetime
+            current_year = datetime.now().year
+            c.execute("""
+                SELECT date, name, type FROM holidays 
+                WHERE date LIKE ?
+                ORDER BY date
+            """, (f"{current_year}%",))
+        
+        holidays = {}
+        for row in c.fetchall():
+            holidays[row[0]] = {
+                'name': row[1],
+                'type': row[2]
+            }
+        
+        return holidays
+        
+    except Exception as e:
+        logging.error(f"Error getting holidays for period: {e}")
+        return {}
+
 # Unified Work Hours and Holiday Management API
 @app.route('/api/work-hours/unified', methods=['GET'])
 def get_unified_work_hours():
@@ -6083,41 +6954,6 @@ def delete_holiday(holiday_id):
     except Exception as e:
         logging.error(f"Error deleting holiday: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-def get_holidays_for_period(start_date=None, end_date=None):
-    """Helper function to get holidays for a specific period"""
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        
-        if start_date and end_date:
-            c.execute("""
-                SELECT date, name, type FROM holidays 
-                WHERE date BETWEEN ? AND ?
-                ORDER BY date
-            """, (start_date, end_date))
-        else:
-            # Default to current year
-            from datetime import datetime
-            current_year = datetime.now().year
-            c.execute("""
-                SELECT date, name, type FROM holidays 
-                WHERE date LIKE ?
-                ORDER BY date
-            """, (f"{current_year}%",))
-        
-        holidays = {}
-        for row in c.fetchall():
-            holidays[row[0]] = {
-                'name': row[1],
-                'type': row[2]
-            }
-        
-        return holidays
-        
-    except Exception as e:
-        logging.error(f"Error getting holidays for period: {e}")
-        return {}
 
 def calculate_work_minutes(start_time, end_time):
     """Calculate work minutes EXCLUDING weekends and holidays"""
@@ -6840,13 +7676,39 @@ def get_project_time_analysis():
                 SELECT 
                     ps.project,
                     ps.total_duration_minutes as project_minutes,
-                    COALESCE(SUM(s.work_duration_minutes), 0) as session_minutes,
-                    ps.total_duration_minutes - COALESCE(SUM(s.work_duration_minutes), 0) as idle_minutes,
+                    COALESCE(SUM(CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            -- For SCANNER sessions, get allocated time from session_projects
+                            (SELECT SUM(
+                                CASE 
+                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
+                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
+                                    ELSE 
+                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
+                                END
+                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
+                        ELSE
+                            -- For non-SCANNER sessions, use full duration
+                            s.work_duration_minutes
+                    END), 0) as session_minutes,
+                    ps.total_duration_minutes - COALESCE(SUM(CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            (SELECT SUM(
+                                CASE 
+                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
+                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
+                                    ELSE 
+                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
+                                END
+                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
+                        ELSE
+                            s.work_duration_minutes
+                    END), 0) as idle_minutes,
                     ps.status,
                     l.is_rep_variant,
                     ps.total_items
                 FROM project_sessions ps
-                LEFT JOIN sessions s ON s.project = ps.project
+                LEFT JOIN sessions s ON (s.project = ps.project OR EXISTS (SELECT 1 FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project))
                 LEFT JOIN logs l ON l.project = ps.project AND l.event = 'OPEN'
                 WHERE 1=1 {date_filter}
                 GROUP BY ps.project, ps.total_duration_minutes, ps.status, l.is_rep_variant, ps.total_items
@@ -6868,14 +7730,40 @@ def get_project_time_analysis():
                 SELECT 
                     ps.project,
                     ps.total_duration_minutes as project_minutes,
-                    COALESCE(SUM(s.work_duration_minutes), 0) as session_minutes,
-                    ps.total_duration_minutes - COALESCE(SUM(s.work_duration_minutes), 0) as idle_minutes,
+                    COALESCE(SUM(CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            -- For SCANNER sessions, get allocated time from session_projects
+                            (SELECT SUM(
+                                CASE 
+                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
+                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
+                                    ELSE 
+                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
+                                END
+                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
+                        ELSE
+                            -- For non-SCANNER sessions, use full duration
+                            s.work_duration_minutes
+                    END), 0) as session_minutes,
+                    ps.total_duration_minutes - COALESCE(SUM(CASE 
+                        WHEN s.session_type = 'SCANNER' THEN
+                            (SELECT SUM(
+                                CASE 
+                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
+                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
+                                    ELSE 
+                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
+                                END
+                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
+                        ELSE
+                            s.work_duration_minutes
+                    END), 0) as idle_minutes,
                     ps.status,
                     COALESCE(l.is_rep_variant, 0) as is_rep_variant,
                     ps.total_items,
                     ps.start_time
                 FROM project_sessions ps
-                LEFT JOIN sessions s ON s.project = ps.project
+                LEFT JOIN sessions s ON (s.project = ps.project OR EXISTS (SELECT 1 FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project))
                 LEFT JOIN logs l ON l.project = ps.project AND l.event = 'OPEN'
                 WHERE 1=1 {date_filter}
                 GROUP BY ps.project, ps.total_duration_minutes, ps.status, l.is_rep_variant, ps.total_items, ps.start_time
@@ -7410,8 +8298,34 @@ def get_project_time_metrics(project):
                 # Fallback - shouldn't happen if logic is correct
                 project_end_time = datetime.now()
         
-        # Calculate work minutes within work hours excluding weekends and holidays
-        total_project_minutes = calculate_work_minutes(project_start_time, project_end_time)
+        # Calculate total project time as:
+        # 1. Proportional time from SCANNER batch sessions (if any)
+        # 2. PLUS all individual XLSX_UPDATED session times
+        
+        total_project_minutes = 0
+        
+        # Get proportional time from SCANNER batch sessions
+        c.execute("""
+            SELECT SUM(total_duration_minutes) as scanner_minutes
+            FROM project_sessions
+            WHERE project = ?
+        """, (project,))
+        
+        scanner_result = c.fetchone()
+        if scanner_result and scanner_result['scanner_minutes']:
+            total_project_minutes += scanner_result['scanner_minutes']
+        
+        # Add all XLSX_UPDATED individual session times (work + pause)
+        c.execute("""
+            SELECT SUM(work_duration_minutes + COALESCE(pause_duration_minutes, 0)) as xlsx_minutes
+            FROM sessions
+            WHERE project = ?
+            AND session_type = 'XLSX_UPDATED'
+        """, (project,))
+        
+        xlsx_result = c.fetchone()
+        if xlsx_result and xlsx_result['xlsx_minutes']:
+            total_project_minutes += xlsx_result['xlsx_minutes']
         
         return jsonify({
             'success': True,
@@ -7494,11 +8408,10 @@ def get_project_productivity_metrics(project):
                 AND (s.project IS NULL OR s.project = '') 
                 AND s.status = 'completed'
                 AND EXISTS (
-                    -- Check if this batch session processed this project
-                    SELECT 1 FROM logs l
-                    WHERE l.user = s.user
-                    AND LOWER(l.project) = LOWER(?)
-                    AND l.timestamp BETWEEN s.start_time AND s.end_time
+                    -- Check if this batch session processed this project via session_projects
+                    SELECT 1 FROM session_projects sp
+                    WHERE sp.session_id = s.session_id
+                    AND sp.project = ?
                 )
                 ORDER BY s.end_time DESC
             """, (user, project))
@@ -7540,23 +8453,39 @@ def get_project_productivity_metrics(project):
             if completed_batches:
                 for batch in completed_batches:
                     if batch['work_duration_minutes'] and batch['work_duration_minutes'] > 0:
-                        # Get total items in this batch
+                        # Check if this is a multi-project batch session
                         c.execute("""
-                            SELECT SUM(COALESCE(item_count, 0)) as batch_total
-                            FROM logs
-                            WHERE user = ?
-                            AND timestamp BETWEEN ? AND ?
-                            AND item_count > 0
-                        """, (user, batch['start_time'], batch['end_time']))
+                            SELECT COUNT(DISTINCT project) as project_count,
+                                   SUM(item_count) as total_items
+                            FROM session_projects
+                            WHERE session_id = ?
+                        """, (batch['session_id'],))
                         
-                        batch_result = c.fetchone()
-                        batch_total_items = batch_result[0] if batch_result and batch_result[0] else 0
+                        batch_info = c.fetchone()
+                        project_count = batch_info[0] if batch_info and batch_info[0] else 1
+                        batch_total_items = batch_info[1] if batch_info and batch_info[1] else 0
                         
-                        # Calculate proportional time for this project
-                        if batch_total_items > 0 and project_items > 0:
-                            proportion = project_items / batch_total_items
-                            allocated_minutes = batch['work_duration_minutes'] * proportion
-                            total_duration_minutes += allocated_minutes
+                        if project_count > 1 and batch_total_items > 0:
+                            # Multi-project batch - use proportional allocation
+                            # Get this project's items from session_projects
+                            c.execute("""
+                                SELECT item_count FROM session_projects
+                                WHERE session_id = ? AND project = ?
+                            """, (batch['session_id'], project))
+                            
+                            sp_result = c.fetchone()
+                            if sp_result and sp_result[0]:
+                                project_items_in_batch = sp_result[0]
+                                proportion = project_items_in_batch / batch_total_items
+                                allocated_minutes = batch['work_duration_minutes'] * proportion
+                                total_duration_minutes += allocated_minutes
+                            else:
+                                # Project not found in session_projects - shouldn't happen for valid data
+                                # Use full time as fallback (conservative approach)
+                                total_duration_minutes += batch['work_duration_minutes']
+                        else:
+                            # Single project batch - use full time
+                            total_duration_minutes += batch['work_duration_minutes']
             
             # Check if active batch has processed this project
             active_batch_processed_project = False
@@ -7665,14 +8594,43 @@ def get_project_productivity_metrics(project):
                 items_per_hour = '--'
                 session_hours = '--'
             elif status == 'IN_PROGRESS' and active_batch:
-                # For active batch sessions (SCANNER type), calculate elapsed time
+                # For active batch sessions (SCANNER type), calculate elapsed time with proportional allocation
                 from datetime import datetime
                 start_time = datetime.fromisoformat(active_batch[1])  # active_batch[1] is start_time
                 current_time = datetime.now()
                 elapsed_minutes = int((current_time - start_time).total_seconds() / 60)
                 
-                # Add any completed batch work time to elapsed time
-                total_work_minutes = total_duration_minutes + elapsed_minutes
+                # Check if this is a multi-project batch session
+                c.execute("""
+                    SELECT COUNT(DISTINCT project) as project_count,
+                           SUM(item_count) as total_items
+                    FROM session_projects
+                    WHERE session_id = ?
+                """, (active_batch[0],))  # active_batch[0] is session_id
+                
+                batch_info = c.fetchone()
+                project_count = batch_info[0] if batch_info and batch_info[0] else 1
+                batch_total_items = batch_info[1] if batch_info and batch_info[1] else 0
+                
+                if project_count > 1 and batch_total_items > 0:
+                    # Multi-project batch - use proportional allocation for elapsed time
+                    c.execute("""
+                        SELECT item_count FROM session_projects
+                        WHERE session_id = ? AND project = ?
+                    """, (active_batch[0], project))
+                    
+                    sp_result = c.fetchone()
+                    if sp_result and sp_result[0]:
+                        project_items_in_batch = sp_result[0]
+                        proportion = project_items_in_batch / batch_total_items
+                        allocated_elapsed_minutes = elapsed_minutes * proportion
+                        total_work_minutes = total_duration_minutes + allocated_elapsed_minutes
+                    else:
+                        # Project not found in session_projects - use full time as fallback
+                        total_work_minutes = total_duration_minutes + elapsed_minutes
+                else:
+                    # Single project batch - use full elapsed time
+                    total_work_minutes = total_duration_minutes + elapsed_minutes
                 
                 if total_work_minutes > 0:
                     if total_items > 0:

@@ -409,6 +409,12 @@
         </div>
     </div>
     
+    {% if not user.has_work_assigned %}
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle"></i> Deze gebruiker heeft geen werk toegewezen gekregen in de geselecteerde periode.
+    </div>
+    {% endif %}
+    
     <div class="metrics-grid">
         <div class="metric-card">
             <div class="metric-value">{{ user.active_projects }}</div>

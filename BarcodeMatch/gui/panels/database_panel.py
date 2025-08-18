@@ -135,11 +135,11 @@ class DatabasePanel(ttk.Frame):
 
         # Right-click context menu
         self.tree_menu = tk.Menu(self, tearoff=0)
-        self.tree_menu.add_command(label="Log 'OPEN' Event", command=lambda: self._log_manual_event("OPEN"))
-        self.tree_menu.add_separator()
-        self.tree_menu.add_command(label="Start Manual Session", command=self._start_manual_session)
-        self.tree_menu.add_command(label="Finish Manual Session", command=self._finish_manual_session)
-        self.tree_menu.add_separator()
+        # self.tree_menu.add_command(label="Log 'OPEN' Event", command=lambda: self._log_manual_event("OPEN"))
+        # self.tree_menu.add_separator()
+        # self.tree_menu.add_command(label="Start Manual Session", command=self._start_manual_session)
+        # self.tree_menu.add_command(label="Finish Manual Session", command=self._finish_manual_session)
+        # self.tree_menu.add_separator()
         self.tree_menu.add_command(label="Log 'AFGEMELD' Event", command=lambda: self._log_manual_event("AFGEMELD"))
         self.logs_tree.bind("<Button-3>", self._show_tree_menu)
         self.logs_tree.bind("<Double-1>", self._on_log_double_click)
@@ -205,22 +205,37 @@ class DatabasePanel(ttk.Frame):
 
             path_to_load = None
 
-            # PRIORITY 1: Use the exact file_path from database if it's a valid Excel file
-            print(f"[DBLCLICK DEBUG] PRIORITY 1: Checking direct Excel file path")
-            print(f"[DBLCLICK DEBUG] file_path_from_db: '{file_path_from_db}'")
-            print(f"[DBLCLICK DEBUG] Is Excel file: {file_path_from_db.lower().endswith(('.xlsx', '.xls')) if file_path_from_db else False}")
-            print(f"[DBLCLICK DEBUG] File exists: {os.path.exists(file_path_from_db) if file_path_from_db else False}")
-            
-            # Special handling when file_path is 'None' or empty - skip to more aggressive search
-            if file_path_from_db == 'None' or not file_path_from_db or not file_path_from_db.strip():
-                print(f"[DBLCLICK DEBUG] File path is None/empty, jumping to PRIORITY 4 for {log_user}")
-                # Skip directly to PRIORITY 4 for ACCURA/BOERE
-                if log_user in ['ACCURA', 'BOERE']:
-                    print(f"[DBLCLICK DEBUG] Jumping directly to ACCURA/BOERE directory search")
-                    # Continue to PRIORITY 4
-            elif file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')) and os.path.exists(file_path_from_db):
+            # If file_path is empty (like for SESSION_RESUME), look it up from the API
+            if not file_path_from_db or file_path_from_db == 'None' or not file_path_from_db.strip():
+                print(f"[DBLCLICK DEBUG] No file path in event, looking up from OPEN event for project: {project_name}, user: {log_user}")
+                try:
+                    import requests
+                    # Use the API to get the file path
+                    api_url = self.api_url_var.get()
+                    logs_url = api_url.replace('/log', '/logs')
+                    
+                    # Query the API for OPEN events for this user/project
+                    response = requests.get(logs_url, timeout=2)
+                    if response.status_code == 200:
+                        logs = response.json()
+                        # Find the most recent OPEN event for this user/project with a file path
+                        for log in logs:
+                            if (log.get('user') == log_user and 
+                                log.get('project') == project_name and 
+                                log.get('event') == 'OPEN' and 
+                                log.get('file_path') and 
+                                log.get('file_path') != 'None'):
+                                file_path_from_db = log.get('file_path')
+                                print(f"[DBLCLICK DEBUG] Found file path from OPEN event via API: {file_path_from_db}")
+                                break
+                except Exception as e:
+                    print(f"[DBLCLICK DEBUG] Error looking up OPEN event via API: {e}")
+
+            # Now use the file path (either from the event or looked up from OPEN)
+            if file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')):
+                # Always trust the database path - it knows where the file was saved
                 path_to_load = file_path_from_db
-                print(f"[DBLCLICK] Found Excel file directly from database: {path_to_load}")
+                print(f"[DBLCLICK] Using Excel file path from database: {path_to_load}")
                 self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                 return
 
@@ -547,6 +562,49 @@ class DatabasePanel(ttk.Frame):
         project_name = item_data['values'][2]  # Assuming 'project' is the 3rd column
         user = self.user_var.get()
 
+        # If this is an AFGEMELD event, close any active sessions for this project
+        if event_type == "AFGEMELD":
+            # First, close sessions via API to ensure proper handling
+            try:
+                config_file_path = get_config_path()
+                if os.path.exists(config_file_path):
+                    with open(config_file_path, 'r') as f:
+                        config = json.load(f)
+                    
+                    api_url = config.get('api_url', '')
+                    if api_url:
+                        # Close sessions via dedicated endpoint
+                        close_data = {
+                            'user': user,
+                            'project': project_name,
+                            'timestamp': datetime.now().isoformat(),
+                            'item_count': 0  # Will be updated by AFGEMELD event
+                        }
+                        
+                        try:
+                            response = requests.post(api_url.replace('/log', '/session/close'),
+                                                   json=close_data, timeout=2)
+                            if response.ok:
+                                result = response.json()
+                                if result.get('sessions_closed', 0) > 0:
+                                    print(f"[DATABASE] Closed {result['sessions_closed']} session(s) for project {project_name}")
+                        except Exception as e:
+                            print(f"[DATABASE] Error closing sessions: {e}")
+            except Exception as e:
+                print(f"[DATABASE] Error reading config for session close: {e}")
+            
+            # Also check scanner panel for local session cleanup
+            if hasattr(self, 'main_app') and self.main_app:
+                scanner_panel = self.main_app.get_panel_by_name("Scanner")
+                if scanner_panel and hasattr(scanner_panel, 'current_session_id'):
+                    if scanner_panel.current_session_id:
+                        current_project = scanner_panel._extract_project_from_filename(
+                            scanner_panel.excel_file_path_var.get()
+                        )
+                        if current_project and current_project == project_name:
+                            print(f"[DATABASE] Clearing local scanner session for project {project_name}")
+                            scanner_panel._end_session()
+
         details = f"{project_name} handmatig op '{event_type}' gezet door {user}"
         self.log_event(event_type, project_name, details)
 
@@ -711,6 +769,18 @@ class DatabasePanel(ttk.Frame):
                                       f"Handmatige sessie afgerond voor {project_name}\n\n"
                                       f"Items verwerkt: {result['item_count']}\n"
                                       f"Werktijd: {work_minutes:.1f} minuten")
+                    
+                    # Also close any active scanner session for this project
+                    if hasattr(self, 'main_app') and self.main_app:
+                        scanner_panel = self.main_app.get_panel_by_name("Scanner")
+                        if scanner_panel and hasattr(scanner_panel, 'current_session_id'):
+                            if scanner_panel.current_session_id:
+                                current_project = scanner_panel._extract_project_from_filename(
+                                    scanner_panel.excel_file_path_var.get()
+                                )
+                                if current_project and current_project == project_name:
+                                    print(f"[DATABASE] Closing scanner session for project {project_name} after manual finish")
+                                    scanner_panel._end_session()
                     
                     # Send AFGEMELD event to complete the workflow with item count
                     self.log_project_closed(project_name, item_count=result['item_count'])
@@ -903,9 +973,34 @@ class DatabasePanel(ttk.Frame):
                 self.logs_tree.insert("", "end", values=("", "Geen logs gevonden voor gebruiker", "", "", user, ""))
                 return
 
-            latest_events = {}
+            # First pass: identify projects that have been AFGEMELD more than a day ago
+            completed_projects = set()
             today = date.today()
-
+            
+            for log_entry in logs:
+                if log_entry.get('user') != user:
+                    continue
+                    
+                project_name = log_entry.get('project')
+                status = (log_entry.get('status') or '').upper()
+                timestamp_str = log_entry.get('timestamp')
+                
+                if not project_name or not status or not timestamp_str:
+                    continue
+                    
+                try:
+                    log_datetime = datetime.fromisoformat(timestamp_str)
+                    log_date = log_datetime.date()
+                except ValueError:
+                    continue
+                
+                # If this project has an AFGEMELD status older than today, mark it as completed
+                if status == 'AFGEMELD' and log_date < today:
+                    completed_projects.add(project_name)
+            
+            # Second pass: build latest_events, excluding completed projects entirely
+            latest_events = {}
+            
             for log_entry in logs:
                 # Process only logs for the current user
                 if log_entry.get('user') != user:
@@ -917,16 +1012,16 @@ class DatabasePanel(ttk.Frame):
 
                 if not project_name or not status or not timestamp_str:
                     continue # Skip logs with missing essential data
+                
+                # Skip ALL events for projects that have been completed (AFGEMELD > 1 day ago)
+                if project_name in completed_projects:
+                    continue
 
                 try:
                     log_datetime = datetime.fromisoformat(timestamp_str)
                     log_date = log_datetime.date()
                 except ValueError:
                     continue # Skip logs with invalid timestamp format
-
-                # Apply filtering: AFGEMELD only for today, OPEN always considered
-                if status == 'AFGEMELD' and log_date != today:
-                    continue
                 
                 # If status is not OPEN or AFGEMELD, skip (unless you want to include others)
                 if status not in ['OPEN', 'AFGEMELD', 'EXCEL_GENERATED', 'BEZIG']:
@@ -945,7 +1040,7 @@ class DatabasePanel(ttk.Frame):
                         # or if the current latest is AFGEMELD
                         if log_datetime > current_latest_datetime or current_latest_status == 'AFGEMELD':
                             latest_events[project_name] = log_entry
-                    elif status == 'AFGEMELD': # And we know it's from today due to earlier filter
+                    elif status == 'AFGEMELD': # Current or recent AFGEMELD
                         # An AFGEMELD event only replaces an older AFGEMELD or if current is older OPEN
                         if current_latest_status == 'AFGEMELD' and log_datetime > current_latest_datetime:
                             latest_events[project_name] = log_entry

@@ -277,6 +277,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#sessions">
+            <i class="fas fa-users-cog"></i> Sessies
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#logs">
             <i class="fas fa-file-alt"></i> Logs
         </a>
@@ -547,6 +552,44 @@
         </div>
     </div>
     
+    <!-- Sessions Tab -->
+    <div class="tab-pane fade" id="sessions">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users-cog"></i> Actieve Sessies</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadActiveSessions()">
+                        <i class="fas fa-sync-alt"></i> Vernieuwen
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="activeSessionsContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Laden...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recente Sessies</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentSessionsContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Laden...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Logs Tab -->
     <div class="tab-pane fade" id="logs">
         <div class="card">
@@ -654,6 +697,15 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDatabaseInfo();
     refreshBackupList();
     refreshLogs();
+    
+    // Load sessions when tab is shown
+    const sessionsTab = document.querySelector('a[href="#sessions"]');
+    if (sessionsTab) {
+        sessionsTab.addEventListener('shown.bs.tab', function() {
+            loadActiveSessions();
+            loadRecentSessions();
+        });
+    }
 });
 
 // Loading spinner functions
@@ -697,6 +749,175 @@ function formatBytes(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Load active sessions
+async function loadActiveSessions() {
+    try {
+        const response = await fetch('/api/sessions/active');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('activeSessionsContainer');
+            
+            if (data.sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Geen actieve sessies gevonden
+                    </div>
+                `;
+            } else {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Gebruiker</th>
+                                    <th>Project(en)</th>
+                                    <th>Start</th>
+                                    <th>Duur</th>
+                                    <th>Status</th>
+                                    <th>Actie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.sessions.forEach(session => {
+                    const startTime = new Date(session.start_time);
+                    const duration = session.duration_minutes ? `${Math.round(session.duration_minutes)}m` : 'Bezig...';
+                    const statusBadge = session.pause_start ? 
+                        '<span class="badge bg-warning">Gepauzeerd</span>' : 
+                        '<span class="badge bg-success">Actief</span>';
+                    
+                    html += `
+                        <tr>
+                            <td><span class="badge bg-info">${session.session_type}</span></td>
+                            <td>${session.user}</td>
+                            <td>${session.projects || session.project || '-'}</td>
+                            <td>${startTime.toLocaleTimeString('nl-NL')}</td>
+                            <td>${duration}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="endSession('${session.session_id}')">
+                                    <i class="fas fa-stop"></i> Stop
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading active sessions:', error);
+        document.getElementById('activeSessionsContainer').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Fout bij laden van sessies
+            </div>
+        `;
+    }
+}
+
+// End a session manually
+async function endSession(sessionId) {
+    if (!confirm('Weet je zeker dat je deze sessie wilt beëindigen?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/sessions/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Sessie beëindigd', 'success');
+            loadActiveSessions();
+            loadRecentSessions();
+        } else {
+            showNotification('Fout bij beëindigen sessie: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error ending session:', error);
+        showNotification('Fout bij beëindigen sessie', 'error');
+    }
+}
+
+// Load recent sessions
+async function loadRecentSessions() {
+    try {
+        const response = await fetch('/api/sessions/recent');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('recentSessionsContainer');
+            
+            if (data.sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Geen recente sessies gevonden
+                    </div>
+                `;
+            } else {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Gebruiker</th>
+                                    <th>Project(en)</th>
+                                    <th>Start</th>
+                                    <th>Einde</th>
+                                    <th>Werk Tijd</th>
+                                    <th>Pauze Tijd</th>
+                                    <th>Items</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.sessions.forEach(session => {
+                    const startTime = new Date(session.start_time);
+                    const endTime = session.end_time ? new Date(session.end_time) : null;
+                    const workMinutes = session.work_duration_minutes || 0;
+                    const pauseMinutes = session.pause_duration_minutes || 0;
+                    
+                    html += `
+                        <tr>
+                            <td><span class="badge bg-secondary">${session.session_type}</span></td>
+                            <td>${session.user}</td>
+                            <td class="text-truncate" style="max-width: 200px;" title="${session.projects || session.project || '-'}">
+                                ${session.projects || session.project || '-'}
+                            </td>
+                            <td>${startTime.toLocaleString('nl-NL', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'})}</td>
+                            <td>${endTime ? endTime.toLocaleString('nl-NL', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                            <td>${Math.round(workMinutes)}m</td>
+                            <td>${Math.round(pauseMinutes)}m</td>
+                            <td>${session.item_count || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading recent sessions:', error);
+        document.getElementById('recentSessionsContainer').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Fout bij laden van recente sessies
+            </div>
+        `;
+    }
 }
 
 // Load database statistics

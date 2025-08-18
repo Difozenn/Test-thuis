@@ -301,9 +301,8 @@
                     </div>
                     <div class="col-md-3">
                         <div class="text-center p-3 bg-light rounded">
-                            {% set total_tool_time = program.tools_used | sum(attribute='duration_seconds') %}
-                            <h4 class="text-success mb-1">{{ format_seconds_human(total_tool_time) }}</h4>
-                            <small class="text-muted">{{ t('total_tool_active_time') }}</small>
+                            <h4 class="text-success mb-1">{{ format_seconds_human(program.cycle_time_seconds) }}</h4>
+                            <small class="text-muted">{{ t('total_program_time') }}</small>
                         </div>
                     </div>
                     <div class="col-md-3">

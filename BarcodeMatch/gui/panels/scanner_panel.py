@@ -544,7 +544,11 @@ class ScannerPanel(ttk.Frame):
                 
                 # No existing session, create a new one
                 self.session_start_time = datetime.now()
-                self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                # Include project in session_id to match what the API expects
+                if project_name:
+                    self.current_session_id = f"{user}_{project_name}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                else:
+                    self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 self.session_item_count = 0
                 self.session_paused = False
                 self.pause_start_time = None
@@ -568,9 +572,18 @@ class ScannerPanel(ttk.Frame):
                 def start_session_api():
                     try:
                         response = requests.post(api_url.replace('/log', '/session/xlsx_updated'), 
-                                               json=data, timeout=1)
+                                               json=data, timeout=3)
                         if response.ok:
-                            self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
+                            result = response.json()
+                            if result.get('session_id'):
+                                # Update to use the API's session_id
+                                old_session_id = self.current_session_id
+                                self.current_session_id = result['session_id']
+                                self._log(f"Started XLSX session - API session_id: {self.current_session_id} (was: {old_session_id})")
+                            else:
+                                self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
+                        else:
+                            self._log(f"Failed to start XLSX session: HTTP {response.status_code}")
                     except Exception as e:
                         self._log(f"Failed to start XLSX session: {e}")
                 
@@ -660,6 +673,17 @@ class ScannerPanel(ttk.Frame):
         
         # Priority 4: Fallback - extract MO code dynamically
         import re
+        
+        # For OPUS format: 0618_MO06797_Bureaukast_(15-16).xlsx
+        # Extract just the project part after the first underscore
+        if 'OPUS' in file_path.upper():
+            # Remove leading numbers and underscore
+            cleaned = re.sub(r'^\d+_', '', filename)
+            # Remove file extension
+            cleaned = re.sub(r'\.xlsx?$', '', cleaned)
+            if cleaned:
+                return cleaned
+        
         mo_match = re.search(r'(MO\d{5})', filename)
         if mo_match:
             # Try to extract full project name from filename structure
@@ -667,10 +691,12 @@ class ScannerPanel(ttk.Frame):
             if len(project_parts) >= 2:
                 # Build project name by removing timestamp and extension
                 project_name = filename
-                # Remove timestamp pattern
+                # Remove timestamp pattern (for ACCURA/BOERE format)
                 project_name = re.sub(r'_\d{8}_\d{6}\.xlsx?$', '', project_name)
                 # Remove file extension if still present
                 project_name = re.sub(r'\.xlsx?$', '', project_name)
+                # Remove leading numbers for OPUS/GANNOMAT format
+                project_name = re.sub(r'^\d+_', '', project_name)
                 return project_name
             else:
                 return mo_match.group(1)
@@ -763,13 +789,16 @@ class ScannerPanel(ttk.Frame):
 
     def _pause_session(self):
         """Pause the current session when panel is hidden"""
-        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, excel_loaded: {hasattr(self, 'workbook') and self.workbook is not None}")
+        print(f"[PAUSE_DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
+        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
         
-        # Only pause if we have an active session and Excel is loaded
-        if self.current_session_id and not self.session_paused and hasattr(self, 'workbook') and self.workbook:
+        # Only pause if we have an active session that's not already paused
+        if self.current_session_id and not self.session_paused:
             # Mark as paused immediately to prevent duplicate pause attempts
             self.session_paused = True
-            self.pause_start_time = datetime.now()
+            # Always set pause_start_time when pausing
+            if not self.pause_start_time:
+                self.pause_start_time = datetime.now()
             
             try:
                 config_file_path = get_config_path()
@@ -792,27 +821,53 @@ class ScannerPanel(ttk.Frame):
                         
                         def pause_session_api():
                             try:
+                                pause_url = api_url.replace('/log', '/session/pause')
+                                print(f"[PAUSE_API] Sending pause request to {pause_url}")
+                                print(f"[PAUSE_API] Pause data: {data}")
+                                
                                 # Send pause event to session endpoint
-                                response = requests.post(api_url.replace('/log', '/session/pause'), 
-                                                       json=data, timeout=1)
+                                response = requests.post(pause_url, json=data, timeout=3)
+                                print(f"[PAUSE_API] Session pause response status: {response.status_code}")
+                                print(f"[PAUSE_API] Session pause response body: {response.text}")
+                                
                                 if response.ok:
+                                    print(f"[PAUSE_API] Session pause successful")
                                     self._log(f"Session paused: {self.current_session_id}")
                                     
                                     # Also log SESSION_PAUSE event for tracking
+                                    # Use pause_start_time if available, otherwise use current time
+                                    pause_timestamp = self.pause_start_time.isoformat() if self.pause_start_time else datetime.now().isoformat()
                                     log_data = {
                                         'event': 'SESSION_PAUSE',
                                         'user': user,
                                         'project': project,
                                         'session_id': self.current_session_id,
                                         'details': f'Session paused - panel hidden',
-                                        'timestamp': self.pause_start_time.isoformat()
+                                        'status': 'PAUZE',  # Add status for visibility
+                                        'timestamp': pause_timestamp
                                     }
-                                    requests.post(api_url, json=log_data, timeout=1)
+                                    print(f"[PAUSE_API] Sending SESSION_PAUSE event to {api_url}")
+                                    print(f"[PAUSE_API] Event data: {log_data}")
+                                    
+                                    try:
+                                        pause_log_response = requests.post(api_url, json=log_data, timeout=3)
+                                        print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
+                                        print(f"[PAUSE_API] SESSION_PAUSE event body: {pause_log_response.text}")
+                                    except Exception as log_error:
+                                        print(f"[PAUSE_API ERROR] Failed to send SESSION_PAUSE event: {log_error}")
                                 else:
                                     # Reset flag if pause failed
+                                    print(f"[PAUSE_API ERROR] Session pause failed with status {response.status_code}: {response.text}")
                                     self.session_paused = False
                                     self._log(f"Failed to pause session: HTTP {response.status_code}")
+                            except requests.exceptions.ConnectionError as e:
+                                print(f"[PAUSE_API ERROR] Connection error - is database running? {e}")
+                                self._log(f"Connection error during pause: {e}")
+                                self.session_paused = False
                             except Exception as e:
+                                print(f"[PAUSE_API ERROR] Unexpected error during pause: {e}")
+                                import traceback
+                                traceback.print_exc()
                                 self._log(f"Failed to pause session: {e}")
                                 # Reset flag if pause failed
                                 self.session_paused = False
@@ -826,11 +881,16 @@ class ScannerPanel(ttk.Frame):
     def _resume_session(self):
         """Resume the current session when panel is shown"""
         if self.current_session_id and self.session_paused:
-            # Calculate pause duration
+            # Don't calculate pause duration locally - let the API do it with work-hours awareness
             pause_duration_seconds = 0
             if self.pause_start_time:
+                # Just for logging purposes, show raw duration
                 pause_duration_seconds = (datetime.now() - self.pause_start_time).total_seconds()
-                self.total_pause_duration += pause_duration_seconds
+                # Don't add to total - the API will track the correct work-hours-aware total
+            
+            # Mark as resumed immediately to prevent duplicate calls
+            self.session_paused = False
+            self.pause_start_time = None
             
             try:
                 config_file_path = get_config_path()
@@ -859,8 +919,6 @@ class ScannerPanel(ttk.Frame):
                                                        json=data, timeout=1)
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
-                                    self.session_paused = False
-                                    self.pause_start_time = None
                                     
                                     # Also log SESSION_RESUME event for tracking
                                     pause_minutes = round(pause_duration_seconds / 60, 1)
@@ -870,9 +928,12 @@ class ScannerPanel(ttk.Frame):
                                         'project': project,
                                         'session_id': self.current_session_id,
                                         'details': f'Session resumed - pause duration: {pause_minutes} minutes',
+                                        'status': 'BEZIG',  # Show that work is continuing
                                         'timestamp': datetime.now().isoformat()
                                     }
-                                    requests.post(api_url, json=log_data, timeout=1)
+                                    print(f"[RESUME_API] Sending SESSION_RESUME event with data: {log_data}")
+                                    resume_response = requests.post(api_url, json=log_data, timeout=1)
+                                    print(f"[RESUME_API] SESSION_RESUME response: {resume_response.status_code}, body: {resume_response.text}")
                                 else:
                                     self._log(f"Failed to resume session: HTTP {response.status_code}")
                             except Exception as e:
@@ -885,23 +946,30 @@ class ScannerPanel(ttk.Frame):
     
     def pack(self, **kwargs):
         """Override pack to detect when panel is shown"""
+        print(f"[PANEL_SWITCH] pack() called - Panel is being shown. Session: {self.current_session_id}, Paused: {self.session_paused}")
         self._log(f"[DEBUG] pack() called - Panel is being shown. Session: {self.current_session_id}, Paused: {self.session_paused}")
         super().pack(**kwargs)
         # Only resume if we have an active session that was paused
         if self.current_session_id and self.session_paused:
+            print(f"[PANEL_SWITCH] Triggering resume for session: {self.current_session_id}")
             self._log("[DEBUG] Resuming session on panel show")
             self._resume_session()
         else:
+            print(f"[PANEL_SWITCH] No resume needed - Session: {self.current_session_id}, Paused: {self.session_paused}")
             self._log(f"[DEBUG] No resume needed - Session: {self.current_session_id}, Paused: {self.session_paused}")
     
     def pack_forget(self):
         """Override pack_forget to detect when panel is hidden"""
+        print(f"[PANEL_SWITCH] pack_forget() called - Panel is being hidden. Session: {self.current_session_id}, Paused: {self.session_paused}")
         self._log(f"[DEBUG] pack_forget() called - Panel is being hidden. Session: {self.current_session_id}, Paused: {self.session_paused}")
         # Only pause if we have an active session that's not already paused
-        if self.current_session_id and not self.session_paused:
+        # Also check that session_start_time exists (session is truly active)
+        if self.current_session_id and not self.session_paused and self.session_start_time:
+            print(f"[PANEL_SWITCH] Triggering pause for session: {self.current_session_id}")
             self._log("[DEBUG] Pausing session on panel hide")
             self._pause_session()
         else:
+            print(f"[PANEL_SWITCH] No pause needed - Session: {self.current_session_id}, Paused: {self.session_paused}, Start time: {self.session_start_time}")
             self._log(f"[DEBUG] No pause needed - Session: {self.current_session_id}, Paused: {self.session_paused}")
         super().pack_forget()
     
@@ -918,6 +986,17 @@ class ScannerPanel(ttk.Frame):
         if self.current_session_id and not self.session_paused:
             self._pause_session()
         super().place_forget()
+    
+    def shutdown(self):
+        """Gracefully pause session on app shutdown."""
+        print("[ScannerPanel] Shutdown called.")
+        # Pause session if active and not already paused
+        if self.current_session_id and not self.session_paused:
+            print(f"[ScannerPanel] Pausing active session on shutdown: {self.current_session_id}")
+            self._pause_session()
+            # Give the API call a moment to complete
+            import time
+            time.sleep(0.5)
 
     def _end_session(self):
         """End the current session"""
@@ -933,10 +1012,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 
                 if api_url:
-                    # If session is paused, calculate final pause duration
-                    if self.session_paused and self.pause_start_time:
-                        pause_duration = (datetime.now() - self.pause_start_time).total_seconds()
-                        self.total_pause_duration += pause_duration
+                    # Don't calculate pause duration locally - the API tracks it correctly with work-hours awareness
                     
                     # Send session end event
                     data = {

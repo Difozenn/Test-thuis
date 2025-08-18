@@ -1925,14 +1925,17 @@ def log_event():
         if cnc_analysis_data:
             try:
                 # DELETE ANY EXISTING CNC ANALYSIS FOR THIS EVENT TO PREVENT DUPLICATES
+                # Only delete if it's for the SAME event, not same file path
+                # Multiple runs of the same program should each keep their analysis
                 existing_analysis = CNCAnalysis.query.filter_by(event_id=event.id).first()
+                
                 if existing_analysis:
                     # Delete all tool usage for this analysis first
                     ToolUsage.query.filter_by(cnc_analysis_id=existing_analysis.id).delete()
                     # Delete the analysis itself
                     db.session.delete(existing_analysis)
-                    db.session.flush()  # Ensure deletion happens before creating new records
                     print(f"[DEBUG] Deleted existing CNC analysis ID {existing_analysis.id} for event {event.id}")
+                    db.session.flush()  # Ensure deletion happens before creating new records
                 
                 # Map C# field names to database field names
                 # TotalTime is the complete cycle time (machine ops + movements) in minutes
@@ -1947,9 +1950,23 @@ def log_event():
                 print(f"  Storing cycle_time_seconds: {cycle_time_seconds} sec")
                 print(f"  Storing machine_time_minutes: {machine_time_minutes} min")
                 
+                # Store both the actual file path and the display name
+                # The C# app sends a display name in 'Filename' which could be a HOP file
+                actual_file_path = os.path.basename(file_path) if file_path else ''
+                display_name = cnc_analysis_data.get('Filename', actual_file_path)
+                
+                # Debug logging for HOP filename issue
+                print(f"[DEBUG] HOP Filename handling:")
+                print(f"  Received file_path: {file_path}")
+                print(f"  Actual basename: {actual_file_path}")
+                print(f"  Display name from C#: {display_name}")
+                print(f"  HOP files in payload: {cnc_analysis_data.get('HopFiles', [])}")
+                
+                # Store the display name in file_path for now (to maintain backward compatibility)
+                # In the future, we should add a separate display_name column
                 cnc_analysis = CNCAnalysis(
                     event_id=event.id,
-                    file_path=cnc_analysis_data.get('Filename', file_path),
+                    file_path=display_name,  # Store the display name (HOP file if generic NC name)
                     cycle_time_seconds=cycle_time_seconds,
                     machine_time_minutes=machine_time_minutes,
                     tool_changes=cnc_analysis_data.get('ToolChanges', 0),
@@ -1971,6 +1988,19 @@ def log_event():
                 if tool_usage_details:
                     # Use detailed tool usage data with timing information
                     print(f"[DEBUG] ToolUsageDetails data: {len(tool_usage_details)} tools with timing data")
+                    
+                    # Log all tool numbers being received
+                    all_tool_nums = [t.get('ToolNumber') for t in tool_usage_details]
+                    print(f"[DEBUG] Tool numbers received: {all_tool_nums}")
+                    
+                    # Check for duplicates in the incoming data
+                    if len(all_tool_nums) != len(set(all_tool_nums)):
+                        print(f"[ERROR] DUPLICATE TOOLS IN INCOMING DATA!")
+                        from collections import Counter
+                        tool_counts = Counter(all_tool_nums)
+                        for tool, count in tool_counts.items():
+                            if count > 1:
+                                print(f"[ERROR] Tool T{tool} appears {count} times in ToolUsageDetails")
                     
                     # Track which tools we've already added to prevent duplicates
                     added_tools = set()
@@ -2366,10 +2396,24 @@ def change_language():
     return redirect(request.referrer or url_for('main.dashboard'))
 
 def extract_program_name_from_cnc_file(file_path):
-    """Extract .HOP/.HOPS/.HOPX program name from CNC file content"""
+    """Extract .HOP/.HOPS/.HOPX program name from CNC file content or return the path if it's already a HOP file"""
     try:
+        # If the file_path is already a HOP filename (not a full path), return it
+        if file_path and file_path.upper().endswith(('.HOP', '.HOPS', '.HOPX')):
+            return file_path
+            
+        # If it's not a full path that exists, try to find it
         if not file_path or not os.path.exists(file_path):
-            return None
+            # Try to find the file in the current directory or common locations
+            if file_path and not os.path.isabs(file_path):
+                # Check in current directory
+                test_path = os.path.join(os.getcwd(), file_path)
+                if os.path.exists(test_path):
+                    file_path = test_path
+                else:
+                    return None
+            else:
+                return None
             
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
@@ -5049,16 +5093,35 @@ def cleanup_count():
 @login_required
 @admin_required
 def reset_database():
-    """Reset database (delete all events)"""
+    """Reset database (delete all events and related data)"""
     try:
-        # Delete CNC analysis records first
-        CNCAnalysis.query.delete()
+        # Delete tool usage records first (to avoid foreign key constraints)
+        tool_count = ToolUsage.query.delete()
+        
+        # Delete CNC analysis records
+        cnc_count = CNCAnalysis.query.delete()
         
         # Delete all events
-        Event.query.delete()
+        event_count = Event.query.delete()
+        
+        # Delete file change history
+        history_count = FileChangeHistory.query.delete()
+        
         db.session.commit()
-        return jsonify({'success': True})
+        
+        print(f"[DATABASE RESET] Deleted: {tool_count} tool usage, {cnc_count} CNC analyses, {event_count} events, {history_count} history records")
+        
+        return jsonify({
+            'success': True,
+            'deleted': {
+                'tool_usage': tool_count,
+                'cnc_analyses': cnc_count,
+                'events': event_count,
+                'history': history_count
+            }
+        })
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
 @api_bp.route('/database/delete_all', methods=['POST'])
@@ -5066,8 +5129,37 @@ def reset_database():
 @admin_required
 def delete_all_data():
     """Delete all data - extremely dangerous"""
-    # This is a placeholder - implement with extreme caution
-    return jsonify({'success': False, 'error': 'Not implemented for safety'})
+    try:
+        # Require confirmation token for safety
+        confirmation = request.json.get('confirmation')
+        if confirmation != 'DELETE_ALL_DATA':
+            return jsonify({'success': False, 'error': 'Invalid confirmation token'})
+        
+        # Delete in correct order to respect foreign key constraints
+        tool_count = ToolUsage.query.delete()
+        cnc_count = CNCAnalysis.query.delete()
+        history_count = FileChangeHistory.query.delete()
+        event_count = Event.query.delete()
+        
+        # Note: We don't delete users, categories, or monitored paths here
+        # Those are configuration data, not event data
+        
+        db.session.commit()
+        
+        print(f"[DATABASE DELETE ALL] Deleted: {tool_count} tool usage, {cnc_count} CNC analyses, {event_count} events, {history_count} history records")
+        
+        return jsonify({
+            'success': True,
+            'deleted': {
+                'tool_usage': tool_count,
+                'cnc_analyses': cnc_count,
+                'events': event_count,
+                'history': history_count
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
 
 # Add these missing routes to app.py after the existing database routes (around line 1650)
 

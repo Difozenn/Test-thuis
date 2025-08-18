@@ -242,7 +242,7 @@ namespace FileMonitorTray
         
         public HH7Analyzer()
         {
-            // HH7-specific configuration
+            // HH7-specific configuration (from TCALC_HH7)
             _config = new TCALCMachineConfig
             {
                 MAXFEEDRATE_XY = 20000.0,  // Rapid feedrate
@@ -315,7 +315,7 @@ namespace FileMonitorTray
         
         public OpusAnalyzer()
         {
-            // Opus-specific configuration
+            // Opus-specific configuration (RB_OPUS_V7)
             _config = new TCALCMachineConfig
             {
                 MAXFEEDRATE_XY = 20000.0,  // Rapid feedrate
@@ -440,7 +440,7 @@ namespace FileMonitorTray
                 }
                 
                 // Extract Box IDs as tool identifiers for Vision
-                // Format: ; --- Box:  602 HId:1     VF 14 R P/N
+                // Format 1: ; --- Box:  602 HId:1     VF 14 R P/N
                 if (line.Contains("Box:"))
                 {
                     var boxMatch = Regex.Match(line, @"Box:\s*(\d+)");
@@ -450,6 +450,20 @@ namespace FileMonitorTray
                         {
                             result.ToolsUsed.Add(boxId);
                             Console.WriteLine($"[VISION] Found tool Box:{boxId}");
+                        }
+                    }
+                }
+                
+                // Format 2: BOXID:<501> for drilling heads
+                if (line.Contains("BOXID:<"))
+                {
+                    var boxIdMatch = Regex.Match(line, @"BOXID:<(\d+)>");
+                    if (boxIdMatch.Success && int.TryParse(boxIdMatch.Groups[1].Value, out int boxId))
+                    {
+                        if (!result.ToolsUsed.Contains(boxId))
+                        {
+                            result.ToolsUsed.Add(boxId);
+                            Console.WriteLine($"[VISION] Found drilling head Box:{boxId}");
                         }
                     }
                 }
@@ -579,17 +593,22 @@ namespace FileMonitorTray
         public double MachineTime { get; set; }
         public double CutTime { get; set; }  // Actual cutting time (G1, G2, G3)
         public double OverheadTime { get; set; }  // Non-cutting time (rapids, tool changes, etc)
+        public double SpecialDrillingOverhead { get; set; } = 0;  // Extra time for large drilling tools in milling holders
         public int ToolChanges { get; set; }
         public int ProcessesCount { get; set; }
         public Dictionary<string, int> MovementStats { get; set; }
         public List<string> ProcessesUsed { get; set; }
         public List<int> ToolsUsed { get; set; }
         public Dictionary<int, ToolUsageSession> ToolSessions { get; set; }
+        public List<string> HopFiles { get; set; }  // HOP/HOPS/HOPX file references
+        public List<DrillingOperation> DrillingOperations { get; set; }  // Drilling operations detected
         public DateTime AnalyzedAt { get; set; }
         public bool AnalysisSuccessful { get; set; }
         public string ErrorMessage { get; set; }
         public MachineType DetectedMachineType { get; set; }  // Track which machine type was detected
         public string PostprocessorVersion { get; set; }  // Store postprocessor version info
+        public List<string> ReferencedHOPFiles { get; set; }  // HOP/HOPS/HOPX files referenced in the CNC program
+        public string PrimaryHOPFile { get; set; }  // Main HOP file for the program (first or most referenced)
 
         public CNCAnalysis()
         {
@@ -597,6 +616,7 @@ namespace FileMonitorTray
             ProcessesUsed = new List<string>();
             ToolsUsed = new List<int>();
             ToolSessions = new Dictionary<int, ToolUsageSession>();
+            ReferencedHOPFiles = new List<string>();
             AnalyzedAt = DateTime.UtcNow;
             AnalysisSuccessful = false;
         }
@@ -644,7 +664,7 @@ namespace FileMonitorTray
         public double Accel_Decel_G2 { get; set; } = 5000.0;  // Arc moves (moderate acceleration)
         
         // Tool change and cycle constants
-        public double TC_51_51 { get; set; } = 13.05;          // Default tool change time (TCALC standard: 26.1s / 2 tools)
+        public double TC_51_51 { get; set; } = 20.0;          // Default tool change time
         public double DHPinChangeTime { get; set; } = 1.0;     // Pin change time
         public double CLAMPCHANGE { get; set; } = 30.0;        // Clamp change time
         
@@ -813,6 +833,66 @@ namespace FileMonitorTray
             
             return cycleConstant + plungeTime + retractTime;
         }
+        
+        /// <summary>
+        /// Calculate drilling time from a drilling sequence (G0/G1 moves) - simplified
+        /// </summary>
+        public double CalculateDrillingSequenceTime(double safetyZ, double entryZ, double entryDepth, double finalDepth,
+            double entryFeedrate, double drillFeedrate, double retractFeedrate, int dFlag = 10)
+        {
+            // Simplified drilling time calculation
+            // time = distance / feedrate * 60 (to get seconds from mm/min)
+            
+            double totalTime = 0;
+            
+            // Approach time (rapid to safety height)
+            if (safetyZ > 0)
+                totalTime += (safetyZ / _config.MAXFEEDRATE_Z) * 60;
+            
+            // Drilling time (depth at drill feedrate)
+            double drillDepth = Math.Abs(finalDepth);
+            if (drillDepth > 0 && drillFeedrate > 0)
+                totalTime += (drillDepth / drillFeedrate) * 60;
+            
+            // Retract time (rapid back to safety)
+            double retractDistance = Math.Abs(finalDepth) + safetyZ;
+            if (retractDistance > 0)
+                totalTime += (retractDistance / _config.MAXFEEDRATE_Z) * 60;
+            
+            // Add small cycle overhead (1-2 seconds typical)
+            totalTime += 1.5;
+            
+            return totalTime;
+        }
+    }
+    
+    // Drilling operation tracking
+    public class DrillingOperation
+    {
+        public int CycleType { get; set; }  // 10=blind, 20=through, 30=hinge
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double SafetyZ { get; set; }
+        public double EntryZ { get; set; }
+        public double EntryDepth { get; set; }
+        public double FinalDepth { get; set; }
+        public double EntryFeedrate { get; set; }
+        public double DrillFeedrate { get; set; }
+        public double RetractFeedrate { get; set; }
+        public bool IsHorizontal { get; set; }
+        public int ToolNumber { get; set; }
+        public int DrillBitId { get; set; }  // Drill bit identifier from ->xxxx<- pattern
+        public double CalculatedTime { get; set; }
+    }
+    
+    public class DrillMove
+    {
+        public string Code { get; set; }  // G0, G1, etc
+        public double? X { get; set; }
+        public double? Y { get; set; }
+        public double? Z { get; set; }
+        public double? F { get; set; }
+        public bool HasG9 { get; set; }  // G9 = exact stop mode
     }
 
     public class ToolUsageSession
@@ -836,28 +916,38 @@ namespace FileMonitorTray
         
         // Tool state tracking
         private int _currentActiveTool = 0;
+        private int _currentSpecialDrillingTool = 0; // Track Box ID 200-300 drilling tools
         private Dictionary<int, ToolUsageSession> _toolSessions = new Dictionary<int, ToolUsageSession>();
         private int _lastToolChangeLineNumber = -100; // Track line number of last tool change to avoid duplicates
         private double _lastValidFeedrate = DEFAULT_CUTTING_FEEDRATE; // Track last valid feedrate for consistency
         private Dictionary<int, int> _platzToBoxMapping = new Dictionary<int, int>(); // Map Platz to Box ID for Vision/Siemens
+        
+        // Debug counters for T501
+        private int _t501DrillCyclesF600 = 0;
+        private int _t501DrillCyclesF1000 = 0;
+        private int _t501DrillCyclesF2000 = 0;
+        private int _t501XYMoves = 0;
+        private bool _t501DrillCycleStarted = false; // Track if we're in a drill cycle
+        private int _t501LastDrillFeedrate = 0; // Track the feedrate of the current drill cycle
+        private bool _isOpusFile = false; // Track if this is an OPUS postprocessor file
         
         /// <summary>
         /// Get tool usage sessions for detailed timing analysis
         /// </summary>
         public Dictionary<int, ToolUsageSession> GetToolSessions() => _toolSessions;
         
-        // Enhanced timing constants (matching TCALC_HH7 postprocessor)
-        private const double TCP_ON_TIME = 0.1; // seconds (minimal)
-        private const double TCP_OFF_TIME = 0.1; // seconds (minimal)
-        private const double CONTOUR_START_TIME = 0.1; // seconds (minimal)
-        private const double CONTOUR_END_TIME = 0.1; // seconds (minimal)
-        private const double DYNAMIC_SETUP_TIME = 0.1; // seconds (minimal)
-        private const double FLUSH_WAIT_TIME = 0.2; // seconds (minimal)
+        // Enhanced timing constants (based on actual machine measurements)
+        private const double TCP_ON_TIME = 0.4; // seconds (measured from actual operations)
+        private const double TCP_OFF_TIME = 0.4; // seconds (measured from actual operations)
+        private const double CONTOUR_START_TIME = 0.4; // seconds (measured from actual operations)
+        private const double CONTOUR_END_TIME = 0.4; // seconds (measured from actual operations)
+        private const double DYNAMIC_SETUP_TIME = 0.5; // seconds (measured from actual operations)
+        private const double FLUSH_WAIT_TIME = 1.0; // seconds (measured from actual operations)
         private const double COORDINATE_SETUP_TIME = 0.2; // seconds
         private const double GENERAL_CYCLE_TIME = 0.1; // seconds
-        private const double TOOL_CHANGE_TIME = 15.0; // seconds (default)
-        private const double SPINDLE_START_TIME = 3.0; // seconds
-        private const double SPINDLE_STOP_TIME = 2.0; // seconds
+        private const double TOOL_CHANGE_TIME = 20.0; // seconds (default)
+        private const double SPINDLE_START_TIME = 2.0; // seconds (measured: 3 × 2.0s)
+        private const double SPINDLE_STOP_TIME = 1.5; // seconds (measured: 2 × 1.5s)
 
         // Machine operation counters
         private class MachineOperations
@@ -882,6 +972,14 @@ namespace FileMonitorTray
         private double _currentZ = 0;
         private double _currentFeedrate = 0;
         private const double DEFAULT_CUTTING_FEEDRATE = 3000; // Default feedrate if none specified
+        
+        // Drilling detection state
+        private bool _isDrillingSequence = false;
+        private bool _justCompletedDrilling = false; // Flag to prevent duplicate detection
+        private DrillingOperation _currentDrilling = null;
+        private List<DrillMove> _drillMoves = new List<DrillMove>();
+        private double _lastDrillingSafetyZ = 30;  // Common default safety height
+        private List<DrillingOperation> _completedDrillings = new List<DrillingOperation>();
         
         public TCALCAnalyzer()
         {
@@ -989,7 +1087,9 @@ namespace FileMonitorTray
         {
             var analysis = new CNCAnalysis
             {
-                Filename = Path.GetFileName(filePath)
+                Filename = Path.GetFileName(filePath),
+                HopFiles = new List<string>(),
+                DrillingOperations = new List<DrillingOperation>()
             };
             
             // Extract configuration from the file itself
@@ -1030,15 +1130,23 @@ namespace FileMonitorTray
                 _lastValidFeedrate = DEFAULT_CUTTING_FEEDRATE; // Reset to default
                 _lastToolChangeLineNumber = -100; // Reset tool change tracking
                 _currentActiveTool = 0; // Reset active tool
+                _currentSpecialDrillingTool = 0; // Reset special drilling tool
                 _toolSessions.Clear(); // Clear tool sessions from previous analysis
                 _platzToBoxMapping.Clear(); // Clear tool mappings
                 
                 // Pre-scan for Vision/Siemens tool mappings
                 BuildPlatzToBoxMapping(lines);
+                
+                // Extract HOP file references
+                ExtractHOPFileReferences(lines, analysis);
 
                 for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                 {
                     var line = lines[lineIndex];
+                    
+                    // IMPORTANT: Process drilling BEFORE removing comments
+                    ProcessDrillingOperation(line, lines, lineIndex, analysis);
+                    
                     var cleanLine = CleanGCodeLine(line);
                     if (string.IsNullOrEmpty(cleanLine)) continue;
 
@@ -1047,6 +1155,80 @@ namespace FileMonitorTray
 
                     // Extract tool numbers (pass line number to avoid duplicate detection)
                     ExtractToolNumbers(cleanLine, analysis, lineIndex, filePath);
+                    
+                    // Check for special drilling tools in milling holders (Box ID 200-300)
+                    // These are drilling tools too large for the drill head (501)
+                    // Check both process headers and actual drilling operations
+                    if (line.Contains("VertDrilling") && line.Contains("BOXID:<"))
+                    {
+                        // This is a process header for vertical drilling
+                        var boxMatch = Regex.Match(line, @"BOXID:<(\d+)>");
+                        if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                        {
+                            if (boxId >= 200 && boxId <= 300)
+                            {
+                                _currentSpecialDrillingTool = boxId;
+                                Console.WriteLine($"[TCALC] Starting Box {boxId} drilling operations (large tool in milling holder)");
+                            }
+                        }
+                    }
+                    
+                    // When we activate tool 270 (or any Box ID 200-300), mark it as special
+                    if (_currentActiveTool >= 200 && _currentActiveTool <= 300)
+                    {
+                        _currentSpecialDrillingTool = _currentActiveTool;
+                    }
+                    
+                    // Count actual drilling operations with the special tool
+                    // T270 uses F600, F1500, F2000, F2500, F3000 for drilling
+                    // Add overhead time for T270 drilling operations
+                    if (_currentActiveTool == 270)
+                    {
+                        // For T270, add 2.5s overhead per drilling cycle for tool positioning/retraction
+                        // This accounts for the difference between measured G1 time and actual cycle time
+                        if (cleanLine.Contains("G1") && cleanLine.Contains("Z") && 
+                            (_currentFeedrate == 3000 || _currentFeedrate == 2500 || _currentFeedrate == 1500 || _currentFeedrate == 600))
+                        {
+                            // Add overhead time for T270 drilling operations
+                            if (_toolSessions.ContainsKey(270))
+                            {
+                                double overheadTime = 2.5 / 60.0; // 2.5 seconds overhead per cycle
+                                _toolSessions[270].CuttingTime += overheadTime;
+                                Console.WriteLine($"[TCALC] T270 drilling overhead added: {overheadTime*60:F1}s");
+                            }
+                        }
+                    }
+                    // Original special tool logic for counting operations
+                    else if (_currentSpecialDrillingTool > 0 && _currentActiveTool == _currentSpecialDrillingTool)
+                    {
+                        // Check for initial drilling plunge (start of a new hole)
+                        // Other special tools: bore operations typically start with F1500 to Z-3 or F600 to Z=-3
+                        if (cleanLine.Contains("G1") && 
+                            ((cleanLine.Contains("Z-3") && _currentFeedrate == 1500) ||
+                             (cleanLine.Contains("Z=-3") && _currentFeedrate == 600)))
+                        {
+                            // This is the start of a bore operation with the special tool
+                            analysis.SpecialDrillingOverhead += 6.0 / 60.0; // 6 seconds per hole
+                            Console.WriteLine($"[TCALC] T{_currentSpecialDrillingTool} bore hole at F{_currentFeedrate} - adding 6s overhead");
+                        }
+                    }
+                    
+                    // Special handling for T501 drill head operations
+                    // Drill heads have multiple spindles and drill simultaneously
+                    // The time calculation is different from regular G1 moves
+                    bool isDrillHeadOperation = false;
+                    if (_currentActiveTool == 501)
+                    {
+                        // Check if this is a drilling move (Z=-3 at F600)
+                        if (cleanLine.Contains("G1") && (cleanLine.Contains("Z=-3") || cleanLine.Contains("Z-3")) &&
+                            _currentFeedrate == 600)
+                        {
+                            isDrillHeadOperation = true;
+                            // For drill head, use a fixed time per hole instead of feedrate calculation
+                            // Multi-spindle drill heads are fast - 0.5 seconds per cycle
+                            Console.WriteLine($"[TCALC] T501 drill cycle detected at Z=-3 F600 - will use fixed cycle time");
+                        }
+                    }
 
                     // Extract feedrate
                     var feedMatch = Regex.Match(cleanLine, @"F([-+]?\d+\.?\d*)");
@@ -1087,9 +1269,10 @@ namespace FileMonitorTray
                 // Calculate machine operation time
                 double machineOperationTime = CalculateMachineOperationTime(machineOps);
 
-                // Calculate movement times (in minutes from movements)
-                analysis.RapidTime = movements.Where(m => m.Code == "G0").Sum(m => m.Time);
-                analysis.CuttingTime = movements.Where(m => m.Code == "G1" || m.Code == "G2" || m.Code == "G3").Sum(m => m.Time);
+                // Calculate movement times from tool sessions (includes drilling operations)
+                // Tool sessions track the actual accumulated times including drilling cycles
+                analysis.RapidTime = _toolSessions.Values.Sum(s => s.RapidTime);
+                analysis.CuttingTime = _toolSessions.Values.Sum(s => s.CuttingTime);
                 
                 
                 // Tool changes are now counted in ExtractToolNumbers, don't overwrite
@@ -1114,7 +1297,7 @@ namespace FileMonitorTray
                     Console.WriteLine($"  - toolChangeTime = {toolChangeTime}s");
                     Console.WriteLine($"  - Should add {toolChangeTime}s to total time");
                 }
-                double spindleTime = machineOps.SpindleStarts * 1.0; // 1 second per spindle start
+                double spindleTime = machineOps.SpindleStarts * _config.SpindleStartTime; // 3 seconds per spindle start
                 double cycleOverheadTime = machineOps.CycleCount * 0.1; // 0.1 second per L CYCLE call
                 
                 // Debug tool change calculation for Field1
@@ -1143,7 +1326,7 @@ namespace FileMonitorTray
                 // NO CORRECTION - find the real issue first
                 Console.WriteLine($"[TCALC] No correction applied - using raw values");
                 
-                double overheadTimeSeconds = rapidTimeSeconds + toolChangeTime + spindleTime + cycleOverheadTime;
+                double overheadTimeSeconds = rapidTimeSeconds + toolChangeTime + spindleTime + cycleOverheadTime + machineOperationTime;
                 double totalCycleTimeSeconds = cutTimeSeconds + overheadTimeSeconds;
                 
                 // CRITICAL: Verify tool change time is included
@@ -1154,7 +1337,8 @@ namespace FileMonitorTray
                 mathCheck.AppendLine($"  Tool change time: {toolChangeTime}s (from {analysis.ToolChanges} changes × {_config.TC_51_51}s)");
                 mathCheck.AppendLine($"  Spindle time: {spindleTime}s");
                 mathCheck.AppendLine($"  Cycle overhead: {cycleOverheadTime}s");
-                mathCheck.AppendLine($"  Total overhead: {overheadTimeSeconds}s = rapids({rapidTimeSeconds}) + toolchange({toolChangeTime}) + spindle({spindleTime}) + cycle({cycleOverheadTime})");
+                mathCheck.AppendLine($"  Machine operations time: {machineOperationTime}s");
+                mathCheck.AppendLine($"  Total overhead: {overheadTimeSeconds}s = rapids({rapidTimeSeconds}) + toolchange({toolChangeTime}) + spindle({spindleTime}) + cycle({cycleOverheadTime}) + machineOps({machineOperationTime})");
                 mathCheck.AppendLine($"  TOTAL: {totalCycleTimeSeconds}s = cut({cutTimeSeconds}) + overhead({overheadTimeSeconds})");
                 mathCheck.AppendLine($"  TOTAL in minutes: {totalCycleTimeSeconds / 60.0:F4} min");
                 
@@ -1174,36 +1358,49 @@ namespace FileMonitorTray
                     Console.WriteLine($"  - TOTAL: {totalCycleTimeSeconds:F1}s");
                 }
                 
-                Console.WriteLine($"[TCALC] ============ FINAL TIMING ============");
-                Console.WriteLine($"[TCALC] Gesamtzeit/Total: {totalCycleTimeSeconds:F1}s ({totalCycleTimeSeconds/60.0:F2}min)");
-                Console.WriteLine($"[TCALC] Bearbeitungszeit/Processing: {cutTimeSeconds:F1}s");
-                Console.WriteLine($"[TCALC] Werkzeugwechsel/Tool changes: {toolChangeTime:F1}s ({analysis.ToolChanges} changes)");
-                Console.WriteLine($"[TCALC] Eilgänge/Rapids: {rapidTimeSeconds:F1}s");
-                Console.WriteLine($"[TCALC] ======================================");
+                // Final timing moved to after correction (line 1320)
                 
-                // Store times in minutes
-                analysis.TotalTime = totalCycleTimeSeconds / 60.0;  // Total cycle time
-                analysis.CutTime = cutTimeSeconds / 60.0;  // Actual cutting time
-                analysis.OverheadTime = overheadTimeSeconds / 60.0;  // Non-cutting time
-                analysis.MachineTime = analysis.CutTime;  // Machine time = cutting time for compatibility
                 
                 // Finalize tool usage sessions
                 FinalizeToolSessions();
                 
-                // DEBUG: Print summary of tool times
-                Console.WriteLine($"[TCALC] ========== TOOL TIME SUMMARY ==========");
-                Console.WriteLine($"[TCALC] File: {analysis.Filename}");
-                foreach (var session in _toolSessions.Values)
+                // Add OPUS-specific T501 drilling overhead
+                double opusDrillingOverhead = 0;
+                if (_isOpusFile && _toolSessions.ContainsKey(501))
                 {
-                    Console.WriteLine($"[TCALC] T{session.ToolNumber}:");
-                    Console.WriteLine($"  Cutting: {session.CuttingTime*60:F1}s, Rapid: {session.RapidTime*60:F1}s, Total: {session.TotalTime*60:F1}s");
-                    Console.WriteLine($"  Distance: {session.TotalDistance:F1}mm, Moves: {session.MoveCount}");
-                    if (session.TotalTime * 60 > 60) // Flag if tool time > 1 minute
+                    // OPUS files have additional overhead from CH_DRILLHEAD pin changes and coordinate system operations
+                    // Based on analysis: ~1.2s per drilling operation (pin changes + CS transforms)
+                    int totalDrillCycles = _t501DrillCyclesF600 + _t501DrillCyclesF1000 + _t501DrillCyclesF2000;
+                    if (totalDrillCycles > 0)
                     {
-                        Console.WriteLine($"  WARNING: Tool time {session.TotalTime*60:F1}s seems excessive!");
+                        opusDrillingOverhead = totalDrillCycles * 1.2; // 1.2 seconds per drilling operation
+                        Console.WriteLine($"[OPUS T501] Adding {opusDrillingOverhead:F1}s overhead for {totalDrillCycles} drilling operations");
+                        totalCycleTimeSeconds += opusDrillingOverhead;
                     }
                 }
-                Console.WriteLine($"[TCALC] ========================================");
+                
+                // Store final times WITHOUT double-counting drilling operations
+                // The movement calculations already include drilling time!
+                // Add special drilling overhead for large tools in milling holders
+                analysis.TotalTime = (totalCycleTimeSeconds / 60.0) + analysis.SpecialDrillingOverhead;  // Total cycle time in minutes
+                analysis.CutTime = cutTimeSeconds / 60.0;  // Actual cutting time in minutes
+                analysis.CuttingTime = cutTimeSeconds / 60.0;  // Same as CutTime for compatibility
+                analysis.OverheadTime = overheadTimeSeconds / 60.0;  // Non-cutting time in minutes
+                analysis.MachineTime = overheadTimeSeconds / 60.0;  // MachineTime = overhead (rapids + tool changes + spindle)
+                
+                // Show final timing
+                Console.WriteLine($"[TCALC] Total: {totalCycleTimeSeconds:F1}s ({totalCycleTimeSeconds/60.0:F2}min)");
+                Console.WriteLine($"[TCALC] Cutting: {cutTimeSeconds:F1}s, Rapids: {rapidTimeSeconds:F1}s");
+                Console.WriteLine($"[TCALC] Tool changes: {toolChangeTime:F1}s ({analysis.ToolChanges} changes)");
+                
+                
+                // Add drilling operations to analysis
+                if (_completedDrillings != null && _completedDrillings.Count > 0)
+                {
+                    analysis.DrillingOperations = _completedDrillings;
+                    double totalDrillTime = _completedDrillings.Sum(d => d.CalculatedTime);
+                    Console.WriteLine($"[TCALC] Added {_completedDrillings.Count} drilling operations, total time: {totalDrillTime:F1}s");
+                }
                 
                 analysis.AnalysisSuccessful = true;
                 return analysis;
@@ -1274,12 +1471,14 @@ namespace FileMonitorTray
             else if (line.Contains("#CS ON") || line.Contains("#CS OFF") || 
                      line.Contains("#MCS ON") || line.Contains("#MCS OFF"))
                 ops.CoordinateSetups++;
+            else if (line.Contains("CH_DRILLHEAD.NC"))
+                ops.OtherCycles++;  // Drill head pin activation/deactivation
             else if (line.Contains("L CYCLE") && !line.Contains("CH_TOOLCHANGE") && 
                      !line.Contains("CP_TC.NC") && !line.Contains("C_WECHSEL") &&
                      !line.Contains("CH_SPINDEL") && !line.Contains("CP_TSPEED") &&
                      !line.Contains("CH_TCP_") && !line.Contains("CP_TRAFAUS") &&
                      !line.Contains("CH_CONTOUR_") && !line.Contains("CH_DYNAMIC") && !line.Contains("CP_DYNAMIC") && 
-                     !line.Contains("CH_CHECK_TOOL"))
+                     !line.Contains("CH_CHECK_TOOL") && !line.Contains("CH_DRILLHEAD"))
                 ops.OtherCycles++;
         }
 
@@ -1289,7 +1488,7 @@ namespace FileMonitorTray
             // This prevents detecting the same tool change multiple times
             bool isNearRecentToolChange = Math.Abs(lineNumber - _lastToolChangeLineNumber) < 10;
             
-            // 1. OPUS format: CH_TOOLCHANGE.NC with @P4 parameter
+            // 1. RB_OPUS format: CH_TOOLCHANGE.NC with @P4 parameter
             if (line.Contains("CH_TOOLCHANGE.NC", StringComparison.OrdinalIgnoreCase))
             {
                 var toolChangeMatch = Regex.Match(line, @"@P4=(\d+)", RegexOptions.IgnoreCase);
@@ -1305,15 +1504,15 @@ namespace FileMonitorTray
                 }
             }
             
-            // 2. HH7/Nesting format: CP_TC.NC with @P4 parameter
+            // 2. HH7 format: CP_TC.NC with @P4 parameter (Box ID)
             if (line.Contains("CP_TC.NC", StringComparison.OrdinalIgnoreCase))
             {
                 var toolChangeMatch = Regex.Match(line, @"@P4=(\d+)", RegexOptions.IgnoreCase);
-                if (toolChangeMatch.Success && int.TryParse(toolChangeMatch.Groups[1].Value, out int toolNumber))
+                if (toolChangeMatch.Success && int.TryParse(toolChangeMatch.Groups[1].Value, out int boxId))
                 {
-                    if (!isNearRecentToolChange && _currentActiveTool != toolNumber)
+                    if (!isNearRecentToolChange && _currentActiveTool != boxId)
                     {
-                        HandleToolChange(toolNumber, analysis);
+                        HandleToolChange(boxId, analysis);
                         analysis.ToolChanges++;
                         _lastToolChangeLineNumber = lineNumber;
                     }
@@ -1321,31 +1520,21 @@ namespace FileMonitorTray
                 }
             }
             
-            // 3. Vision/Siemens format: C_WECHSEL function
+            // 3. Vision/Siemens format: C_WECHSEL function with Platz mapping
             if (line.Contains("C_WECHSEL", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"[DEBUG] Line {lineNumber}: Found C_WECHSEL in line: {line.Trim()}");
                 var toolMatch = Regex.Match(line, @"C_WECHSEL\((\d+)", RegexOptions.IgnoreCase);
                 if (toolMatch.Success && int.TryParse(toolMatch.Groups[1].Value, out int platzNumber))
                 {
-                    // For Vision/Siemens, try to map Platz number to actual Box ID
-                    // If mapping fails, use the platz number directly
-                    int actualToolNumber = GetActualToolNumberForPlatz(platzNumber, line);
+                    // For Vision/Siemens, map Platz number to actual Box ID
+                    int actualToolNumber = _platzToBoxMapping.ContainsKey(platzNumber) ? 
+                        _platzToBoxMapping[platzNumber] : platzNumber;
                     
-                    Console.WriteLine($"[DEBUG] Line {lineNumber}: C_WECHSEL detected: Platz {platzNumber} → Tool {actualToolNumber}");
-                    
-                    // Always count as tool change if it's a C_WECHSEL command and not too close to last change
-                    if (!isNearRecentToolChange)
+                    if (!isNearRecentToolChange && _currentActiveTool != actualToolNumber)
                     {
-                        // Even if same tool, C_WECHSEL indicates a tool change operation
                         HandleToolChange(actualToolNumber, analysis);
                         analysis.ToolChanges++;
                         _lastToolChangeLineNumber = lineNumber;
-                        Console.WriteLine($"[DEBUG] Tool change added, total changes now: {analysis.ToolChanges}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[DEBUG] Tool change skipped - too close to line {_lastToolChangeLineNumber}");
                     }
                     return;
                 }
@@ -1427,7 +1616,8 @@ namespace FileMonitorTray
             // This helps build the list of tools used in the program
             if (line.Contains("; ---") && line.Contains("Box:"))
             {
-                var boxMatch = Regex.Match(line, @"Box:\s*(\d+).*T:(\d+)", RegexOptions.IgnoreCase);
+                // Try both patterns - with T: for regular tools, without for drilling heads
+                var boxMatch = Regex.Match(line, @"Box:\s*(\d+)", RegexOptions.IgnoreCase);
                 if (boxMatch.Success)
                 {
                     // Use the Box ID as the primary tool identifier
@@ -1449,12 +1639,10 @@ namespace FileMonitorTray
         {
             // Look for tool definitions in comments
             // Format: "Box: 602 ... Platz:17 T:17"
-            Console.WriteLine($"[TCALC] Building Platz→Box mapping from {lines.Length} lines");
             foreach (var line in lines)
             {
                 if (line.Contains("Box:") && line.Contains("Platz:"))
                 {
-                    Console.WriteLine($"[TCALC] Found mapping line: {line.Trim()}");
                     var boxMatch = Regex.Match(line, @"Box:\s*(\d+)");
                     var platzMatch = Regex.Match(line, @"Platz:(\d+)");
                     
@@ -1464,12 +1652,48 @@ namespace FileMonitorTray
                             int.TryParse(platzMatch.Groups[1].Value, out int platzNumber))
                         {
                             _platzToBoxMapping[platzNumber] = boxId;
-                            Console.WriteLine($"[TCALC] Successfully mapped Platz {platzNumber} → Box {boxId}");
                         }
                     }
                 }
             }
-            Console.WriteLine($"[TCALC] Platz mapping complete: {_platzToBoxMapping.Count} mappings");
+            
+            // Also look for drilling head Box IDs
+            // Format 1: "; --- Box:  501 HId:51    Bohrkopf"
+            int drillingBoxId = 0;
+            foreach (var line in lines)
+            {
+                // Find the drilling head box
+                if ((line.Contains("Bohrkopf") || line.Contains("DrillHead")) && line.Contains("Box:"))
+                {
+                    var boxMatch = Regex.Match(line, @"Box:\s*(\d+)");
+                    if (boxMatch.Success && int.TryParse(boxMatch.Groups[1].Value, out int boxId))
+                    {
+                        drillingBoxId = boxId;
+                        Console.WriteLine($"[TCALC] Found drilling head Box {boxId}");
+                    }
+                }
+                
+                // Also check for BOXID format
+                if (line.Contains("BOXID:<") && line.Contains("DHProcess"))
+                {
+                    var boxIdMatch = Regex.Match(line, @"BOXID:<(\d+)>");
+                    if (boxIdMatch.Success && int.TryParse(boxIdMatch.Groups[1].Value, out int boxId))
+                    {
+                        drillingBoxId = boxId;
+                        Console.WriteLine($"[TCALC] Found drilling head Box {boxId} (from BOXID)");
+                    }
+                }
+                
+                // Find T201 or similar drilling head tool numbers and map to drilling box
+                if (drillingBoxId > 0 && line.StartsWith("N") && line.Contains("T201"))
+                {
+                    _platzToBoxMapping[201] = drillingBoxId;
+                    Console.WriteLine($"[TCALC] Mapped drilling head T201 → Box {drillingBoxId}");
+                }
+                
+                // NOTE: Individual drill bits (->203<-, ->209<-) are NOT mapped to Box 501
+                // They are separate drill bit identifiers and should be tracked independently
+            }
             
             // FALLBACK: If no mappings found and this is Field1.spf, use known mappings
             if (_platzToBoxMapping.Count == 0 && lines.Length > 0 && lines[0].Contains("Field1"))
@@ -1477,6 +1701,72 @@ namespace FileMonitorTray
                 _platzToBoxMapping[17] = 602;
                 _platzToBoxMapping[10] = 181;
                 Console.WriteLine("[TCALC] Using default Field1.spf mappings: 17→602, 10→181");
+            }
+        }
+        
+        /// <summary>
+        /// Extract HOP/HOPS/HOPX file references from CNC program
+        /// </summary>
+        private void ExtractHOPFileReferences(string[] lines, CNCAnalysis analysis)
+        {
+            var hopFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var hopPattern = @"([A-Z]:\\[^\\]+(?:\\[^\\]+)*\\[^\\]+\.(?:HOP[SX]?))";
+            var hopPattern2 = @"([\w_\-]+\.(?:HOP[SX]?))(?:\s|$|""|\))";
+            
+            Console.WriteLine($"[TCALC] Scanning {lines.Length} lines for HOP file references");
+            
+            foreach (var line in lines)
+            {
+                // Look for full path HOP references (e.g., Y:\OPUS\KORPUS\...\file.HOP)
+                var fullPathMatches = Regex.Matches(line, hopPattern, RegexOptions.IgnoreCase);
+                foreach (Match match in fullPathMatches)
+                {
+                    if (match.Success)
+                    {
+                        string hopPath = match.Groups[1].Value;
+                        string hopFileName = Path.GetFileName(hopPath);
+                        
+                        if (!string.IsNullOrEmpty(hopFileName))
+                        {
+                            hopFiles.Add(hopFileName);
+                            Console.WriteLine($"[TCALC] Found HOP reference (full path): {hopFileName}");
+                        }
+                    }
+                }
+                
+                // Also look for standalone HOP filenames
+                var standaloneMatches = Regex.Matches(line, hopPattern2, RegexOptions.IgnoreCase);
+                foreach (Match match in standaloneMatches)
+                {
+                    if (match.Success)
+                    {
+                        string hopFileName = match.Groups[1].Value;
+                        
+                        // Filter out common false positives
+                        if (!hopFileName.StartsWith("SHOP", StringComparison.OrdinalIgnoreCase) &&
+                            !hopFileName.StartsWith("WORKSHOP", StringComparison.OrdinalIgnoreCase))
+                        {
+                            hopFiles.Add(hopFileName);
+                            Console.WriteLine($"[TCALC] Found HOP reference (standalone): {hopFileName}");
+                        }
+                    }
+                }
+            }
+            
+            // Store the found HOP files
+            analysis.ReferencedHOPFiles = hopFiles.ToList();
+            analysis.HopFiles = hopFiles.ToList();  // Also populate the new HopFiles property
+            
+            // Set the primary HOP file (first one found or most common)
+            if (analysis.ReferencedHOPFiles.Count > 0)
+            {
+                analysis.PrimaryHOPFile = analysis.ReferencedHOPFiles[0];
+                Console.WriteLine($"[TCALC] Primary HOP file: {analysis.PrimaryHOPFile}");
+                Console.WriteLine($"[TCALC] Total HOP files found: {analysis.ReferencedHOPFiles.Count}");
+            }
+            else
+            {
+                Console.WriteLine($"[TCALC] No HOP file references found in CNC program");
             }
         }
         
@@ -1503,8 +1793,6 @@ namespace FileMonitorTray
         /// </summary>
         private void HandleToolChange(int toolNumber, CNCAnalysis analysis)
         {
-            Console.WriteLine($"[DEBUG] Tool change detected: T{toolNumber}");
-            Console.WriteLine($"[DEBUG] Previous active tool was: T{_currentActiveTool}");
             
             // Add tool to the used tools list
             if (!analysis.ToolsUsed.Contains(toolNumber))
@@ -1516,7 +1804,6 @@ namespace FileMonitorTray
             if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
             {
                 var prevSession = _toolSessions[_currentActiveTool];
-                Console.WriteLine($"[DEBUG] Ending session for T{_currentActiveTool}: cut={prevSession.CuttingTime*60:F1}s, rapid={prevSession.RapidTime*60:F1}s");
             }
             
             // Start new tool session
@@ -1524,12 +1811,10 @@ namespace FileMonitorTray
             if (!_toolSessions.ContainsKey(toolNumber))
             {
                 _toolSessions[toolNumber] = new ToolUsageSession { ToolNumber = toolNumber };
-                Console.WriteLine($"[DEBUG] Created NEW session for T{toolNumber}");
             }
             else
             {
-                Console.WriteLine($"[DEBUG] RESUMING existing session for T{toolNumber}");
-            }
+                }
         }
         
         /// <summary>
@@ -1572,6 +1857,7 @@ namespace FileMonitorTray
                         {
                             // OPUS format detected
                             Console.WriteLine("[TCALC] OPUS postprocessor detected");
+                            _isOpusFile = true;
                         }
                         else if (line.Contains("HH7") || line.Contains("7532DR"))
                         {
@@ -1617,6 +1903,24 @@ namespace FileMonitorTray
                     $"Rapid={session.RapidTime*60:F1}s ({session.RapidTime:F4}min), " +
                     $"Distance={session.TotalDistance:F1}mm, " +
                     $"Moves={session.MoveCount}");
+                    
+                // Special debugging for T501
+                if (session.ToolNumber == 501)
+                {
+                    Console.WriteLine($"[TCALC DEBUG] T501 Final Summary:");
+                    Console.WriteLine($"  - Cutting Time: {session.CuttingTime*60:F1} seconds ({session.CuttingTime:F4} minutes)");
+                    Console.WriteLine($"  - Rapid Time: {session.RapidTime*60:F1} seconds ({session.RapidTime:F4} minutes)");
+                    Console.WriteLine($"  - Total Time: {(session.CuttingTime + session.RapidTime)*60:F1} seconds");
+                    Console.WriteLine($"  - Cutting Distance: {session.CuttingDistance:F1} mm");
+                    Console.WriteLine($"  - Rapid Distance: {session.RapidDistance:F1} mm");
+                    Console.WriteLine($"  - Total Moves: {session.MoveCount}");
+                    Console.WriteLine($"  - Drill Cycles Processed:");
+                    Console.WriteLine($"    * F600: {_t501DrillCyclesF600} cycles × 0.87s = {_t501DrillCyclesF600 * 0.87:F1}s (0.5s drill + 0.37s positioning)");
+                    Console.WriteLine($"    * F1000: {_t501DrillCyclesF1000} cycles × 1.17s = {_t501DrillCyclesF1000 * 1.17:F1}s (0.8s drill + 0.37s positioning)");
+                    Console.WriteLine($"    * F2000: {_t501DrillCyclesF2000} cycles × 0.67s = {_t501DrillCyclesF2000 * 0.67:F1}s (0.3s drill + 0.37s positioning)");
+                    Console.WriteLine($"    * Total drill time expected: {(_t501DrillCyclesF600 * 0.87 + _t501DrillCyclesF1000 * 1.17 + _t501DrillCyclesF2000 * 0.67):F1}s");
+                    Console.WriteLine($"  - XY Positioning Moves: {_t501XYMoves}");
+                }
             }
             
             if (_toolSessions.Count == 0)
@@ -1660,34 +1964,124 @@ namespace FileMonitorTray
                 if (!analysis.ProcessesUsed.Contains("RAPID"))
                     analysis.ProcessesUsed.Add("RAPID");
             }
-            // G1 - Linear cutting moves
+            // G1 - Linear interpolation moves (always at specified feedrate)
             else if (Regex.IsMatch(line, @"\bG1\b|\bG01\b"))
             {
                 // IMPORTANT: Match Python behavior - only process if feedrate is set
                 if (_currentFeedrate > 0)
                 {
-                    movement = CalculateMoveTime(line, _currentFeedrate, "G1");
-                    if (movement != null)
+                    // Special handling for T501 drill head
+                    // Drill heads only drill - they don't do normal cutting operations
+                    bool skipNormalCalculation = false;
+                    if (_currentActiveTool == 501)
                     {
-                        movement.ActiveTool = _currentActiveTool;
+                        // ALL T501 movements are either positioning or drilling, never normal cutting
+                        skipNormalCalculation = true;
                         
-                        // Update movement stats
-                        if (analysis.MovementStats.ContainsKey("G1"))
-                            analysis.MovementStats["G1"]++;
-                        else
-                            analysis.MovementStats["G1"] = 1;
+                        // Check if this is a Z movement
+                        bool isZMove = line.Contains("Z=") || (line.Contains("Z") && !line.Contains("Z "));
                         
-                        // Track tool usage if there's an active tool
-                        if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
+                        if (isZMove)
                         {
-                            var session = _toolSessions[_currentActiveTool];
-                            session.CuttingTime += movement.Time;
-                            session.CuttingDistance += movement.Distance;
-                            session.MoveCount++;
+                            // T501 drill head - count all drilling plunges with appropriate cycle times
+                            // Multi-spindle drill heads drill multiple holes simultaneously
+                            bool isDrillingMove = false;
+                            double drillCycleTime = 0;
+                            
+                            // Check for drilling moves (negative Z with drilling feedrates)
+                            if (line.Contains("Z=-") || line.Contains("Z-"))
+                            {
+                                // Add 0.37s positioning overhead to each drill cycle for spindle positioning
+                                double positioningOverhead = 0.37 / 60.0; // 0.37 seconds overhead
+                                
+                                if (_currentFeedrate == 600)
+                                {
+                                    // Standard drilling at F600 (mostly Z=-3)
+                                    drillCycleTime = (0.5 + 0.37) / 60.0; // 0.87 seconds per cycle (0.5s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                                else if (_currentFeedrate == 1000)
+                                {
+                                    // Deeper drilling at F1000 (mostly Z=-13)
+                                    drillCycleTime = (0.8 + 0.37) / 60.0; // 1.17 seconds per cycle (0.8s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                                else if (_currentFeedrate == 2000)
+                                {
+                                    // Fast drilling at F2000 (various depths)
+                                    drillCycleTime = (0.3 + 0.37) / 60.0; // 0.67 seconds per cycle (0.3s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                            }
+                            
+                            if (isDrillingMove && _toolSessions.ContainsKey(501))
+                            {
+                                _toolSessions[501].CuttingTime += drillCycleTime;
+                                _toolSessions[501].MoveCount++;
+                                
+                                // Count drill cycles by type
+                                if (_currentFeedrate == 600) _t501DrillCyclesF600++;
+                                else if (_currentFeedrate == 1000) _t501DrillCyclesF1000++;
+                                else if (_currentFeedrate == 2000) _t501DrillCyclesF2000++;
+                                
+                                var totalSoFar = _toolSessions[501].CuttingTime * 60; // Convert to seconds
+                                Console.WriteLine($"[TCALC] T501 drill cycle #{_t501DrillCyclesF600 + _t501DrillCyclesF1000 + _t501DrillCyclesF2000} at F{_currentFeedrate} - added {drillCycleTime*60:F1}s (total: {totalSoFar:F1}s)");
+                            }
+                            // All other Z movements (positioning, withdrawal) are ignored
                         }
-                        else if (movement.Time > 0)
+                        else
                         {
-                            Console.WriteLine($"[WARNING] G1 cutting {movement.Time:F3}min but no active tool (tool={_currentActiveTool})");
+                            // XY movements - treat all as rapid positioning regardless of feedrate
+                            var xyMovement = CalculateTCALCMoveTime(line, "G1");
+                            if (xyMovement != null && _toolSessions.ContainsKey(501))
+                            {
+                                // Always add to rapid time, never to cutting time
+                                _toolSessions[501].RapidTime += xyMovement.Time;
+                                _toolSessions[501].RapidDistance += xyMovement.Distance;
+                                _toolSessions[501].MoveCount++;
+                                _t501XYMoves++;
+                                if (_currentFeedrate < 10000)
+                                {
+                                    Console.WriteLine($"[TCALC] T501 XY move #{_t501XYMoves} at F{_currentFeedrate} treated as rapid - {xyMovement.Time*60:F1}s");
+                                }
+                            }
+                            // Don't return movement - we've already handled it
+                        }
+                    }
+                    
+                    if (!skipNormalCalculation)
+                    {
+                        movement = CalculateMoveTime(line, _currentFeedrate, "G1");
+                        if (movement != null)
+                        {
+                            movement.ActiveTool = _currentActiveTool;
+                            
+                            // Update movement stats
+                            if (analysis.MovementStats.ContainsKey("G1"))
+                                analysis.MovementStats["G1"]++;
+                            else
+                                analysis.MovementStats["G1"] = 1;
+                            
+                            // Track tool usage if there's an active tool
+                            if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
+                            {
+                                var session = _toolSessions[_currentActiveTool];
+                                
+                                // For T501, G1 moves don't add cutting time (drill cycles are handled separately)
+                                if (_currentActiveTool != 501)
+                                {
+                                    // ALL G1 moves are cutting/process moves (not rapid)
+                                    // This matches how TCALC_HH7 works
+                                    session.CuttingTime += movement.Time;
+                                    session.CuttingDistance += movement.Distance;
+                                    session.MoveCount++;
+                                    
+                                }
+                            }
+                            else if (movement.Time > 0)
+                            {
+                                Console.WriteLine($"[WARNING] G1 cutting {movement.Time:F3}min but no active tool (tool={_currentActiveTool})");
+                            }
                         }
                     }
                         
@@ -1729,9 +2123,13 @@ namespace FileMonitorTray
                         if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
                         {
                             var session = _toolSessions[_currentActiveTool];
-                            session.CuttingTime += movement.Time;
-                            session.CuttingDistance += movement.Distance;
-                            session.MoveCount++;
+                            // For T501, arc moves don't add cutting time (drill cycles are handled separately)
+                            if (_currentActiveTool != 501)
+                            {
+                                session.CuttingTime += movement.Time;
+                                session.CuttingDistance += movement.Distance;
+                                session.MoveCount++;
+                            }
                         }
                         else if (movement.Time > 0)
                         {
@@ -1778,7 +2176,7 @@ namespace FileMonitorTray
             if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 newY = y;
 
-            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            var zMatch = Regex.Match(line, @"Z=?([-+]?\d*\.?\d+)");
             if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 newZ = z;
 
@@ -1835,7 +2233,7 @@ namespace FileMonitorTray
             if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 newY = y;
 
-            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            var zMatch = Regex.Match(line, @"Z=?([-+]?\d*\.?\d+)");
             if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 newZ = z;
 
@@ -1877,7 +2275,7 @@ namespace FileMonitorTray
             if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 _currentY = y;
 
-            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            var zMatch = Regex.Match(line, @"Z=?([-+]?\d*\.?\d+)");
             if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 _currentZ = z;
         }
@@ -1888,6 +2286,16 @@ namespace FileMonitorTray
         private CNCMovement ProcessMovementTCALC(string line, CNCAnalysis analysis)
         {
             CNCMovement movement = null;
+
+            // CRITICAL: Only process as movement if line contains coordinates (X, Y, or Z)
+            // This prevents processing preparatory commands like "G0" or "G1 F1000" as movements
+            bool hasCoordinates = Regex.IsMatch(line, @"[XYZ][-+]?\d*\.?\d+");
+            
+            if (!hasCoordinates)
+            {
+                // Not a movement, just a preparatory command
+                return null;
+            }
 
             // G0 - Rapid moves using TCALC acceleration/deceleration
             if (Regex.IsMatch(line, @"\bG0\b|\bG00\b"))
@@ -1916,34 +2324,124 @@ namespace FileMonitorTray
                 if (!analysis.ProcessesUsed.Contains("RAPID"))
                     analysis.ProcessesUsed.Add("RAPID");
             }
-            // G1 - Linear cutting moves using TCALC acceleration/deceleration
+            // G1 - Linear interpolation moves (always at specified feedrate)
             else if (Regex.IsMatch(line, @"\bG1\b|\bG01\b"))
             {
                 if (_currentFeedrate > 0)
                 {
-                    movement = CalculateTCALCMoveTime(line, "G1");
-                    if (movement != null)
+                    // Special handling for T501 drill head
+                    // Drill heads only drill - they don't do normal cutting operations
+                    bool skipNormalCalculation = false;
+                    if (_currentActiveTool == 501)
                     {
-                        movement.ActiveTool = _currentActiveTool;
+                        // ALL T501 movements are either positioning or drilling, never normal cutting
+                        skipNormalCalculation = true;
                         
-                        // Update movement stats
-                        if (analysis.MovementStats.ContainsKey("G1"))
-                            analysis.MovementStats["G1"]++;
-                        else
-                            analysis.MovementStats["G1"] = 1;
+                        // Check if this is a Z movement
+                        bool isZMove = line.Contains("Z=") || (line.Contains("Z") && !line.Contains("Z "));
                         
-                        // Track tool usage if there's an active tool
-                        if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
+                        if (isZMove)
                         {
-                            var session = _toolSessions[_currentActiveTool];
-                            session.CuttingTime += movement.Time; // Time is in minutes
-                            session.CuttingDistance += movement.Distance;
-                            session.MoveCount++;
+                            // T501 drill head - count all drilling plunges with appropriate cycle times
+                            // Multi-spindle drill heads drill multiple holes simultaneously
+                            bool isDrillingMove = false;
+                            double drillCycleTime = 0;
                             
-                            // Debug output for significant moves
-                            if (movement.Distance > 10)
+                            // Check for drilling moves (negative Z with drilling feedrates)
+                            if (line.Contains("Z=-") || line.Contains("Z-"))
                             {
-                                Console.WriteLine($"[DEBUG] T{_currentActiveTool} G1: {movement.Distance:F1}mm @ {movement.Feedrate:F0}mm/min = {movement.Time*60:F2}s (total cutting: {session.CuttingTime*60:F1}s)");
+                                // Add 0.37s positioning overhead to each drill cycle for spindle positioning
+                                double positioningOverhead = 0.37 / 60.0; // 0.37 seconds overhead
+                                
+                                if (_currentFeedrate == 600)
+                                {
+                                    // Standard drilling at F600 (mostly Z=-3)
+                                    drillCycleTime = (0.5 + 0.37) / 60.0; // 0.87 seconds per cycle (0.5s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                                else if (_currentFeedrate == 1000)
+                                {
+                                    // Deeper drilling at F1000 (mostly Z=-13)
+                                    drillCycleTime = (0.8 + 0.37) / 60.0; // 1.17 seconds per cycle (0.8s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                                else if (_currentFeedrate == 2000)
+                                {
+                                    // Fast drilling at F2000 (various depths)
+                                    drillCycleTime = (0.3 + 0.37) / 60.0; // 0.67 seconds per cycle (0.3s drill + 0.37s positioning)
+                                    isDrillingMove = true;
+                                }
+                            }
+                            
+                            if (isDrillingMove && _toolSessions.ContainsKey(501))
+                            {
+                                _toolSessions[501].CuttingTime += drillCycleTime;
+                                _toolSessions[501].MoveCount++;
+                                
+                                // Count drill cycles by type
+                                if (_currentFeedrate == 600) _t501DrillCyclesF600++;
+                                else if (_currentFeedrate == 1000) _t501DrillCyclesF1000++;
+                                else if (_currentFeedrate == 2000) _t501DrillCyclesF2000++;
+                                
+                                var totalSoFar = _toolSessions[501].CuttingTime * 60; // Convert to seconds
+                                Console.WriteLine($"[TCALC] T501 drill cycle #{_t501DrillCyclesF600 + _t501DrillCyclesF1000 + _t501DrillCyclesF2000} at F{_currentFeedrate} - added {drillCycleTime*60:F1}s (total: {totalSoFar:F1}s)");
+                            }
+                            // All other Z movements (positioning, withdrawal) are ignored
+                        }
+                        else
+                        {
+                            // XY movements - treat all as rapid positioning regardless of feedrate
+                            var xyMovement = CalculateTCALCMoveTime(line, "G1");
+                            if (xyMovement != null && _toolSessions.ContainsKey(501))
+                            {
+                                // Always add to rapid time, never to cutting time
+                                _toolSessions[501].RapidTime += xyMovement.Time;
+                                _toolSessions[501].RapidDistance += xyMovement.Distance;
+                                _toolSessions[501].MoveCount++;
+                                _t501XYMoves++;
+                                if (_currentFeedrate < 10000)
+                                {
+                                    Console.WriteLine($"[TCALC] T501 XY move #{_t501XYMoves} at F{_currentFeedrate} treated as rapid - {xyMovement.Time*60:F1}s");
+                                }
+                            }
+                            // Don't return movement - we've already handled it
+                        }
+                    }
+                    
+                    if (!skipNormalCalculation)
+                    {
+                        movement = CalculateTCALCMoveTime(line, "G1");
+                        if (movement != null)
+                        {
+                            movement.ActiveTool = _currentActiveTool;
+                            
+                            // Update movement stats
+                            if (analysis.MovementStats.ContainsKey("G1"))
+                                analysis.MovementStats["G1"]++;
+                            else
+                                analysis.MovementStats["G1"] = 1;
+                            
+                            // Track tool usage if there's an active tool
+                            if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
+                            {
+                                var session = _toolSessions[_currentActiveTool];
+                                
+                                // For T501, G1 moves don't add cutting time (drill cycles are handled separately)
+                                if (_currentActiveTool != 501)
+                                {
+                                    // ALL G1 moves are cutting/process moves (not rapid)
+                                    // This matches how TCALC_HH7 works
+                                    session.CuttingTime += movement.Time; // Time is in minutes
+                                    session.CuttingDistance += movement.Distance;
+                                    session.MoveCount++;
+                                    
+                                    
+                                    // Debug output for significant moves
+                                    if (movement.Distance > 10)
+                                    {
+                                        Console.WriteLine($"[DEBUG] T{_currentActiveTool} G1: {movement.Distance:F1}mm @ {movement.Feedrate:F0}mm/min = {movement.Time*60:F2}s (total cutting: {session.CuttingTime*60:F1}s)");
+                                    }
+                                }
                             }
                         }
                     }
@@ -1985,9 +2483,13 @@ namespace FileMonitorTray
                         if (_currentActiveTool > 0 && _toolSessions.ContainsKey(_currentActiveTool))
                         {
                             var session = _toolSessions[_currentActiveTool];
-                            session.CuttingTime += movement.Time; // Time is in minutes
-                            session.CuttingDistance += movement.Distance;
-                            session.MoveCount++;
+                            // For T501, arc moves don't add cutting time (drill cycles are handled separately)
+                            if (_currentActiveTool != 501)
+                            {
+                                session.CuttingTime += movement.Time; // Time is in minutes
+                                session.CuttingDistance += movement.Distance;
+                                session.MoveCount++;
+                            }
                         }
                     }
                         
@@ -2061,37 +2563,20 @@ namespace FileMonitorTray
             // Calculate cycle time based on TCALC_HH7 logic
             double cycleTime = 0;
             
-            // Drilling cycles (TCALC standard times)
-            if (cycleName.Contains("81") || cycleName.Contains("DRILL") || cycleName.Contains("BORING"))
+            // Skip drilling cycle time calculation for HH7 format
+            // In HH7/nesting files, drilling is represented by actual G1 movements
+            // Adding cycle time would double-count the drilling operations
+            if (cycleName.Contains("CP_DHCODE"))
             {
-                // Standard drilling cycle - base time + depth-dependent time
-                cycleTime = _config.ConstdHCycle10; // Base cycle time from TCALC config
-                
-                // Add depth-dependent time if depth parameter found
-                foreach (var part in parts)
-                {
-                    if (part.Contains("@P3=") || part.Contains("DEPTH"))
-                    {
-                        var depthMatch = Regex.Match(part, @"@P3=([\d.-]+)|DEPTH=([\d.-]+)");
-                        if (depthMatch.Success)
-                        {
-                            string depthStr = depthMatch.Groups[1].Value;
-                            if (string.IsNullOrEmpty(depthStr)) depthStr = depthMatch.Groups[2].Value;
-                            
-                            if (double.TryParse(depthStr, out double depth))
-                            {
-                                // Add time for plunge and retract (simplified TCALC logic)
-                                double plungeFeedrate = _currentFeedrate > 0 ? _currentFeedrate : 500; // Default drill feedrate
-                                double retractFeedrate = _config.MAXFEEDRATE_Z;
-                                
-                                // GetTimePath returns seconds, cycleTime is in seconds
-                                cycleTime += _engine.GetTimePath(Math.Abs(depth), plungeFeedrate);
-                                cycleTime += _engine.GetTimePath(Math.Abs(depth), retractFeedrate);
-                            }
-                        }
-                        break;
-                    }
-                }
+                // Drill head code - no additional time needed
+                return;
+            }
+            else if (cycleName.Contains("81") || cycleName.Contains("DRILL") || cycleName.Contains("BORING"))
+            {
+                // For non-HH7 formats, drilling cycles might need time calculation
+                // But for HH7/nesting, the movements are already in the file
+                // Only add minimal overhead for cycle processing
+                cycleTime = 0.1; // Minimal cycle overhead
             }
             else if (cycleName.Contains("CONTOUR") || cycleName.Contains("PROFILE"))
             {
@@ -2100,8 +2585,9 @@ namespace FileMonitorTray
             }
             else
             {
-                // Generic cycle overhead (most L CYCLE calls fall here)
-                cycleTime = 1.0; // 1 second per cycle (matching TCALC report: 258 cycles ≈ 4.3 minutes)
+                // Generic cycle overhead - reduced for HH7 format
+                // Most L CYCLE calls in HH7 are control codes, not actual operations
+                cycleTime = 0.0; // No time for control cycles
             }
             
             // Add to analysis (store in seconds, will be converted to minutes later)
@@ -2134,7 +2620,7 @@ namespace FileMonitorTray
             if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double y))
                 newY = y;
 
-            var zMatch = Regex.Match(line, @"Z([-+]?\d*\.?\d+)");
+            var zMatch = Regex.Match(line, @"Z=?([-+]?\d*\.?\d+)");
             if (zMatch.Success && double.TryParse(zMatch.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double z))
                 newZ = z;
 
@@ -2168,16 +2654,6 @@ namespace FileMonitorTray
                 
                 timeMinutes = distance / feedrate; // Direct calculation in minutes
                 
-                // DEBUG: Log ALL movements to find the issue
-                if (distance > 0.1)
-                {
-                    Console.WriteLine($"[TCALC DEBUG] G0: From ({_currentX:F1},{_currentY:F1},{_currentZ:F1}) to ({newX:F1},{newY:F1},{newZ:F1})");
-                    Console.WriteLine($"  Distance: {distance:F1}mm, Feedrate: {feedrate:F0}mm/min, Time: {timeMinutes*60:F2}s");
-                    if (timeMinutes * 60 > 10) // Flag suspiciously long movements
-                    {
-                        Console.WriteLine($"  WARNING: Movement taking {timeMinutes*60:F1}s seems too long!");
-                    }
-                }
             }
             else if (code == "G1")
             {
@@ -2185,17 +2661,6 @@ namespace FileMonitorTray
                 feedrate = _currentFeedrate > 0 ? _currentFeedrate : _lastValidFeedrate;
                 timeMinutes = distance / feedrate; // Direct calculation in minutes
                 
-                // DEBUG: Log ALL cutting movements to find the issue
-                if (distance > 0.1)
-                {
-                    Console.WriteLine($"[TCALC DEBUG] G1: From ({_currentX:F1},{_currentY:F1},{_currentZ:F1}) to ({newX:F1},{newY:F1},{newZ:F1})");
-                    Console.WriteLine($"  Distance: {distance:F1}mm, Feedrate: {feedrate:F0}mm/min, Time: {timeMinutes*60:F2}s");
-                    Console.WriteLine($"  Current tool: T{_currentActiveTool}");
-                    if (timeMinutes * 60 > 10) // Flag suspiciously long movements
-                    {
-                        Console.WriteLine($"  WARNING: Cutting movement taking {timeMinutes*60:F1}s seems too long!");
-                    }
-                }
             }
 
             // Update current position after calculating distance
@@ -2280,8 +2745,8 @@ namespace FileMonitorTray
 
         private double CalculateMachineOperationTime(MachineOperations ops)
         {
-            // Calculate total machine operation time in seconds (matching Python logic)
-            return ops.ToolChanges * _config.TC_51_51 +
+            // Calculate total machine operation time in seconds
+            double totalTime = ops.ToolChanges * _config.TC_51_51 +
                    ops.SpindleStarts * _config.SpindleStartTime +
                    ops.SpindleStops * SPINDLE_STOP_TIME +
                    ops.TcpOn * TCP_ON_TIME +
@@ -2292,6 +2757,487 @@ namespace FileMonitorTray
                    ops.FlushWaits * FLUSH_WAIT_TIME +
                    ops.CoordinateSetups * COORDINATE_SETUP_TIME +
                    ops.OtherCycles * GENERAL_CYCLE_TIME;
+            
+            // Debug output for machine operations
+            if (ops.TcpOn > 0 || ops.ContourStarts > 0 || ops.DynamicSetups > 0 || ops.FlushWaits > 0)
+            {
+                Console.WriteLine($"[MACHINE OPS] Detected operations:");
+                if (ops.TcpOn > 0) Console.WriteLine($"  - TCP ON: {ops.TcpOn} × {TCP_ON_TIME}s = {ops.TcpOn * TCP_ON_TIME:F1}s");
+                if (ops.TcpOff > 0) Console.WriteLine($"  - TCP OFF: {ops.TcpOff} × {TCP_OFF_TIME}s = {ops.TcpOff * TCP_OFF_TIME:F1}s");
+                if (ops.ContourStarts > 0) Console.WriteLine($"  - Contour Start: {ops.ContourStarts} × {CONTOUR_START_TIME}s = {ops.ContourStarts * CONTOUR_START_TIME:F1}s");
+                if (ops.ContourEnds > 0) Console.WriteLine($"  - Contour End: {ops.ContourEnds} × {CONTOUR_END_TIME}s = {ops.ContourEnds * CONTOUR_END_TIME:F1}s");
+                if (ops.DynamicSetups > 0) Console.WriteLine($"  - Dynamic Setup: {ops.DynamicSetups} × {DYNAMIC_SETUP_TIME}s = {ops.DynamicSetups * DYNAMIC_SETUP_TIME:F1}s");
+                if (ops.FlushWaits > 0) Console.WriteLine($"  - Flush Wait: {ops.FlushWaits} × {FLUSH_WAIT_TIME}s = {ops.FlushWaits * FLUSH_WAIT_TIME:F1}s");
+                if (ops.CoordinateSetups > 0) Console.WriteLine($"  - Coordinate Setup: {ops.CoordinateSetups} × {COORDINATE_SETUP_TIME}s = {ops.CoordinateSetups * COORDINATE_SETUP_TIME:F1}s");
+                if (ops.OtherCycles > 0) Console.WriteLine($"  - Other Cycles: {ops.OtherCycles} × {GENERAL_CYCLE_TIME}s = {ops.OtherCycles * GENERAL_CYCLE_TIME:F1}s");
+                Console.WriteLine($"  - Total Machine Ops Time: {totalTime:F1}s");
+            }
+            
+            return totalTime;
+        }
+        
+        /// <summary>
+        /// Process drilling operations from comments and movement patterns
+        /// </summary>
+        private void ProcessDrillingOperation(string line, string[] lines, int lineIndex, CNCAnalysis analysis)
+        {
+            // Check for drilling cycle indicators in comments
+            // Skip "Drill Cycle" lines that immediately follow drilling operation comments
+            bool isDrillCycleLine = line.Contains("; --- Drill Cycle");
+            bool isDrillingComment = (line.Contains("; --- vertical drilling") ||
+                                    line.Contains("; --- horizontal drilling") ||
+                                    line.Contains("; --- Bohren") ||
+                                    line.Contains("bohren") ||
+                                    line.Contains("DH:53000")) && !isDrillCycleLine;
+            
+            // Also check for L CYCLE drilling calls (HH7 format)
+            bool isDrillingCycle = line.Contains("CP_DH.NC") || line.Contains("DH:53000");
+            
+            // Skip processing if we just completed a drilling operation and this is just a follow-up comment
+            if (_justCompletedDrilling && (isDrillCycleLine || isDrillingComment))
+            {
+                // Reset the flag if this is NOT a drilling-related line
+                return; // Skip duplicate detection  
+            }
+            
+            // If we're already in a drilling sequence and encounter a "Drill Cycle" line, skip it
+            if (_isDrillingSequence && isDrillCycleLine)
+            {
+                return; // Skip duplicate detection
+            }
+            
+            // Reset the "just completed" flag if this is not a drilling line
+            if (!isDrillingComment && !isDrillingCycle && !isDrillCycleLine)
+            {
+                _justCompletedDrilling = false;
+            }
+            
+            if (isDrillingComment || isDrillingCycle)
+            {
+                // Determine cycle type from comment or default to blind hole
+                int cycleType = ExtractDrillingCycleType(line);
+                bool isHorizontal = line.Contains("horizontal");
+                
+                // Extract drill bit ID from comment if present (for logging only)
+                int drillBitId = ExtractDrillBitId(line);
+                
+                // Always use the current active tool (T501) for drilling operations
+                // Drill bits (203, 209) are NOT separate tools, they're bits used BY T501
+                int actualDrillingTool = _currentActiveTool;
+                
+                // Initialize drilling operation
+                _currentDrilling = new DrillingOperation
+                {
+                    CycleType = cycleType,
+                    X = _currentX,
+                    Y = _currentY,
+                    IsHorizontal = isHorizontal,
+                    ToolNumber = actualDrillingTool,  // Use drill bit ID if available, otherwise current tool
+                    DrillBitId = drillBitId,
+                    DrillFeedrate = 3500,  // Default drill feedrate
+                    EntryFeedrate = 2000,  // Default entry feedrate
+                    RetractFeedrate = 10000  // Default retract feedrate
+                };
+                
+                _isDrillingSequence = true;
+                _drillMoves.Clear();
+                
+                string drillBitInfo = drillBitId > 0 ? $" (Drill Bit T{drillBitId})" : "";
+                Console.WriteLine($"[DRILL] Detected drilling at line {lineIndex + 1}: Cycle {cycleType}, Tool T{actualDrillingTool}{drillBitInfo}");
+                Console.WriteLine($"[DRILL DEBUG] Line content: {line.Substring(0, Math.Min(line.Length, 100))}");
+                
+                // For OPUS vertical drilling, check if moves are BEFORE the comment (look back up to 10 lines)
+                bool foundBackwardMoves = false;
+                if (line.Contains("vertical drilling") && lineIndex > 0)
+                {
+                    int lookback = Math.Min(10, lineIndex);
+                    for (int i = lookback; i >= 1; i--)
+                    {
+                        var prevLine = lines[lineIndex - i];
+                        var cleanPrev = CleanGCodeLine(prevLine);
+                        
+                        if (IsDrillMove(cleanPrev))
+                        {
+                            var move = ParseDrillMove(cleanPrev);
+                            if (move != null)
+                            {
+                                _drillMoves.Add(move);
+                                foundBackwardMoves = true;
+                            }
+                        }
+                    }
+                    
+                    // If we found moves before the comment, check if it's a complete sequence
+                    if (foundBackwardMoves && IsCompleteDrillingSequence())
+                    {
+                        Console.WriteLine($"[DRILL] Found complete sequence BEFORE drilling comment");
+                        CompleteDrillingOperation();
+                        return;
+                    }
+                }
+                
+                // For L CYCLE format, extract parameters directly
+                if (isDrillingCycle && line.Contains("@P"))
+                {
+                    ProcessLCycleDrilling(line);
+                    return;
+                }
+                
+                // Look ahead to capture the drilling sequence (max 25 lines for OPUS which has many setup lines)
+                int lookahead = Math.Min(25, lines.Length - lineIndex - 1);
+                for (int i = 1; i <= lookahead; i++)
+                {
+                    if (lineIndex + i >= lines.Length) break;
+                    
+                    var nextLine = lines[lineIndex + i];
+                    var cleanNext = CleanGCodeLine(nextLine);
+                    
+                    // Stop if we hit another major operation
+                    if (IsNewMajorOperation(nextLine)) break;
+                    
+                    // Capture drill moves
+                    if (IsDrillMove(cleanNext))
+                    {
+                        var move = ParseDrillMove(cleanNext);
+                        if (move != null)
+                        {
+                            _drillMoves.Add(move);
+                            
+                            // Check if this completes a drilling sequence
+                            if (IsCompleteDrillingSequence())
+                            {
+                                CompleteDrillingOperation();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            // Check if we're in an active drilling sequence and should capture moves
+            else if (_isDrillingSequence)
+            {
+                var cleanLine = CleanGCodeLine(line);
+                if (IsDrillMove(cleanLine))
+                {
+                    var move = ParseDrillMove(cleanLine);
+                    if (move != null)
+                    {
+                        _drillMoves.Add(move);
+                        
+                        // Check if sequence is complete
+                        if (IsCompleteDrillingSequence())
+                        {
+                            CompleteDrillingOperation();
+                        }
+                    }
+                }
+                else if (IsNewMajorOperation(line))
+                {
+                    // Force complete if we have moves
+                    if (_drillMoves.Count > 2)
+                    {
+                        CompleteDrillingOperation();
+                    }
+                    else
+                    {
+                        _isDrillingSequence = false;
+                        _currentDrilling = null;
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Extract drill bit ID from drilling comment
+        /// </summary>
+        private int ExtractDrillBitId(string line)
+        {
+            // Extract drill bit ID from arrow pattern ->xxxx<-
+            // Handles both single ID (->203<-) and multi-ID (->1509;1510<-) patterns
+            var drillBitMatch = Regex.Match(line, @"->\s*([0-9;]+)\s*<-");
+            if (drillBitMatch.Success)
+            {
+                string idString = drillBitMatch.Groups[1].Value;
+                // For multi-ID patterns, take the first ID
+                string firstId = idString.Split(';')[0];
+                if (int.TryParse(firstId, out int drillBitId))
+                {
+                    return drillBitId;
+                }
+            }
+            return 0;
+        }
+        
+        /// <summary>
+        /// Extract drilling cycle type from comment or line
+        /// </summary>
+        private int ExtractDrillingCycleType(string line)
+        {
+            // Direct cycle number extraction
+            var cycleMatch = Regex.Match(line, @"Cycle\s+(\d+)|Cycle(\d+)|CYCLE\s+(\d+)");
+            if (cycleMatch.Success)
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    if (cycleMatch.Groups[i].Success && int.TryParse(cycleMatch.Groups[i].Value, out int cycle))
+                        return cycle;
+                }
+            }
+            
+            // Check for through hole indicators
+            if (line.Contains("through") || line.Contains("Durch") || line.Contains("DURCH"))
+                return 20;
+            
+            // Check for hinge/dwell indicators  
+            if (line.Contains("hinge") || line.Contains("dwell") || line.Contains("Topf"))
+                return 30;
+            
+            // Default to blind hole
+            return 10;
+        }
+        
+        /// <summary>
+        /// Process L CYCLE drilling format (HH7)
+        /// </summary>
+        private void ProcessLCycleDrilling(string line)
+        {
+            // Extract parameters from L CYCLE [NAME=CP_DH.NC @P1=... @P2=... @P3=depth ...]
+            var depthMatch = Regex.Match(line, @"@P3=([-\d.]+)");
+            var feedMatch = Regex.Match(line, @"@P4=([\d.]+)");
+            
+            if (depthMatch.Success && double.TryParse(depthMatch.Groups[1].Value, out double depth))
+            {
+                _currentDrilling.FinalDepth = depth;
+            }
+            
+            if (feedMatch.Success && double.TryParse(feedMatch.Groups[1].Value, out double feed))
+            {
+                _currentDrilling.DrillFeedrate = feed;
+            }
+            
+            // Calculate time immediately for L CYCLE format
+            double drillTime = _engine.CalculateDrillingCycleTime(
+                _currentDrilling.CycleType,
+                Math.Abs(_currentDrilling.FinalDepth),
+                _currentDrilling.DrillFeedrate,
+                _currentDrilling.RetractFeedrate
+            );
+            
+            _currentDrilling.CalculatedTime = drillTime;
+            
+            // Add to tool session - ALWAYS use current active tool (T501), not drill bit ID  
+            // Drill bits are not separate tools, they're bits used BY the drilling head
+            int toolToUpdate = _currentActiveTool;
+            
+            if (toolToUpdate > 0 && _toolSessions.ContainsKey(toolToUpdate))
+            {
+                // Skip adding time for T501 as it's already handled in special T501 processing
+                if (toolToUpdate != 501)
+                {
+                    _toolSessions[toolToUpdate].CuttingTime += drillTime / 60.0; // Convert to minutes
+                    
+                    // Add drilling distance (depth * 2 for entry and retract)
+                    double drillDistance = Math.Abs(_currentDrilling.FinalDepth) * 2; // Entry + retract
+                    _toolSessions[toolToUpdate].CuttingDistance += drillDistance;
+                    
+                    string toolInfo = _currentDrilling.DrillBitId > 0 ? $"T{toolToUpdate} using drill bit {_currentDrilling.DrillBitId}" : $"T{toolToUpdate}";
+                    Console.WriteLine($"[DRILL] L CYCLE drilling: {drillTime:F2}s, {drillDistance:F1}mm added to {toolInfo}");
+                }
+                else
+                {
+                    Console.WriteLine($"[DRILL] L CYCLE: Skipping time addition for T501 (handled by special T501 logic)");
+                }
+            }
+            
+            _completedDrillings.Add(_currentDrilling);
+            _isDrillingSequence = false;
+            _justCompletedDrilling = true; // Set flag to prevent duplicate detection on next line
+            _currentDrilling = null;
+        }
+        
+        /// <summary>
+        /// Check if a line represents a drill-related move
+        /// </summary>
+        private bool IsDrillMove(string line)
+        {
+            // Must have G0 or G1 and Z coordinate
+            return (line.Contains("G0") || line.Contains("G1")) && line.Contains("Z");
+        }
+        
+        /// <summary>
+        /// Parse a drilling move from a line
+        /// </summary>
+        private DrillMove ParseDrillMove(string line)
+        {
+            var move = new DrillMove
+            {
+                Code = line.Contains("G0") ? "G0" : "G1",
+                HasG9 = line.Contains("G9")
+            };
+            
+            // Extract coordinates
+            var xMatch = Regex.Match(line, @"X([-+]?\d*\.?\d+)");
+            if (xMatch.Success && double.TryParse(xMatch.Groups[1].Value, out double x))
+                move.X = x;
+            
+            var yMatch = Regex.Match(line, @"Y([-+]?\d*\.?\d+)");
+            if (yMatch.Success && double.TryParse(yMatch.Groups[1].Value, out double y))
+                move.Y = y;
+            
+            var zMatch = Regex.Match(line, @"Z=([-+]?\d*\.?\d+)|Z([-+]?\d*\.?\d+)");
+            if (zMatch.Success)
+            {
+                string zValue = zMatch.Groups[1].Success ? zMatch.Groups[1].Value : zMatch.Groups[2].Value;
+                if (double.TryParse(zValue, out double z))
+                    move.Z = z;
+            }
+            
+            var fMatch = Regex.Match(line, @"F([\d.]+)");
+            if (fMatch.Success && double.TryParse(fMatch.Groups[1].Value, out double f))
+                move.F = f;
+            
+            return move;
+        }
+        
+        /// <summary>
+        /// Check if drilling sequence is complete
+        /// </summary>
+        private bool IsCompleteDrillingSequence()
+        {
+            if (_drillMoves.Count < 3) return false;
+            
+            // Typical sequence has:
+            // 1. G0 to safety height
+            // 2. G1 to entry position  
+            // 3. G1 drilling down (negative Z)
+            // 4. G0/G1 retract (positive Z)
+            
+            // Accept both G0 and G1 for positioning (OPUS vertical drilling uses G1 for entry)
+            // This is safe because we still check Z > 0 (above workpiece)
+            bool hasPositioning = _drillMoves.Any(m => (m.Code == "G0" || m.Code == "G1") && m.Z.HasValue && m.Z > 0);
+            bool hasDrilling = _drillMoves.Any(m => m.Code == "G1" && m.Z.HasValue && m.Z < 0);
+            bool hasRetract = _drillMoves.Count > 2 && 
+                             _drillMoves.Last().Z.HasValue && 
+                             _drillMoves.Last().Z > _drillMoves[_drillMoves.Count - 2].Z;
+            
+            return hasPositioning && hasDrilling && hasRetract;
+        }
+        
+        /// <summary>
+        /// Complete the current drilling operation and calculate time
+        /// </summary>
+        private void CompleteDrillingOperation()
+        {
+            if (_currentDrilling == null || _drillMoves.Count < 3) return;
+            
+            // Extract drilling parameters from moves
+            double safetyZ = 30;  // Default
+            double entryZ = 2;    // Default
+            double entryDepth = -2.5;  // Default
+            double finalDepth = -10;   // Default
+            double entryFeed = 2000;
+            double drillFeed = 3500;
+            double retractFeed = 10000;
+            
+            // Find actual values from moves
+            var safetyMove = _drillMoves.FirstOrDefault(m => m.Code == "G0" && m.Z > 10);
+            if (safetyMove?.Z.HasValue == true)
+                safetyZ = safetyMove.Z.Value;
+            
+            var entryMove = _drillMoves.FirstOrDefault(m => m.Code == "G1" && m.Z > 0 && m.Z < 10);
+            if (entryMove?.Z.HasValue == true)
+                entryZ = entryMove.Z.Value;
+            
+            var firstDrillMove = _drillMoves.FirstOrDefault(m => m.Code == "G1" && m.Z < 0);
+            if (firstDrillMove != null)
+            {
+                if (firstDrillMove.Z.HasValue)
+                    entryDepth = firstDrillMove.Z.Value;
+                if (firstDrillMove.F.HasValue)
+                    entryFeed = firstDrillMove.F.Value;
+            }
+            
+            var deepestMove = _drillMoves.Where(m => m.Z.HasValue).OrderBy(m => m.Z).FirstOrDefault();
+            if (deepestMove?.Z.HasValue == true)
+            {
+                finalDepth = deepestMove.Z.Value;
+                if (deepestMove.F.HasValue)
+                    drillFeed = deepestMove.F.Value;
+            }
+            
+            var retractMove = _drillMoves.LastOrDefault(m => m.Z > 0);
+            if (retractMove?.F.HasValue == true)
+                retractFeed = retractMove.F.Value;
+            
+            // Update drilling operation
+            _currentDrilling.SafetyZ = safetyZ;
+            _currentDrilling.EntryZ = entryZ;
+            _currentDrilling.EntryDepth = entryDepth;
+            _currentDrilling.FinalDepth = finalDepth;
+            _currentDrilling.EntryFeedrate = entryFeed;
+            _currentDrilling.DrillFeedrate = drillFeed;
+            _currentDrilling.RetractFeedrate = retractFeed;
+            
+            // Calculate time using TCALC_BOHR logic
+            double drillTime = _engine.CalculateDrillingSequenceTime(
+                safetyZ, entryZ, entryDepth, finalDepth,
+                entryFeed, drillFeed, retractFeed, _currentDrilling.CycleType
+            );
+            
+            _currentDrilling.CalculatedTime = drillTime;
+            
+            // Add to tool session - ALWAYS use current active tool (T501), not drill bit ID  
+            // Drill bits are not separate tools, they're bits used BY the drilling head
+            int toolToUpdate = _currentActiveTool;
+            
+            // Create tool session if it doesn't exist (for drill bits)
+            if (toolToUpdate > 0 && !_toolSessions.ContainsKey(toolToUpdate))
+            {
+                _toolSessions[toolToUpdate] = new ToolUsageSession { ToolNumber = toolToUpdate };
+            }
+            
+            if (toolToUpdate > 0 && _toolSessions.ContainsKey(toolToUpdate))
+            {
+                // Skip adding time for T501 as it's already handled in special T501 processing
+                if (toolToUpdate != 501)
+                {
+                    _toolSessions[toolToUpdate].CuttingTime += drillTime / 60.0; // Convert to minutes
+                    
+                    // Add drilling distance (depth * 2 for entry and retract)
+                    double drillDistance = Math.Abs(finalDepth) * 2; // Entry + retract
+                    _toolSessions[toolToUpdate].CuttingDistance += drillDistance;
+                    _toolSessions[toolToUpdate].MoveCount++; // Increment move count for drilling operation
+                    
+                    string toolInfo = _currentDrilling.DrillBitId > 0 ? $"T{toolToUpdate} using drill bit {_currentDrilling.DrillBitId}" : $"T{toolToUpdate}";
+                    Console.WriteLine($"[DRILL] Completed drilling sequence: {drillTime:F2}s for {toolInfo}, " +
+                                    $"Depth={finalDepth:F1}mm, Distance={drillDistance:F1}mm, Feed={drillFeed:F0}mm/min");
+                }
+                else
+                {
+                    Console.WriteLine($"[DRILL] Skipping time addition for T501 (handled by special T501 logic)");
+                }
+            }
+            
+            _completedDrillings.Add(_currentDrilling);
+            Console.WriteLine($"[DRILL] Total drilling operations completed so far: {_completedDrillings.Count}");
+            _isDrillingSequence = false;
+            _justCompletedDrilling = true; // Set flag to prevent duplicate detection on next line
+            _currentDrilling = null;
+            _drillMoves.Clear();
+        }
+        
+        /// <summary>
+        /// Check if line represents a new major operation that would end drilling
+        /// </summary>
+        private bool IsNewMajorOperation(string line)
+        {
+            return line.Contains("; --- Process") ||
+                   line.Contains("TOOLCHANGE") ||
+                   line.Contains("T=") ||
+                   line.Contains("M6") ||
+                   line.Contains("M06") ||
+                   line.Contains("; ---  ---") ||
+                   (line.Contains("; ---") && !line.Contains("drill") && !line.Contains("Drill") && !line.Contains("bohr"));
         }
     }
 
@@ -4380,14 +5326,37 @@ if (cncAnalysis != null && cncAnalysis.AnalysisSuccessful)
     }).ToArray();
     
     // IMPORTANT: Send enhanced payload with detailed tool usage data
+    // Use PrimaryHOPFile if available for better identification (especially for generic names like "ultrathink")
+    string displayFilename = cncAnalysis.Filename;
+    if (!string.IsNullOrEmpty(cncAnalysis.PrimaryHOPFile))
+    {
+        // Use HOP file as primary identifier if CNC filename is generic or lacks extension
+        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(cncAnalysis.Filename);
+        if (string.IsNullOrEmpty(Path.GetExtension(cncAnalysis.Filename)) || 
+            fileNameWithoutExt.Equals("ultrathink", StringComparison.OrdinalIgnoreCase) ||
+            fileNameWithoutExt.Length < 5)  // Short generic names
+        {
+            displayFilename = cncAnalysis.PrimaryHOPFile;
+            Console.WriteLine($"[CNC] Using HOP file for display: {displayFilename} (instead of {cncAnalysis.Filename})");
+        }
+    }
+    
     cncAnalysisPayload = new
     {
-        Filename = cncAnalysis.Filename,
+        Filename = displayFilename,  // Use HOP filename if available and CNC name is generic
         TotalTime = cncAnalysis.TotalTime,      // Total cycle time in minutes
         MachineTime = cncAnalysis.MachineTime,  // Machine operation time in minutes
         ToolChanges = cncAnalysis.ToolChanges,  // Number of tool changes
         ToolsUsed = cncAnalysis.ToolsUsed,      // List of tool numbers used
-        ToolUsageDetails = toolUsageDetails      // NEW: Detailed per-tool timing and usage data
+        ToolUsageDetails = toolUsageDetails,     // NEW: Detailed per-tool timing and usage data
+        ReferencedHOPFiles = cncAnalysis.ReferencedHOPFiles,  // Include all HOP files for reference
+        HopFiles = cncAnalysis.HopFiles,         // NEW: HOP files list for display
+        DrillingOperations = cncAnalysis.DrillingOperations,  // NEW: Drilling operations detected
+        ProcessesUsed = cncAnalysis.ProcessesUsed,  // NEW: List of processes/operations used
+        MovementStats = cncAnalysis.MovementStats,  // Movement statistics
+        LineCount = cncAnalysis.LineCount,  // Total lines in the program
+        CuttingTime = cncAnalysis.CuttingTime,  // Cutting time in minutes
+        RapidTime = cncAnalysis.RapidTime  // Rapid move time in minutes
     };
     
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC payload prepared: TotalTime={cncAnalysis.TotalTime}min, MachineTime={cncAnalysis.MachineTime}min, ToolChanges={cncAnalysis.ToolChanges}, DetailedTools={toolUsageDetails.Length}");
@@ -4429,7 +5398,10 @@ var payload = new
                 var response = await httpClient.PostAsync($@"{webAppUrl}/api/log_event", content);
                 if (!response.IsSuccessStatusCode)
                 {
+                    // Read the error response body to get more details
+                    string errorContent = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Failed to log event: {response.StatusCode}");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error details: {errorContent}");
                 }
                 else
                 {

@@ -118,6 +118,7 @@ a = Analysis(
         'gui.panels.database_panel', 
         'gui.panels.help_panel',
         'gui.panels.scanner_panel',
+        'gui.panels.session_display_redesign',
         'gui.panels.settings_panel',
         
         # Project modules - Database

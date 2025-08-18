@@ -991,12 +991,12 @@
 <div class="modal fade" id="idleDetailsModal" tabindex="-1" style="display: none;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 1.5rem;">
-                <h5 class="modal-title" style="color: white; font-weight: 600;">
-                    <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>
-                    Idle Time Performance Analysis
+            <div class="modal-header" style="background: white; border-bottom: 1px solid #dee2e6; padding: 1rem 1.5rem;">
+                <h5 class="modal-title" style="color: #495057; font-weight: 600;">
+                    <i class="fas fa-clock" style="margin-right: 10px; color: #6c757d;"></i>
+                    Idle Tijd Details
                 </h5>
-                <button type="button" class="btn-close btn-close-white" onclick="closeIdleDetailsModal()" aria-label="Close" style="filter: brightness(0) invert(1);"></button>
+                <button type="button" class="btn-close" onclick="closeIdleDetailsModal()" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="padding: 0;">
                 <div id="idle-details-content">
@@ -1031,153 +1031,99 @@ let idleTimeBreakdown = {
     totalIdleMinutes: 0
 };
 
-// Helper Functions
-let userProcessingTypes = {}; // Will be loaded from config
-
-// Calculate handoff delays from logs
+// Function to calculate handoff delays from logs
 function calculateHandoffDelaysFromLogs() {
-    console.log('Calculating handoff delays from logs...');
-    
-    // Filter for work events (OPEN, BEZIG, PROJECT_START, AFGEMELD)
-    const workEvents = logData.filter(log => 
-        ['OPEN', 'BEZIG', 'PROJECT_START', 'AFGEMELD'].includes(log.event)
-    ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
-    console.log(`Found ${workEvents.length} work events`);
-    
-    let handoffDetails = [];
+    const logs = logData || [];
+    let handoffDetails = {};
     let totalHandoffMinutes = 0;
-    let lastUserEndTime = null;
-    let lastUser = null;
     
-    // Track the last activity time for each user
-    const userLastActivity = {};
+    // Filter for relevant events
+    const relevantLogs = logs.filter(log => 
+        ['OPEN', 'BEZIG', 'PROJECT_START', 'AFGEMELD'].includes(log.event) && log.user
+    );
     
-    // Process events chronologically
-    for (let i = 0; i < workEvents.length; i++) {
-        const event = workEvents[i];
-        const eventTime = new Date(event.timestamp);
-        const user = event.user;
+    // Sort logs by timestamp
+    const sortedLogs = [...relevantLogs].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    
+    // Track last activity by user
+    let lastActivityByUser = {};
+    
+    for (let i = 0; i < sortedLogs.length; i++) {
+        const log = sortedLogs[i];
+        const user = log.user;
+        const timestamp = new Date(log.timestamp);
         
-        // Skip if no user
-        if (!user) continue;
-        
-        // Update last activity time for this user
-        if (event.event === 'AFGEMELD' || (i === workEvents.length - 1)) {
-            // User finished work
-            userLastActivity[user] = eventTime;
-        }
-        
-        // Check for handoff when a new user starts working
-        if (event.event === 'OPEN' || event.event === 'BEZIG' || event.event === 'PROJECT_START') {
-            // Check if a different user was working before
-            if (lastUser && lastUser !== user && lastUserEndTime) {
-                // Calculate handoff time
-                const handoffMs = eventTime - lastUserEndTime;
-                const handoffMinutes = handoffMs / (1000 * 60);
+        // Check if this is a handoff (different user than previous activity)
+        if (i > 0) {
+            const prevLog = sortedLogs[i - 1];
+            const prevUser = prevLog.user;
+            const prevTimestamp = new Date(prevLog.timestamp);
+            
+            // If different user, count as handoff (no arbitrary time limits!)
+            if (user !== prevUser && prevUser) {
+                // Calculate actual work minutes between the two events (excluding breaks/non-work hours)
+                const workMinutesInHandoff = calculateWorkMinutes(prevTimestamp, timestamp);
                 
-                // Only count as handoff if > 30 minutes (to filter out quick transitions)
-                if (handoffMinutes > 30) {
-                    console.log(`Handoff detected: ${lastUser} -> ${user}, delay: ${Math.round(handoffMinutes)} minutes`);
-                    
-                    handoffDetails.push({
-                        from: lastUser,
-                        to: user,
-                        minutes: Math.round(handoffMinutes),
-                        fromTime: lastUserEndTime.toISOString(),
-                        toTime: eventTime.toISOString()
-                    });
-                    
-                    totalHandoffMinutes += handoffMinutes;
+                // Only count as handoff if there's actual work time between events
+                if (workMinutesInHandoff > 0) {
+                    const transition = `${prevUser} → ${user}`;
+                    handoffDetails[transition] = (handoffDetails[transition] || 0) + workMinutesInHandoff;
+                    totalHandoffMinutes += workMinutesInHandoff;
                 }
             }
-            
-            // Update last user info
-            lastUser = user;
         }
         
-        // Update last end time when user finishes
-        if (event.event === 'AFGEMELD') {
-            lastUserEndTime = eventTime;
-        } else if (event.event === 'OPEN' || event.event === 'BEZIG' || event.event === 'PROJECT_START') {
-            // For ongoing work, estimate end time as next different user's start or current event time
-            let endTime = eventTime;
-            
-            // Look ahead for when this user stops or another user starts
-            for (let j = i + 1; j < workEvents.length; j++) {
-                const nextEvent = workEvents[j];
-                if (nextEvent.user === user && nextEvent.event === 'AFGEMELD') {
-                    // Found when this user finished
-                    endTime = new Date(nextEvent.timestamp);
-                    break;
-                } else if (nextEvent.user !== user && 
-                          (nextEvent.event === 'OPEN' || nextEvent.event === 'BEZIG' || nextEvent.event === 'PROJECT_START')) {
-                    // Another user started, use previous event time as end
-                    if (j > i + 1) {
-                        endTime = new Date(workEvents[j - 1].timestamp);
-                    }
-                    break;
-                }
-            }
-            
-            lastUserEndTime = endTime;
-        }
+        lastActivityByUser[user] = timestamp;
     }
     
-    // Special case: Check for handoffs between batch sessions (SCANNER) and individual sessions (XLSX_UPDATED)
-    // This handles the NESTING -> ACCURA handoff issue
-    const sessions = sessionsData || [];
-    const scannerSessions = sessions.filter(s => s.session_type === 'SCANNER').sort((a, b) => new Date(a.end_time || a.start_time) - new Date(b.end_time || b.start_time));
-    const xlsxSessions = sessions.filter(s => s.session_type === 'XLSX_UPDATED').sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    return {
+        totalHandoffMinutes: totalHandoffMinutes,
+        handoffDetails: handoffDetails
+    };
+}
+
+// Function to calculate pause time from SESSION_PAUSE/SESSION_RESUME events
+function calculatePauseTimeFromLogs() {
+    const logs = logData || [];
+    let totalPauseMinutes = 0;
+    let pausesByUser = {};
     
-    // Check each XLSX session for handoff from previous SCANNER session
-    xlsxSessions.forEach(xlsxSession => {
-        const xlsxStart = new Date(xlsxSession.start_time);
-        const xlsxUser = xlsxSession.user;
-        
-        // Find the most recent SCANNER session before this XLSX session
-        const previousScanner = scannerSessions.filter(s => 
-            s.end_time && new Date(s.end_time) < xlsxStart && s.user !== xlsxUser
-        ).pop();
-        
-        if (previousScanner) {
-            const scannerEnd = new Date(previousScanner.end_time);
-            const handoffMinutes = (xlsxStart - scannerEnd) / (1000 * 60);
-            
-            // Only count if > 30 minutes and not already captured
-            if (handoffMinutes > 30) {
-                // Check if this handoff is not already in our list
-                const isDuplicate = handoffDetails.some(h => 
-                    h.from === previousScanner.user && 
-                    h.to === xlsxUser &&
-                    Math.abs(h.minutes - Math.round(handoffMinutes)) < 10 // Within 10 minutes tolerance
-                );
-                
-                if (!isDuplicate) {
-                    console.log(`Session handoff detected: ${previousScanner.user} -> ${xlsxUser}, delay: ${Math.round(handoffMinutes)} minutes`);
+    // Find pause/resume pairs
+    const pauseEvents = logs.filter(log => 
+        log.event === 'SESSION_PAUSE' || log.event === 'SESSION_RESUME'
+    ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Track pause duration from details field (e.g., "pause duration: 1.8 minutes" or "pauze duur: 1.8 minuten")
+    pauseEvents.forEach(log => {
+        if (log.event === 'SESSION_RESUME' && log.details) {
+            // Match both English and Dutch formats
+            const match = log.details.match(/(?:pause duration|pauze duur):\s*([\d.]+)\s*(?:minutes?|minuten?)/i);
+            if (match) {
+                const pauseDuration = parseFloat(match[1]);
+                if (!isNaN(pauseDuration)) {
+                    totalPauseMinutes += pauseDuration;
                     
-                    handoffDetails.push({
-                        from: previousScanner.user,
-                        to: xlsxUser,
-                        minutes: Math.round(handoffMinutes),
-                        fromTime: scannerEnd.toISOString(),
-                        toTime: xlsxStart.toISOString()
-                    });
-                    
-                    totalHandoffMinutes += handoffMinutes;
+                    // Track per user
+                    const user = log.user || 'Unknown';
+                    if (!pausesByUser[user]) {
+                        pausesByUser[user] = 0;
+                    }
+                    pausesByUser[user] += pauseDuration;
                 }
             }
         }
     });
     
-    console.log(`Total handoff time: ${Math.round(totalHandoffMinutes)} minutes`);
-    console.log('Handoff details:', handoffDetails);
-    
     return {
-        totalHandoffMinutes: Math.round(totalHandoffMinutes),
-        handoffDetails: handoffDetails
+        totalPauseMinutes: totalPauseMinutes,
+        pausesByUser: pausesByUser
     };
 }
+
+// Helper Functions
+let userProcessingTypes = {}; // Will be loaded from config
 
 function formatProjectDisplayName(projectCode) {
     // Extract clean project name from raw project code
@@ -1314,181 +1260,120 @@ function showIdleDetailsModal() {
     const modal = document.getElementById('idleDetailsModal');
     const content = document.getElementById('idle-details-content');
     
-    // Build professional idle details ONLY
+    // Add ESC key handler
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeIdleDetailsModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // Build idle details showing ONLY pauses per user and handoffs
     let html = '';
     
-    // Header with total idle time
-    html += '<div style="padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
-    html += '<div style="text-align: center;">';
-    html += '<div style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 10px;">Total Idle Time</div>';
-    html += '<div style="font-size: 3.5rem; font-weight: 700; line-height: 1;">';
-    html += `${Math.floor(idleTimeBreakdown.totalIdleMinutes / 60)}h ${Math.round(idleTimeBreakdown.totalIdleMinutes % 60)}m`;
-    html += '</div>';
+    // Simple header with total idle time
+    html += '<div style="padding: 20px; background: #f8f9fa; border-bottom: 2px solid #dee2e6;">';
+    html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+    html += '<div>';
+    html += '<h5 style="margin: 0; color: #495057;">Totale Idle Tijd</h5>';
     const idlePercent = idleTimeBreakdown.projectMinutes > 0 ? 
         Math.round((idleTimeBreakdown.totalIdleMinutes / idleTimeBreakdown.projectMinutes) * 100) : 0;
-    html += `<div style="font-size: 1rem; margin-top: 10px; opacity: 0.9;">${idlePercent}% of total project time</div>`;
+    html += `<small style="color: #6c757d;">${idlePercent}% van project tijd</small>`;
+    html += '</div>';
+    html += '<div style="text-align: right;">';
+    html += `<span style="font-size: 2rem; font-weight: 600; color: #495057;">${Math.floor(idleTimeBreakdown.totalIdleMinutes / 60)}h ${Math.round(idleTimeBreakdown.totalIdleMinutes % 60)}m</span>`;
+    html += '</div>';
     html += '</div>';
     html += '</div>';
     
     // Breakdown components
     html += '<div style="padding: 30px;">';
     
-    // Check if we have any breakdown data
-    const hasBreakdownData = idleTimeBreakdown.pauseMinutes > 0 || 
-                            idleTimeBreakdown.handoffMinutes > 0 || 
-                            (idleTimeBreakdown.handoffDetails && Object.keys(idleTimeBreakdown.handoffDetails).length > 0);
+    // Get pause data from the already calculated idleTimeBreakdown
+    let userPauses = idleTimeBreakdown.pausesByUser || {};
+    let totalPauseMinutes = idleTimeBreakdown.pauseMinutes || 0;
+    let totalHandoffMinutes = idleTimeBreakdown.handoffMinutes || 0;
     
-    if (!hasBreakdownData) {
-        // No breakdown available - show analysis in progress
-        html += '<div style="text-align: center; padding: 40px;">';
-        html += '<i class="fas fa-chart-pie" style="font-size: 3rem; color: #e9ecef; margin-bottom: 20px;"></i>';
-        html += '<h5 style="color: #6c757d; margin-bottom: 10px;">Detailed Analysis Not Available</h5>';
-        html += '<p style="color: #6c757d; font-size: 0.875rem; margin: 0;">The system is currently unable to break down idle time into specific categories.</p>';
-        html += '<p style="color: #6c757d; font-size: 0.875rem; margin-top: 10px;">This could be due to incomplete session data or ongoing work processes.</p>';
-        html += '</div>';
-    } else {
-        // Show the breakdown
-        html += '<div style="margin-bottom: 25px;">';
-        html += '<h5 style="color: #495057; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center;">';
-        html += '<i class="fas fa-chart-donut" style="margin-right: 10px; color: #667eea;"></i>';
-        html += 'Idle Time Breakdown Analysis';
-        html += '</h5>';
+    // Always show the breakdown structure
+    html += '<div style="margin-bottom: 25px;">';
+    html += '<h5 style="color: #495057; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center;">';
+    html += '<i class="fas fa-list-ul" style="margin-right: 10px; color: #667eea;"></i>';
+    html += 'Idle Time Components';
+    html += '</h5>';
         
-        // Create a visual progress bar showing the breakdown
-        if (idleTimeBreakdown.totalIdleMinutes > 0) {
-            html += '<div style="margin-bottom: 30px;">';
-            html += '<div style="background: #e9ecef; border-radius: 8px; height: 40px; overflow: hidden; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);">';
-            
-            if (idleTimeBreakdown.pauseMinutes > 0) {
-                const width = (idleTimeBreakdown.pauseMinutes / idleTimeBreakdown.totalIdleMinutes * 100);
-                html += `<div style="background: linear-gradient(135deg, #ffc107, #ff9800); width: ${width}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;" title="Pause Time">`;
-                if (width > 10) html += `${Math.round(width)}%`;
-                html += '</div>';
-            }
-            
-            if (idleTimeBreakdown.handoffMinutes > 0) {
-                const width = (idleTimeBreakdown.handoffMinutes / idleTimeBreakdown.totalIdleMinutes * 100);
-                html += `<div style="background: linear-gradient(135deg, #28a745, #20c997); width: ${width}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;" title="Handoff Time">`;
-                if (width > 10) html += `${Math.round(width)}%`;
-                html += '</div>';
-            }
-            
-            if (idleTimeBreakdown.otherGaps > 0) {
-                const width = (idleTimeBreakdown.otherGaps / idleTimeBreakdown.totalIdleMinutes * 100);
-                html += `<div style="background: linear-gradient(135deg, #6c757d, #495057); width: ${width}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;" title="Other Gaps">`;
-                if (width > 10) html += `${Math.round(width)}%`;
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            html += '</div>';
-        }
+        // Simple table layout
+        html += '<div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">';
         
-        // Detailed cards for each component
-        html += '<div style="display: grid; grid-template-columns: 1fr; gap: 15px;">';
+        // Pause times section
+        html += '<div style="padding: 20px; border-bottom: 1px solid #dee2e6;">';
+        html += '<h6 style="margin: 0 0 15px 0; color: #495057; font-weight: 600; display: flex; align-items: center;">';
+        html += '<i class="fas fa-pause-circle" style="color: #ffc107; margin-right: 10px;"></i>';
+        html += 'Pauze Tijden per Gebruiker';
+        html += '</h6>';
         
-        if (idleTimeBreakdown.pauseMinutes > 0) {
-            const pausePercent = (idleTimeBreakdown.pauseMinutes / idleTimeBreakdown.totalIdleMinutes * 100).toFixed(1);
-            html += '<div style="background: white; border: 2px solid #ffc107; border-radius: 12px; padding: 20px; position: relative; overflow: hidden;">';
-            html += '<div style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: linear-gradient(135deg, #ffc10720, #ffc10710); border-radius: 0 0 0 100%;"></div>';
-            html += '<div style="position: relative;">';
-            html += '<div style="display: flex; justify-content: between; align-items: start;">';
-            html += '<div style="flex: 1;">';
-            html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
-            html += '<i class="fas fa-coffee" style="color: #ffc107; font-size: 1.5rem; margin-right: 15px;"></i>';
-            html += '<div>';
-            html += '<h6 style="margin: 0; color: #495057; font-weight: 600;">Break & Pause Time</h6>';
-            html += '<small style="color: #6c757d;">Scheduled breaks, lunch periods</small>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '<div style="text-align: right;">';
-            html += `<div style="font-size: 1.75rem; font-weight: 700; color: #ffc107;">${Math.round(idleTimeBreakdown.pauseMinutes)}<span style="font-size: 1rem; font-weight: 400;">min</span></div>`;
-            html += `<div style="color: #6c757d; font-size: 0.875rem;">${pausePercent}% of idle</div>`;
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-        }
-        
-        if (idleTimeBreakdown.handoffMinutes > 0) {
-            const handoffPercent = (idleTimeBreakdown.handoffMinutes / idleTimeBreakdown.totalIdleMinutes * 100).toFixed(1);
-            html += '<div style="background: white; border: 2px solid #28a745; border-radius: 12px; padding: 20px; position: relative; overflow: hidden;">';
-            html += '<div style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: linear-gradient(135deg, #28a74520, #28a74510); border-radius: 0 0 0 100%;"></div>';
-            html += '<div style="position: relative;">';
-            html += '<div style="display: flex; justify-content: between; align-items: start;">';
-            html += '<div style="flex: 1;">';
-            html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
-            html += '<i class="fas fa-people-arrows" style="color: #28a745; font-size: 1.5rem; margin-right: 15px;"></i>';
-            html += '<div>';
-            html += '<h6 style="margin: 0; color: #495057; font-weight: 600;">Handoff Delays</h6>';
-            html += '<small style="color: #6c757d;">Transitions between team members</small>';
-            html += '</div>';
-            html += '</div>';
-            
-            // Show detailed handoffs if available
-            if (idleTimeBreakdown.handoffDetails && Object.keys(idleTimeBreakdown.handoffDetails).length > 0) {
-                html += '<div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">';
-                html += '<div style="font-size: 0.75rem; text-transform: uppercase; color: #6c757d; margin-bottom: 8px; font-weight: 600;">Transition Details</div>';
-                for (const [transition, minutes] of Object.entries(idleTimeBreakdown.handoffDetails)) {
-                    if (minutes > 0) {
-                        html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #e9ecef;">`;
-                        html += `<span style="color: #495057; font-size: 0.875rem;">${transition}</span>`;
-                        html += `<span style="color: #28a745; font-weight: 600; font-size: 0.875rem;">${Math.round(minutes)} min</span>`;
-                        html += `</div>`;
-                    }
+        if (Object.keys(userPauses).length > 0) {
+            html += '<table style="width: 100%;">';
+            for (const [user, pauseMinutes] of Object.entries(userPauses)) {
+                if (pauseMinutes > 0) {
+                    html += '<tr>';
+                    html += `<td style="padding: 8px 0; color: #495057;">${user}</td>`;
+                    html += `<td style="text-align: right; padding: 8px 0; color: #495057; font-weight: 600;">${Math.round(pauseMinutes)} minuten</td>`;
+                    html += '</tr>';
                 }
-                html += '</div>';
             }
-            
-            html += '</div>';
-            html += '<div style="text-align: right;">';
-            html += `<div style="font-size: 1.75rem; font-weight: 700; color: #28a745;">${Math.round(idleTimeBreakdown.handoffMinutes)}<span style="font-size: 1rem; font-weight: 400;">min</span></div>`;
-            html += `<div style="color: #6c757d; font-size: 0.875rem;">${handoffPercent}% of idle</div>`;
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
+            html += '<tr style="border-top: 2px solid #dee2e6;">';
+            html += '<td style="padding: 8px 0; font-weight: 600; color: #495057;">Totaal Pauze</td>';
+            html += `<td style="text-align: right; padding: 8px 0; color: #ffc107; font-weight: 700;">${Math.round(totalPauseMinutes)} minuten</td>`;
+            html += '</tr>';
+            html += '</table>';
+        } else {
+            html += '<p style="color: #6c757d; margin: 0;">Geen pauzes geregistreerd</p>';
         }
+        html += '</div>';
         
-        if (idleTimeBreakdown.otherGaps > 0) {
-            const otherPercent = (idleTimeBreakdown.otherGaps / idleTimeBreakdown.totalIdleMinutes * 100).toFixed(1);
-            html += '<div style="background: white; border: 2px solid #6c757d; border-radius: 12px; padding: 20px; position: relative; overflow: hidden;">';
-            html += '<div style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: linear-gradient(135deg, #6c757d20, #6c757d10); border-radius: 0 0 0 100%;"></div>';
-            html += '<div style="position: relative;">';
-            html += '<div style="display: flex; justify-content: between; align-items: start;">';
-            html += '<div style="flex: 1;">';
-            html += '<div style="display: flex; align-items: center; margin-bottom: 10px;">';
-            html += '<i class="fas fa-question-circle" style="color: #6c757d; font-size: 1.5rem; margin-right: 15px;"></i>';
-            html += '<div>';
-            html += '<h6 style="margin: 0; color: #495057; font-weight: 600;">Other Time Gaps</h6>';
-            html += '<small style="color: #6c757d;">Setup, system delays, untracked activities</small>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '<div style="text-align: right;">';
-            html += `<div style="font-size: 1.75rem; font-weight: 700; color: #6c757d;">${Math.round(idleTimeBreakdown.otherGaps)}<span style="font-size: 1rem; font-weight: 400;">min</span></div>`;
-            html += `<div style="color: #6c757d; font-size: 0.875rem;">${otherPercent}% of idle</div>`;
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
+        // Handoff times section
+        html += '<div style="padding: 20px;">';
+        html += '<h6 style="margin: 0 0 15px 0; color: #495057; font-weight: 600; display: flex; align-items: center;">';
+        html += '<i class="fas fa-people-arrows" style="color: #28a745; margin-right: 10px;"></i>';
+        html += 'Handoff Tijden tussen Gebruikers';
+        html += '</h6>';
+        
+        if (idleTimeBreakdown.handoffDetails && Object.keys(idleTimeBreakdown.handoffDetails).length > 0) {
+            html += '<table style="width: 100%;">';
+            for (const [transition, minutes] of Object.entries(idleTimeBreakdown.handoffDetails)) {
+                if (minutes > 0) {
+                    html += '<tr>';
+                    html += `<td style="padding: 8px 0; color: #495057;">${transition}</td>`;
+                    html += `<td style="text-align: right; padding: 8px 0; color: #495057; font-weight: 600;">${Math.round(minutes)} minuten</td>`;
+                    html += '</tr>';
+                }
+            }
+            html += '<tr style="border-top: 2px solid #dee2e6;">';
+            html += '<td style="padding: 8px 0; font-weight: 600; color: #495057;">Totaal Handoff</td>';
+            html += `<td style="text-align: right; padding: 8px 0; color: #28a745; font-weight: 700;">${Math.round(totalHandoffMinutes)} minuten</td>`;
+            html += '</tr>';
+            html += '</table>';
+        } else {
+            html += '<p style="color: #6c757d; margin: 0;">Geen handoff tijd geregistreerd</p>';
         }
+        html += '</div>';
         
+        // Close the white box
         html += '</div>';
-        html += '</div>';
-    }
-    
-    html += '</div>';
+        
+    html += '</div>';  // Close the breakdown div
     
     content.innerHTML = html;
     modal.style.display = 'block';
     modal.classList.add('show');
     
-    // Add backdrop
+    // Add backdrop with click-to-close functionality
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop fade show';
     backdrop.id = 'idleModalBackdrop';
+    backdrop.style.cursor = 'pointer';
+    backdrop.onclick = closeIdleDetailsModal;
     document.body.appendChild(backdrop);
 }
 
@@ -2379,16 +2264,45 @@ async function updatePerformanceMetrics() {
                     };
                 } else {
                     // Fallback to raw session data for users not in API response
+                    // Only use sessions that are linked to THIS project (sessionsData is already filtered)
                     const userSessions = sessionsData.filter(session => session.user === user);
-                    let userItems = 0;
+                    console.log(`Sessions for ${user} on project ${project}:`, userSessions);
+                    
+                    // Get project items from logs
+                    const userProjectLogs = logData.filter(log => log.user === user && getItemCountForLog(log) > 0);
+                    const projectItems = userProjectLogs.length > 0 ? Math.max(...userProjectLogs.map(log => getItemCountForLog(log))) : 0;
+                    
                     let userSessionMinutes = 0;
                     
                     userSessions.forEach(session => {
-                        userItems += session.item_count || 0;
-                        userSessionMinutes += session.work_duration_minutes || 0;
+                        // Calculate work duration for active sessions
+                        let workMinutes = session.work_duration_minutes;
+                        if (session.status === 'active' && session.start_time) {
+                            // For active sessions, calculate duration from start to now
+                            const start = new Date(session.start_time);
+                            const now = new Date();
+                            workMinutes = (now - start) / 60000; // Convert to minutes
+                        }
+                        
+                        if (workMinutes > 0) {
+                            // Check if this is a batch session with multiple projects
+                            if (session.total_projects_in_session > 1) {
+                                // Batch session - need proportional allocation
+                                const projectItemsInSession = session.item_count || 0;
+                                const totalItemsInSession = session.total_items_in_session || 0;
+                                
+                                if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                                    const proportion = projectItemsInSession / totalItemsInSession;
+                                    userSessionMinutes += workMinutes * proportion;
+                                }
+                            } else {
+                                // Individual session - use full time
+                                userSessionMinutes += workMinutes;
+                            }
+                        }
                     });
                     
-                    const itemsPerHour = userSessionMinutes > 0 ? Math.round((userItems / userSessionMinutes) * 60 * 100) / 100 : 0;
+                    const itemsPerHour = userSessionMinutes > 0 ? Math.round((projectItems / userSessionMinutes) * 60 * 100) / 100 : 0;
                     
                     // For NESTING users, also get the breakdown of nesting vs opdeelzaag counts
                     let nestingCount = 0;
@@ -2402,8 +2316,8 @@ async function updatePerformanceMetrics() {
                     }
                     
                     userStats[user] = {
-                        items: userItems,
-                        sessionMinutes: userSessionMinutes,
+                        items: projectItems,
+                        sessionMinutes: Math.round(userSessionMinutes),
                         itemsPerHour: itemsPerHour,
                         nestingCount: nestingCount,
                         opdeelzaagCount: opdeelzaagCount
@@ -2416,7 +2330,8 @@ async function updatePerformanceMetrics() {
     } catch (error) {
         console.warn('Could not fetch productivity metrics, falling back to raw session data:', error);
         
-        // Fallback: calculate from raw sessions data with proper batch allocation
+        // Fallback: calculate from raw sessions data
+        // IMPORTANT: sessionsData already contains ONLY sessions linked to this project
         uniqueUsers.forEach(user => {
             const userSessions = sessionsData.filter(session => session.user === user);
             console.log(`Fallback calculation for ${user}:`, userSessions);
@@ -2428,29 +2343,34 @@ async function updatePerformanceMetrics() {
             let userSessionMinutes = 0;
             
             userSessions.forEach(session => {
-                if (session.session_type === 'SCANNER' && (!session.project || session.project === '')) {
-                    // Batch session - need proportional allocation
-                    if (session.status === 'completed' && session.work_duration_minutes > 0) {
-                        // Calculate total items in this batch from ALL user's logs during session time
-                        const batchLogs = logData.filter(log => 
-                            log.user === user && 
-                            getItemCountForLog(log) > 0 &&
-                            new Date(log.timestamp) >= new Date(session.start_time) &&
-                            new Date(log.timestamp) <= new Date(session.end_time)
-                        );
-                        const batchTotalItems = batchLogs.reduce((sum, log) => sum + getItemCountForLog(log), 0);
+                // Calculate work duration for active sessions
+                let workMinutes = session.work_duration_minutes;
+                if (session.status === 'active' && session.start_time) {
+                    // For active sessions, calculate duration from start to now
+                    const start = new Date(session.start_time);
+                    const now = new Date();
+                    workMinutes = (now - start) / 60000; // Convert to minutes
+                    console.log(`  Active session ${session.session_id}: calculated ${workMinutes.toFixed(1)}min from start`);
+                }
+                
+                if ((session.status === 'completed' || session.status === 'active') && workMinutes > 0) {
+                    // Check if this is a batch session with multiple projects
+                    if (session.total_projects_in_session > 1) {
+                        // Batch session - need proportional allocation based on items
+                        // Use the item count from this specific project in the session
+                        const projectItemsInSession = session.item_count || 0;
+                        const totalItemsInSession = session.total_items_in_session || 0;
                         
-                        if (batchTotalItems > 0 && projectItems > 0) {
-                            const proportion = projectItems / batchTotalItems;
-                            const allocatedMinutes = session.work_duration_minutes * proportion;
+                        if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                            const proportion = projectItemsInSession / totalItemsInSession;
+                            const allocatedMinutes = workMinutes * proportion;
                             userSessionMinutes += allocatedMinutes;
-                            console.log(`  Batch allocation: ${allocatedMinutes.toFixed(1)}min (${(proportion * 100).toFixed(1)}%)`);
+                            console.log(`  Batch allocation for ${session.session_id}: ${allocatedMinutes.toFixed(1)}min (${projectItemsInSession}/${totalItemsInSession} items = ${(proportion * 100).toFixed(1)}% of ${workMinutes.toFixed(1)}min)`);
                         }
-                    }
-                } else {
-                    // Individual session - use full time if completed
-                    if (session.status === 'completed') {
-                        userSessionMinutes += session.work_duration_minutes || 0;
+                    } else {
+                        // Individual session - use full session time
+                        userSessionMinutes += workMinutes;
+                        console.log(`  Using full session time: ${workMinutes.toFixed(1)}min from session ${session.session_id}`);
                     }
                 }
             });
@@ -2482,29 +2402,44 @@ async function updatePerformanceMetrics() {
     }
     
     // Calculate total session minutes for PROJECT METRICS
-    // Simply sum up the session minutes from userStats which are already correctly calculated
     let totalSessionMinutes = 0;
-    console.log('Calculating total session minutes from userStats...');
+    console.log('Calculating total session minutes from linked sessions...');
+    console.log('Sessions linked to this project:', sessionsData);
     
-    // Sum up all user session minutes (these already have proportional allocation applied)
-    Object.entries(userStats).forEach(([userName, stats]) => {
-        if (typeof stats.sessionMinutes === 'number' && !isNaN(stats.sessionMinutes)) {
-            totalSessionMinutes += stats.sessionMinutes;
-            console.log(`  Adding ${stats.sessionMinutes} minutes for ${userName}`);
-        } else if (stats.sessionMinutes === 'IN_PROGRESS') {
-            // For in-progress sessions, calculate elapsed time
+    // Sum up work duration from ALL sessions linked to this project
+    // Apply proportional allocation for batch sessions
+    sessionsData.forEach(session => {
+        // Calculate work duration for active sessions
+        let workMinutes = session.work_duration_minutes;
+        if (session.status === 'active' && session.start_time) {
+            // For active sessions, calculate duration from start to now
+            const start = new Date(session.start_time);
             const now = new Date();
-            const userLogs = logData.filter(log => log.user === userName).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            if (userLogs.length > 0) {
-                const startTime = new Date(userLogs[0].timestamp);
-                const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
-                totalSessionMinutes += elapsedMinutes;
-                console.log(`  Adding ${elapsedMinutes} elapsed minutes for active ${userName}`);
+            workMinutes = (now - start) / 60000; // Convert to minutes
+            console.log(`  Active session ${session.session_id}: calculated ${workMinutes.toFixed(1)}min from start`);
+        }
+        
+        if (workMinutes > 0) {
+            if (session.total_projects_in_session > 1) {
+                // Batch session - use proportional allocation
+                const projectItemsInSession = session.item_count || 0;
+                const totalItemsInSession = session.total_items_in_session || 0;
+                
+                if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                    const proportion = projectItemsInSession / totalItemsInSession;
+                    const allocatedMinutes = workMinutes * proportion;
+                    totalSessionMinutes += allocatedMinutes;
+                    console.log(`  Batch allocation: ${allocatedMinutes.toFixed(1)} minutes (${projectItemsInSession}/${totalItemsInSession} items = ${(proportion * 100).toFixed(1)}%) from session ${session.session_id} (${session.user})`);
+                }
+            } else {
+                // Single project session - use full time
+                totalSessionMinutes += workMinutes;
+                console.log(`  Adding ${workMinutes.toFixed(1)} minutes from session ${session.session_id} (${session.user})`);
             }
         }
     });
     
-    console.log('Total session minutes (from userStats):', totalSessionMinutes);
+    console.log('Total session minutes (with proportional allocation):', totalSessionMinutes);
     
     // Keep userStats calculation unchanged for Gebruiker Performance Analyse
     // The proportional allocation in userStats is correct for per-user performance metrics
@@ -2544,19 +2479,27 @@ async function updatePerformanceMetrics() {
             
             if (sessionsDetail.metrics) {
                 // Get pause and handoff times
-                pauseMinutes = sessionsDetail.metrics.total_pause_minutes || 0;
-                handoffMinutes = sessionsDetail.metrics.total_handoff_minutes || 0;
+                // Always calculate from logs since events might be added after session close
+                const pauseData = calculatePauseTimeFromLogs();
+                const handoffData = calculateHandoffDelaysFromLogs();
+                pauseMinutes = pauseData.totalPauseMinutes || sessionsDetail.metrics.total_pause_minutes || 0;
+                handoffMinutes = handoffData.totalHandoffMinutes || sessionsDetail.metrics.total_handoff_minutes || 0;
                 
                 // Calculate idle time correctly
                 // Total idle = project time - work time (work time already excludes pauses)
-                idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
+                // Calculate total idle from project time minus work time
+                const baseIdleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
+                
+                // If we have pause/handoff data but baseIdle is 0, use pause+handoff as minimum
+                // This handles cases where session tracking might be incomplete
+                idleMinutes = Math.max(baseIdleMinutes, pauseMinutes + handoffMinutes);
                 
                 // Other gaps = Total idle - pause time - handoff time
                 const otherGaps = Math.max(0, idleMinutes - pauseMinutes - handoffMinutes);
                 
-                // Extract handoff details from workflow
-                let handoffDetails = {};
-                if (sessionsDetail.workflow) {
+                // Extract handoff details from workflow or use calculated ones
+                let handoffDetails = handoffData.handoffDetails || {};
+                if (sessionsDetail.workflow && Object.keys(handoffDetails).length === 0) {
                     sessionsDetail.workflow.forEach(session => {
                         if (session.handoff_from && session.handoff_delay > 0) {
                             const transition = `${session.handoff_from} → ${session.user}`;
@@ -2568,6 +2511,7 @@ async function updatePerformanceMetrics() {
                 // Store breakdown for modal
                 idleTimeBreakdown = {
                     pauseMinutes: pauseMinutes,
+                    pausesByUser: pauseData.pausesByUser || {},
                     handoffMinutes: handoffMinutes,
                     handoffDetails: handoffDetails,
                     otherGaps: otherGaps,
@@ -2582,7 +2526,8 @@ async function updatePerformanceMetrics() {
                     otherGaps: otherGaps.toFixed(1),
                     totalIdleMinutes: idleMinutes.toFixed(1),
                     handoffDetails: handoffDetails,
-                    sessionsDetail: sessionsDetail
+                    metrics: sessionsDetail.metrics,
+                    hasBreakdownData: (pauseMinutes > 0 || handoffMinutes > 0 || Object.keys(handoffDetails).length > 0 || otherGaps > 0)
                 });
                 
                 // Update idle time info with details
@@ -2602,58 +2547,68 @@ async function updatePerformanceMetrics() {
                 console.log('API metrics not available, calculating handoffs from logs');
                 const handoffData = calculateHandoffDelaysFromLogs();
                 
+                // Try to extract pause data from logs as well
+                const pauseData = calculatePauseTimeFromLogs();
+                
                 handoffMinutes = handoffData.totalHandoffMinutes;
-                idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
-                const otherGaps = Math.max(0, idleMinutes - pauseMinutes - handoffMinutes);
+                pauseMinutes = pauseData.totalPauseMinutes;
+                // Idle time is ONLY pause + handoff
+                idleMinutes = pauseMinutes + handoffMinutes;
                 
                 idleTimeBreakdown = {
-                    pauseMinutes: 0, // We don't have pause data from logs
+                    pauseMinutes: pauseMinutes,
+                    pausesByUser: pauseData.pausesByUser || {},
                     handoffMinutes: handoffMinutes,
                     handoffDetails: handoffData.handoffDetails,
-                    otherGaps: otherGaps,
                     totalIdleMinutes: idleMinutes,
                     projectMinutes: actualProjectMinutes,
                     workMinutes: totalSessionMinutes
                 };
-                console.log('Calculated handoff delays from logs:', handoffData);
+                console.log('Calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
             }
         } else {
             // API call failed, calculate from logs instead
             console.log('API call failed, calculating handoffs from logs');
             const handoffData = calculateHandoffDelaysFromLogs();
+            const pauseData = calculatePauseTimeFromLogs();
             
             handoffMinutes = handoffData.totalHandoffMinutes;
-            idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
-            const otherGaps = Math.max(0, idleMinutes - handoffMinutes);
+            pauseMinutes = pauseData.totalPauseMinutes;
+            // Idle time is ONLY pause + handoff
+            idleMinutes = pauseMinutes + handoffMinutes;
             
             idleTimeBreakdown = {
-                pauseMinutes: 0,
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
                 handoffMinutes: handoffMinutes,
                 handoffDetails: handoffData.handoffDetails,
-                otherGaps: otherGaps,
                 totalIdleMinutes: idleMinutes,
                 projectMinutes: actualProjectMinutes,
                 workMinutes: totalSessionMinutes
             };
+            console.log('API failed - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
         }
     } catch (error) {
         console.warn('Could not fetch detailed session metrics:', error);
         // Fallback: calculate from logs
         const handoffData = calculateHandoffDelaysFromLogs();
+        const pauseData = calculatePauseTimeFromLogs();
         
         handoffMinutes = handoffData.totalHandoffMinutes;
-        idleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
-        const otherGaps = Math.max(0, idleMinutes - handoffMinutes);
+        pauseMinutes = pauseData.totalPauseMinutes;
+        // Idle time is ONLY pause + handoff
+        idleMinutes = pauseMinutes + handoffMinutes;
         
         idleTimeBreakdown = {
-            pauseMinutes: 0,
+            pauseMinutes: pauseMinutes,
+            pausesByUser: pauseData.pausesByUser || {},
             handoffMinutes: handoffMinutes,
             handoffDetails: handoffData.handoffDetails,
-            otherGaps: otherGaps,
             totalIdleMinutes: idleMinutes,
             projectMinutes: actualProjectMinutes,
             workMinutes: totalSessionMinutes
         };
+        console.log('Exception fallback - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
     }
     
     // Display idle time

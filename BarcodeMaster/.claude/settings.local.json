@@ -10,7 +10,10 @@
       "Bash(cd /mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster)",
       "Bash(python:*)",
       "Bash(rm:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(killall:*)"
     ],
     "deny": []
   }

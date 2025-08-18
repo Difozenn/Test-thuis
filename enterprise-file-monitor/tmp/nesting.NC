@@ -1,0 +1,1042 @@
+%field2
+N10 ; --- FinishedPart: X: 2445 Y: 800 Z: 19 ---
+N20 ; --- TData:7532DR_106 ---
+N30 ; --- created:12.08.2025 - 15:25:33 - DiREKT CNC-Systeme GmbH ---
+N40 ; --- machine parameters id1000=1 ---
+#VAR
+V.P.LAENGE= 2445
+V.P.BREITE= 800
+V.P.DICKE= 19
+V.P.OOX=0
+V.P.OOY=0
+V.P.OOZ=0
+V.P.MAXZ=0
+V.P.MAXX=0
+V.P.MINX=0
+V.P.MAXY=0
+V.P.MINY=0
+V.P.PX=0
+V.P.PY=0
+V.P.DCMARKER=0
+V.P.LIFTOX=0
+V.P.LIFTOY=0
+V.P.LIFTOZ=0
+V.P.LP_MODE_A=0
+V.P.LP_MODE_D=0
+V.P.NPOFFSETX= -1.93  
+V.P.NPOFFSETY= 1442.19
+V.P.NPOFFSETZ= 17.8
+V.P.AUTOXSTRATEGIE= 0
+V.P.HLASERCOUNT=0
+V.P.HLASERPOSTYP
+V.P.HLASERPOSX
+V.P.HLASERPOSY
+#ENDVAR
+N50 V.P.MAXZ=V.A.+SWE_MDS.Z-1
+N60 V.P.MAXX=V.A.+SWE_MDS.X-1
+N70 V.P.MINX=V.A.-SWE_MDS.X+1
+N80 V.P.MAXY=V.A.+SWE_MDS.Y-1
+N90 V.P.MINY=V.A.-SWE_MDS.Y+1
+N100 ; --- WZ:7532DR_106 ---
+N110 ; --- Post:HH7 V7.5.5.93 Script7.0.9.0 ---
+N120 ; --- total processes[#9] ---
+N130 ; --- used tools ---
+N140 ; ---  ---
+N150 ; --- Box:  601 HId:1     VF 12 R P/N                    Platz:1 T:50 D1 ---
+N160 L CYCLE [NAME=CP_TCHECK.NC @P1=601 @P2=50 @P3=1 @P4=24000 @P5=5.4 @P6=111.55 @P7=0 @P8=0]
+N170 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N180 ; --- Box:   30 HId:1     VF 06 R P DIA                  Platz:2 T:37 D2 ---
+N190 L CYCLE [NAME=CP_TCHECK.NC @P1=30 @P2=37 @P3=2 @P4=24000 @P5=2.75 @P6=102.6 @P7=0 @P8=0]
+N200 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N210 ; --- Box:  501 HId:51    DH 7845_R (_sx_0_0)            ---
+N220 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=1 @P3=1 @P4=6250 @P5=1.25 @P6=72.5 @P7=0 @P8=0]
+N230 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N240 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=2 @P3=1 @P4=6250 @P5=0.5 @P6=73 @P7=0 @P8=0]
+N250 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N260 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=3 @P3=1 @P4=6250 @P5=0.5 @P6=71 @P7=0 @P8=0]
+N270 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N280 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=4 @P3=1 @P4=6250 @P5=3 @P6=73 @P7=0 @P8=0]
+N290 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N300 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=5 @P3=1 @P4=6250 @P5=5 @P6=73 @P7=0 @P8=0]
+N310 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N320 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=6 @P3=1 @P4=6250 @P5=2 @P6=73 @P7=0 @P8=0]
+N330 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N340 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=8 @P3=1 @P4=6250 @P5=7.625 @P6=73.1 @P7=0 @P8=0]
+N350 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N360 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=9 @P3=1 @P4=6250 @P5=4.5 @P6=70.6 @P7=0 @P8=0]
+N370 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N380 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=10 @P3=1 @P4=6250 @P5=10 @P6=72.2 @P7=0 @P8=0]
+N390 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N400 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=11 @P3=1 @P4=6250 @P5=3.5 @P6=71 @P7=0 @P8=0]
+N410 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N420 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=12 @P3=1 @P4=6250 @P5=4 @P6=89.9 @P7=0 @P8=0]
+N430 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N440 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=15 @P3=1 @P4=6250 @P5=2.5 @P6=70 @P7=0 @P8=0]
+N450 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N460 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=16 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N470 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N480 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=17 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N490 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N500 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=18 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N510 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N520 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=19 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N530 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N540 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=20 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N550 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N560 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=21 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N570 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N580 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=22 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N590 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N600 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=23 @P3=1 @P4=6250 @P5=2.5 @P6=70 @P7=0 @P8=0]
+N610 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N620 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=24 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N630 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N640 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=25 @P3=1 @P4=6250 @P5=2.5 @P6=70 @P7=0 @P8=0]
+N650 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N660 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=26 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N670 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N680 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=27 @P3=1 @P4=6250 @P5=2.5 @P6=70 @P7=0 @P8=0]
+N690 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N700 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=28 @P3=1 @P4=6250 @P5=4 @P6=71.1 @P7=0 @P8=0]
+N710 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N720 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=30 @P3=1 @P4=5000 @P5=6 @P6=79.4 @P7=0 @P8=0]
+N730 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N740 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=31 @P3=1 @P4=6250 @P5=1.5 @P6=76.2 @P7=0 @P8=0]
+N750 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N760 L CYCLE [NAME=CP_TCHECK.NC @P1=501 @P2=33 @P3=1 @P4=6250 @P5=4 @P6=60.5 @P7=0 @P8=0]
+N770 ; --- 1:CAMPUS ID, 2:ToolNo, 3:DNo, 4:DZ, 5:Radius, 6:Laenge1, 7:Laenge2, 8:Laenge3 ---
+N780 ; ---  ---
+N790 G90 D0 ;G500
+N800 ;CUT2DF
+N810 ;CFIN
+N820 V.P.AutoXStrategie = 2
+N830 L CYCLE [NAME=CP_START.NC]
+N840 ;G64 G17 SOFT
+N850 V.G.NP[1].V.X=-1.93
+N860 V.G.NP[1].V.Y=1442.19
+N870 V.G.NP[1].V.Z=17.8
+N880 ; ---  ---
+N890 #FLUSH WAIT
+N900 G54
+N910 ; ---  ---
+N920 ; --- Process #1 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:2414.37 Xmax:2453.37 Ymin:1498.79 Ymax:1498.79 ---
+N930 ; --- --- ---
+N940 ; --- --- process group start ---  ---
+N950 ; --- --- ---
+N960 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N970 ; --- Go Safety ---
+N980 G90 D0
+N990 #MCS ON
+N1000 G0 Z=V.P.MAXZ
+N1010 #MCS OFF
+N1020 ; --- 601 VF 12 R P/N ---
+N1030 ; --- HEAD:1 Spindle 1 (P01 V01) ---
+N1040 ; --- VF 12 R P/N  ID:601 Platz:1 T:50 ---
+N1050 L CYCLE [NAME=CP_TC.NC @P1=1 @P2=2001 @P3=1 @P4=601 @P5=-1 @P6=1 @P7=0 @P8=2455 @P9=100]
+N1060 ; --- 1:CAMPUS ID, 2:HEAD ID, 3:PLACE ID WZW, 4:ToolNo, 5:C-Achse-Heben, 6:Heben erlaubt, 7:Wechselmode, 8:XPos, 9:Achsbeschl ---
+N1070 ; --- AKNEU ---
+N1080 T50 D1    ; --- SpeedCall ---
+N1090 L CYCLE [NAME=CP_TSPEED.NC @P1=1 @P2=3 @P3=22000 @P8=1]
+N1100 ; --- 1:HEAD ID, 2:DR, 3:DZ, 4:XPos, 5:YPos, 6:ZPos, 7:CRaster ---
+N1110 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N1120 M160    ; --- DustSuction ---
+N1130 D0 G0 X2455.15 Y56.8 Z276.19
+N1140 T50 D1
+N1150 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N1160 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N1170 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N1180 ; --- FX:2445 FY:800 Z:19 ---
+N1190 ; --- Viewchange View 0 ---
+N1200 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N1210 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N1220 ; --- -- ---
+N1230 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N1240 ; --- -- ---
+N1250 P1=0+V.P.OOX
+N1260 P2=0+V.P.OOY
+N1270 P3=19+V.P.OOZ
+N1280 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N1290 ; --- ViewchangeEnd ---
+N1300 L CYCLE [NAME=CP_RELEASE.NC]
+N1310 ; --- -- ---
+N1320 ; --- --      Milling  ---
+N1330 ; --- -- ---
+N1340 ; ---  ##################### DLLMPs ---
+N1350 T50 D1
+N1360 L CP_CONTOUR_START.NC
+N1370 G0 G40 X2455.15 Y56.8 Z25
+N1380 G1 X2455.15 Y56.8 Z6 F4000
+N1390 G1 X2446.15 Y56.8 Z-18 F16000
+N1400 G1 X2445.15
+N1410 G1 X2417.15
+N1420 G1 X2416.15
+N1430 G1 X2416.15 Y56.8 Z6
+N1440 G1 X2416.15 Y56.8 Z25 F10000
+N1450 L CP_CONTOUR_END.NC
+N1460 ; --- -- ---
+N1470 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N1480 ; --- -- ---
+N1490 L CYCLE [NAME=CP_CS.NC @P1=0]
+N1500 ; ---  ##################### DLLMPs SIC ---
+N1510 D0 G0 X2416.15 Y56.8 Z155.55
+N1520 T50 D1
+N1530 ; --- Process #2 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:2414.37 Xmax:2453.37 Ymin:1499.79 Ymax:1499.79 ---
+N1540 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N1550 M160    ; --- DustSuction ---
+N1560 D0 G0 X2416.15 Y56.8 Z155.55
+N1570 D0 G0 X2455.15 Y57.8
+N1580 T50 D1
+N1590 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N1600 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N1610 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N1620 ; --- FX:2445 FY:800 Z:19 ---
+N1630 ; --- Viewchange View 0 ---
+N1640 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N1650 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N1660 ; --- -- ---
+N1670 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N1680 ; --- -- ---
+N1690 P1=0+V.P.OOX
+N1700 P2=0+V.P.OOY
+N1710 P3=19+V.P.OOZ
+N1720 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N1730 ; --- ViewchangeEnd ---
+N1740 L CYCLE [NAME=CP_RELEASE.NC]
+N1750 ; --- -- ---
+N1760 ; --- --      Milling  ---
+N1770 ; --- -- ---
+N1780 ; ---  ##################### DLLMPs ---
+N1790 T50 D1
+N1800 L CP_CONTOUR_START.NC
+N1810 G0 G40 X2455.15 Y57.8 Z25
+N1820 G1 X2455.15 Y57.8 Z6 F4000
+N1830 G1 X2446.15 Y57.8 Z-19.2 F16000
+N1840 G1 X2445.15
+N1850 G1 X2417.15
+N1860 G1 X2416.15
+N1870 G1 X2416.15 Y57.8 Z6
+N1880 G1 X2416.15 Y57.8 Z25 F10000
+N1890 L CP_CONTOUR_END.NC
+N1900 ; --- -- ---
+N1910 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N1920 ; --- -- ---
+N1930 L CYCLE [NAME=CP_CS.NC @P1=0]
+N1940 ; ---  ##################### DLLMPs SIC ---
+N1950 D0 G0 X2416.15 Y57.8 Z276.19
+N1960 T50 D1
+N1970 ; --- --- ---
+N1980 ; --- --- process group end --- ---
+N1990 ; --- -------------------------------  ---
+N2000 ; --- --- ---
+N2010 ; --- Process #3 Kind:<Milling(2)> - BOXID:<30> T:<30 VF 06 R P DIA>  HId:<1> Xmin:15.92 Xmax:1947.46 Ymin:2204.54 Ymax:2205.04 ---
+N2020 ; --- --- ---
+N2030 ; --- --- process group start ---  ---
+N2040 ; --- --- ---
+N2050 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N2060 M5
+N2070 ; --- Go Safety ---
+N2080 G90 D0
+N2090 #MCS ON
+N2100 G0 Z=V.P.MAXZ
+N2110 #MCS OFF
+N2120 ; --- 30 VF 06 R P DIA ---
+N2130 ; --- HEAD:1 Spindle 1 (P01 V01) ---
+N2140 ; --- VF 06 R P DIA  ID:30 Platz:2 T:37 ---
+N2150 L CYCLE [NAME=CP_TC.NC @P1=1 @P2=2001 @P3=2 @P4=30 @P5=0 @P6=1 @P7=0 @P8=1886 @P9=100]
+N2160 ; --- 1:CAMPUS ID, 2:HEAD ID, 3:PLACE ID WZW, 4:ToolNo, 5:C-Achse-Heben, 6:Heben erlaubt, 7:Wechselmode, 8:XPos, 9:Achsbeschl ---
+N2170 ; --- AKNEU ---
+N2180 T37 D2    ; --- SpeedCall ---
+N2190 L CYCLE [NAME=CP_TSPEED.NC @P1=1 @P2=3 @P3=22000 @P8=1]
+N2200 ; --- 1:HEAD ID, 2:DR, 3:DZ, 4:XPos, 5:YPos, 6:ZPos, 7:CRaster ---
+N2210 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N2220 M160    ; --- DustSuction ---
+N2230 D0 G0 X1886.1 Y762.65 Z276.19
+N2240 T37 D2
+N2250 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N2260 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N2270 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N2280 ; --- FX:2445 FY:800 Z:19 ---
+N2290 ; --- Viewchange View 0 ---
+N2300 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N2310 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N2320 ; --- -- ---
+N2330 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N2340 ; --- -- ---
+N2350 P1=0+V.P.OOX
+N2360 P2=0+V.P.OOY
+N2370 P3=19+V.P.OOZ
+N2380 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N2390 ; --- ViewchangeEnd ---
+N2400 L CYCLE [NAME=CP_RELEASE.NC]
+N2410 ; --- -- ---
+N2420 ; --- --      Milling  ---
+N2430 ; --- -- ---
+N2440 ; ---  ##################### DLLMPs ---
+N2450 T37 D2
+N2460 L CP_CONTOUR_START.NC
+N2470 G0 G40 X1886.1 Y762.65 Z50
+N2480 G1 G41 Y759.8 F8000
+N2490 G1 X1886.1 Y759.8 Z25 F3000
+N2500 G1 X1892.1 F8000
+N2510 G1 X1946.14 Y759.8 Z-6.2
+N2520 G1 X1949.15
+N2530 G1 Y765.8
+N2540 G1 X14.95
+N2550 G1 Y759.8
+N2560 G1 X1946.14
+N2570 G1 X1946.24 Y759.8 Z25
+N2580 G1 X1949.24
+N2590 G1 X1949.24 Y759.8 Z50 F20000
+N2600 G1 G40 Y762.65 F8000
+N2610 L CP_CONTOUR_END.NC
+N2620 ; --- -- ---
+N2630 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N2640 ; --- -- ---
+N2650 L CYCLE [NAME=CP_CS.NC @P1=0]
+N2660 ; ---  ##################### DLLMPs SIC ---
+N2670 D0 G0 X1949.24 Y762.65 Z171.6
+N2680 T37 D2
+N2690 ; --- Process #4 Kind:<Milling(2)> - BOXID:<30> T:<30 VF 06 R P DIA>  HId:<1> Xmin:1972.92 Xmax:2411.46 Ymin:2204.54 Ymax:2205.04 ---
+N2700 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N2710 M160    ; --- DustSuction ---
+N2720 D0 G0 X1949.24 Y762.65 Z171.6
+N2730 D0 G0 X2350.1
+N2740 T37 D2
+N2750 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N2760 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N2770 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N2780 ; --- FX:2445 FY:800 Z:19 ---
+N2790 ; --- Viewchange View 0 ---
+N2800 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N2810 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N2820 ; --- -- ---
+N2830 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N2840 ; --- -- ---
+N2850 P1=0+V.P.OOX
+N2860 P2=0+V.P.OOY
+N2870 P3=19+V.P.OOZ
+N2880 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N2890 ; --- ViewchangeEnd ---
+N2900 L CYCLE [NAME=CP_RELEASE.NC]
+N2910 ; --- -- ---
+N2920 ; --- --      Milling  ---
+N2930 ; --- -- ---
+N2940 ; ---  ##################### DLLMPs ---
+N2950 T37 D2
+N2960 L CP_CONTOUR_START.NC
+N2970 G0 G40 X2350.1 Y762.65 Z50
+N2980 G1 G41 Y759.8 F8000
+N2990 G1 X2350.1 Y759.8 Z25 F3000
+N3000 G1 X2356.1 F8000
+N3010 G1 X2410.14 Y759.8 Z-6.2
+N3020 G1 X2413.15
+N3030 G1 Y765.8
+N3040 G1 X1971.95
+N3050 G1 Y759.8
+N3060 G1 X2410.14
+N3070 G1 X2410.24 Y759.8 Z25
+N3080 G1 X2413.24
+N3090 G1 X2413.24 Y759.8 Z50 F20000
+N3100 G1 G40 Y762.65 F8000
+N3110 L CP_CONTOUR_END.NC
+N3120 ; --- -- ---
+N3130 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N3140 ; --- -- ---
+N3150 L CYCLE [NAME=CP_CS.NC @P1=0]
+N3160 ; ---  ##################### DLLMPs SIC ---
+N3170 D0 G0 X2413.24 Y762.65 Z276.19
+N3180 T37 D2
+N3190 ; --- --- ---
+N3200 ; --- --- process group end --- ---
+N3210 ; --- -------------------------------  ---
+N3220 ; --- --- ---
+N3230 ; --- Process #5 Kind:<DHProcess(9)> - BOXID:<501> T:<DH 7845_R (_sx_0_0) Head:DH 7845_R (_sx_0_0)>  HId:<51> Xmin:157.14 Xmax:2350.64 Ymin:1962.84 Ymax:2631.84 ---
+N3240 ; --- --- ---
+N3250 ; --- --- process group start ---  ---
+N3260 ; --- --- ---
+N3270 M5
+N3280 ; --- Go Safety ---
+N3290 G90 D0
+N3300 #MCS ON
+N3310 G0 Z=V.P.MAXZ
+N3320 #MCS OFF
+N3330 L CYCLE [NAME=CP_TC.NC @P1=51 @P4=501 @P6=0 @P7=-1 @P8=159 @P9=100]
+N3340 ; --- 1:CAMPUS ID, 2:HEAD ID, 3:PLACE ID WZW, 4:ToolNo, 5:C-Achse-Heben, 6:Heben erlaubt, 7:Wechselmode, 8:XPos, 9:Achsbeschl ---
+N3350 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=9]
+N3360 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N3370 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N3380 ; --- FX:2445 FY:800 Z:19 ---
+N3390 ;G602
+N3400 L CYCLE [NAME=CP_TSPEED.NC @P1=51 @P2=3 @P3=3556 @P8=1.125]
+N3410 ; --- 1:HEAD ID, 2:DR, 3:DZ, 4:XPos, 5:YPos, 6:ZPos, 7:CRaster ---
+N3420 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N3430 T16 D1
+N3440 ; --- Viewchange DH View 0 ---
+N3450 P1=0+0
+N3460 P2=0+0
+N3470 P3=19+0
+N3480 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N3490 ; --- ViewchangeEnd DH  ---
+N3500 ; --- ZMax:-13 ---
+N3510 ; --- Drill Cycle 10 ---
+N3520 ; --- Additives ZMass:0 ---
+N3530 G0 G40 X159.07 Y771.65 Z=7
+N3540 L CYCLE [NAME=CP_RELEASE.NC]
+N3550 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=32768 @P4=0 @P5=0]
+N3560 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N3570 ; --- BM1:32768 ---
+N3580 L CYCLE [NAME=CP_RELEASE.NC]
+N3590 G1 X159.07 Y771.65 Z=2 F10000
+N3600 G1 X159.07 Y771.65 Z=-3 F600
+N3610 G1 X159.07 Y771.65 Z=-13 F1000
+N3620 G0 X159.07 Y771.65 Z=7 F10000
+N3630 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N3640 ; --- ZMax:-13 ---
+N3650 ; --- Drill Cycle 10 ---
+N3660 ; --- Additives ZMass:0 ---
+N3670 G0 X159.07 Y867.65 Z=7
+N3680 G1 X159.07 Y867.65 Z=2 F10000
+N3690 G1 X159.07 Y867.65 Z=-3 F600
+N3700 G1 X159.07 Y867.65 Z=-13 F1000
+N3710 G0 X159.07 Y867.65 Z=7 F10000
+N3720 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N3730 ; --- ZMax:-13 ---
+N3740 ; --- Drill Cycle 10 ---
+N3750 ; --- Additives ZMass:0 ---
+N3760 G0 X159.07 Y980.65 Z=7
+N3770 G1 X159.07 Y980.65 Z=2 F10000
+N3780 G1 X159.07 Y980.65 Z=-3 F600
+N3790 G1 X159.07 Y980.65 Z=-13 F1000
+N3800 G0 X159.07 Y980.65 Z=7 F10000
+N3810 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N3820 ; --- ZMax:-13 ---
+N3830 ; --- Drill Cycle 10 ---
+N3840 ; --- Additives ZMass:0 ---
+N3850 G0 X159.07 Y1093.65 Z=7
+N3860 G1 X159.07 Y1093.65 Z=2 F10000
+N3870 G1 X159.07 Y1093.65 Z=-3 F600
+N3880 G1 X159.07 Y1093.65 Z=-13 F1000
+N3890 G0 X159.07 Y1093.65 Z=7 F10000
+N3900 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N3910 ; --- ZMax:-13 ---
+N3920 ; --- Drill Cycle 10 ---
+N3930 ; --- Additives ZMass:0 ---
+N3940 G0 X159.07 Y1189.65 Z=7
+N3950 G1 X159.07 Y1189.65 Z=2 F10000
+N3960 G1 X159.07 Y1189.65 Z=-3 F600
+N3970 G1 X159.07 Y1189.65 Z=-13 F1000
+N3980 G0 X159.07 Y1189.65 Z=7 F10000
+N3990 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N4000 ; --- ZMax:-13 ---
+N4010 ; --- Drill Cycle 10 ---
+N4020 ; --- Additives ZMass:0 ---
+N4030 G0 X935.47 Y1189.65 Z=7
+N4040 G1 X935.47 Y1189.65 Z=2 F10000
+N4050 G1 X935.47 Y1189.65 Z=-3 F600
+N4060 G1 X935.47 Y1189.65 Z=-13 F1000
+N4070 G0 X935.47 Y1189.65 Z=7 F10000
+N4080 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N4090 ; --- ZMax:-13 ---
+N4100 ; --- Drill Cycle 10 ---
+N4110 ; --- Additives ZMass:0 ---
+N4120 G0 X935.47 Y1093.65 Z=7
+N4130 G1 X935.47 Y1093.65 Z=2 F10000
+N4140 G1 X935.47 Y1093.65 Z=-3 F600
+N4150 G1 X935.47 Y1093.65 Z=-13 F1000
+N4160 G0 X935.47 Y1093.65 Z=7 F10000
+N4170 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N4180 ; --- ZMax:-13 ---
+N4190 ; --- Drill Cycle 10 ---
+N4200 ; --- Additives ZMass:0 ---
+N4210 G0 X935.47 Y973.65 Z=7
+N4220 G1 X935.47 Y973.65 Z=2 F10000
+N4230 G1 X935.47 Y973.65 Z=-3 F600
+N4240 G1 X935.47 Y973.65 Z=-13 F1000
+N4250 G0 X935.47 Y973.65 Z=7 F10000
+N4260 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N4270 ; --- ZMax:-13 ---
+N4280 ; --- Drill Cycle 10 ---
+N4290 ; --- Additives ZMass:0 ---
+N4300 G0 X935.47 Y853.65 Z=7
+N4310 G1 X935.47 Y853.65 Z=2 F10000
+N4320 G1 X935.47 Y853.65 Z=-3 F600
+N4330 G1 X935.47 Y853.65 Z=-13 F1000
+N4340 G0 X935.47 Y853.65 Z=7 F10000
+N4350 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N4360 ; --- ZMax:-13 ---
+N4370 ; --- Drill Cycle 10 ---
+N4380 ; --- Additives ZMass:0 ---
+N4390 G0 X935.47 Y757.65 Z=7
+N4400 G1 X935.47 Y757.65 Z=2 F10000
+N4410 G1 X935.47 Y757.65 Z=-3 F600
+N4420 G1 X935.47 Y757.65 Z=-13 F1000
+N4430 G0 X935.47 Y757.65 Z=7 F10000
+N4440 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4450 T15 D1
+N4460 ; --- ZMax:-12 ---
+N4470 ; --- Drill Cycle 10 ---
+N4480 ; --- Additives ZMass:0 ---
+N4490 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=16384 @P4=1024 @P5=0]
+N4500 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N4510 ; --- BM1:16384 ---
+N4520 ; ---  * BM2:1024 ---
+N4530 G0 X503.27 Y760.65 Z=7
+N4540 L CYCLE [NAME=CP_RELEASE.NC]
+N4550 G1 X503.27 Y760.65 Z=2 F10000
+N4560 G1 X503.27 Y760.65 Z=-3 F600
+N4570 G1 X503.27 Y760.65 Z=-12 F2000
+N4580 G0 X503.27 Y760.65 Z=7 F10000
+N4590 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4600 ; --- ZMax:-12 ---
+N4610 ; --- Drill Cycle 10 ---
+N4620 ; --- Additives ZMass:0 ---
+N4630 G0 X503.27 Y1185.65 Z=7
+N4640 G1 X503.27 Y1185.65 Z=2 F10000
+N4650 G1 X503.27 Y1185.65 Z=-3 F600
+N4660 G1 X503.27 Y1185.65 Z=-12 F2000
+N4670 G0 X503.27 Y1185.65 Z=7 F10000
+N4680 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4690 ; --- ZMax:-12 ---
+N4700 ; --- Drill Cycle 10 ---
+N4710 ; --- Additives ZMass:0 ---
+N4720 G0 X1279.67 Y1185.65 Z=7
+N4730 G1 X1279.67 Y1185.65 Z=2 F10000
+N4740 G1 X1279.67 Y1185.65 Z=-3 F600
+N4750 G1 X1279.67 Y1185.65 Z=-12 F2000
+N4760 G0 X1279.67 Y1185.65 Z=7 F10000
+N4770 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4780 ; --- ZMax:-12 ---
+N4790 ; --- Drill Cycle 10 ---
+N4800 ; --- Additives ZMass:0 ---
+N4810 G0 X1667.87 Y1185.65 Z=7
+N4820 G1 X1667.87 Y1185.65 Z=2 F10000
+N4830 G1 X1667.87 Y1185.65 Z=-3 F600
+N4840 G1 X1667.87 Y1185.65 Z=-12 F2000
+N4850 G0 X1667.87 Y1185.65 Z=7 F10000
+N4860 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4870 ; --- ZMax:-12 ---
+N4880 ; --- Drill Cycle 10 ---
+N4890 ; --- Additives ZMass:0 ---
+N4900 G0 X1667.87 Y760.65 Z=7
+N4910 G1 X1667.87 Y760.65 Z=2 F10000
+N4920 G1 X1667.87 Y760.65 Z=-3 F600
+N4930 G1 X1667.87 Y760.65 Z=-12 F2000
+N4940 G0 X1667.87 Y760.65 Z=7 F10000
+N4950 ; --- vertical drilling: ->115;127<- Rijboring D5 Typ:1 ---
+N4960 ; --- ZMax:-12 ---
+N4970 ; --- Drill Cycle 10 ---
+N4980 ; --- Additives ZMass:0 ---
+N4990 G0 X1279.67 Y760.65 Z=7
+N5000 G1 X1279.67 Y760.65 Z=2 F10000
+N5010 G1 X1279.67 Y760.65 Z=-3 F600
+N5020 G1 X1279.67 Y760.65 Z=-12 F2000
+N5030 G0 X1279.67 Y760.65 Z=7 F10000
+N5040 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5050 ; --- ZMax:-12 ---
+N5060 ; --- Drill Cycle 10 ---
+N5070 ; --- Additives ZMass:0 ---
+N5080 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=16384 @P4=1280 @P5=0]
+N5090 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N5100 ; --- BM1:16384 ---
+N5110 ; ---  * BM2:1280 ---
+N5120 G0 X1247.67 Y760.65 Z=7
+N5130 L CYCLE [NAME=CP_RELEASE.NC]
+N5140 G1 X1247.67 Y760.65 Z=2 F10000
+N5150 G1 X1247.67 Y760.65 Z=-3 F600
+N5160 G1 X1247.67 Y760.65 Z=-12 F2000
+N5170 G0 X1247.67 Y760.65 Z=7 F10000
+N5180 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5190 ; --- ZMax:-12 ---
+N5200 ; --- Drill Cycle 10 ---
+N5210 ; --- Additives ZMass:0 ---
+N5220 G0 X1635.87 Y760.65 Z=7
+N5230 G1 X1635.87 Y760.65 Z=2 F10000
+N5240 G1 X1635.87 Y760.65 Z=-3 F600
+N5250 G1 X1635.87 Y760.65 Z=-12 F2000
+N5260 G0 X1635.87 Y760.65 Z=7 F10000
+N5270 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5280 ; --- ZMax:-12 ---
+N5290 ; --- Drill Cycle 10 ---
+N5300 ; --- Additives ZMass:0 ---
+N5310 G0 X1635.87 Y1185.65 Z=7
+N5320 G1 X1635.87 Y1185.65 Z=2 F10000
+N5330 G1 X1635.87 Y1185.65 Z=-3 F600
+N5340 G1 X1635.87 Y1185.65 Z=-12 F2000
+N5350 G0 X1635.87 Y1185.65 Z=7 F10000
+N5360 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5370 ; --- ZMax:-12 ---
+N5380 ; --- Drill Cycle 10 ---
+N5390 ; --- Additives ZMass:0 ---
+N5400 G0 X1247.67 Y1185.65 Z=7
+N5410 G1 X1247.67 Y1185.65 Z=2 F10000
+N5420 G1 X1247.67 Y1185.65 Z=-3 F600
+N5430 G1 X1247.67 Y1185.65 Z=-12 F2000
+N5440 G0 X1247.67 Y1185.65 Z=7 F10000
+N5450 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5460 ; --- ZMax:-12 ---
+N5470 ; --- Drill Cycle 10 ---
+N5480 ; --- Additives ZMass:0 ---
+N5490 G0 X471.27 Y1185.65 Z=7
+N5500 G1 X471.27 Y1185.65 Z=2 F10000
+N5510 G1 X471.27 Y1185.65 Z=-3 F600
+N5520 G1 X471.27 Y1185.65 Z=-12 F2000
+N5530 G0 X471.27 Y1185.65 Z=7 F10000
+N5540 ; --- vertical drilling: ->115;127;125<- Rijboring D5 Typ:1 ---
+N5550 ; --- ZMax:-12 ---
+N5560 ; --- Drill Cycle 10 ---
+N5570 ; --- Additives ZMass:0 ---
+N5580 G0 X471.27 Y760.65 Z=7
+N5590 G1 X471.27 Y760.65 Z=2 F10000
+N5600 G1 X471.27 Y760.65 Z=-3 F600
+N5610 G1 X471.27 Y760.65 Z=-12 F2000
+N5620 G0 X471.27 Y760.65 Z=7 F10000
+N5630 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N5640 ; --- ZMax:-9 ---
+N5650 ; --- Drill Cycle 10 ---
+N5660 ; --- Additives ZMass:0 ---
+N5670 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=16384 @P4=0 @P5=0]
+N5680 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N5690 ; --- BM1:16384 ---
+N5700 G0 X264.07 Y761.65 Z=7
+N5710 L CYCLE [NAME=CP_RELEASE.NC]
+N5720 G1 X264.07 Y761.65 Z=2 F10000
+N5730 G1 X264.07 Y761.65 Z=-3 F600
+N5740 G1 X264.07 Y761.65 Z=-9 F2000
+N5750 G0 X264.07 Y761.65 Z=7 F10000
+N5760 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N5770 ; --- ZMax:-9 ---
+N5780 ; --- Drill Cycle 10 ---
+N5790 ; --- Additives ZMass:0 ---
+N5800 G0 X296.07 Y761.65 Z=7
+N5810 G1 X296.07 Y761.65 Z=2 F10000
+N5820 G1 X296.07 Y761.65 Z=-3 F600
+N5830 G1 X296.07 Y761.65 Z=-9 F2000
+N5840 G0 X296.07 Y761.65 Z=7 F10000
+N5850 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N5860 ; --- ZMax:-9 ---
+N5870 ; --- Drill Cycle 10 ---
+N5880 ; --- Additives ZMass:0 ---
+N5890 G0 X833.737 Y761.65 Z=7
+N5900 G1 X833.737 Y761.65 Z=2 F10000
+N5910 G1 X833.737 Y761.65 Z=-3 F600
+N5920 G1 X833.737 Y761.65 Z=-9 F2000
+N5930 G0 X833.737 Y761.65 Z=7 F10000
+N5940 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N5950 ; --- ZMax:-9 ---
+N5960 ; --- Drill Cycle 10 ---
+N5970 ; --- Additives ZMass:0 ---
+N5980 G0 X865.737 Y761.65 Z=7
+N5990 G1 X865.737 Y761.65 Z=2 F10000
+N6000 G1 X865.737 Y761.65 Z=-3 F600
+N6010 G1 X865.737 Y761.65 Z=-9 F2000
+N6020 G0 X865.737 Y761.65 Z=7 F10000
+N6030 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6040 ; --- ZMax:-9 ---
+N6050 ; --- Drill Cycle 10 ---
+N6060 ; --- Additives ZMass:0 ---
+N6070 G0 X1453.403 Y761.65 Z=7
+N6080 G1 X1453.403 Y761.65 Z=2 F10000
+N6090 G1 X1453.403 Y761.65 Z=-3 F600
+N6100 G1 X1453.403 Y761.65 Z=-9 F2000
+N6110 G0 X1453.403 Y761.65 Z=7 F10000
+N6120 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6130 ; --- ZMax:-9 ---
+N6140 ; --- Drill Cycle 10 ---
+N6150 ; --- Additives ZMass:0 ---
+N6160 G0 X1485.403 Y761.65 Z=7
+N6170 G1 X1485.403 Y761.65 Z=2 F10000
+N6180 G1 X1485.403 Y761.65 Z=-3 F600
+N6190 G1 X1485.403 Y761.65 Z=-9 F2000
+N6200 G0 X1485.403 Y761.65 Z=7 F10000
+N6210 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6220 ; --- ZMax:-9 ---
+N6230 ; --- Drill Cycle 10 ---
+N6240 ; --- Additives ZMass:0 ---
+N6250 G0 X1973.07 Y761.65 Z=7
+N6260 G1 X1973.07 Y761.65 Z=2 F10000
+N6270 G1 X1973.07 Y761.65 Z=-3 F600
+N6280 G1 X1973.07 Y761.65 Z=-9 F2000
+N6290 G0 X1973.07 Y761.65 Z=7 F10000
+N6300 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6310 ; --- ZMax:-9 ---
+N6320 ; --- Drill Cycle 10 ---
+N6330 ; --- Additives ZMass:0 ---
+N6340 G0 X2005.07 Y761.65 Z=7
+N6350 G1 X2005.07 Y761.65 Z=2 F10000
+N6360 G1 X2005.07 Y761.65 Z=-3 F600
+N6370 G1 X2005.07 Y761.65 Z=-9 F2000
+N6380 G0 X2005.07 Y761.65 Z=7 F10000
+N6390 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6400 ; --- ZMax:-13 ---
+N6410 ; --- Drill Cycle 10 ---
+N6420 ; --- Additives ZMass:0 ---
+N6430 G0 X2163.57 Y840.65 Z=7
+N6440 G1 X2163.57 Y840.65 Z=2 F10000
+N6450 G1 X2163.57 Y840.65 Z=-3 F600
+N6460 G1 X2163.57 Y840.65 Z=-13 F2000
+N6470 G0 X2163.57 Y840.65 Z=7 F10000
+N6480 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6490 ; --- ZMax:-13 ---
+N6500 ; --- Drill Cycle 10 ---
+N6510 ; --- Additives ZMass:0 ---
+N6520 G0 X2163.57 Y808.65 Z=7
+N6530 G1 X2163.57 Y808.65 Z=2 F10000
+N6540 G1 X2163.57 Y808.65 Z=-3 F600
+N6550 G1 X2163.57 Y808.65 Z=-13 F2000
+N6560 G0 X2163.57 Y808.65 Z=7 F10000
+N6570 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6580 ; --- ZMax:-13 ---
+N6590 ; --- Drill Cycle 10 ---
+N6600 ; --- Additives ZMass:0 ---
+N6610 G0 X2163.57 Y584.65 Z=7
+N6620 G1 X2163.57 Y584.65 Z=2 F10000
+N6630 G1 X2163.57 Y584.65 Z=-3 F600
+N6640 G1 X2163.57 Y584.65 Z=-13 F2000
+N6650 G0 X2163.57 Y584.65 Z=7 F10000
+N6660 ; --- vertical drilling: ->115<- Rijboring D5 Typ:1 ---
+N6670 ; --- ZMax:-13 ---
+N6680 ; --- Drill Cycle 10 ---
+N6690 ; --- Additives ZMass:0 ---
+N6700 G0 X2163.57 Y552.65 Z=7
+N6710 G1 X2163.57 Y552.65 Z=2 F10000
+N6720 G1 X2163.57 Y552.65 Z=-3 F600
+N6730 G1 X2163.57 Y552.65 Z=-13 F2000
+N6740 G0 X2163.57 Y552.65 Z=7 F10000
+N6750 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N6760 T16 D1
+N6770 ; --- Hochfahren, da laengeres Werkzeug vorgelegt wird: ---
+N6780 ; --- bisher:70 jetzt:71.1 ---
+N6790 ; --- Additives ZMass:0 ---
+N6800 G0 Z=7
+N6810 ; --- ZMax:-13 ---
+N6820 ; --- Drill Cycle 10 ---
+N6830 ; --- Additives ZMass:0 ---
+N6840 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=32768 @P4=0 @P5=0]
+N6850 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N6860 ; --- BM1:32768 ---
+N6870 G0 X2116.07 Y569.65 Z=7
+N6880 L CYCLE [NAME=CP_RELEASE.NC]
+N6890 G1 X2116.07 Y569.65 Z=2 F10000
+N6900 G1 X2116.07 Y569.65 Z=-3 F600
+N6910 G1 X2116.07 Y569.65 Z=-13 F1000
+N6920 G0 X2116.07 Y569.65 Z=7 F10000
+N6930 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N6940 ; --- ZMax:-13 ---
+N6950 ; --- Drill Cycle 10 ---
+N6960 ; --- Additives ZMass:0 ---
+N6970 G0 X2116.07 Y665.65 Z=7
+N6980 G1 X2116.07 Y665.65 Z=2 F10000
+N6990 G1 X2116.07 Y665.65 Z=-3 F600
+N7000 G1 X2116.07 Y665.65 Z=-13 F1000
+N7010 G0 X2116.07 Y665.65 Z=7 F10000
+N7020 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N7030 ; --- ZMax:-13 ---
+N7040 ; --- Drill Cycle 10 ---
+N7050 ; --- Additives ZMass:0 ---
+N7060 G0 X2116.07 Y808.317 Z=7
+N7070 G1 X2116.07 Y808.317 Z=2 F10000
+N7080 G1 X2116.07 Y808.317 Z=-3 F600
+N7090 G1 X2116.07 Y808.317 Z=-13 F1000
+N7100 G0 X2116.07 Y808.317 Z=7 F10000
+N7110 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N7120 ; --- ZMax:-13 ---
+N7130 ; --- Drill Cycle 10 ---
+N7140 ; --- Additives ZMass:0 ---
+N7150 G0 X2116.07 Y950.983 Z=7
+N7160 G1 X2116.07 Y950.983 Z=2 F10000
+N7170 G1 X2116.07 Y950.983 Z=-3 F600
+N7180 G1 X2116.07 Y950.983 Z=-13 F1000
+N7190 G0 X2116.07 Y950.983 Z=7 F10000
+N7200 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N7210 ; --- ZMax:-13 ---
+N7220 ; --- Drill Cycle 10 ---
+N7230 ; --- Additives ZMass:0 ---
+N7240 G0 X2116.07 Y1093.65 Z=7
+N7250 G1 X2116.07 Y1093.65 Z=2 F10000
+N7260 G1 X2116.07 Y1093.65 Z=-3 F600
+N7270 G1 X2116.07 Y1093.65 Z=-13 F1000
+N7280 G0 X2116.07 Y1093.65 Z=7 F10000
+N7290 ; --- vertical drilling: ->116<- Drevelboor D8 Typ:1 ---
+N7300 ; --- ZMax:-13 ---
+N7310 ; --- Drill Cycle 10 ---
+N7320 ; --- Additives ZMass:0 ---
+N7330 G0 X2116.07 Y1189.65 Z=7
+N7340 G1 X2116.07 Y1189.65 Z=2 F10000
+N7350 G1 X2116.07 Y1189.65 Z=-3 F600
+N7360 G1 X2116.07 Y1189.65 Z=-13 F1000
+N7370 G0 X2116.07 Y1189.65 Z=7 F10000
+N7380 ; --- vertical drilling: ->101<- Boor D2.5 Typ:1 ---
+N7390 T1 D1
+N7400 ; --- Hochfahren, da laengeres Werkzeug vorgelegt wird: ---
+N7410 ; --- bisher:71.1 jetzt:72.5 ---
+N7420 ; --- Additives ZMass:0 ---
+N7430 G0 Z=7
+N7440 ; --- ZMax:-3 ---
+N7450 ; --- Drill Cycle 10 ---
+N7460 ; --- Additives ZMass:0 ---
+N7470 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=1 @P3=1 @P4=0 @P5=0]
+N7480 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N7490 ; --- BM1:1 ---
+N7500 G0 X2080.57 Y1244.65 Z=7
+N7510 L CYCLE [NAME=CP_RELEASE.NC]
+N7520 G1 X2080.57 Y1244.65 Z=2 F10000
+N7530 G1 X2080.57 Y1244.65 Z=-3 F2000
+N7540 G0 X2080.57 Y1244.65 Z=7 F10000
+N7550 ; --- vertical drilling: ->101<- Boor D2.5 Typ:1 ---
+N7560 ; --- ZMax:-3 ---
+N7570 ; --- Drill Cycle 10 ---
+N7580 ; --- Additives ZMass:0 ---
+N7590 G0 X2544.57 Y1244.65 Z=7
+N7600 G1 X2544.57 Y1244.65 Z=2 F10000
+N7610 G1 X2544.57 Y1244.65 Z=-3 F2000
+N7620 G0 X2544.57 Y1244.65 Z=7 F10000
+N7630 ; --- Bohrspindeln zuruecklegen ---
+N7640 L CYCLE [NAME=CP_DHCODE.NC @P1=51 @P2=0 @P3=0 @P4=0 @P5=0]
+N7650 ; --- 1:HEAD ID, 2:GROUPCODE 3:bm1 4:bm2 5:bm3 ---
+N7660 ; --- BM1:0 ---
+N7670 ; --- -- ---
+N7680 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N7690 ; --- -- ---
+N7700 L CYCLE [NAME=CP_CS.NC @P1=0]
+N7710 ; --- Additives ZMass:0 ---
+N7720 G0 Z26
+N7730 ;G601
+N7740 ; --- --- ---
+N7750 ; --- --- process group end --- ---
+N7760 ; --- -------------------------------  ---
+N7770 ; --- --- ---
+N7780 ; --- Process #6 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:-3.03 Xmax:1950.77 Ymin:1701.29 Ymax:2243.19 ---
+N7790 ; --- --- ---
+N7800 ; --- --- process group start ---  ---
+N7810 ; --- --- ---
+N7820 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N7830 M5
+N7840 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N7850 ; --- Go Safety ---
+N7860 G90 D0
+N7870 #MCS ON
+N7880 G0 Z=V.P.MAXZ
+N7890 #MCS OFF
+N7900 ; --- 601 VF 12 R P/N ---
+N7910 ; --- HEAD:1 Spindle 1 (P01 V01) ---
+N7920 ; --- VF 12 R P/N  ID:601 Platz:1 T:50 ---
+N7930 L CYCLE [NAME=CP_TC.NC @P1=1 @P2=2001 @P3=1 @P4=601 @P5=-1 @P6=1 @P7=0 @P8=16 @P9=100]
+N7940 ; --- 1:CAMPUS ID, 2:HEAD ID, 3:PLACE ID WZW, 4:ToolNo, 5:C-Achse-Heben, 6:Heben erlaubt, 7:Wechselmode, 8:XPos, 9:Achsbeschl ---
+N7950 ; --- AKNEU ---
+N7960 T50 D1    ; --- SpeedCall ---
+N7970 L CYCLE [NAME=CP_TSPEED.NC @P1=1 @P2=3 @P3=22000 @P8=1]
+N7980 ; --- 1:HEAD ID, 2:DR, 3:DZ, 4:XPos, 5:YPos, 6:ZPos, 7:CRaster ---
+N7990 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N8000 M160    ; --- DustSuction ---
+N8010 D0 G0 X16.15 Y259.3 Z276.19
+N8020 T50 D1
+N8030 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N8040 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N8050 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N8060 ; --- FX:2445 FY:800 Z:19 ---
+N8070 ; --- Viewchange View 0 ---
+N8080 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N8090 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N8100 ; --- -- ---
+N8110 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N8120 ; --- -- ---
+N8130 P1=0+V.P.OOX
+N8140 P2=0+V.P.OOY
+N8150 P3=19+V.P.OOZ
+N8160 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N8170 ; --- ViewchangeEnd ---
+N8180 L CYCLE [NAME=CP_RELEASE.NC]
+N8190 ; --- -- ---
+N8200 ; --- --      Milling  ---
+N8210 ; --- -- ---
+N8220 ; ---  ##################### DLLMPs ---
+N8230 T50 D1
+N8240 L CP_CONTOUR_START.NC
+N8250 G0 G40 X16.15 Y259.3 Z25
+N8260 G1 G41 Y264.8 F16000
+N8270 G1 X16.15 Y264.8 Z6 F4000
+N8280 G1 X7.15 Y264.8 Z-18 F16000
+N8290 G1 X5.736
+N8300 G1 X4.15 Y266.386
+N8310 G1 Y795.8
+N8320 G1 X1947.15
+N8330 G1 Y265.8
+N8340 G1 X5.15
+N8350 G1 X4.15
+N8360 G1 X4.15 Y265.8 Z6
+N8370 G1 X4.15 Y265.8 Z25 F10000
+N8380 G1 G40 Y260.3 F16000
+N8390 L CP_CONTOUR_END.NC
+N8400 ; --- -- ---
+N8410 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N8420 ; --- -- ---
+N8430 L CYCLE [NAME=CP_CS.NC @P1=0]
+N8440 ; ---  ##################### DLLMPs SIC ---
+N8450 D0 G0 X4.15 Y260.3 Z155.55
+N8460 T50 D1
+N8470 ; --- Process #7 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:1951.87 Xmax:2414.77 Ymin:1500.39 Ymax:2243.19 ---
+N8480 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N8490 M160    ; --- DustSuction ---
+N8500 D0 G0 X4.15 Y260.3 Z155.55
+N8510 D0 G0 X1953.65 Y783.8
+N8520 T50 D1
+N8530 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N8540 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N8550 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N8560 ; --- FX:2445 FY:800 Z:19 ---
+N8570 ; --- Viewchange View 0 ---
+N8580 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N8590 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N8600 ; --- -- ---
+N8610 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N8620 ; --- -- ---
+N8630 P1=0+V.P.OOX
+N8640 P2=0+V.P.OOY
+N8650 P3=19+V.P.OOZ
+N8660 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N8670 ; --- ViewchangeEnd ---
+N8680 L CYCLE [NAME=CP_RELEASE.NC]
+N8690 ; --- -- ---
+N8700 ; --- --      Milling  ---
+N8710 ; --- -- ---
+N8720 ; ---  ##################### DLLMPs ---
+N8730 T50 D1
+N8740 L CP_CONTOUR_START.NC
+N8750 G0 G40 X1953.65 Y783.8 Z25
+N8760 G1 G41 X1959.15 F16000
+N8770 G1 X1959.15 Y783.8 Z6 F4000
+N8780 G1 X1959.15 Y792.8 Z-18 F16000
+N8790 G1 Y794.214
+N8800 G1 X1960.736 Y795.8
+N8810 G1 X2411.15
+N8820 G1 Y63.8
+N8830 G1 X1960.15
+N8840 G1 Y794.8
+N8850 G1 Y795.8
+N8860 G1 X1960.15 Y795.8 Z6
+N8870 G1 X1960.15 Y795.8 Z25 F10000
+N8880 G1 G40 X1954.65 F16000
+N8890 L CP_CONTOUR_END.NC
+N8900 ; --- -- ---
+N8910 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N8920 ; --- -- ---
+N8930 L CYCLE [NAME=CP_CS.NC @P1=0]
+N8940 ; ---  ##################### DLLMPs SIC ---
+N8950 D0 G0 X1954.65 Y795.8 Z155.55
+N8960 T50 D1
+N8970 ; --- Process #8 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:1952.87 Xmax:2413.77 Ymin:1501.39 Ymax:2242.19 ---
+N8980 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N8990 M160    ; --- DustSuction ---
+N9000 D0 G0 X1954.65 Y795.8 Z155.55
+N9010 D0 G0 Y783.8
+N9020 T50 D1
+N9030 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N9040 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N9050 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N9060 ; --- FX:2445 FY:800 Z:19 ---
+N9070 ; --- Viewchange View 0 ---
+N9080 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N9090 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N9100 ; --- -- ---
+N9110 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N9120 ; --- -- ---
+N9130 P1=0+V.P.OOX
+N9140 P2=0+V.P.OOY
+N9150 P3=19+V.P.OOZ
+N9160 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N9170 ; --- ViewchangeEnd ---
+N9180 L CYCLE [NAME=CP_RELEASE.NC]
+N9190 ; --- -- ---
+N9200 ; --- --      Milling  ---
+N9210 ; --- -- ---
+N9220 ; ---  ##################### DLLMPs ---
+N9230 T50 D1
+N9240 L CP_CONTOUR_START.NC
+N9250 G0 G40 X1954.65 Y783.8 Z25
+N9260 G1 G41 X1960.15 F16000
+N9270 G1 X1960.15 Y783.8 Z6 F4000
+N9280 G1 X1960.15 Y792.8 Z-19.2 F16000
+N9290 G1 Y793.8
+N9300 G1 X1961.15 Y794.8
+N9310 G1 X2410.15
+N9320 G1 Y64.8
+N9330 G1 X1961.15
+N9340 G1 Y794.8
+N9350 G1 Y795.8
+N9360 G1 X1961.15 Y795.8 Z6
+N9370 G1 X1961.15 Y795.8 Z25 F10000
+N9380 G1 G40 X1955.65 F16000
+N9390 L CP_CONTOUR_END.NC
+N9400 ; --- -- ---
+N9410 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N9420 ; --- -- ---
+N9430 L CYCLE [NAME=CP_CS.NC @P1=0]
+N9440 ; ---  ##################### DLLMPs SIC ---
+N9450 D0 G0 X1955.65 Y795.8 Z155.55
+N9460 T50 D1
+N9470 ; --- Process #9 Kind:<Milling(2)> - BOXID:<601> T:<601 VF 12 R P/N>  HId:<1> Xmin:-2.03 Xmax:1949.77 Ymin:1702.29 Ymax:2242.19 ---
+N9480 ; ---  ##################### DLLMPs vor ViewChange - AGGOX:-0.15  AGGOY:0.2  AGGOZ:0 ---
+N9490 M160    ; --- DustSuction ---
+N9500 D0 G0 X1955.65 Y795.8 Z155.55
+N9510 D0 G0 X16.15 Y260.3
+N9520 T50 D1
+N9530 L CYCLE [NAME=CP_DYNAMIC.NC @P1=-1 @P2=2]
+N9540 ; --- WP:1 Stop:CH X:-1.93 Y:2242.19 Z:0 ---
+N9550 ; --- N:\Hops\0620_MO07842_TV-wand_(1-1)\132MDF Zwart 19mm KrakAwxB.HOP ---
+N9560 ; --- FX:2445 FY:800 Z:19 ---
+N9570 ; --- Viewchange View 0 ---
+N9580 V.P.OOX=0 V.P.OOY=0 V.P.OOZ=0
+N9590 ; --- INFO - IM IPZ wird beim vertikalen Fraesen der Offset Z vom Aggregat eingerechnet ---
+N9600 ; --- -- ---
+N9610 ; --- VERSCHIEBUNG AKTIVIEREN ---
+N9620 ; --- -- ---
+N9630 P1=0+V.P.OOX
+N9640 P2=0+V.P.OOY
+N9650 P3=19+V.P.OOZ
+N9660 L CYCLE [NAME=CP_CS.NC @P1=1 @P2=P1 @P3=P2 @P4=P3 @P5=0 @P6=0 @P7=0]
+N9670 ; --- ViewchangeEnd ---
+N9680 L CYCLE [NAME=CP_RELEASE.NC]
+N9690 ; --- -- ---
+N9700 ; --- --      Milling  ---
+N9710 ; --- -- ---
+N9720 ; ---  ##################### DLLMPs ---
+N9730 T50 D1
+N9740 L CP_CONTOUR_START.NC
+N9750 G0 G40 X16.15 Y260.3 Z25
+N9760 G1 G41 Y265.8 F16000
+N9770 G1 X16.15 Y265.8 Z6 F4000
+N9780 G1 X7.15 Y265.8 Z-19.2 F16000
+N9790 G1 X6.15
+N9800 G1 X5.15 Y266.8
+N9810 G1 Y794.8
+N9820 G1 X1946.15
+N9830 G1 Y266.8
+N9840 G1 X5.15
+N9850 G1 X4.15
+N9860 G1 X4.15 Y266.8 Z6
+N9870 G1 X4.15 Y266.8 Z25 F10000
+N9880 G1 G40 Y261.3 F16000
+N9890 L CP_CONTOUR_END.NC
+N9900 ; --- -- ---
+N9910 ; --- VERSCHIEBUNG DEAKTIVIEREN ---
+N9920 ; --- -- ---
+N9930 L CYCLE [NAME=CP_CS.NC @P1=0]
+N9940 ; ---  ##################### DLLMPs SIC ---
+N9950 D0 G0 X4.15 Y261.3 Z276.19
+N9960 T50 D1
+N9970 ; --- --- ---
+N9980 ; --- --- process group end --- ---
+N9990 ; --- -------------------------------  ---
+N10000 ; --- --- ---
+N10010 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N10020 M5
+N10030 L CYCLE [NAME=CP_CLEARDH.NC @P1=1]
+N10040 ; --- Go Safety ---
+N10050 G90 D0
+N10060 #MCS ON
+N10070 G0 Z=V.P.MAXZ
+N10080 #MCS OFF
+N10090 V.P.PX=V.P.MINX
+N10100 V.P.PY=V.P.MINY
+N10110 L CYCLE [NAME=CP_END.NC @P1=V.P.PX @P2=V.P.PY]
+N10120 M30

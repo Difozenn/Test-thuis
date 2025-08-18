@@ -404,30 +404,56 @@ class BackgroundImportService:
                         try:
                             # Logic adapted from scanner_panel.py lines 628-643
                             if base_project_code and base_project_code.strip():
-                                # Extract proper project code if full filename was passed
+                                # For HOPS/MDB, use the full project code as-is
                                 search_project_code = project_code_to_log
-                                project_match = re.search(r'(MO\d{5}_[^_]+_\([^)]+\))', project_code_to_log, re.IGNORECASE)
-                                if project_match:
-                                    search_project_code = project_match.group(1)
-                                    self._log(f"[BG_TASK] Extracted project code '{search_project_code}' from '{project_code_to_log}'")
+                                if user_processing_type not in ['HOPS_PROCESSING', 'MDB_PROCESSING']:
+                                    # Only extract for non-HOPS/MDB users
+                                    project_match = re.search(r'(MO\d{5}_[^_]+_\([^)]+\))', project_code_to_log, re.IGNORECASE)
+                                    if project_match:
+                                        search_project_code = project_match.group(1)
+                                        self._log(f"[BG_TASK] Extracted project code '{search_project_code}' from '{project_code_to_log}'")
                                 
-                                for item_name in os.listdir(user_dir):
-                                    item_base_name, _ = os.path.splitext(item_name)
-                                    is_rep_scan_for_item = bool(re.search(r'_REP_?', search_project_code, re.IGNORECASE))
-                                    
-                                    # Standard file matching logic
-                                    file_matches = False
-                                    if is_rep_scan_for_item:
-                                        if item_base_name.upper().endswith(search_project_code.upper()):
-                                            file_matches = True
-                                    else:
-                                        if item_base_name.upper().endswith(search_project_code.upper()) and not re.search(r'_REP_?', item_name, re.IGNORECASE):
-                                            file_matches = True
-                                    
-                                    if file_matches:
-                                        # Regular users - file match is enough
-                                        match_found_for_this_user = True
-                                        break
+                                # Special handling for HOPS and MDB processing types
+                                if user_processing_type == 'HOPS_PROCESSING':
+                                    # HOPS needs to find matching directories
+                                    for item_name in os.listdir(user_dir):
+                                        item_path = os.path.join(user_dir, item_name)
+                                        if os.path.isdir(item_path):
+                                            if item_name.upper().endswith(search_project_code.upper()):
+                                                match_found_for_this_user = True
+                                                self._log(f"[BG_TASK] Found matching HOPS directory: {item_name}")
+                                                break
+                                
+                                elif user_processing_type == 'MDB_PROCESSING':
+                                    # MDB needs to find .mdb/.accdb files with matching project code
+                                    for item_name in os.listdir(user_dir):
+                                        file_base_name, file_ext = os.path.splitext(item_name)
+                                        if file_ext.lower() in ('.mdb', '.accdb'):
+                                            is_rep_scan = bool(re.search(r'_REP_?', search_project_code, re.IGNORECASE))
+                                            if file_base_name.upper().endswith(search_project_code.upper()):
+                                                match_found_for_this_user = True
+                                                self._log(f"[BG_TASK] Found matching MDB file: {item_name}")
+                                                break
+                                
+                                else:
+                                    # Standard file matching logic for other processing types
+                                    for item_name in os.listdir(user_dir):
+                                        item_base_name, _ = os.path.splitext(item_name)
+                                        is_rep_scan_for_item = bool(re.search(r'_REP_?', search_project_code, re.IGNORECASE))
+                                        
+                                        # Standard file matching logic
+                                        file_matches = False
+                                        if is_rep_scan_for_item:
+                                            if item_base_name.upper().endswith(search_project_code.upper()):
+                                                file_matches = True
+                                        else:
+                                            if item_base_name.upper().endswith(search_project_code.upper()) and not re.search(r'_REP_?', item_name, re.IGNORECASE):
+                                                file_matches = True
+                                        
+                                        if file_matches:
+                                            # Regular users - file match is enough
+                                            match_found_for_this_user = True
+                                            break
                         except OSError as e_os:
                             self._log(f"[BG_TASK_ERR] Error accessing dir {user_dir} for {user}: {e_os}")
                             if self.log_callback:

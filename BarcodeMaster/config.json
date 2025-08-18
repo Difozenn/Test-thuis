@@ -51,15 +51,15 @@
         },
         "tuesday": {
             "start": 7.5,
-            "end": 16.0
+            "end": 23.983333333333334
         },
         "wednesday": {
-            "start": 7.5,
+            "start": 6.5,
             "end": 23.983333333333334
         },
         "thursday": {
-            "start": 7.5,
-            "end": 16.0
+            "start": 6.5,
+            "end": 23.983333333333334
         },
         "friday": {
             "start": 7.5,

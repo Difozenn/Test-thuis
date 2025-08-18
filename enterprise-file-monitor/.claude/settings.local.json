@@ -24,7 +24,10 @@
       "Bash(./filemonitortrayapp.exe:*)",
       "Bash(pip3 list:*)",
       "Bash(pip3 install:*)",
-      "Bash(\"./CNC DATALOG.exe\":*)"
+      "Bash(\"./CNC DATALOG.exe\":*)",
+      "Bash(sed:*)",
+      "Bash(where:*)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }

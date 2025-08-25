@@ -920,3 +920,18 @@ Traceback (most recent call last):
   File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
     conn.execute('PRAGMA journal_mode=WAL;')
 sqlite3.OperationalError: unable to open database file
+2025-08-22 16:28:04,537 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:28:34,625 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:04,693 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:34,754 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:04,822 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:06,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:10,807 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,395 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,669 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,878 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,085 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,298 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,496 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:42,691 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:31:13,075 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']

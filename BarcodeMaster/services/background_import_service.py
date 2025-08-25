@@ -473,7 +473,7 @@ class BackgroundImportService:
                                 'details': f"Auto-detected from {current_user_scanner}'s scan",
                                 'project': project_code_to_log,
                                 'base_mo_code': self._extract_project_code(project_code_to_log),
-                                'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
+                                'is_rep_variant': bool(re.search(r'_REP(?:_|$)', project_code_to_log, re.IGNORECASE)),
                                 'user': user,
                                 'session_type': self._get_session_type_for_processing(user_processing_type)
                             }
@@ -523,7 +523,7 @@ class BackgroundImportService:
                             'details': f"Auto-detected from {current_user_scanner}'s scan of {scanned_code}",
                             'project': project_code_to_log,
                             'base_mo_code': base_project_code,
-                            'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
+                            'is_rep_variant': bool(re.search(r'_REP(?:_|$)', project_code_to_log, re.IGNORECASE)),
                             'user': user,  # This preserves the actual user name (e.g., "KL GANNOMAT")
                             'session_type': self._get_session_type_for_processing(user_processing_type)
                         }
@@ -929,7 +929,7 @@ class BackgroundImportService:
             
             # Extract base project code
             base_project_code = self._get_base_code(project_code)
-            is_rep_variant = bool(re.search(r'_REP_?', project_code, re.IGNORECASE))
+            is_rep_variant = bool(re.search(r'_REP(?:_|$)', project_code, re.IGNORECASE))
             
             # Get processing type for this user from config
             user_processing_types = config.get('scanner_user_to_processing_type_map', {})
@@ -1976,20 +1976,32 @@ class BackgroundImportService:
             self._log(f"[{processing_type}] Error updating existing entry: {e}")
 
     def _extract_project_code(self, code):
-        """Extract project code met _REP_ handling (consistent met scanner panel)."""
-        project_code = code  # Default to full code
+        """Extract project code preserving full REP variant identifiers.
         
-        # Try to extract project code using standard pattern
-        match = re.search(r'_([A-Z]{2}\d+)_', code)
-        if match:
-            project_code = match.group(1)
+        Examples:
+        S04570_0811_MO07454_Storeroom_1_REP_rg_ETAP -> MO07454_Storeroom_1_REP_rg
+        S04570_0819_MO07454_Storeroom_1_REP_DR_ETAP -> MO07454_Storeroom_1_REP_DR
+        S04570_0620_MO07454_Storeroom_1__(8-19)_ETAP -> MO07454_Storeroom_1_(8-19)
+        """
+        # Remove common prefixes/suffixes
+        # Pattern: S[numbers]_[date]_[PROJECT]_ETAP
         
-        # Dynamic logic for handling _REP_ project codes (case insensitive)
-        code_upper = code.upper()
-        if re.search(r'_REP_?', code, re.IGNORECASE):
-            if not project_code.upper().endswith("_REP"):
-                project_code = f"{project_code}_REP"
-                
+        # Remove ETAP suffix if present
+        if code.endswith('_ETAP'):
+            code = code[:-5]
+        
+        # Remove S-number and date prefix (S04570_0811_)
+        # Pattern: S followed by digits, underscore, more digits, underscore
+        prefix_match = re.match(r'^S\d+_\d+_(.+)$', code)
+        if prefix_match:
+            project_code = prefix_match.group(1)
+        else:
+            # If no standard prefix, use the whole code
+            project_code = code
+            
+        # Clean up any double underscores from extraction (e.g., "__(8-19)" -> "_(8-19)")
+        project_code = re.sub(r'__+', '_', project_code)
+        
         return project_code
         
     def _log_import_event(self, user_type, project, details, item_count=None, nesting_count=None, opdeelzaag_count=None, aantal_sides=None):

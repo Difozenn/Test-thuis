@@ -44355,3 +44355,775 @@ sqlite3.OperationalError: unable to open database file
 2025-08-18 19:49:09,022 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 23.983333333333334}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 6.5, 'end': 23.983333333333334}, 'thursday': {'start': 6.5, 'end': 23.983333333333334}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
 2025-08-18 19:50:45,608 INFO [INIT] Background service log callback initialized
 2025-08-18 19:50:45,608 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 23.983333333333334}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 6.5, 'end': 23.983333333333334}, 'thursday': {'start': 6.5, 'end': 23.983333333333334}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 16:28:04,537 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:28:34,625 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:04,693 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:34,754 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:04,822 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:06,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:10,807 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,395 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,669 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,878 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,085 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,298 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,496 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:42,691 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:31:04,249 INFO [INIT] Background service log callback initialized
+2025-08-22 16:31:04,249 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 23.983333333333334}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 6.5, 'end': 23.983333333333334}, 'thursday': {'start': 6.5, 'end': 23.983333333333334}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 16:31:04,560 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 16:31:04,561 INFO Database initialization complete.
+2025-08-22 16:31:04,578 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 16:31:06,194 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 16:31:13,075 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:31:18,793 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:47:59,844 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:48:03,034 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:48:07,705 INFO [DELETE_PROJECT] Request to delete project: 000000277360;OUT
+2025-08-22 17:48:07,707 WARNING [DELETE_PROJECT] Cannot delete project '000000277360;OUT' - has active sessions
+2025-08-22 17:48:09,684 INFO database management page was called
+2025-08-22 17:48:26,665 ERROR Error ending session: table project_sessions has no column named duration_minutes
+2025-08-22 17:48:34,395 INFO database management page was called
+2025-08-22 17:48:41,005 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:48:43,476 INFO [DELETE_PROJECT] Request to delete project: 000000277360;OUT
+2025-08-22 17:48:43,478 WARNING [DELETE_PROJECT] Cannot delete project '000000277360;OUT' - has active sessions
+2025-08-22 17:48:52,058 INFO [DELETE_PROJECT] Request to delete project: 000000277360;OUT
+2025-08-22 17:48:52,060 WARNING [DELETE_PROJECT] Cannot delete project '000000277360;OUT' - has active sessions
+2025-08-22 17:48:55,910 INFO database management page was called
+2025-08-22 17:48:59,308 ERROR Error ending session: table project_sessions has no column named duration_minutes
+2025-08-22 17:49:01,402 INFO database management page was called
+2025-08-22 17:49:17,833 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:53:07,902 INFO logs_project endpoint called for project: 'MO04587_Dressing_2_(2-2)'
+2025-08-22 17:53:08,009 ERROR Error getting linked sessions: unsupported operand type(s) for *: 'NoneType' and 'float'
+2025-08-22 17:53:28,369 INFO logs_project endpoint called for project: 'MO04587_Dressing_2_(2-2)'
+2025-08-22 17:53:28,498 ERROR Error getting linked sessions: unsupported operand type(s) for *: 'NoneType' and 'float'
+2025-08-22 17:53:33,729 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:53:36,111 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast_REP_RZ'
+2025-08-22 17:53:38,349 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:53:38,917 INFO users endpoint was called
+2025-08-22 17:53:53,214 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:54:15,878 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast_REP_RZ'
+2025-08-22 17:54:18,129 INFO users endpoint was called
+2025-08-22 17:55:34,893 INFO users endpoint was called
+2025-08-22 17:56:02,436 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:56:09,592 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 17:56:36,877 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:56:38,915 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast_REP_RZ'
+2025-08-22 17:56:56,613 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast (2-2)'
+2025-08-22 17:57:06,909 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 17:57:07,902 INFO logs_project endpoint called for project: '0821MO07418_Sales-support_REP_blad'
+2025-08-22 18:02:16,579 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 18:02:18,697 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 18:07:50,364 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 18:10:03,665 INFO logs_project endpoint called for project: 'test'
+2025-08-22 18:21:32,235 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:21:34,066 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 18:21:36,982 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:22:07,041 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:22:37,086 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:23:07,129 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:23:37,173 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:24:07,218 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:24:37,281 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:25:07,328 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:25:37,373 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:26:07,416 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:26:37,457 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:27:07,503 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:27:37,547 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:27:57,994 INFO logs_project endpoint called for project: 'MO07931_Hangkast (3-4)'
+2025-08-22 18:28:07,586 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:28:37,920 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:28:38,184 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 18:28:42,116 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 18:29:00,152 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 18:29:06,524 INFO logs_project endpoint called for project: 'MO07931_Hangkast (3-4)'
+2025-08-22 18:37:08,953 INFO logs_project endpoint called for project: 'MO07931_Hangkast (3-4)'
+2025-08-22 18:37:56,432 INFO database management page was called
+2025-08-22 18:37:56,461 WARNING Task queue depth is 1
+2025-08-22 18:51:11,692 INFO database management page was called
+2025-08-22 18:51:16,547 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 18:51:42,942 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:52:12,976 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:52:43,020 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:53:13,065 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:53:43,111 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:53:49,843 INFO Work hours configuration updated: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 18:53:49,843 INFO Work hours configuration saved to config.json
+2025-08-22 18:53:52,632 INFO database management page was called
+2025-08-22 18:54:13,154 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:54:32,469 INFO users endpoint was called
+2025-08-22 18:54:43,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:55:13,241 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:55:43,284 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:56:13,342 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:56:43,386 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:57:13,434 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:57:43,479 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:58:13,522 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:58:43,566 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:58:51,548 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:59:13,610 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:59:21,623 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:59:43,655 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 18:59:51,689 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:00:13,702 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:00:21,921 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:00:43,755 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:00:52,152 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:01:13,800 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:01:22,394 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:01:43,850 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:01:52,650 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:02:14,204 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:02:22,908 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:02:44,252 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:02:53,154 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:03:14,300 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:03:23,406 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:03:44,351 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:03:53,666 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:04:14,406 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:04:23,921 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:04:44,463 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:04:54,009 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:05:14,508 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:05:24,259 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:05:54,345 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:06:24,895 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:06:55,112 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:07:25,335 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:07:55,425 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:08:25,993 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:08:56,079 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:09:26,340 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:09:56,562 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:10:26,795 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:10:57,022 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:11:27,249 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:11:57,339 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:12:27,603 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:12:57,698 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:13:27,958 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:13:58,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:14:28,283 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:14:58,372 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:15:28,619 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:15:54,791 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 19:15:58,711 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:16:29,269 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:16:59,505 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:17:29,590 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:17:59,833 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:18:29,909 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:19:00,144 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:19:30,226 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:20:00,315 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:20:30,565 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:21:00,808 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:21:31,041 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:22:01,311 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:22:31,394 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:23:01,480 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:23:31,722 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:24:01,964 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:24:32,045 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:25:02,130 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:25:32,386 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:26:02,670 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:26:32,752 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:27:02,834 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:27:33,073 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:28:03,160 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:28:33,765 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:29:03,845 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:29:34,097 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:30:04,181 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:30:34,430 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:31:04,512 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:31:34,742 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:32:04,821 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:32:35,357 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:33:05,648 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:33:35,736 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:34:05,972 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:34:36,198 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:35:06,439 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:35:36,524 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:36:06,606 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:36:36,850 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:37:07,082 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:37:37,162 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:38:07,240 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:38:37,504 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:38:39,061 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 19:38:45,417 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 19:38:47,829 INFO logs_project endpoint called for project: 'MO08528_NT50_(1-1)'
+2025-08-22 19:39:07,735 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:39:37,958 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:40:08,188 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:40:38,276 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:41:08,524 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:41:38,776 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:42:09,039 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:42:39,137 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:43:09,389 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:43:39,620 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:44:09,870 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:44:39,958 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:45:10,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:45:40,287 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:46:10,526 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:46:40,749 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:47:10,844 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:47:41,112 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:48:11,200 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:48:41,445 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:49:11,687 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:49:41,908 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:50:12,160 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:50:42,247 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:51:12,497 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:51:42,583 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:52:12,827 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:52:42,915 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:53:13,159 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:53:43,248 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:54:13,501 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:54:43,592 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:55:13,834 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:55:44,068 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:56:14,296 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:56:44,390 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:57:14,638 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:57:44,733 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:58:14,987 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:58:45,078 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:59:15,326 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 19:59:45,417 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:00:15,665 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:00:45,882 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:01:16,121 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:01:46,212 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:02:16,768 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:02:47,009 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:03:17,250 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:03:47,339 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:04:17,576 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:04:47,800 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:05:18,026 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:05:48,114 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:06:18,356 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:06:48,443 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:07:18,678 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:07:48,766 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:08:19,003 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:08:49,091 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:09:19,322 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:09:49,530 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:10:19,749 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:10:49,829 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:11:20,065 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:11:50,277 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:12:20,359 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:12:50,606 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:13:20,836 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:13:51,063 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:14:21,284 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:14:51,370 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:15:21,598 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:15:51,678 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:16:21,911 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:16:52,126 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:17:22,347 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:17:38,656 INFO [DatabasePanel] Shutdown called.
+2025-08-22 20:17:38,657 INFO Shutdown requested for DB API server
+2025-08-22 20:17:39,708 INFO Shutdown requested for DB API server
+2025-08-22 20:17:54,089 INFO [INIT] Background service log callback initialized
+2025-08-22 20:17:54,091 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 20:17:54,422 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 20:17:54,423 INFO Database initialization complete.
+2025-08-22 20:17:54,443 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 20:17:54,484 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:17:56,025 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 20:18:11,061 INFO logs_project endpoint called for project: 'MO08528_NT50_(1-1)'
+2025-08-22 20:18:12,311 INFO logs_project endpoint called for project: 'MO08528_NT50_(1-1)'
+2025-08-22 20:18:18,352 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:18:24,739 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:18:30,920 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:18:32,012 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:18:32,639 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:18:33,836 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast_REP_RZ'
+2025-08-22 20:18:54,812 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:19:25,040 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:19:55,138 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:20:25,390 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:20:55,479 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:21:25,719 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:21:55,805 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:22:26,031 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:22:56,123 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:23:26,373 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:23:56,599 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:24:26,844 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:24:56,932 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:25:27,187 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:25:57,275 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:26:27,527 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:26:57,749 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:27:27,989 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:27:51,515 INFO [DatabasePanel] Shutdown called.
+2025-08-22 20:27:51,515 INFO Shutdown requested for DB API server
+2025-08-22 20:27:52,564 INFO Shutdown requested for DB API server
+2025-08-22 20:28:02,389 INFO [INIT] Background service log callback initialized
+2025-08-22 20:28:02,389 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 20:28:02,493 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 20:28:02,496 INFO Database initialization complete.
+2025-08-22 20:28:02,512 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 20:28:04,104 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 20:29:18,208 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 20:29:44,323 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:30:14,373 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:30:44,408 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:31:14,440 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:31:22,845 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:31:24,622 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 20:31:33,610 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:32:40,982 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 20:32:45,979 INFO logs_project endpoint called for project: 'MO04585_Dressing_1_(1-2)'
+2025-08-22 20:32:46,129 ERROR Error getting linked sessions: unsupported operand type(s) for *: 'NoneType' and 'float'
+2025-08-22 20:36:25,393 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 20:42:01,602 INFO [DatabasePanel] Shutdown called.
+2025-08-22 20:42:01,602 INFO Shutdown requested for DB API server
+2025-08-22 20:42:02,655 INFO Shutdown requested for DB API server
+2025-08-22 20:42:25,047 INFO [INIT] Background service log callback initialized
+2025-08-22 20:42:25,047 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 20:42:25,154 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 20:42:25,155 INFO Database initialization complete.
+2025-08-22 20:42:25,173 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 20:42:26,759 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 20:42:40,445 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 20:42:40,532 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
+2025-08-22 20:50:40,638 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
+2025-08-22 20:58:53,565 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:58:54,105 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 20:59:15,746 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:00:11,647 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:00:18,406 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 21:00:20,714 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:00:37,303 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 21:01:00,064 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:01:58,067 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 21:05:12,961 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:10:05,125 INFO logs_project endpoint called for project: 'MO08109_Dressing (2-4)'
+2025-08-22 21:10:05,207 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
+2025-08-22 21:11:42,131 INFO logs_project endpoint called for project: 'MO08109_Dressing (2-4)'
+2025-08-22 21:11:42,432 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
+2025-08-22 21:13:07,986 INFO users endpoint was called
+2025-08-22 21:13:46,431 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 21:14:16,488 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 21:14:42,390 INFO users endpoint was called
+2025-08-22 21:14:45,479 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:14:48,665 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 21:14:50,415 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_Rep'
+2025-08-22 21:14:50,717 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
+2025-08-22 21:14:59,997 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_Rep'
+2025-08-22 21:15:00,066 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
+2025-08-22 21:15:45,971 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:15:48,543 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 21:15:48,844 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:30:07,346 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:30:07,347 INFO Shutdown requested for DB API server
+2025-08-22 21:30:08,398 INFO Shutdown requested for DB API server
+2025-08-22 21:30:17,629 INFO [INIT] Background service log callback initialized
+2025-08-22 21:30:17,629 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:30:17,733 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:30:17,734 INFO Database initialization complete.
+2025-08-22 21:30:17,751 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:30:19,336 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:30:36,164 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 21:30:36,250 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:33:14,089 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:33:14,090 INFO Shutdown requested for DB API server
+2025-08-22 21:33:15,140 INFO Shutdown requested for DB API server
+2025-08-22 21:33:20,423 INFO [INIT] Background service log callback initialized
+2025-08-22 21:33:20,424 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:33:20,525 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:33:20,526 INFO Database initialization complete.
+2025-08-22 21:33:20,543 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:33:22,129 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:33:33,508 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 21:33:33,577 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:37:18,184 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:37:18,192 INFO Initializing database at /mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/central_logging.sqlite
+2025-08-22 21:37:18,214 INFO Database initialization complete.
+2025-08-22 21:37:18,226 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:39:31,525 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:39:31,526 INFO Shutdown requested for DB API server
+2025-08-22 21:39:32,583 INFO Shutdown requested for DB API server
+2025-08-22 21:39:37,309 INFO [INIT] Background service log callback initialized
+2025-08-22 21:39:37,310 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:39:37,413 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:39:37,414 INFO Database initialization complete.
+2025-08-22 21:39:37,433 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:39:39,007 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:41:34,809 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:42:12,149 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:42:12,150 INFO Shutdown requested for DB API server
+2025-08-22 21:42:13,211 INFO Shutdown requested for DB API server
+2025-08-22 21:42:19,021 INFO [INIT] Background service log callback initialized
+2025-08-22 21:42:19,021 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:42:19,123 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:42:19,124 INFO Database initialization complete.
+2025-08-22 21:42:19,141 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:42:20,726 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:42:52,668 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:42:52,678 INFO Initializing database at /mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/central_logging.sqlite
+2025-08-22 21:42:52,700 INFO Database initialization complete.
+2025-08-22 21:42:52,713 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:43:06,750 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:43:34,343 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:43:34,344 INFO Shutdown requested for DB API server
+2025-08-22 21:43:39,768 INFO [INIT] Background service log callback initialized
+2025-08-22 21:43:39,768 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:43:39,873 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:43:39,875 INFO Database initialization complete.
+2025-08-22 21:43:39,892 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:43:41,478 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:45:05,860 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:45:52,081 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast (2-2)'
+2025-08-22 21:45:52,175 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
+2025-08-22 21:47:57,710 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:47:57,711 INFO Shutdown requested for DB API server
+2025-08-22 21:47:58,750 INFO Shutdown requested for DB API server
+2025-08-22 21:48:04,093 INFO [INIT] Background service log callback initialized
+2025-08-22 21:48:04,093 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:48:04,197 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:48:04,198 INFO Database initialization complete.
+2025-08-22 21:48:04,216 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:48:05,810 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:48:13,903 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast (2-2)'
+2025-08-22 21:48:13,987 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
+2025-08-22 21:49:10,331 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 21:49:29,417 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 21:49:49,566 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:50:05,239 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast (2-2)'
+2025-08-22 21:50:05,282 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
+2025-08-22 21:50:21,644 INFO logs_project endpoint called for project: 'MO08171_Muurtafel (1-2)'
+2025-08-22 21:50:21,947 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
+2025-08-22 21:50:27,916 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 21:50:29,507 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 21:50:29,811 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:53:50,940 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 21:57:42,412 INFO [DatabasePanel] Shutdown called.
+2025-08-22 21:57:42,412 INFO Shutdown requested for DB API server
+2025-08-22 21:57:43,484 INFO Shutdown requested for DB API server
+2025-08-22 21:57:49,317 INFO [INIT] Background service log callback initialized
+2025-08-22 21:57:49,318 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 21:57:49,421 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 21:57:49,423 INFO Database initialization complete.
+2025-08-22 21:57:49,441 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 21:57:51,026 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 21:57:55,907 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 21:57:55,968 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 22:02:40,377 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 22:08:10,660 INFO [DatabasePanel] Shutdown called.
+2025-08-22 22:08:10,661 INFO Shutdown requested for DB API server
+2025-08-22 22:08:11,702 INFO Shutdown requested for DB API server
+2025-08-22 22:08:29,535 INFO [INIT] Background service log callback initialized
+2025-08-22 22:08:29,535 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-22 22:08:29,646 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-22 22:08:29,649 INFO Database initialization complete.
+2025-08-22 22:08:29,665 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-22 22:08:31,250 INFO [CALLBACK] Scanner panel callback registered
+2025-08-22 22:08:47,832 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 22:08:47,902 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 22:10:20,345 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:10:22,042 INFO logs_project endpoint called for project: 'MO07932_Berging (4-4)'
+2025-08-22 22:10:22,344 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
+2025-08-22 22:10:25,822 INFO logs_project endpoint called for project: 'MO08110_Dressing (3-4)'
+2025-08-22 22:10:25,859 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
+2025-08-22 22:11:58,571 INFO logs_project endpoint called for project: 'MO07929_Vestiaire (1-4)'
+2025-08-22 22:11:58,629 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
+2025-08-22 22:14:27,578 INFO logs_project endpoint called for project: 'MO08110_Dressing (3-4)'
+2025-08-22 22:14:27,641 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
+2025-08-22 22:14:50,812 INFO logs_project endpoint called for project: 'MO08108_Vestiaire (1-4)'
+2025-08-22 22:14:51,113 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
+2025-08-22 22:14:59,862 INFO logs_project endpoint called for project: 'MO07931_Hangkast (3-4)'
+2025-08-22 22:14:59,900 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
+2025-08-22 22:15:05,393 INFO logs_project endpoint called for project: 'MO08192_Wandkast_(1-1)'
+2025-08-22 22:15:33,490 INFO logs_project endpoint called for project: 'MO08192_Wandkast_(1-1)'
+2025-08-22 22:15:42,676 INFO database management page was called
+2025-08-22 22:15:48,659 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 22:15:54,703 INFO users endpoint was called
+2025-08-22 22:16:00,832 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 22:16:30,873 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 22:17:00,908 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 22:17:30,943 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 22:17:52,942 INFO users endpoint was called
+2025-08-22 22:17:53,611 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:17:55,049 INFO logs_project endpoint called for project: 'MO08171_Muurtafel (1-2)'
+2025-08-22 22:17:55,355 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
+2025-08-22 22:18:15,069 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast (2-2)'
+2025-08-22 22:18:15,374 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
+2025-08-22 22:18:36,642 INFO users endpoint was called
+2025-08-22 22:18:38,251 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:18:47,361 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 22:40:54,957 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:40:57,729 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 22:41:00,173 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_REP_DR'
+2025-08-22 22:41:00,480 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
+2025-08-22 22:41:06,948 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_REP_dr10-11'
+2025-08-22 22:41:07,253 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
+2025-08-22 22:41:15,938 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_Rep'
+2025-08-22 22:41:16,243 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
+2025-08-22 22:41:21,169 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:41:23,400 INFO logs_project endpoint called for project: 'MO07454_Storeroom_1_REP_LL'
+2025-08-22 22:41:23,704 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
+2025-08-22 22:52:13,986 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:52:16,497 INFO projects endpoint called - page: 2, per_page: 20
+2025-08-22 22:52:19,651 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-22 22:52:37,538 INFO logs_project endpoint called for project: '000000277360;12903'
+2025-08-22 22:52:45,226 INFO logs_project endpoint called for project: '000000277360;OUT'
+2025-08-22 22:58:57,835 INFO logs_project endpoint called for project: 'MO08110_Dressing (3-4)'
+2025-08-22 22:58:57,891 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
+2025-08-22 23:04:40,137 INFO users endpoint was called
+2025-08-22 23:04:40,521 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 23:04:45,858 INFO logs_project endpoint called for project: '0821MO07418_Sales-support_REP_blad'
+2025-08-22 23:04:46,160 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
+2025-08-22 23:06:57,678 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-23 07:11:45,508 INFO users endpoint was called
+2025-08-23 07:27:49,717 INFO [DatabasePanel] Shutdown called.
+2025-08-23 07:27:49,717 INFO Shutdown requested for DB API server
+2025-08-23 07:27:50,808 INFO Shutdown requested for DB API server
+2025-08-23 07:28:02,849 INFO [INIT] Background service log callback initialized
+2025-08-23 07:28:02,849 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-23 07:28:03,180 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-23 07:28:03,180 INFO Database initialization complete.
+2025-08-23 07:28:03,198 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-23 07:28:04,809 INFO [CALLBACK] Scanner panel callback registered
+2025-08-23 07:46:13,099 INFO [DatabasePanel] Shutdown called.
+2025-08-23 07:46:13,100 INFO Shutdown requested for DB API server
+2025-08-23 07:46:14,148 INFO Shutdown requested for DB API server
+2025-08-23 07:46:19,038 INFO [INIT] Background service log callback initialized
+2025-08-23 07:46:19,039 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-23 07:46:19,140 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-23 07:46:19,142 INFO Database initialization complete.
+2025-08-23 07:46:19,159 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-23 07:46:20,744 INFO [CALLBACK] Scanner panel callback registered
+2025-08-23 07:50:42,574 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:50:59,150 INFO users endpoint was called
+2025-08-23 07:50:59,848 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:52:39,269 INFO users endpoint was called
+2025-08-23 07:52:39,973 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:53:34,567 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-23 07:53:36,999 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:53:48,956 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:53:58,556 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 07:57:53,913 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:02:30,346 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:34:31,829 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:37:36,354 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:37:41,997 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:43:55,406 ERROR Error getting quality control metrics: no such column: l.timestamp
+Traceback (most recent call last):
+  File "C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database\db_log_api.py", line 7882, in get_quality_control
+    'efficiency_percentage': row['efficiency_percentage']
+sqlite3.OperationalError: no such column: l.timestamp
+2025-08-23 08:44:16,386 INFO [DatabasePanel] Shutdown called.
+2025-08-23 08:44:16,386 INFO Shutdown requested for DB API server
+2025-08-23 08:44:17,442 INFO Shutdown requested for DB API server
+2025-08-23 08:44:21,974 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-23 08:44:21,982 INFO Initializing database at /mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/central_logging.sqlite
+2025-08-23 08:44:22,004 INFO Database initialization complete.
+2025-08-23 08:44:22,021 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-23 08:51:26,196 INFO [INIT] Background service log callback initialized
+2025-08-23 08:51:26,197 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-23 08:51:26,310 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-23 08:51:26,311 INFO Database initialization complete.
+2025-08-23 08:51:26,329 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-23 08:51:27,912 INFO [CALLBACK] Scanner panel callback registered
+2025-08-23 08:51:35,491 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-30 days')' and params1=[]
+2025-08-23 08:51:35,491 INFO First query successful, result: <sqlite3.Row object at 0x00000265DF4066B0>
+2025-08-23 08:51:35,491 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-30 days')' and params2=[]
+2025-08-23 08:51:35,492 INFO Second query successful, found 28 rep projects
+2025-08-23 08:51:35,492 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-30 days')' and params3=[]
+2025-08-23 08:51:35,492 INFO Third query successful, found 4 trend points
+2025-08-23 08:51:49,557 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-7 days')' and params1=[]
+2025-08-23 08:51:49,558 INFO First query successful, result: <sqlite3.Row object at 0x00000265DF57FD90>
+2025-08-23 08:51:49,558 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params2=[]
+2025-08-23 08:51:49,558 INFO Second query successful, found 28 rep projects
+2025-08-23 08:51:49,558 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params3=[]
+2025-08-23 08:51:49,558 INFO Third query successful, found 4 trend points
+2025-08-23 08:51:50,908 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-1 days')' and params1=[]
+2025-08-23 08:51:50,908 INFO First query successful, result: <sqlite3.Row object at 0x00000265DF57C280>
+2025-08-23 08:51:50,908 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params2=[]
+2025-08-23 08:51:50,909 INFO Second query successful, found 7 rep projects
+2025-08-23 08:51:50,909 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params3=[]
+2025-08-23 08:51:50,909 INFO Third query successful, found 1 trend points
+2025-08-23 08:51:51,926 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-7 days')' and params1=[]
+2025-08-23 08:51:51,926 INFO First query successful, result: <sqlite3.Row object at 0x00000265DF57E440>
+2025-08-23 08:51:51,926 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params2=[]
+2025-08-23 08:51:51,928 INFO Second query successful, found 28 rep projects
+2025-08-23 08:51:51,928 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params3=[]
+2025-08-23 08:51:51,928 INFO Third query successful, found 4 trend points
+2025-08-23 08:52:10,593 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-1 days')' and params1=[]
+2025-08-23 08:52:10,594 INFO First query successful, result: <sqlite3.Row object at 0x00000265DD9DB1C0>
+2025-08-23 08:52:10,594 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params2=[]
+2025-08-23 08:52:10,594 INFO Second query successful, found 7 rep projects
+2025-08-23 08:52:10,594 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params3=[]
+2025-08-23 08:52:10,594 INFO Third query successful, found 1 trend points
+2025-08-23 08:54:08,834 INFO [DatabasePanel] Shutdown called.
+2025-08-23 08:54:08,834 INFO Shutdown requested for DB API server
+2025-08-23 08:54:09,917 INFO Shutdown requested for DB API server
+2025-08-23 08:54:14,157 INFO [INIT] Background service log callback initialized
+2025-08-23 08:54:14,159 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-23 08:54:14,259 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-23 08:54:14,260 INFO Database initialization complete.
+2025-08-23 08:54:14,277 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-23 08:54:15,862 INFO [CALLBACK] Scanner panel callback registered
+2025-08-23 08:54:18,931 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-1 days')' and params1=[]
+2025-08-23 08:54:18,931 INFO First query successful, result: <sqlite3.Row object at 0x000001EAA7D0B580>
+2025-08-23 08:54:18,931 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params2=[]
+2025-08-23 08:54:18,931 INFO Second query successful, found 7 rep projects
+2025-08-23 08:54:18,933 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-1 days')' and params3=[]
+2025-08-23 08:54:18,933 INFO Third query successful, found 1 trend points
+2025-08-23 08:54:26,426 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-7 days')' and params1=[]
+2025-08-23 08:54:26,426 INFO First query successful, result: <sqlite3.Row object at 0x000001EAA7D0A230>
+2025-08-23 08:54:26,427 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params2=[]
+2025-08-23 08:54:26,427 INFO Second query successful, found 28 rep projects
+2025-08-23 08:54:26,427 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-7 days')' and params3=[]
+2025-08-23 08:54:26,429 INFO Third query successful, found 4 trend points
+2025-08-23 14:14:47,601 INFO [DatabasePanel] Shutdown called.
+2025-08-23 14:14:47,601 INFO Shutdown requested for DB API server
+2025-08-23 14:14:48,663 INFO Shutdown requested for DB API server
+2025-08-25 20:48:52,045 INFO [INIT] Background service log callback initialized
+2025-08-25 20:48:52,045 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-25 20:48:52,384 INFO Initializing database at C:\Users\Rob_v\Desktop\PP\BarcodeMaster\database/central_logging.sqlite
+2025-08-25 20:48:52,386 INFO Database initialization complete.
+2025-08-25 20:48:52,404 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-25 20:48:54,011 INFO [CALLBACK] Scanner panel callback registered
+2025-08-25 20:50:32,844 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 20:50:36,832 INFO logs_project endpoint called for project: 'MO08192_Wandkast_(1-1)'
+2025-08-25 20:51:22,881 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 20:51:24,851 INFO logs_project endpoint called for project: 'MO07931_Hangkast (3-4)'
+2025-08-25 20:51:24,974 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
+2025-08-25 20:51:31,253 INFO logs_project endpoint called for project: 'MO08173_Schoenenkast_REP_RZ'
+2025-08-25 20:51:31,289 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
+2025-08-25 20:51:35,170 INFO logs_project endpoint called for project: 'MO08192_Wandkast_(1-1)'
+2025-08-25 20:51:48,043 INFO logs_project endpoint called for project: 'MO04587_Dressing_2_(2-2)'
+2025-08-25 20:51:52,913 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 20:52:04,853 INFO logs_project endpoint called for project: 'MO04587_Dressing_2_(2-2)'
+2025-08-25 21:34:28,675 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:34:58,734 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:35:28,779 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:35:59,123 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:36:29,164 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:36:59,204 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:37:29,248 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:37:59,293 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:38:29,355 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:38:59,401 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:39:29,447 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:39:59,491 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:40:29,546 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:40:59,591 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:41:29,636 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:41:59,679 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:42:29,725 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:42:59,769 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:43:29,815 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:43:59,859 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:44:29,902 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:44:59,946 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:45:29,986 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:46:00,026 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:46:30,071 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:47:00,114 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:47:30,160 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:48:00,206 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:48:30,250 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:49:00,295 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:49:30,344 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:50:00,389 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:50:30,439 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:51:00,485 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:51:30,529 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:52:00,576 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:52:30,624 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:53:00,667 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:53:30,709 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:54:00,753 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:54:30,811 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:55:00,856 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:55:30,904 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:56:00,948 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:56:30,996 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:57:01,041 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:57:31,087 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:58:01,131 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:58:31,174 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:59:01,219 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 21:59:31,263 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:00:01,309 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:00:31,352 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:01:01,398 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:01:31,442 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:02:01,488 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:04:14,352 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-25 22:04:20,031 INFO database management page was called
+2025-08-25 22:04:21,354 INFO Executing first query with date_filter=' AND timestamp >= datetime('now', '-30 days')' and params1=[]
+2025-08-25 22:04:21,354 INFO First query successful, result: <sqlite3.Row object at 0x0000012CA4AC2800>
+2025-08-25 22:04:21,355 INFO Executing second query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-30 days')' and params2=[]
+2025-08-25 22:04:21,355 INFO Second query successful, found 19 rep projects
+2025-08-25 22:04:21,357 INFO Executing third query with date_filter_with_alias=' AND l.timestamp >= datetime('now', '-30 days')' and params3=[]
+2025-08-25 22:04:21,357 INFO Third query successful, found 4 trend points
+2025-08-25 22:04:21,781 INFO projects endpoint called - page: 1, per_page: 20
+2025-08-25 22:04:24,902 INFO logs_project endpoint called for project: 'MO08192_Wandkast_(1-1)'
+2025-08-25 22:04:51,788 INFO [DatabasePanel] Shutdown called.
+2025-08-25 22:04:51,788 INFO Shutdown requested for DB API server
+2025-08-25 22:04:52,879 INFO Shutdown requested for DB API server

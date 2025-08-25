@@ -2348,11 +2348,74 @@ class ScannerPanel(tk.Frame):
     def _update_admin_dependent_ui(self, *args):
         # This method is now a stub - UI moved to admin panel
         pass
+    def validate_barcode(self, code):
+        """
+        Validate barcode format and reject invalid patterns.
+        Returns (is_valid, error_message)
+        """
+        # Check for empty or too short codes
+        if not code or len(code) < 5:
+            return False, "Barcode te kort"
+        
+        # Special handling for codes with semicolon
+        if ';' in code:
+            parts = code.split(';', 1)
+            if len(parts) == 2:
+                first_part, second_part = parts
+                
+                # Reject simple number;number or number;word patterns
+                # But ALLOW if second part looks like a file path or project
+                if re.match(r'^\d+$', first_part):
+                    # First part is just numbers
+                    if re.match(r'^\d+$', second_part):
+                        # Second part is also just numbers - likely invalid
+                        return False, f"Ongeldig barcode formaat: {code}"
+                    elif re.match(r'^[A-Z]+$', second_part):
+                        # Second part is just uppercase letters like "OUT" - likely invalid
+                        return False, f"Ongeldig barcode formaat: {code}"
+                    elif '\\' in second_part or '/' in second_part or 'MO' in second_part or 'SO' in second_part:
+                        # Second part contains path separators or MO/SO - likely valid OPUS/file path
+                        return True, None
+                    else:
+                        # Ambiguous - reject to be safe
+                        return False, f"Ongeldig barcode formaat: {code}"
+        
+        # Reject pure numeric codes that are too long (likely errors)
+        if re.match(r'^\d{12,}$', code):
+            return False, f"Ongeldig numeriek barcode: {code}"
+        
+        # Valid patterns should contain:
+        # - MO/SO numbers (MO##### or SO#####)
+        # - S-numbers with project codes (S#####_####_MO...)
+        # - File paths (containing \ or /)
+        # - Or other configured project patterns
+        
+        # Check for at least some expected pattern
+        has_mo_so = bool(re.search(r'[MS]O\d{4,}', code))
+        has_s_number = bool(re.search(r'S\d{4,}_\d+_', code))
+        has_project_pattern = bool(re.search(r'_[A-Z]{2}\d+_', code))
+        has_file_path = bool('\\' in code or '/' in code)
+        
+        if not (has_mo_so or has_s_number or has_project_pattern or has_file_path):
+            # Allow if it at least looks like a project name with underscores
+            if '_' not in code:
+                return False, f"Geen geldig project formaat: {code}"
+        
+        return True, None
+    
     def log_scan_event(self, code):
         import requests
         from config_utils import get_config
         import traceback
         import re
+
+        # Validate barcode first
+        is_valid, error_msg = self.validate_barcode(code)
+        if not is_valid:
+            self.log_message(f"❌ {error_msg}", "error")
+            self.usb_entry.config(bg='red')
+            self.after(2000, lambda: self.usb_entry.config(bg='white'))
+            return
 
         event_type = 'OPEN'  # Always use OPEN event type
         config = get_config()
@@ -2398,7 +2461,7 @@ class ScannerPanel(tk.Frame):
             'details': code,
             'project': project_code_to_log,
             'base_mo_code': base_project_code,
-            'is_rep_variant': bool(re.search(r'_REP_?', project_code_to_log, re.IGNORECASE)),
+            'is_rep_variant': bool(re.search(r'_REP(?:_|$)', project_code_to_log, re.IGNORECASE)),
             'user': current_user,
             **session_data
         }

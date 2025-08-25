@@ -1356,7 +1356,15 @@ async function loadQualityControl() {
 function updateQualityMetrics(overallMetrics) {
     document.getElementById('total-rep-projects').textContent = overallMetrics.rep_projects || '0';
     document.getElementById('rep-percentage').textContent = (overallMetrics.rep_percentage || '0') + '%';
-    document.getElementById('rep-avg-time').textContent = formatHumanTime(overallMetrics.avg_rep_hours);
+    document.getElementById('rep-avg-time').textContent = formatHumanTime(overallMetrics.avg_rep_hours || 0);
+}
+
+function updateRepProjectsTable(repProjects) {
+    // Function to update rep projects table
+    // Currently no table element exists in the HTML for rep projects
+    // This function is a placeholder to prevent JavaScript errors
+    console.log('Rep projects data:', repProjects);
+    // TODO: Add rep projects table to HTML if needed
 }
 
 function updateQualityCharts(data) {

@@ -1022,6 +1022,9 @@ let currentPage = 1;
 const itemsPerPage = 20;
 let efficiencyTargets = {};
 
+// Store v2 metrics data globally for use in modal
+let v2MetricsData = null;
+
 // Store idle time breakdown for modal
 let idleTimeBreakdown = {
     pauseMinutes: 0,
@@ -2155,28 +2158,47 @@ async function updatePerformanceMetrics() {
     
     // Get accurate project time from server using event logs and work hours
     let actualProjectMinutes = 0;
+    v2MetricsData = null; // Reset v2 data for this calculation
     console.log('Starting project time calculation...');
     console.log('Project start time:', projectStartTime);
     console.log('Project end time:', projectEndTime);
     
-    // Note: batch sessions will be calculated later in the function
-    // For now, use the standard API calculation
+    // Try the new v2 endpoint first for correct calculation
     try {
         const projectName = '{{ project }}';
-        console.log('Fetching time metrics for project:', projectName);
-        const timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics`);
-        console.log('API response status:', timeResponse.status);
+        console.log('Fetching v2 time metrics for project:', projectName);
+        
+        // Try v2 endpoint first (correct calculation)
+        let timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics-v2`);
+        let isV2 = true;
+        
+        // Fallback to v1 if v2 not available
+        if (!timeResponse.ok && timeResponse.status === 404) {
+            console.log('V2 endpoint not found, falling back to v1');
+            timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics`);
+            isV2 = false;
+        }
         
         if (!timeResponse.ok) {
             throw new Error(`API returned status ${timeResponse.status}`);
         }
         
         const timeData = await timeResponse.json();
-        console.log('API response data:', timeData);
+        console.log(`API response data (${isV2 ? 'v2' : 'v1'}):`, timeData);
         
         if (timeData.success && typeof timeData.total_project_minutes === 'number') {
             actualProjectMinutes = timeData.total_project_minutes;
-            console.log('Server-calculated project time:', actualProjectMinutes, 'minutes');
+            console.log(`Server-calculated project time (${isV2 ? 'v2 CORRECT' : 'v1 LEGACY'}):`, actualProjectMinutes, 'minutes');
+            
+            // Store v2 data for idle calculation
+            if (isV2) {
+                v2MetricsData = timeData;
+                console.log('Calculation breakdown:', {
+                    batch: timeData.components?.batch_proportional,
+                    elapsed: timeData.components?.elapsed_after_batch,
+                    timeline: timeData.components?.timeline
+                });
+            }
         } else {
             console.log('API did not return valid project time, using fallback');
             // Fallback to client-side calculation
@@ -2469,8 +2491,55 @@ async function updatePerformanceMetrics() {
     let pauseMinutes = 0;
     let handoffMinutes = 0;
     
-    // Try to get detailed idle time breakdown from API
-    try {
+    // Check if we have v2 metrics data with correct idle calculation
+    if (v2MetricsData && v2MetricsData.total_idle_minutes !== undefined) {
+        console.log('Using v2 idle time calculation');
+        idleMinutes = v2MetricsData.total_idle_minutes;
+        
+        // Use v2 breakdown if available
+        if (v2MetricsData.components && v2MetricsData.components.idle_breakdown) {
+            pauseMinutes = v2MetricsData.components.idle_breakdown.pause_minutes || 0;
+            handoffMinutes = v2MetricsData.components.idle_breakdown.handoff_minutes || 0;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                handoffMinutes: handoffMinutes,
+                pausesByUser: v2MetricsData.components.idle_breakdown.pauses_by_user || {},
+                handoffDetails: v2MetricsData.components.idle_breakdown.handoff_details || {},
+                otherGaps: Math.max(0, idleMinutes - pauseMinutes - handoffMinutes),
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            
+            console.log('V2 idle breakdown:', idleTimeBreakdown);
+        } else {
+            // If v2 doesn't have idle breakdown, calculate it from logs
+            const pauseData = calculatePausesFromSessions();
+            const handoffData = calculateHandoffDelaysFromLogs();
+            
+            pauseMinutes = pauseData.totalPauseMinutes || 0;
+            handoffMinutes = handoffData.totalHandoffMinutes || 0;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
+                handoffMinutes: handoffMinutes,
+                handoffDetails: handoffData.handoffDetails || {},
+                otherGaps: Math.max(0, idleMinutes - pauseMinutes - handoffMinutes),
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            
+            console.log('V2 with calculated idle breakdown:', idleTimeBreakdown);
+        }
+    } else {
+        // Fallback to old calculation method
+        console.log('Using legacy idle time calculation');
+        
+        // Try to get detailed idle time breakdown from API
+        try {
         const projectName = '{{ project }}';
         const sessionsResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/linked_sessions`);
         
@@ -2587,29 +2656,30 @@ async function updatePerformanceMetrics() {
                 workMinutes: totalSessionMinutes
             };
             console.log('API failed - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
+            }
+        } catch (error) {
+            console.warn('Could not fetch detailed session metrics:', error);
+            // Fallback: calculate from logs
+            const handoffData = calculateHandoffDelaysFromLogs();
+            const pauseData = calculatePauseTimeFromLogs();
+            
+            handoffMinutes = handoffData.totalHandoffMinutes;
+            pauseMinutes = pauseData.totalPauseMinutes;
+            // Idle time is ONLY pause + handoff
+            idleMinutes = pauseMinutes + handoffMinutes;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
+                handoffMinutes: handoffMinutes,
+                handoffDetails: handoffData.handoffDetails,
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            console.log('Exception fallback - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
         }
-    } catch (error) {
-        console.warn('Could not fetch detailed session metrics:', error);
-        // Fallback: calculate from logs
-        const handoffData = calculateHandoffDelaysFromLogs();
-        const pauseData = calculatePauseTimeFromLogs();
-        
-        handoffMinutes = handoffData.totalHandoffMinutes;
-        pauseMinutes = pauseData.totalPauseMinutes;
-        // Idle time is ONLY pause + handoff
-        idleMinutes = pauseMinutes + handoffMinutes;
-        
-        idleTimeBreakdown = {
-            pauseMinutes: pauseMinutes,
-            pausesByUser: pauseData.pausesByUser || {},
-            handoffMinutes: handoffMinutes,
-            handoffDetails: handoffData.handoffDetails,
-            totalIdleMinutes: idleMinutes,
-            projectMinutes: actualProjectMinutes,
-            workMinutes: totalSessionMinutes
-        };
-        console.log('Exception fallback - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
-    }
+    } // End of else block for v2 metrics fallback
     
     // Display idle time
     const idleHours = Math.floor(idleMinutes / 60) || 0;

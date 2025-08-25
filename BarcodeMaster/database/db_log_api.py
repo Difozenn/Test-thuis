@@ -688,7 +688,7 @@ def format_minutes(minutes):
 
 # --- User Statistics Helper Functions ---
 def count_active_projects(user):
-    """Count active projects for a user"""
+    """Count active projects for a user (legacy - last 7 days)"""
     try:
         cursor = get_db().cursor()
         cursor.execute("""
@@ -701,6 +701,31 @@ def count_active_projects(user):
         return result[0] if result else 0
     except Exception as e:
         logging.error(f"Error counting active projects for {user}: {e}")
+        return 0
+
+def count_active_projects_in_period(user, start_date, end_date):
+    """Count projects that are currently active (not completed) within the date range"""
+    try:
+        cursor = get_db().cursor()
+        # Projects that were opened but not yet completed in this period
+        cursor.execute("""
+            SELECT COUNT(DISTINCT l.project) 
+            FROM logs l
+            WHERE l.user = ? 
+            AND DATE(l.timestamp) BETWEEN ? AND ?
+            AND l.project NOT IN (
+                SELECT DISTINCT project 
+                FROM logs 
+                WHERE user = ? 
+                AND event = 'AFGEMELD'
+                AND DATE(timestamp) <= ?
+            )
+            AND l.event IN ('OPEN', 'BEZIG', 'PROJECT_START')
+        """, (user, start_date, end_date, user, end_date))
+        result = cursor.fetchone()
+        return result[0] if result else 0
+    except Exception as e:
+        logging.error(f"Error counting active projects in period for {user}: {e}")
         return 0
 
 def user_has_work_assigned(user, start_date=None, end_date=None):
@@ -789,6 +814,23 @@ def count_completed_in_period(user, start_date, end_date):
         return result[0] if result else 0
     except Exception as e:
         logging.error(f"Error counting completed in period for {user}: {e}")
+        return 0
+
+def count_active_days_in_period(user, start_date, end_date):
+    """Count unique days where user had any activity in specified period"""
+    try:
+        cursor = get_db().cursor()
+        cursor.execute("""
+            SELECT COUNT(DISTINCT DATE(timestamp)) as active_days
+            FROM logs 
+            WHERE user = ? 
+            AND DATE(timestamp) BETWEEN ? AND ?
+            AND event IN ('OPEN', 'BEZIG', 'AFGEMELD', 'PROJECT_START', 'SESSION_START', 'SESSION_END')
+        """, (user, start_date, end_date))
+        result = cursor.fetchone()
+        return result[0] if result else 0
+    except Exception as e:
+        logging.error(f"Error counting active days for {user}: {e}")
         return 0
 
 def calculate_avg_time(user):
@@ -5628,7 +5670,7 @@ def user_performance(username):
             'role': 'Operator',
             'initials': ''.join([part[0] for part in username.split()]),
             'avg_items_per_hour': calculate_avg_items_per_hour(username, start_date, end_date),
-            'active_projects': count_active_projects(username),
+            'active_projects': count_active_projects_in_period(username, start_date, end_date),
             'completed_today': count_completed_today(username),
             'completed_in_period': count_completed_in_period(username, start_date, end_date),
             'has_work_assigned': has_work
@@ -5641,6 +5683,9 @@ def user_performance(username):
         
         # Get extended activity data for the specified date range
         user_data['activity_data'] = get_user_activity_date_range(username, start_date, end_date)
+        
+        # Calculate actual number of active days (unique days with activity)
+        user_data['active_days_count'] = count_active_days_in_period(username, start_date, end_date)
         
         # Calculate period label for display
         period_label = 'Vandaag'
@@ -5662,7 +5707,7 @@ def user_performance(username):
         
         # Add additional metrics for the period
         user_data['total_items_in_period'] = calculate_total_items_in_period(username, start_date, end_date)
-        user_data['avg_session_duration'] = calculate_avg_session_duration(username, start_date, end_date)
+        # Removed avg_session_duration as per requirement
         
         return render_template('user_performance.html',
                              user=user_data,
@@ -7498,10 +7543,12 @@ def get_quality_metrics():
         
         # Build date filter
         date_filter = ""
+        date_filter_with_alias = ""  # For queries using 'l' alias
         params = []
         
         if period_type == 'custom' and start_date and end_date:
-            date_filter = " AND l.timestamp BETWEEN ? AND ?"
+            date_filter = " AND timestamp BETWEEN ? AND ?"
+            date_filter_with_alias = " AND l.timestamp BETWEEN ? AND ?"
             params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
         elif period_type == 'all':
             # No date filter for 'all'
@@ -7512,7 +7559,8 @@ def get_quality_metrics():
                 period_int = int(period)
             else:
                 period_int = 30  # fallback
-            date_filter = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
+            date_filter = " AND timestamp >= datetime('now', '-{} days')".format(period_int)
+            date_filter_with_alias = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
         
         conn = get_db()
         c = conn.cursor()
@@ -7525,7 +7573,7 @@ def get_quality_metrics():
                 COUNT(CASE WHEN l.is_rep_variant = 0 THEN 1 END) as normal_items,
                 ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2) as defect_rate
             FROM logs l
-            WHERE l.event = 'AFGEMELD' {date_filter}
+            WHERE l.event = 'AFGEMELD' {date_filter_with_alias}
         """
         
         c.execute(quality_query, params)
@@ -7547,7 +7595,7 @@ def get_quality_metrics():
                         (SELECT MIN(l2.timestamp) FROM logs l2 WHERE l2.project = l.project AND l2.user = l.user AND l2.event = 'OPEN')
                     )) * 24 * 60 END), 2) as avg_rework_minutes
             FROM logs l
-            WHERE l.event = 'AFGEMELD' {date_filter}
+            WHERE l.event = 'AFGEMELD' {date_filter_with_alias}
             GROUP BY l.user
             HAVING COUNT(*) > 0
             ORDER BY defect_rate DESC
@@ -7564,7 +7612,7 @@ def get_quality_metrics():
                 COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
                 ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2) as defect_rate
             FROM logs l
-            WHERE l.event = 'AFGEMELD' {date_filter}
+            WHERE l.event = 'AFGEMELD' {date_filter_with_alias}
             GROUP BY DATE(l.timestamp)
             ORDER BY DATE(l.timestamp) DESC
             LIMIT 30
@@ -7587,7 +7635,7 @@ def get_quality_metrics():
                 COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) as rework_items,
                 ROUND((COUNT(CASE WHEN l.is_rep_variant = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2) as defect_rate
             FROM logs l
-            WHERE l.event = 'AFGEMELD' {date_filter}
+            WHERE l.event = 'AFGEMELD' {date_filter_with_alias}
             GROUP BY product_type
             HAVING COUNT(*) > 0
             ORDER BY defect_rate DESC
@@ -7853,50 +7901,76 @@ def get_quality_control():
         end_date = request.args.get('end_date')
         period = request.args.get('period', '30')
         
-        # Build date filter
+        # Build date filter - separate params for each query
         date_filter = ""
-        params = []
+        date_filter_with_alias = ""  # For queries using 'l' alias
+        params1 = []  # For first query (no alias)
+        params2 = []  # For second query (with 'l' alias)
+        params3 = []  # For third query (with 'l' alias)
         
         if period_type == 'custom' and start_date and end_date:
-            date_filter = " AND l.timestamp BETWEEN ? AND ?"
-            params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+            date_filter = " AND timestamp BETWEEN ? AND ?"
+            date_filter_with_alias = " AND l.timestamp BETWEEN ? AND ?"
+            params1.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+            params2.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+            params3.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
         elif period_type == 'all':
             pass  # No date filter
         else:
             period_int = int(period)
-            date_filter = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
+            date_filter = " AND timestamp >= datetime('now', '-{} days')".format(period_int)
+            date_filter_with_alias = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
         
         conn = get_db()
         c = conn.cursor()
         
         # Check if is_rep_variant column exists, if not initialize the database
-        c.execute("PRAGMA table_info(logs)")
-        columns = [column[1] for column in c.fetchall()]
-        if 'is_rep_variant' not in columns:
-            c.execute('ALTER TABLE logs ADD COLUMN is_rep_variant INTEGER DEFAULT 0')
-            logging.info("Added 'is_rep_variant' column to logs table.")
-            conn.commit()
+        try:
+            c.execute("PRAGMA table_info(logs)")
+            columns = [column[1] for column in c.fetchall()]
+            if 'is_rep_variant' not in columns:
+                c.execute('ALTER TABLE logs ADD COLUMN is_rep_variant INTEGER DEFAULT 0')
+                logging.info("Added 'is_rep_variant' column to logs table.")
+                conn.commit()
+        except Exception as e:
+            logging.error(f"Error checking/adding is_rep_variant column: {e}")
         
         # Overall quality metrics
-        c.execute(f"""
-            SELECT 
-                COUNT(DISTINCT l.project) as total_projects,
-                COUNT(DISTINCT CASE WHEN l.is_rep_variant = 1 THEN l.project END) as rep_projects,
-                COUNT(DISTINCT CASE WHEN l.is_rep_variant = 0 THEN l.project END) as normal_projects,
-                ROUND((COUNT(DISTINCT CASE WHEN l.is_rep_variant = 1 THEN l.project END) * 100.0 / 
-                       NULLIF(COUNT(DISTINCT l.project), 0)), 2) as rep_percentage
-            FROM logs l
-            WHERE l.event IN ('OPEN', 'AFGEMELD') {date_filter}
-        """, params)
-        
-        overall_metrics = c.fetchone()
+        # A project is considered REP if ANY of its log entries have is_rep_variant = 1
+        try:
+            logging.info(f"Executing first query with date_filter='{date_filter}' and params1={params1}")
+            c.execute(f"""
+                WITH ProjectClassification AS (
+                    SELECT 
+                        project,
+                        MAX(is_rep_variant) as is_rep  -- MAX returns 1 if any entry is 1, else 0 or NULL
+                    FROM logs
+                    WHERE event IN ('OPEN', 'AFGEMELD') {date_filter}
+                    GROUP BY project
+                )
+                SELECT 
+                    COUNT(*) as total_projects,
+                    COUNT(CASE WHEN is_rep = 1 THEN 1 END) as rep_projects,
+                    COUNT(CASE WHEN is_rep = 0 OR is_rep IS NULL THEN 1 END) as normal_projects,
+                    ROUND((COUNT(CASE WHEN is_rep = 1 THEN 1 END) * 100.0 / 
+                           NULLIF(COUNT(*), 0)), 2) as rep_percentage
+                FROM ProjectClassification
+            """, params1)
+            
+            overall_metrics = c.fetchone()
+            logging.info(f"First query successful, result: {overall_metrics}")
+        except Exception as e:
+            logging.error(f"Error in first query: {e}")
+            raise
         
         # Rep projects detailed breakdown
-        c.execute(f"""
+        try:
+            logging.info(f"Executing second query with date_filter_with_alias='{date_filter_with_alias}' and params2={params2}")
+            c.execute(f"""
             WITH RepProjectDetails AS (
                 SELECT 
                     l.project,
-                    l.is_rep_variant,
+                    MAX(l.is_rep_variant) as is_rep_variant,
                     MIN(CASE WHEN l.event = 'OPEN' THEN l.timestamp END) as start_time,
                     MAX(CASE WHEN l.event = 'AFGEMELD' THEN l.timestamp END) as completion_time,
                     MAX(l.item_count) as items,
@@ -7904,9 +7978,9 @@ def get_quality_control():
                     ps.status
                 FROM logs l
                 LEFT JOIN project_sessions ps ON ps.project = l.project
-                WHERE l.event IN ('OPEN', 'AFGEMELD') {date_filter}
-                GROUP BY l.project, l.is_rep_variant, l.user, ps.status
-                HAVING l.is_rep_variant = 1
+                WHERE l.event IN ('OPEN', 'AFGEMELD') {date_filter_with_alias}
+                GROUP BY l.project, l.user, ps.status
+                HAVING MAX(l.is_rep_variant) = 1
             )
             SELECT 
                 project,
@@ -7927,12 +8001,18 @@ def get_quality_control():
                 COALESCE(status, 'unknown') as status
             FROM RepProjectDetails
             ORDER BY start_date DESC
-        """, params)
-        
-        rep_projects = c.fetchall()
+            """, params2)
+            
+            rep_projects = c.fetchall()
+            logging.info(f"Second query successful, found {len(rep_projects)} rep projects")
+        except Exception as e:
+            logging.error(f"Error in second query: {e}")
+            raise
         
         # Quality trend over time (last 30 days)
-        c.execute(f"""
+        try:
+            logging.info(f"Executing third query with date_filter_with_alias='{date_filter_with_alias}' and params3={params3}")
+            c.execute(f"""
             SELECT 
                 DATE(l.timestamp) as date,
                 COUNT(DISTINCT l.project) as total_projects,
@@ -7940,14 +8020,18 @@ def get_quality_control():
                 ROUND((COUNT(DISTINCT CASE WHEN l.is_rep_variant = 1 THEN l.project END) * 100.0 / 
                        NULLIF(COUNT(DISTINCT l.project), 0)), 2) as rep_percentage
             FROM logs l
-            WHERE l.event = 'OPEN' {date_filter}
+            WHERE l.event = 'OPEN' {date_filter_with_alias}
             AND l.timestamp >= datetime('now', '-30 days')
             GROUP BY DATE(l.timestamp)
             ORDER BY date DESC
             LIMIT 30
-        """, params)
-        
-        quality_trend = c.fetchall()
+            """, params3)
+            
+            quality_trend = c.fetchall()
+            logging.info(f"Third query successful, found {len(quality_trend)} trend points")
+        except Exception as e:
+            logging.error(f"Error in third query: {e}")
+            raise
         
         conn.close()
         
@@ -8341,6 +8425,236 @@ def get_project_time_metrics(project):
     except Exception as e:
         logging.error(f"Error getting project time metrics for {project}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/project/<project>/time-metrics-v2', methods=['GET'])
+def get_project_time_metrics_v2(project):
+    """
+    Correctly calculate project time metrics without relying on flawed project_sessions table.
+    
+    Calculation logic:
+    1. For SCANNER batch sessions: Use proportional allocation based on item counts
+    2. Add elapsed time from batch completion to last activity
+    3. All calculations within work hours only
+    """
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Initialize response structure
+        metrics = {
+            'project': project,
+            'calculation_version': 'v2',
+            'success': True
+        }
+        
+        # Step 1: Calculate proportional batch time for SCANNER sessions
+        c.execute("""
+            SELECT 
+                sp.session_id,
+                sp.item_count as project_items,
+                s.user,
+                s.start_time,
+                s.end_time,
+                s.work_duration_minutes,
+                s.pause_duration_minutes,
+                (SELECT SUM(item_count) FROM session_projects WHERE session_id = sp.session_id) as total_batch_items
+            FROM session_projects sp
+            JOIN sessions s ON sp.session_id = s.session_id
+            WHERE sp.project = ?
+            AND s.session_type = 'SCANNER'
+            AND s.status = 'completed'
+            ORDER BY s.end_time DESC
+            LIMIT 1
+        """, (project,))
+        
+        batch_result = c.fetchone()
+        batch_proportional_minutes = 0
+        batch_end_time = None
+        
+        if batch_result and batch_result['total_batch_items'] and batch_result['project_items']:
+            proportion = batch_result['project_items'] / batch_result['total_batch_items']
+            work_minutes = batch_result['work_duration_minutes'] or 0
+            pause_minutes = batch_result['pause_duration_minutes'] or 0
+            batch_proportional_minutes = (work_minutes + pause_minutes) * proportion
+            batch_end_time = batch_result['end_time']
+            
+            logging.info(f"Batch calculation for {project}: {batch_result['project_items']}/{batch_result['total_batch_items']} items = {proportion*100:.1f}% = {batch_proportional_minutes:.1f} min")
+        
+        # Step 2: Get timeline from logs
+        c.execute("""
+            SELECT 
+                MIN(timestamp) as first_event,
+                MAX(timestamp) as last_event
+            FROM logs
+            WHERE project = ?
+        """, (project,))
+        
+        timeline = c.fetchone()
+        
+        if not timeline or not timeline['first_event']:
+            return jsonify({
+                'success': False,
+                'error': 'No events found for project',
+                'project': project
+            }), 404
+        
+        # Step 3: Calculate total project time
+        if batch_proportional_minutes > 0 and batch_end_time:
+            # Project had batch processing
+            # Add elapsed time from batch end to last event
+            elapsed_minutes = calculate_work_minutes(batch_end_time, timeline['last_event'])
+            total_project_minutes = batch_proportional_minutes + max(0, elapsed_minutes)
+        else:
+            # No batch processing, calculate from first to last event
+            total_project_minutes = calculate_work_minutes(timeline['first_event'], timeline['last_event'])
+        
+        # Step 4: Get work time (already correct in your system)
+        total_work_minutes = 0
+        
+        # Get proportional work from batch sessions
+        if batch_result and batch_result['total_batch_items'] and batch_result['project_items']:
+            proportion = batch_result['project_items'] / batch_result['total_batch_items']
+            total_work_minutes += (batch_result['work_duration_minutes'] or 0) * proportion
+        
+        # Add XLSX_UPDATED sessions
+        c.execute("""
+            SELECT SUM(work_duration_minutes) as xlsx_work
+            FROM sessions
+            WHERE project = ?
+            AND session_type = 'XLSX_UPDATED'
+            AND status = 'completed'
+        """, (project,))
+        
+        xlsx_result = c.fetchone()
+        if xlsx_result and xlsx_result['xlsx_work']:
+            total_work_minutes += xlsx_result['xlsx_work']
+        
+        # Step 5: Calculate idle time breakdown
+        total_idle_minutes = max(0, total_project_minutes - total_work_minutes)
+        
+        # Calculate pause minutes (proportional for batch, full for XLSX_UPDATED)
+        pause_minutes = 0
+        pauses_by_user = {}
+        
+        # Get proportional pause from batch session
+        if batch_result and batch_result['total_batch_items'] and batch_result['project_items']:
+            proportion = batch_result['project_items'] / batch_result['total_batch_items']
+            batch_pause = (batch_result['pause_duration_minutes'] or 0) * proportion
+            pause_minutes += batch_pause
+            if batch_pause > 0:
+                pauses_by_user[batch_result['user']] = batch_pause
+        
+        # Add pauses from XLSX_UPDATED sessions
+        c.execute("""
+            SELECT user, SUM(pause_duration_minutes) as pause_mins
+            FROM sessions
+            WHERE project = ?
+            AND session_type = 'XLSX_UPDATED'
+            AND status = 'completed'
+            AND pause_duration_minutes > 0
+            GROUP BY user
+        """, (project,))
+        
+        for row in c.fetchall():
+            if row['pause_mins']:
+                pause_minutes += row['pause_mins']
+                if row['user'] in pauses_by_user:
+                    pauses_by_user[row['user']] += row['pause_mins']
+                else:
+                    pauses_by_user[row['user']] = row['pause_mins']
+        
+        # Calculate handoff delays from logs
+        handoff_minutes = 0
+        handoff_details = {}
+        
+        c.execute("""
+            SELECT user, timestamp, event
+            FROM logs
+            WHERE project = ?
+            AND event IN ('AFGEMELD', 'OPEN', 'PROJECT_START')
+            ORDER BY timestamp
+        """, (project,))
+        
+        events = c.fetchall()
+        last_afgemeld = None
+        
+        for event in events:
+            if event['event'] == 'AFGEMELD':
+                last_afgemeld = {'user': event['user'], 'time': event['timestamp']}
+            elif event['event'] in ['OPEN', 'PROJECT_START'] and last_afgemeld and event['user'] != last_afgemeld['user']:
+                # Calculate handoff delay
+                delay_minutes = calculate_work_minutes(last_afgemeld['time'], event['timestamp'])
+                if delay_minutes > 0:
+                    handoff_key = f"{last_afgemeld['user']} → {event['user']}"
+                    if handoff_key in handoff_details:
+                        handoff_details[handoff_key] += delay_minutes
+                    else:
+                        handoff_details[handoff_key] = delay_minutes
+                    handoff_minutes += delay_minutes
+                    # Clear last_afgemeld after handoff is recorded to prevent double-counting
+                    last_afgemeld = None
+        
+        # Step 6: Determine project status
+        c.execute("""
+            SELECT DISTINCT user, 
+                   MAX(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as has_afgemeld
+            FROM logs
+            WHERE project = ?
+            GROUP BY user
+        """, (project,))
+        
+        user_statuses = c.fetchall()
+        active_users = []
+        completed_users = []
+        
+        for status in user_statuses:
+            if status['has_afgemeld']:
+                completed_users.append(status['user'])
+            else:
+                active_users.append(status['user'])
+        
+        metrics.update({
+            'total_project_minutes': round(total_project_minutes, 2),
+            'total_work_minutes': round(total_work_minutes, 2),
+            'total_idle_minutes': round(total_idle_minutes, 2),
+            'project_start_time': timeline['first_event'],
+            'project_end_time': timeline['last_event'],
+            'is_active': len(active_users) > 0,
+            'active_users': active_users,
+            'completed_users': completed_users,
+            'components': {
+                'batch_proportional': {
+                    'found_batch': batch_result is not None,
+                    'proportional_total_minutes': round(batch_proportional_minutes, 2)
+                },
+                'elapsed_after_batch': round(total_project_minutes - batch_proportional_minutes, 2) if batch_proportional_minutes > 0 else 0,
+                'timeline': {
+                    'first_event_time': timeline['first_event'],
+                    'last_event_time': timeline['last_event']
+                },
+                'idle_breakdown': {
+                    'pause_minutes': round(pause_minutes, 2),
+                    'pauses_by_user': {user: round(mins, 2) for user, mins in pauses_by_user.items()},
+                    'handoff_minutes': round(handoff_minutes, 2),
+                    'handoff_details': {key: round(mins, 2) for key, mins in handoff_details.items()},
+                    'other_idle_minutes': round(max(0, total_idle_minutes - pause_minutes - handoff_minutes), 2),
+                    'total_idle_for_verification': round(total_idle_minutes, 2)
+                }
+            }
+        })
+        
+        return jsonify(metrics)
+        
+    except Exception as e:
+        logging.error(f"Error in time-metrics-v2 for project {project}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'project': project
+        }), 500
     finally:
         if conn:
             conn.close()

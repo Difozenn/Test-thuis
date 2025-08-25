@@ -429,10 +429,6 @@
             <div class="metric-label">Items {{ user.period_label }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value">{{ user.avg_session_duration|default('--') }}</div>
-            <div class="metric-label">Gem. Sessie Duur</div>
-        </div>
-        <div class="metric-card">
             <div class="metric-value" id="current-items-per-hour">{{ user.avg_items_per_hour }}</div>
             <div class="metric-label">Items/Uur</div>
         </div>
@@ -445,7 +441,7 @@
             </div>
         </div>
         <div class="metric-card">
-            <div class="metric-value">{{ user.activity_data|length }}</div>
+            <div class="metric-value" id="active-days-count">{{ user.active_days_count|default(0) }}</div>
             <div class="metric-label">Actieve Dagen</div>
         </div>
     </div>
@@ -855,8 +851,8 @@ async function exportUserPerformanceToPDF() {
         // Get current metrics values
         const currentItemsPerHour = document.getElementById('current-items-per-hour').textContent;
         const goalProgress = document.getElementById('goal-progress').textContent;
-        const activeDaysElement = document.querySelector('.metric-card:nth-child(7) .metric-value');
-        const activeDays = activeDaysElement ? activeDaysElement.textContent : '{{ user.activity_data|length }}';
+        const activeDaysElement = document.getElementById('active-days-count');
+        const activeDays = activeDaysElement ? activeDaysElement.textContent : '{{ user.active_days_count|default(0) }}';
         
         // Get activity table data
         const activityTable = document.querySelector('.stats-table tbody');

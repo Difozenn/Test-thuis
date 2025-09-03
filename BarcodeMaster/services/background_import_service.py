@@ -178,7 +178,7 @@ class BackgroundImportService:
                 for item_name in os.listdir(user_specific_path):
                     item_path = os.path.join(user_specific_path, item_name)
                     if os.path.isdir(item_path):
-                        if item_name.upper().endswith(code_to_match.upper()):
+                        if self._strict_project_match(item_name, code_to_match):
                             # Start HOPS processing thread
                             thread = threading.Thread(
                                 target=self._execute_hops_import_with_stats,
@@ -229,12 +229,20 @@ class BackgroundImportService:
         if processing_type == 'HOPS_PROCESSING':
             # Extract just the MO code and project description for matching
             # Remove any additional text after the standard format
-            # Match pattern: MO#####_Description_(#-#)
+            # Match pattern: MO#####_Description_(#-#) or MO#####_Description_REP_*
             code_to_match = project_code
-            match = re.match(r'(MO\d+_[^_]+_\(\d+-\d+\))', project_code)
+            
+            # First try to match standard format with (#-#)
+            match = re.match(r'(MO\d+_.+_\(\d+-\d+\))', project_code)
             if match:
                 code_to_match = match.group(1)
-                self._log(f"  [HOPS] Extracted project code for matching: '{project_code}' -> '{code_to_match}'")
+                self._log(f"  [HOPS] Extracted standard project code for matching: '{project_code}' -> '{code_to_match}'")
+            else:
+                # Try to match REP format
+                match = re.match(r'(MO\d+_[^_]+(?:_[^_]+)?_REP(?:_[^_]+)?)', project_code, re.IGNORECASE)
+                if match:
+                    code_to_match = match.group(1)
+                    self._log(f"  [HOPS] Extracted REP project code for matching: '{project_code}' -> '{code_to_match}'")
             
             self._log(f"HOPS_PROCESSING voor user '{user_type}': Using '{code_to_match}' for directory matching.")
 
@@ -248,21 +256,16 @@ class BackgroundImportService:
                 for item_name in os.listdir(user_specific_path):
                     item_path = os.path.join(user_specific_path, item_name)
                     if os.path.isdir(item_path):
-                        match_condition_met = False
-                        if is_rep_project_code:
-                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
-                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
-                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
-                            if ends_with_result:
-                                match_condition_met = True
-                                self._log(f"HOPS_PROCESSING (REP match) (voor user '{user_type}') wordt gestart voor gevonden map: {item_path}")
-                        else: # Not a REP variant, use endswith for robustness with prefixes
-                            self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' (Upper: '{item_name.upper()}') with code_to_match: '{code_to_match}' (Upper: '{code_to_match.upper()}')")
-                            ends_with_result = item_name.upper().endswith(code_to_match.upper())
-                            self._log(f"  [DEBUG HOPS] Does '{item_name.upper()}' end with '{code_to_match.upper()}'? Result: {ends_with_result}")
-                            if ends_with_result:
-                                match_condition_met = True
-                                self._log(f"HOPS_PROCESSING (EndsWith match) (voor user '{user_type}') wordt gestart voor gevonden map: {item_path}")
+                        # Use strict matching for both REP and non-REP projects
+                        self._log(f"  [DEBUG HOPS] Comparing dir: '{item_name}' with code_to_match: '{code_to_match}'")
+                        match_condition_met = self._strict_project_match(item_name, code_to_match)
+                        self._log(f"  [DEBUG HOPS] Strict match result: {match_condition_met}")
+                        
+                        if match_condition_met:
+                            if is_rep_project_code:
+                                self._log(f"HOPS_PROCESSING (REP strict match) (voor user '{user_type}') wordt gestart voor gevonden map: {item_path}")
+                            else:
+                                self._log(f"HOPS_PROCESSING (strict match) (voor user '{user_type}') wordt gestart voor gevonden map: {item_path}")
                         
                         if match_condition_met:
                             # Pass the actual user_type (e.g., "KL GANNOMAT") to preserve it in logging
@@ -419,7 +422,7 @@ class BackgroundImportService:
                                     for item_name in os.listdir(user_dir):
                                         item_path = os.path.join(user_dir, item_name)
                                         if os.path.isdir(item_path):
-                                            if item_name.upper().endswith(search_project_code.upper()):
+                                            if self._strict_project_match(item_name, search_project_code):
                                                 match_found_for_this_user = True
                                                 self._log(f"[BG_TASK] Found matching HOPS directory: {item_name}")
                                                 break
@@ -429,8 +432,7 @@ class BackgroundImportService:
                                     for item_name in os.listdir(user_dir):
                                         file_base_name, file_ext = os.path.splitext(item_name)
                                         if file_ext.lower() in ('.mdb', '.accdb'):
-                                            is_rep_scan = bool(re.search(r'_REP_?', search_project_code, re.IGNORECASE))
-                                            if file_base_name.upper().endswith(search_project_code.upper()):
+                                            if self._strict_project_match(file_base_name, search_project_code):
                                                 match_found_for_this_user = True
                                                 self._log(f"[BG_TASK] Found matching MDB file: {item_name}")
                                                 break
@@ -441,14 +443,13 @@ class BackgroundImportService:
                                         item_base_name, _ = os.path.splitext(item_name)
                                         is_rep_scan_for_item = bool(re.search(r'_REP_?', search_project_code, re.IGNORECASE))
                                         
-                                        # Standard file matching logic
-                                        file_matches = False
-                                        if is_rep_scan_for_item:
-                                            if item_base_name.upper().endswith(search_project_code.upper()):
-                                                file_matches = True
-                                        else:
-                                            if item_base_name.upper().endswith(search_project_code.upper()) and not re.search(r'_REP_?', item_name, re.IGNORECASE):
-                                                file_matches = True
+                                        # Use strict matching for standard files
+                                        file_matches = self._strict_project_match(item_base_name, search_project_code)
+                                        
+                                        # For non-REP projects, also verify the file itself doesn't contain REP
+                                        if file_matches and not is_rep_scan_for_item:
+                                            if re.search(r'_REP_?', item_name, re.IGNORECASE):
+                                                file_matches = False
                                         
                                         if file_matches:
                                             # Regular users - file match is enough
@@ -970,6 +971,32 @@ class BackgroundImportService:
             return mo_match.group(0).upper()
         # Use full project name when no MO code found
         return project_code
+    
+    def _strict_project_match(self, filename, project_code):
+        """
+        Perform strict matching that prevents partial or incorrect matches.
+        Returns True only if the filename properly matches the project code.
+        """
+        filename_upper = filename.upper()
+        project_upper = project_code.upper()
+        
+        # Exact match
+        if filename_upper == project_upper:
+            return True
+        
+        # Match with standard S-number prefixes (S####_####_ pattern)
+        prefix_pattern = r'^S\d+_\d+_' + re.escape(project_upper) + r'$'
+        if re.match(prefix_pattern, filename_upper):
+            return True
+        
+        # Match with other prefixes but ensure it's the complete project code
+        if filename_upper.endswith(project_upper):
+            prefix_part = filename_upper[:-len(project_upper)]
+            # Only allow if prefix ends with underscore AND project starts with MO
+            if prefix_part.endswith('_') and project_upper.startswith('MO'):
+                return True
+        
+        return False
 
     def _trigger_hops_import(self, user_name, project_event_code, details, timestamp, hops_scan_path):
         """Trigger automatische HOPS import en Excel generatie voor .hop/.hops bestanden in de gespecificeerde map."""
@@ -1076,36 +1103,36 @@ class BackgroundImportService:
         try:
             # Extract just the MO code and project description for matching
             # Remove any additional text after the standard format
-            # Match pattern: MO#####_Description_(#-#)
+            # Match pattern: MO#####_Description_(#-#) or MO#####_Description_REP_*
             project_code_for_matching = project_event_code
-            match = re.match(r'(MO\d+_[^_]+_\(\d+-\d+\))', project_event_code)
+            
+            # First try to match standard format with (#-#)
+            match = re.match(r'(MO\d+_.+_\(\d+-\d+\))', project_event_code)
             if match:
                 project_code_for_matching = match.group(1)
-                self._log(f"  [MDB] Extracted project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
+                self._log(f"  [MDB] Extracted standard project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
+            else:
+                # Try to match REP format
+                match = re.match(r'(MO\d+_[^_]+(?:_[^_]+)?_REP(?:_[^_]+)?)', project_event_code, re.IGNORECASE)
+                if match:
+                    project_code_for_matching = match.group(1)
+                    self._log(f"  [MDB] Extracted REP project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
             
             is_rep_project_code = bool(re.search(r'_REP_?', project_code_for_matching, re.IGNORECASE))
             for filename in os.listdir(mdb_scan_path):
                 file_basename, file_ext = os.path.splitext(filename)
                 if file_ext.lower() in ('.mdb', '.accdb'):
-                    match_condition_met = False
-                    db_file_path = "" # Define here to be accessible after condition
-
-                    if is_rep_project_code:
-                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_code_for_matching: '{project_code_for_matching}' (Upper: '{project_code_for_matching.upper()}')")
-                        ends_with_result = file_basename.upper().endswith(project_code_for_matching.upper())
-                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_code_for_matching.upper()}'? Result: {ends_with_result}")
-                        if ends_with_result:
-                            match_condition_met = True
-                            db_file_path = os.path.join(mdb_scan_path, filename)
-                            self._log(f"Overeenkomend MDB bestand (REP match) gevonden: {db_file_path}. Verwerken...")
-                    else: # Not a REP variant, use endswith for robustness with prefixes
-                        self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' (Upper: '{file_basename.upper()}') with project_code_for_matching: '{project_code_for_matching}' (Upper: '{project_code_for_matching.upper()}')")
-                        ends_with_result = file_basename.upper().endswith(project_code_for_matching.upper())
-                        self._log(f"  [DEBUG MDB] Does '{file_basename.upper()}' end with '{project_code_for_matching.upper()}'? Result: {ends_with_result}")
-                        if ends_with_result:
-                            match_condition_met = True
-                            db_file_path = os.path.join(mdb_scan_path, filename)
-                            self._log(f"Overeenkomend MDB bestand (EndsWith match) gevonden: {db_file_path}. Verwerken...")
+                    # Use strict matching for both REP and non-REP projects
+                    self._log(f"  [DEBUG MDB] Comparing file_basename: '{file_basename}' with project_code_for_matching: '{project_code_for_matching}'")
+                    match_condition_met = self._strict_project_match(file_basename, project_code_for_matching)
+                    self._log(f"  [DEBUG MDB] Strict match result: {match_condition_met}")
+                    
+                    if match_condition_met:
+                        db_file_path = os.path.join(mdb_scan_path, filename)
+                        if is_rep_project_code:
+                            self._log(f"Overeenkomend MDB bestand (REP strict match) gevonden: {db_file_path}. Verwerken...")
+                        else:
+                            self._log(f"Overeenkomend MDB bestand (strict match) gevonden: {db_file_path}. Verwerken...")
                     
                     if match_condition_met:
                         match_found = True

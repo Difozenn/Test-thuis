@@ -1978,9 +1978,9 @@ function updateWorkflowStatus() {
         stepElement.classList.remove('completed', 'active', 'processing', 'pending');
         
         if (!latestEvent) {
-            // No events for this user
+            // No events for this user - they didn't receive work
             stepElement.classList.add('pending');
-            stepElement.querySelector('.chain-step-user').textContent = 'In afwachting';
+            stepElement.querySelector('.chain-step-user').textContent = 'Niet van toepassing';
             stepElement.querySelector('.chain-step-time').textContent = '-';
         } else {
             // Determine status based on latest event and status
@@ -2062,8 +2062,14 @@ function updateWorkflowStatus() {
         }
     });
     
-    // Check if project completed
-    const isProjectCompleted = completedCount === workflowOrder.length && completedCount > 0;
+    // Check if project completed - only count users who actually worked on the project
+    // A user is considered to have worked on the project if they have any log entries
+    const usersWhoWorked = workflowOrder.filter(user => {
+        const userKey = `${user}_${project}`;
+        return userLatestEvents[userKey] !== undefined;
+    });
+    
+    const isProjectCompleted = usersWhoWorked.length > 0 && completedCount === usersWhoWorked.length;
     if (isProjectCompleted) {
         const completeStep = document.getElementById('step-completed');
         if (completeStep) {
@@ -2105,9 +2111,9 @@ async function updatePerformanceMetrics() {
     
     // Calculate from sessions data for accuracy
     const totalItems = sessionsData.reduce((sum, session) => sum + (session.item_count || 0), 0);
-    // Get users from logs and ensure all configured users are included
+    // Only include users who actually worked on this project (have logs)
     const logUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
-    const uniqueUsers = [...new Set([...logUsers, ...configuredUsers])];
+    const uniqueUsers = logUsers; // Don't include configured users who didn't work
     
     // Bereken totale projecttijd (eerste event van eerste user tot laatste AFGEMELD event van alle users binnen werktijden)
     let projectStartTime = null;

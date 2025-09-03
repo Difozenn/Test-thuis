@@ -291,6 +291,11 @@
             <i class="fas fa-cog"></i> Instellingen
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#manualAfgemeld">
+            <i class="fas fa-user-check"></i> Manueel Afmelden
+        </a>
+    </li>
 </ul>
 
 <!-- Tab Content -->
@@ -672,6 +677,69 @@
                     <button class="btn btn-primary" onclick="saveSettings()">
                         <i class="fas fa-save"></i> Instellingen Opslaan
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Manueel Afmelden Tab -->
+    <div class="tab-pane fade" id="manualAfgemeld">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-check"></i> Manueel Afmelden - Projecten Handmatig Afsluiten</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="userSelect" class="form-label">Selecteer Gebruiker</label>
+                        <select class="form-select" id="userSelect" onchange="loadUserActiveProjects()">
+                            <option value="">-- Selecteer een gebruiker --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-info-circle"></i> 
+                            Selecteer een gebruiker om hun actieve projecten te zien en handmatig af te melden.
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="activeProjectsContainer" style="display: none;">
+                    <h6 class="mb-3">Actieve Projecten voor <span id="selectedUserName" class="text-primary"></span></h6>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Laatste Activiteit</th>
+                                    <th>Items</th>
+                                    <th>Actie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeProjectsList">
+                                <!-- Projects will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-warning" onclick="sendBulkAfgemeld()" id="bulkAfgemeldBtn" disabled>
+                            <i class="fas fa-check-double"></i> Geselecteerde Projecten Afmelden
+                        </button>
+                        <span id="selectedCount" class="ms-3 text-muted">0 projecten geselecteerd</span>
+                    </div>
+                </div>
+                
+                <div id="noActiveProjects" style="display: none;">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Deze gebruiker heeft geen actieve projecten (OPEN of BEZIG status).
+                    </div>
                 </div>
             </div>
         </div>
@@ -1407,5 +1475,206 @@ setInterval(() => {
         loadDatabaseStats();
     }
 }, 30000);
+
+// --- Manual Afgemeld Functions ---
+// Load users with active projects when tab is shown
+document.querySelector('a[href="#manualAfgemeld"]')?.addEventListener('shown.bs.tab', function() {
+    loadUsersWithActiveProjects();
+});
+
+async function loadUsersWithActiveProjects() {
+    try {
+        const response = await fetch('/api/users/with-active-projects');
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '<option value="">-- Selecteer een gebruiker --</option>';
+            
+            data.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.user;
+                option.textContent = `${user.user} (${user.active_projects} actieve project${user.active_projects !== 1 ? 'en' : ''})`;
+                select.appendChild(option);
+            });
+            
+            if (data.users.length === 0) {
+                select.innerHTML = '<option value="">-- Geen gebruikers met actieve projecten --</option>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showNotification('Fout bij laden van gebruikers', 'error');
+    }
+}
+
+async function loadUserActiveProjects() {
+    const userSelect = document.getElementById('userSelect');
+    const selectedUser = userSelect.value;
+    
+    if (!selectedUser) {
+        document.getElementById('activeProjectsContainer').style.display = 'none';
+        document.getElementById('noActiveProjects').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('selectedUserName').textContent = selectedUser;
+    
+    try {
+        const response = await fetch(`/api/users/active-projects/${encodeURIComponent(selectedUser)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('activeProjectsList');
+            tbody.innerHTML = '';
+            
+            if (data.active_projects.length === 0) {
+                document.getElementById('activeProjectsContainer').style.display = 'none';
+                document.getElementById('noActiveProjects').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('noActiveProjects').style.display = 'none';
+            document.getElementById('activeProjectsContainer').style.display = 'block';
+            
+            data.active_projects.forEach((project, index) => {
+                const row = document.createElement('tr');
+                const lastActivity = new Date(project.last_activity);
+                const statusBadge = project.status === 'BEZIG' ? 
+                    '<span class="badge bg-warning">BEZIG</span>' : 
+                    '<span class="badge bg-info">OPEN</span>';
+                
+                row.innerHTML = `
+                    <td>
+                        <input type="checkbox" class="project-checkbox" 
+                               value="${project.project}" 
+                               data-user="${selectedUser}"
+                               onchange="updateSelectedCount()">
+                    </td>
+                    <td class="fw-semibold">${project.project}</td>
+                    <td>${statusBadge}</td>
+                    <td>${lastActivity.toLocaleString('nl-NL')}</td>
+                    <td>${project.item_count || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" 
+                                onclick="sendSingleAfgemeld('${selectedUser}', '${project.project}')">
+                            <i class="fas fa-check"></i> Afmelden
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Reset select all checkbox
+            document.getElementById('selectAll').checked = false;
+            updateSelectedCount();
+        }
+    } catch (error) {
+        console.error('Error loading active projects:', error);
+        showNotification('Fout bij laden van actieve projecten', 'error');
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll').checked;
+    const checkboxes = document.querySelectorAll('.project-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll);
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selectedCount = document.querySelectorAll('.project-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = `${selectedCount} project${selectedCount !== 1 ? 'en' : ''} geselecteerd`;
+    document.getElementById('bulkAfgemeldBtn').disabled = selectedCount === 0;
+}
+
+async function sendSingleAfgemeld(user, project) {
+    if (!confirm(`Weet je zeker dat je project "${project}" wilt afmelden voor gebruiker "${user}"?`)) {
+        return;
+    }
+    
+    await sendAfgemeldRequest(user, project);
+}
+
+async function sendBulkAfgemeld() {
+    const selectedCheckboxes = document.querySelectorAll('.project-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showNotification('Selecteer eerst projecten om af te melden', 'warning');
+        return;
+    }
+    
+    const user = selectedCheckboxes[0].dataset.user;
+    const projects = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (!confirm(`Weet je zeker dat je ${projects.length} project${projects.length !== 1 ? 'en' : ''} wilt afmelden voor "${user}"?`)) {
+        return;
+    }
+    
+    showLoading('Projecten afmelden...');
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const project of projects) {
+        const success = await sendAfgemeldRequest(user, project, false);
+        if (success) {
+            successCount++;
+        } else {
+            errorCount++;
+        }
+    }
+    
+    hideLoading();
+    
+    if (successCount > 0) {
+        showNotification(`${successCount} project${successCount !== 1 ? 'en' : ''} succesvol afgemeld`, 'success');
+    }
+    if (errorCount > 0) {
+        showNotification(`${errorCount} project${errorCount !== 1 ? 'en' : ''} kon${errorCount !== 1 ? 'den' : ''} niet worden afgemeld`, 'error');
+    }
+    
+    // Reload the projects list
+    loadUserActiveProjects();
+}
+
+async function sendAfgemeldRequest(user, project, showLoadingIndicator = true) {
+    if (showLoadingIndicator) {
+        showLoading('Project afmelden...');
+    }
+    
+    try {
+        const response = await fetch('/api/manual-afgemeld', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, project })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (showLoadingIndicator) {
+                showNotification(`Project "${project}" succesvol afgemeld voor "${user}"`, 'success');
+                // Reload the projects list
+                loadUserActiveProjects();
+            }
+            return true;
+        } else {
+            if (showLoadingIndicator) {
+                showNotification(`Fout bij afmelden: ${data.error}`, 'error');
+            }
+            return false;
+        }
+    } catch (error) {
+        console.error('Error sending AFGEMELD:', error);
+        if (showLoadingIndicator) {
+            showNotification('Fout bij het versturen van AFGEMELD event', 'error');
+        }
+        return false;
+    } finally {
+        if (showLoadingIndicator) {
+            hideLoading();
+        }
+    }
+}
 </script>
 {% endblock %}

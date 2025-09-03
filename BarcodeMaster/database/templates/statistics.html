@@ -1822,9 +1822,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Date input change handlers
-    startDateInput.addEventListener('change', updatePageWithDateRange);
-    endDateInput.addEventListener('change', updatePageWithDateRange);
+    // Date input change handlers - removed to prevent auto-refresh
+    // Users should click "Toepassen" button to apply date changes
+    // startDateInput.addEventListener('change', updatePageWithDateRange);
+    // endDateInput.addEventListener('change', updatePageWithDateRange);
 });
 
 function updatePageWithDateRange() {

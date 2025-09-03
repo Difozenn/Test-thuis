@@ -3447,6 +3447,195 @@ def update_session_id():
         logging.error(f"Error updating session ID: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# --- Manual AFGEMELD Endpoints ---
+@app.route('/api/users/active-projects/<user>', methods=['GET'])
+def get_user_active_projects(user):
+    """Get all active (OPEN or BEZIG) projects for a specific user"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get projects where the user has OPEN or BEZIG status but not AFGEMELD
+        c.execute("""
+            WITH user_project_status AS (
+                SELECT 
+                    project,
+                    MAX(timestamp) as last_activity,
+                    MAX(CASE WHEN event = 'OPEN' THEN timestamp END) as open_time,
+                    MAX(CASE WHEN event = 'BEZIG' THEN timestamp END) as bezig_time,
+                    MAX(CASE WHEN event = 'AFGEMELD' THEN timestamp END) as afgemeld_time,
+                    MAX(CASE WHEN status = 'OPEN' THEN 1 ELSE 0 END) as has_open,
+                    MAX(CASE WHEN status = 'BEZIG' THEN 1 ELSE 0 END) as has_bezig,
+                    MAX(item_count) as item_count
+                FROM logs
+                WHERE user = ?
+                GROUP BY project
+            )
+            SELECT 
+                project,
+                last_activity,
+                CASE 
+                    WHEN afgemeld_time IS NOT NULL THEN 'AFGEMELD'
+                    WHEN bezig_time > COALESCE(open_time, '1900-01-01') THEN 'BEZIG'
+                    WHEN has_open = 1 THEN 'OPEN'
+                    ELSE 'UNKNOWN'
+                END as status,
+                item_count
+            FROM user_project_status
+            WHERE (has_open = 1 OR has_bezig = 1)
+            AND afgemeld_time IS NULL
+            ORDER BY last_activity DESC
+        """, (user,))
+        
+        projects = []
+        for row in c.fetchall():
+            projects.append({
+                'project': row['project'],
+                'status': row['status'],
+                'last_activity': row['last_activity'],
+                'item_count': row['item_count'] or 0
+            })
+        
+        return jsonify({
+            'success': True,
+            'user': user,
+            'active_projects': projects,
+            'count': len(projects)
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting active projects for {user}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/manual-afgemeld', methods=['POST'])
+def send_manual_afgemeld():
+    """Send a manual AFGEMELD event for a user and project"""
+    try:
+        data = request.get_json()
+        user = data.get('user')
+        project = data.get('project')
+        
+        if not user or not project:
+            return jsonify({'success': False, 'error': 'User and project are required'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Check if project exists and is active for the user
+        c.execute("""
+            SELECT 
+                MAX(timestamp) as last_activity,
+                MAX(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as already_afgemeld,
+                MAX(item_count) as item_count
+            FROM logs
+            WHERE user = ? AND project = ?
+        """, (user, project))
+        
+        result = c.fetchone()
+        if not result or not result['last_activity']:
+            return jsonify({'success': False, 'error': 'Project not found for user'}), 404
+        
+        if result['already_afgemeld']:
+            return jsonify({'success': False, 'error': 'Project already marked as AFGEMELD'}), 400
+        
+        # Create AFGEMELD event
+        timestamp = datetime.now().isoformat()
+        
+        # Insert AFGEMELD log entry
+        c.execute("""
+            INSERT INTO logs (timestamp, event, status, details, project, user, item_count)
+            VALUES (?, 'AFGEMELD', 'AFGEMELD', 'Manueel afgemeld via Database Management', ?, ?, ?)
+        """, (timestamp, project, user, result['item_count'] or 0))
+        
+        # Note: We do NOT update the OPEN event's status field
+        # The OPEN event should keep status='OPEN' for the project completion logic to work
+        # The AFGEMELD event itself indicates completion
+        
+        updated_rows = 0  # No rows updated since we're not changing OPEN status
+        
+        # Close any active individual sessions for this user/project
+        c.execute("""
+            UPDATE sessions
+            SET status = 'completed',
+                end_time = ?,
+                work_duration_minutes = ROUND((julianday(?) - julianday(start_time) - COALESCE(pause_duration_minutes/60.0, 0)) * 24 * 60)
+            WHERE user = ? 
+            AND status = 'active'
+            AND session_type IN ('XLSX_UPDATED', 'MANUAL')
+            AND session_id IN (
+                SELECT session_id FROM session_projects 
+                WHERE project = ?
+            )
+        """, (timestamp, timestamp, user, project))
+        
+        closed_sessions = c.rowcount
+        
+        conn.commit()
+        
+        logging.info(f"Manueel AFGEMELD verzonden voor {user} op project {project}. Closed {closed_sessions} sessions.")
+        
+        return jsonify({
+            'success': True,
+            'message': f'AFGEMELD event succesvol verzonden',
+            'closed_sessions': closed_sessions
+        })
+        
+    except Exception as e:
+        logging.error(f"Error sending manueel AFGEMELD: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/users/with-active-projects', methods=['GET'])
+def get_users_with_active_projects():
+    """Get list of all users that have active projects"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all users with active projects
+        c.execute("""
+            WITH user_active_projects AS (
+                SELECT 
+                    user,
+                    project,
+                    MAX(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as is_afgemeld
+                FROM logs
+                WHERE event IN ('OPEN', 'BEZIG', 'AFGEMELD')
+                GROUP BY user, project
+                HAVING is_afgemeld = 0
+            )
+            SELECT 
+                user,
+                COUNT(DISTINCT project) as active_project_count
+            FROM user_active_projects
+            GROUP BY user
+            ORDER BY user
+        """)
+        
+        users = []
+        for row in c.fetchall():
+            users.append({
+                'user': row['user'],
+                'active_projects': row['active_project_count']
+            })
+        
+        return jsonify({
+            'success': True,
+            'users': users
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting users with active projects: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
 @app.route('/api/sessions/end', methods=['POST'])
 def end_session_manually():
     """Manually end an active session"""

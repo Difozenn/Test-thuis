@@ -790,7 +790,11 @@ let toolUsageChart = new Chart(toolUsageCtx, {
 // Function to load tool usage data
 async function loadToolUsageData() {
     try {
-        const response = await fetch('/api/tool_statistics?days=30');
+        // Get the user filter from the form
+        const userFilter = document.getElementById('user-filter')?.value || '';
+        const userParam = userFilter ? `&user_id=${userFilter}` : '';
+        
+        const response = await fetch(`/api/tool_statistics?days=30${userParam}`);
         const data = await response.json();
         
         if (data.success && data.tools.length > 0) {
@@ -821,34 +825,32 @@ function displayDetailedToolUsage(tools) {
             <table class="table table-sm table-hover">
                 <thead class="table-dark">
                     <tr>
+                        <th>#</th>
                         <th>{{ t('tool_number') }}</th>
                         <th>{{ t('total_time') }}</th>
                         <th>{{ t('cutting_time') }}</th>
                         <th>{{ t('rapid_time') }}</th>
                         <th>{{ t('usage_count') }}</th>
-                        <th>{{ t('programs_used') }}</th>
                         <th>{{ t('cutting_efficiency') }}</th>
                         <th>{{ t('total_distance') }}</th>
-                        <th>{{ t('avg_time_per_use') }}</th>
                     </tr>
                 </thead>
                 <tbody>`;
     
-    tools.forEach(tool => {
+    tools.forEach((tool, index) => {
         const efficiencyClass = tool.cutting_efficiency >= 60 ? 'text-success' : 
                                tool.cutting_efficiency >= 40 ? 'text-warning' : 'text-danger';
         
         tableHTML += `
             <tr>
+                <td>${index + 1}</td>
                 <td><strong>T${tool.tool_number}</strong></td>
                 <td><span class="badge bg-primary">${tool.total_time_formatted}</span></td>
                 <td><span class="badge bg-success">${tool.cutting_time_formatted}</span></td>
                 <td><span class="badge bg-info">${tool.rapid_time_formatted}</span></td>
                 <td>${tool.usage_count}</td>
-                <td>${tool.programs_used}</td>
                 <td class="${efficiencyClass}"><strong>${tool.cutting_efficiency}%</strong></td>
                 <td>${(tool.total_distance_mm / 1000).toFixed(3)} m</td>
-                <td>${tool.avg_time_per_use_formatted}</td>
             </tr>`;
     });
     

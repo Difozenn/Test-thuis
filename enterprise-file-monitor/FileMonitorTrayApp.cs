@@ -15,9 +15,21 @@ using System.Net;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Runtime.Versioning;
 
 namespace FileMonitorTray
 {
+    public class Program
+    {
+        [STAThread]
+        [SupportedOSPlatform("windows")]
+        public static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new FileMonitorTrayApp());
+        }
+    }
     // Analyzer mode selection
     public enum AnalysisMode
     {

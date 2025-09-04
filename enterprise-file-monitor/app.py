@@ -1578,10 +1578,12 @@ def get_tool_statistics():
     """Get tool usage statistics for charts"""
     try:
         days = request.args.get('days', 30, type=int)
+        user_filter = request.args.get('user_id', type=int)
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         print(f"[DEBUG] Tool statistics requested for last {days} days (since {cutoff_date})")
         print(f"[DEBUG] Current user: {current_user.username} (role: {current_user.role})")
+        print(f"[DEBUG] User filter: {user_filter}")
         
         # Get detailed tool usage statistics from database
         tool_usage_query = db.session.query(
@@ -1601,8 +1603,13 @@ def get_tool_statistics():
             CNCAnalysis.created_at >= cutoff_date
         )
         
-        # Filter by user if not admin
-        if current_user.role != 'admin':
+        # Filter by user based on role and selection
+        if current_user.role == 'admin':
+            # Admin can filter by specific user or see all
+            if user_filter:
+                tool_usage_query = tool_usage_query.filter(Event.user_id == user_filter)
+        else:
+            # Regular users can only see their own data
             tool_usage_query = tool_usage_query.filter(Event.user_id == current_user.id)
         
         tool_usage_query = tool_usage_query.group_by(ToolUsage.tool_number).order_by(
@@ -1753,74 +1760,8 @@ def list_machine_configs():
         print(f"Error listing machine configs: {e}")
         return jsonify({'error': 'Failed to fetch machine configurations'}), 500
 
-@api_bp.route('/manual_entry', methods=['POST'])
-@login_required
-def api_manual_entry():
-    """API endpoint for manual entry from C# app"""
-    try:
-        data = request.get_json()
-        
-        description = data.get('description', '').strip()
-        category = data.get('category', '').strip()
-        amount = data.get('amount', 1)
-        path_id = data.get('path_id')
-        
-        # Find category by name for current user
-        category_obj = Category.query.filter_by(name=category, user_id=current_user.id).first()
-        if not category_obj:
-            return jsonify({'error': 'Category not found'}), 400
-        
-        # Validate amount
-        if not (1 <= amount <= 100):
-            return jsonify({'error': 'Amount must be between 1 and 100'}), 400
-        
-        # Get the monitored path if provided
-        path_info = ""
-        if path_id:
-            monitored_path = MonitoredPath.query.get(path_id)
-            if monitored_path and (monitored_path.user_id == current_user.id or current_user.role == 'admin'):
-                path_info = monitored_path.path
-            else:
-                path_info = "Manual Entry"
-        else:
-            path_info = "Manual Entry"
-        
-        # Create events
-        events_created = 0
-        for i in range(amount):
-            # Create a unique identifier for each entry if amount > 1
-            if amount > 1:
-                entry_description = f"{description} (Entry {i+1}/{amount})"
-            else:
-                entry_description = description
-            
-            # Format file path with optional monitored path
-            if path_info != "Manual Entry":
-                file_path = f"{path_info}: {entry_description}"
-            else:
-                file_path = f"Manual Entry: {entry_description}"
-            
-            event = Event(
-                file_path=file_path,
-                category_id=category_obj.id,
-                computer_name=socket.gethostname(),
-                user_id=current_user.id,
-                event_type='manual'
-            )
-            db.session.add(event)
-            events_created += 1
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'events_created': events_created,
-            'message': f'Successfully created {events_created} event(s)'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+# This endpoint has been replaced by manual_entry_api() below which includes CNC analysis support
+# Keeping this comment for reference to the old implementation
 
 @api_bp.route('/log_event', methods=['POST'])
 @login_required
@@ -2073,22 +2014,41 @@ def manual_entry_api():
     try:
         data = request.get_json()
         
+        # Debug logging
+        print(f"[DEBUG] Manual entry received data: {data}")
+        
         description = data.get('description', '').strip()
-        category_name = data.get('category')
+        category_id = data.get('category_id')
+        matched_keyword = data.get('matched_keyword')
         amount = data.get('amount', 1)
         path_id = data.get('path_id')
         cnc_analysis_data = data.get('cnc_analysis')
         
-        if not category_name:
-            return jsonify({'error': 'Category is required'}), 400
+        print(f"[DEBUG] Manual entry parsed: category_id={category_id}, amount={amount}, path_id={path_id}")
         
         if not (1 <= amount <= 100):
             return jsonify({'error': 'Amount must be between 1 and 100'}), 400
         
-        # Find category by name for current user
-        category = Category.query.filter_by(name=category_name, user_id=current_user.id).first()
-        if not category:
-            return jsonify({'error': f'Category "{category_name}" not found'}), 404
+        # If category_id is provided by client, use it (but verify it belongs to the user)
+        if category_id:
+            category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
+            if not category:
+                print(f"[ERROR] Category ID {category_id} not found for user {current_user.id}")
+                return jsonify({'error': f'Invalid category'}), 404
+        else:
+            # No category matched on client side - use "Allerlei" or create it for the user
+            category = Category.query.filter_by(name='Allerlei', user_id=current_user.id).first()
+            if not category:
+                category = Category(
+                    name='Allerlei',
+                    user_id=current_user.id,
+                    keywords='[]',
+                    file_patterns='[]',
+                    color='#6c757d'
+                )
+                db.session.add(category)
+                db.session.flush()
+                print(f"[DEBUG] Created 'Allerlei' category for manual entry without match")
         
         # Create events
         events_created = 0
@@ -2102,7 +2062,7 @@ def manual_entry_api():
             event = Event(
                 file_path=f"Manual Entry: {entry_description}",
                 category_id=category.id,
-                matched_keyword=None,
+                matched_keyword=matched_keyword,
                 computer_name=socket.gethostname(),
                 user_id=current_user.id,
                 event_type='manual'
@@ -2110,10 +2070,10 @@ def manual_entry_api():
             db.session.add(event)
             db.session.flush()  # Get the event ID
             
-            # Handle CNC analysis if provided (only for first entry to avoid duplicates)
-            if cnc_analysis_data and i == 0:
+            # Handle CNC analysis if provided - APPLY TO ALL ENTRIES for correct machine time tracking
+            if cnc_analysis_data:
                 try:
-                    # DELETE ANY EXISTING CNC ANALYSIS FOR THIS EVENT TO PREVENT DUPLICATES
+                    # Create CNC analysis for this event (each event needs its own for statistics)
                     existing_analysis = CNCAnalysis.query.filter_by(event_id=event.id).first()
                     if existing_analysis:
                         # Delete all tool usage for this analysis first
@@ -3401,81 +3361,7 @@ def events():
                          categories=categories,
                          users=users)
 
-@main_bp.route('/manual_entry', methods=['GET', 'POST'])
-@login_required
-def manual_entry():
-    if request.method == 'POST':
-        description = request.form.get('description', '').strip()
-        category_id = request.form.get('category_id', type=int)
-        matched_keyword = request.form.get('matched_keyword', '').strip()
-        amount = request.form.get('amount', type=int)
-        monitored_path_id = request.form.get('monitored_path_id', type=int)
-        
-        if description and category_id and amount and 1 <= amount <= 100:
-            # Validate that the category belongs to the current user
-            category = Category.query.filter_by(id=category_id, user_id=current_user.id).first()
-            if not category:
-                flash('Invalid category selected', 'danger')
-                return redirect(url_for('main.manual_entry'))
-            
-            # Get the monitored path if selected
-            path_info = ""
-            if monitored_path_id:
-                monitored_path = MonitoredPath.query.get(monitored_path_id)
-                if monitored_path and (monitored_path.user_id == current_user.id or current_user.role == 'admin'):
-                    path_info = monitored_path.path
-                else:
-                    path_info = "Manual Entry"
-            else:
-                path_info = "Manual Entry"
-            
-            # Create multiple events based on amount
-            events_created = 0
-            for i in range(amount):
-                # Create a unique identifier for each entry if amount > 1
-                if amount > 1:
-                    entry_description = f"{description} (Entry {i+1}/{amount})"
-                else:
-                    entry_description = description
-                
-                # Format file path with optional monitored path
-                if path_info != "Manual Entry":
-                    file_path = f"{path_info}: {entry_description}"
-                else:
-                    file_path = f"Manual Entry: {entry_description}"
-                
-                event = Event(
-                    file_path=file_path,
-                    category_id=category_id,
-                    matched_keyword=matched_keyword if matched_keyword else None,
-                    computer_name=socket.gethostname(),
-                    user_id=current_user.id,
-                    event_type='manual'
-                )
-                db.session.add(event)
-                events_created += 1
-            
-            db.session.commit()
-            
-            if events_created == 1:
-                flash(get_translation('event_added'), 'success')
-            else:
-                flash(f"{events_created} {get_translation('events_added')}", 'success')
-            
-            return redirect(url_for('main.events'))
-        else:
-            flash('Please provide valid description, category, and amount (1-100)', 'danger')
-    
-    # Get categories and monitored paths for the form
-    categories = Category.query.filter_by(user_id=current_user.id).all()
-    
-    # Get monitored paths based on user role
-    if current_user.role == 'admin':
-        monitored_paths = MonitoredPath.query.filter_by(is_active=True).order_by(MonitoredPath.path).all()
-    else:
-        monitored_paths = MonitoredPath.query.filter_by(user_id=current_user.id, is_active=True).order_by(MonitoredPath.path).all()
-    
-    return render_template('manual_entry.html', categories=categories, monitored_paths=monitored_paths)
+# Manual entry web interface has been removed - use C# app instead
 
 @main_bp.route('/delete_event/<int:event_id>', methods=['POST'])
 @login_required

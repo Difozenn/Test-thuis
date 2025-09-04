@@ -12,12 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="filemonitortrayapp.cs" />
-    <Compile Include="FileSelectorForm.cs" />
-    <Compile Include="LocalizationManager.cs" />
-    <Compile Include="LoginForm.cs" />
-    <Compile Include="UserManagementForm.cs" />
+    <Compile Remove="tmp\**" />
+    <EmbeddedResource Remove="tmp\**" />
+    <None Remove="tmp\**" />
   </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="System.Management" Version="7.0.0" />

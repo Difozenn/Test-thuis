@@ -567,10 +567,6 @@
                            href="{{ url_for('main.events') }}">
                             <i class="fas fa-list"></i> {{ t('events') }}
                         </a>
-                        <a class="nav-link {{ 'active' if request.endpoint == 'main.manual_entry' }}" 
-                           href="{{ url_for('main.manual_entry') }}">
-                            <i class="fas fa-plus-circle"></i> {{ t('manual_entry') }}
-                        </a>
                         <a class="nav-link {{ 'active' if request.endpoint == 'main.statistics' }}" 
                            href="{{ url_for('main.statistics') }}">
                             <i class="fas fa-chart-line"></i> {{ t('statistics') }}

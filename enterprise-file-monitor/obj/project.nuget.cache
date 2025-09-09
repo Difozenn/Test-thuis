@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "vIWC7awNJhc=",
+  "dgSpecHash": "fMXZOiZxQbI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\CNCDatalog.csproj",
+  "projectFilePath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\cncdatalog.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Rob_v\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
     "C:\\Users\\Rob_v\\.nuget\\packages\\microsoft.win32.registry\\5.0.0\\microsoft.win32.registry.5.0.0.nupkg.sha512",

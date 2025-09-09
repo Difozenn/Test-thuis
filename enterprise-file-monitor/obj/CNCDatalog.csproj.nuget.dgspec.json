@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\CNCDatalog.csproj": {}
+    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\cncdatalog.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\CNCDatalog.csproj": {
+    "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\cncdatalog.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\CNCDatalog.csproj",
+        "projectUniqueName": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\cncdatalog.csproj",
         "projectName": "CNCDatalog",
-        "projectPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\CNCDatalog.csproj",
+        "projectPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\cncdatalog.csproj",
         "packagesPath": "C:\\Users\\Rob_v\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\Rob_v\\Desktop\\Test-thuis\\enterprise-file-monitor\\obj\\",
         "projectStyle": "PackageReference",

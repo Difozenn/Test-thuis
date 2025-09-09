@@ -25,6 +25,7 @@
                         <th>{{ t('username') }}</th>
                         <th>{{ t('email') }}</th>
                         <th>{{ t('role') }}</th>
+                        <th>Machine Type</th>
                         <th>{{ t('status') }}</th>
                         <th>{{ t('created') }}</th>
                         <th>{{ t('actions') }}</th>
@@ -46,6 +47,14 @@
                             {% else %}
                                 <span class="badge bg-primary">{{ t('operator') }}</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm machine-type-select" 
+                                    data-user-id="{{ user.id }}" 
+                                    style="width: auto;">
+                                <option value="cnc" {% if user.machine_type == 'cnc' %}selected{% endif %}>CNC</option>
+                                <option value="accura" {% if user.machine_type == 'accura' %}selected{% endif %}>Accura</option>
+                            </select>
                         </td>
                         <td>
                             {% if user.is_active %}
@@ -149,6 +158,39 @@
         
         document.getElementById('delete-username').textContent = username;
         document.getElementById('confirmDeleteBtn').href = `{{ url_for('main.delete_user', id=0) }}`.replace('0', userId);
+    });
+    
+    // Handle machine type changes
+    document.querySelectorAll('.machine-type-select').forEach(select => {
+        select.addEventListener('change', async function() {
+            const userId = this.getAttribute('data-user-id');
+            const machineType = this.value;
+            
+            try {
+                const response = await fetch(`/user/update_machine_type/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ machine_type: machineType })
+                });
+                
+                if (response.ok) {
+                    // Show success feedback
+                    this.style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 1000);
+                } else {
+                    // Revert on error
+                    alert('Failed to update machine type');
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Error updating machine type');
+                location.reload();
+            }
+        });
     });
 </script>
 {% endblock %}

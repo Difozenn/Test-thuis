@@ -3315,6 +3315,14 @@ namespace FileMonitorTray
             public bool EnableCNCAnalysis { get; set; } = true;
             public int MaxFileSizeMB { get; set; } = 10; // Max file size to scan in MB
             public bool MonitoringEnabled { get; set; } = true; // Remember monitoring state
+            public string MachineType { get; set; } = "cnc"; // Machine type: cnc, accura, etc.
+            public Dictionary<string, double> MachineTimeSettings { get; set; } = new Dictionary<string, double>
+            {
+                { "accura", 0.33 }, // 20 seconds (0.33 minutes) per piece for Accura
+                // Add more machine types here in the future:
+                // { "laser", 3.0 },
+                // { "3dprinter", 15.0 },
+            };
         }
 
         // Class to hold path info from the server
@@ -3781,6 +3789,26 @@ namespace FileMonitorTray
 
             // Settings checkboxes
             yPos += 40;
+            
+            // Machine Type Selection
+            var machineTypeLabel = new Label {
+                Text = "Machine Type:",
+                Location = new Point(10, yPos),
+                Size = new Size(100, 20)
+            };
+            panel.Controls.Add(machineTypeLabel);
+            
+            var machineTypeCombo = new ComboBox {
+                Location = new Point(120, yPos),
+                Size = new Size(150, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            machineTypeCombo.Items.AddRange(new[] { "cnc", "accura" });
+            // Add more machine types here in the future: "laser", "3dprinter", etc.
+            machineTypeCombo.SelectedItem = config.MachineType ?? "cnc";
+            panel.Controls.Add(machineTypeCombo);
+            yPos += 30;
+            
             var scanContentCheckbox = new CheckBox { 
                 Text = "Scan file contents", 
                 Location = new Point(10, yPos), 
@@ -3798,13 +3826,22 @@ namespace FileMonitorTray
                 Text = "Enable CNC Analysis", 
                 Location = new Point(10, yPos), 
                 Size = new Size(200, 20),
-                Checked = config.EnableCNCAnalysis
+                Checked = config.EnableCNCAnalysis,
+                Enabled = (config.MachineType == "cnc") // Only enabled for CNC machines
             };
             cncAnalysisCheckbox.CheckedChanged += (s, e) => {
                 config.EnableCNCAnalysis = cncAnalysisCheckbox.Checked;
                 SaveConfiguration();
             };
             panel.Controls.Add(cncAnalysisCheckbox);
+            
+            // Update the machine type combo event handler to reference the checkbox
+            machineTypeCombo.SelectedIndexChanged += (s, e) => {
+                config.MachineType = machineTypeCombo.SelectedItem?.ToString() ?? "cnc";
+                SaveConfiguration();
+                // Enable/disable CNC analysis checkbox based on machine type
+                cncAnalysisCheckbox.Enabled = (config.MachineType == "cnc");
+            };
         }
 
         private void CreateAnalysisTab(TabPage tab)
@@ -5264,55 +5301,86 @@ Max Scan Size: {config.MaxFileSizeMB} MB";
                 }
             }
 
-            // CNC Analysis
+            // Machine-specific Analysis
             CNCAnalysis cncAnalysis = null;
-            if (config.EnableCNCAnalysis && File.Exists(changeInfo.FullPath))
+            object machineAnalysisPayload = null;
+            
+            if (config.MachineType == "cnc")
             {
-                string fileExtension = Path.GetExtension(changeInfo.FullPath).ToLower();
-                if (CNC_EXTENSIONS.Contains(fileExtension))
+                // CNC Machine - Full G-code analysis
+                if (config.EnableCNCAnalysis && File.Exists(changeInfo.FullPath))
                 {
-                    try
+                    string fileExtension = Path.GetExtension(changeInfo.FullPath).ToLower();
+                    if (CNC_EXTENSIONS.Contains(fileExtension))
                     {
-                        // Wait a bit to ensure file is fully written
-                        await Task.Delay(500);
-                        
-                        // Use machine-specific analyzer if configured, otherwise use current analyzer
-                        ICNCAnalyzer analyzer = currentAnalyzer;
-                        
-                        // Create machine-specific analyzer if mode is set to MachineSpecific
-                        if (analyzerConfig.Mode == AnalysisMode.MachineSpecific)
+                        try
                         {
-                            analyzer = CNCAnalyzerFactory.CreateAnalyzer(analyzerConfig, config.WebAppUrl, changeInfo.FullPath);
-                        }
-                        
-                        if (analyzer != null)
-                        {
-                            cncAnalysis = await analyzer.AnalyzeFileAsync(changeInfo.FullPath);
+                            // Wait a bit to ensure file is fully written
+                            await Task.Delay(500);
                             
-                            if (cncAnalysis.AnalysisSuccessful)
+                            // Use machine-specific analyzer if configured, otherwise use current analyzer
+                            ICNCAnalyzer analyzer = currentAnalyzer;
+                            
+                            // Create machine-specific analyzer if mode is set to MachineSpecific
+                            if (analyzerConfig.Mode == AnalysisMode.MachineSpecific)
                             {
-                                string machineInfo = cncAnalysis.DetectedMachineType != MachineType.Unknown 
-                                    ? $" [{cncAnalysis.DetectedMachineType}]" 
-                                    : "";
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis completed{machineInfo} ({analyzer.GetAnalyzerVersion()}) for {Path.GetFileName(changeInfo.FullPath)} - Total Time: {cncAnalysis.GetFormattedTime()} ({cncAnalysis.TotalTime:F2} min)");
+                                analyzer = CNCAnalyzerFactory.CreateAnalyzer(analyzerConfig, config.WebAppUrl, changeInfo.FullPath);
+                            }
+                            
+                            if (analyzer != null)
+                            {
+                                cncAnalysis = await analyzer.AnalyzeFileAsync(changeInfo.FullPath);
+                                
+                                if (cncAnalysis.AnalysisSuccessful)
+                                {
+                                    string machineInfo = cncAnalysis.DetectedMachineType != MachineType.Unknown 
+                                        ? $" [{cncAnalysis.DetectedMachineType}]" 
+                                        : "";
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis completed{machineInfo} ({analyzer.GetAnalyzerVersion()}) for {Path.GetFileName(changeInfo.FullPath)} - Total Time: {cncAnalysis.GetFormattedTime()} ({cncAnalysis.TotalTime:F2} min)");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis failed: {cncAnalysis.ErrorMessage}");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] CNC Analysis failed: {cncAnalysis.ErrorMessage}");
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No analyzer available - using legacy analyzer");
+                                cncAnalysis = await gCodeAnalyzer.AnalyzeFileAsync(changeInfo.FullPath);
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No analyzer available - using legacy analyzer");
-                            cncAnalysis = await gCodeAnalyzer.AnalyzeFileAsync(changeInfo.FullPath);
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error during CNC analysis: {ex.Message}");
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error during CNC analysis: {ex.Message}");
                     }
                 }
             }
+            else if (config.MachineType == "accura")
+            {
+                // Accura Machine - Parse SystemLog.txt for specific entries
+                string fileName = Path.GetFileName(changeInfo.FullPath);
+                
+                // Check if this is the SystemLog.txt file
+                if (fileName.Equals("SystemLog.txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Parse the SystemLog.txt to detect new entries
+                    // This method will handle logging all detected entries internally
+                    await ParseAccuraSystemLog(changeInfo.FullPath);
+                    
+                    // Return here since ParseAccuraSystemLog handles all logging
+                    return;
+                }
+                else
+                {
+                    // Not SystemLog.txt, skip for Accura machine
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Accura mode: Ignoring non-SystemLog file: {fileName}");
+                    return;
+                }
+            }
+            // Add more machine types here in the future:
+            // else if (config.MachineType == "laser") { ... }
+            // else if (config.MachineType == "3dprinter") { ... }
 
             // Send the event
 object cncAnalysisPayload = null;
@@ -5383,6 +5451,17 @@ if (cncAnalysis != null && cncAnalysis.AnalysisSuccessful)
     }
 }
 
+// Determine which analysis payload to use based on machine type
+object analysisPayload = null;
+if (config.MachineType == "cnc" && cncAnalysisPayload != null)
+{
+    analysisPayload = cncAnalysisPayload;
+}
+else if (machineAnalysisPayload != null)
+{
+    analysisPayload = machineAnalysisPayload;
+}
+
 var payload = new
 {
     path_id = changeInfo.PathInfo.id,
@@ -5393,7 +5472,8 @@ var payload = new
     computer_name = Environment.MachineName,
     category_id = matchedCategory?.id,
     matched_keyword = matchedKeyword,
-    cnc_analysis = cncAnalysisPayload
+    machine_type = config.MachineType,  // Include machine type in payload
+    cnc_analysis = analysisPayload      // Send appropriate analysis data
 };
 
             try
@@ -5426,6 +5506,250 @@ var payload = new
             }
         }
 
+        // Track last processed timestamp in Accura SystemLog.txt
+        private DateTime? lastAccuraLogDate = null;
+        private TimeSpan? lastAccuraLogTime = null;
+        
+        private async Task<string> ParseAccuraSystemLog(string filePath)
+        {
+            try
+            {
+                // Wait a bit to ensure file write is complete
+                await Task.Delay(500);
+                
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(stream))
+                {
+                    string line;
+                    List<string> newEntries = new List<string>();
+                    DateTime? currentFileDate = null;
+                    
+                    // Read all lines and process them
+                    while ((line = await reader.ReadLineAsync()) != null)
+                    {
+                        line = line.Trim();
+                        if (string.IsNullOrEmpty(line)) continue;
+                        
+                        // Check if this is a date line (format: DD.MM.YYYY)
+                        var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{2})\.(\d{2})\.(\d{4})$");
+                        if (dateMatch.Success)
+                        {
+                            int day = int.Parse(dateMatch.Groups[1].Value);
+                            int month = int.Parse(dateMatch.Groups[2].Value);
+                            int year = int.Parse(dateMatch.Groups[3].Value);
+                            currentFileDate = new DateTime(year, month, day);
+                            continue;
+                        }
+                        
+                        // Parse timestamp from line (format: "HH:mm:ss  Entry text  [data]")
+                        var timeMatch = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{2}):(\d{2}):(\d{2})\s+(.+)");
+                        if (!timeMatch.Success) continue;
+                        
+                        int hour = int.Parse(timeMatch.Groups[1].Value);
+                        int minute = int.Parse(timeMatch.Groups[2].Value);
+                        int second = int.Parse(timeMatch.Groups[3].Value);
+                        TimeSpan currentTime = new TimeSpan(hour, minute, second);
+                        string entryText = timeMatch.Groups[4].Value;
+                        
+                        // Combine date and time
+                        DateTime entryDateTime = (currentFileDate ?? DateTime.Today) + currentTime;
+                        
+                        // Check if this entry is new (after our last processed timestamp)
+                        bool isNewEntry = false;
+                        if (lastAccuraLogDate == null || lastAccuraLogTime == null)
+                        {
+                            // First run - don't process existing entries, just remember the last timestamp
+                            isNewEntry = false;
+                        }
+                        else
+                        {
+                            DateTime lastProcessed = lastAccuraLogDate.Value.Date + lastAccuraLogTime.Value;
+                            isNewEntry = entryDateTime > lastProcessed;
+                        }
+                        
+                        // Process the entry if it's new
+                        if (isNewEntry)
+                        {
+                            // Check for our target patterns
+                            if (entryText.Contains("M1 von KAM1 Retour1"))
+                            {
+                                // Parse BC and B (width) values for machine time calculation
+                                var fullMatch = System.Text.RegularExpressions.Regex.Match(entryText, @"M1 von KAM1 Retour1 BC=\s*(\d+).*?B=\s*(\d+)");
+                                if (fullMatch.Success)
+                                {
+                                    string bcNum = fullMatch.Groups[1].Value;
+                                    int width = int.Parse(fullMatch.Groups[2].Value);
+                                    
+                                    // Include width in entry name and determine machine time
+                                    string entry = $"M1 von KAM1 Retour1 BC={bcNum} (B={width})";
+                                    
+                                    // Store as tuple with entry and width for later processing
+                                    newEntries.Add(entry);
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Detected new Accura entry: {entry} (from {entryDateTime:dd.MM.yyyy HH:mm:ss})");
+                                }
+                            }
+                            else if (entryText.Contains("Rifo 2 Ende erreicht"))
+                            {
+                                string entry = "Rifo 2 Ende erreicht";
+                                newEntries.Add(entry);
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Detected new Accura entry: {entry} (from {entryDateTime:dd.MM.yyyy HH:mm:ss})");
+                            }
+                        }
+                        
+                        // Update last processed timestamp (even for non-matching entries)
+                        lastAccuraLogDate = currentFileDate ?? DateTime.Today;
+                        lastAccuraLogTime = currentTime;
+                    }
+                    
+                    // If this is the first run, just log that we're ready
+                    if (lastAccuraLogDate != null && newEntries.Count == 0)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Accura SystemLog initialized - last entry at {lastAccuraLogDate.Value:dd.MM.yyyy} {lastAccuraLogTime:hh\\:mm\\:ss}");
+                    }
+                    
+                    // Log each new entry separately
+                    if (newEntries.Count > 0)
+                    {
+                        foreach (var entry in newEntries)
+                        {
+                            await LogAccuraEntry(entry, filePath);
+                        }
+                    }
+                    
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error parsing Accura SystemLog: {ex.Message}");
+                return null;
+            }
+        }
+        
+        private async Task LogAccuraEntry(string entry, string logFilePath)
+        {
+            try
+            {
+                // Calculate machine time based on width (B value)
+                double staticTime;
+                
+                // Check if entry contains width information
+                var widthMatch = System.Text.RegularExpressions.Regex.Match(entry, @"B=(\d+)");
+                if (widthMatch.Success)
+                {
+                    int width = int.Parse(widthMatch.Groups[1].Value);
+                    
+                    // Width-based machine time:
+                    // B < 2400: 20 seconds (0.33 minutes)
+                    // B >= 2400: 60 seconds (1.0 minute)
+                    if (width >= 2400)
+                    {
+                        staticTime = 1.0; // 60 seconds for wide pieces
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Wide piece detected (B={width}), using 60 seconds machine time");
+                    }
+                    else
+                    {
+                        staticTime = 0.33; // 20 seconds for narrow pieces
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Narrow piece detected (B={width}), using 20 seconds machine time");
+                    }
+                }
+                else
+                {
+                    // Default time if no width found (e.g., for "Rifo 2 Ende erreicht")
+                    staticTime = config.MachineTimeSettings.ContainsKey("accura") 
+                        ? config.MachineTimeSettings["accura"] 
+                        : 0.33; // Default 20 seconds (0.33 minutes)
+                }
+                
+                var machineAnalysisPayload = new
+                {
+                    MachineType = "accura",
+                    Filename = entry, // Use the detected entry as filename
+                    TotalTime = staticTime, // Total time in minutes
+                    MachineTime = staticTime, // Machine time in minutes (same as total for Accura)
+                    AnalysisSuccessful = true,
+                    StaticTimeUsed = true,
+                    LogEntry = entry // Store the actual log entry
+                };
+                
+                // Determine which analysis payload to use based on machine type
+                object analysisPayload = machineAnalysisPayload;
+                
+                // Get file size
+                long fileSize = 0;
+                try
+                {
+                    FileInfo fileInfo = new FileInfo(logFilePath);
+                    fileSize = fileInfo.Length;
+                }
+                catch { }
+                
+                // Find monitored path for this file
+                // Fetch monitored paths from API
+                List<MonitoredPathInfo> pathsToMonitor = null;
+                try
+                {
+                    var pathResponse = await httpClient.GetAsync($@"{webAppUrl}/api/paths");
+                    if (pathResponse.IsSuccessStatusCode)
+                    {
+                        string jsonResponse = await pathResponse.Content.ReadAsStringAsync();
+                        pathsToMonitor = JsonSerializer.Deserialize<List<MonitoredPathInfo>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error fetching monitored paths: {ex.Message}");
+                    return;
+                }
+                
+                if (pathsToMonitor == null || pathsToMonitor.Count == 0)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No monitored paths available");
+                    return;
+                }
+                
+                var matchingPath = pathsToMonitor.FirstOrDefault(p => logFilePath.StartsWith(p.path, StringComparison.OrdinalIgnoreCase));
+                if (matchingPath == null)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No monitored path found for: {logFilePath}");
+                    return;
+                }
+                
+                var payload = new
+                {
+                    path_id = matchingPath.id,
+                    change_type = "modified",
+                    file_path = logFilePath,
+                    timestamp_utc = DateTime.UtcNow.ToString("o"),
+                    new_size = fileSize,
+                    computer_name = Environment.MachineName,
+                    category_id = (int?)null,  // Let server determine category
+                    matched_keyword = (string)null,
+                    machine_type = config.MachineType,  // Include machine type in payload
+                    cnc_analysis = analysisPayload      // Send appropriate analysis data
+                };
+                
+                string jsonPayload = JsonSerializer.Serialize(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                
+                var response = await httpClient.PostAsync($@"{webAppUrl}/api/log_event", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Failed to log Accura event: {response.StatusCode}");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error details: {errorContent}");
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ✓ Accura event logged successfully: {entry}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error logging Accura entry: {ex.Message}");
+            }
+        }
+        
         private async Task<string> ReadFileContentAsync(string filePath)
         {
             const int MAX_RETRIES = 5;

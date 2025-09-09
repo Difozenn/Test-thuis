@@ -37,6 +37,15 @@
                 </select>
             </div>
             
+            <div class="mb-3">
+                <label for="machine_type" class="form-label">Machine Type</label>
+                <select class="form-select" id="machine_type" name="machine_type">
+                    <option value="cnc" selected>CNC</option>
+                    <option value="accura">Accura</option>
+                </select>
+                <small class="text-muted">Select the type of machine this user will be monitoring</small>
+            </div>
+            
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">{{ t('create_user') }}</button>
                 <a href="{{ url_for('main.users') }}" class="btn btn-secondary">{{ t('cancel') }}</a>

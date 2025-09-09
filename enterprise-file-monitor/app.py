@@ -338,22 +338,22 @@ def check_and_migrate_database():
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name VARCHAR(100) NOT NULL DEFAULT 'Default Schedule',
                         is_active BOOLEAN DEFAULT 1,
-                        monday_start REAL DEFAULT 8.0,
-                        monday_end REAL DEFAULT 17.0,
-                        tuesday_start REAL DEFAULT 8.0,
-                        tuesday_end REAL DEFAULT 17.0,
-                        wednesday_start REAL DEFAULT 8.0,
-                        wednesday_end REAL DEFAULT 17.0,
-                        thursday_start REAL DEFAULT 8.0,
-                        thursday_end REAL DEFAULT 17.0,
-                        friday_start REAL DEFAULT 8.0,
-                        friday_end REAL DEFAULT 17.0,
+                        monday_start REAL DEFAULT 7.5,
+                        monday_end REAL DEFAULT 16.0,
+                        tuesday_start REAL DEFAULT 7.5,
+                        tuesday_end REAL DEFAULT 16.0,
+                        wednesday_start REAL DEFAULT 7.5,
+                        wednesday_end REAL DEFAULT 16.0,
+                        thursday_start REAL DEFAULT 7.5,
+                        thursday_end REAL DEFAULT 16.0,
+                        friday_start REAL DEFAULT 7.5,
+                        friday_end REAL DEFAULT 15.0,
                         saturday_start REAL DEFAULT 0.0,
                         saturday_end REAL DEFAULT 0.0,
                         sunday_start REAL DEFAULT 0.0,
                         sunday_end REAL DEFAULT 0.0,
                         break_start REAL DEFAULT 12.0,
-                        break_duration REAL DEFAULT 1.0,
+                        break_duration REAL DEFAULT 0.5,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     )
@@ -744,6 +744,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True)
     language = db.Column(db.String(2), default='en')
+    machine_type = db.Column(db.String(20), default='cnc')  # 'cnc' or 'accura'
     
     events = db.relationship('Event', backref='user', lazy='dynamic')
     
@@ -1077,24 +1078,25 @@ class WorkScheduleConfig(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     
     # Per-day start and end times (in decimal hours)
-    monday_start = db.Column(db.Float, default=8.0)
-    monday_end = db.Column(db.Float, default=17.0)
-    tuesday_start = db.Column(db.Float, default=8.0)
-    tuesday_end = db.Column(db.Float, default=17.0)
-    wednesday_start = db.Column(db.Float, default=8.0)
-    wednesday_end = db.Column(db.Float, default=17.0)
-    thursday_start = db.Column(db.Float, default=8.0)
-    thursday_end = db.Column(db.Float, default=17.0)
-    friday_start = db.Column(db.Float, default=8.0)
-    friday_end = db.Column(db.Float, default=17.0)
-    saturday_start = db.Column(db.Float, default=0.0)  # 0 means non-working day
+    # Mon-Thu: 7:30-16:00, Fri: 7:30-15:00
+    monday_start = db.Column(db.Float, default=7.5)     # 7:30
+    monday_end = db.Column(db.Float, default=16.0)      # 16:00
+    tuesday_start = db.Column(db.Float, default=7.5)    # 7:30
+    tuesday_end = db.Column(db.Float, default=16.0)     # 16:00
+    wednesday_start = db.Column(db.Float, default=7.5)  # 7:30
+    wednesday_end = db.Column(db.Float, default=16.0)   # 16:00
+    thursday_start = db.Column(db.Float, default=7.5)   # 7:30
+    thursday_end = db.Column(db.Float, default=16.0)    # 16:00
+    friday_start = db.Column(db.Float, default=7.5)     # 7:30
+    friday_end = db.Column(db.Float, default=15.0)      # 15:00
+    saturday_start = db.Column(db.Float, default=0.0)   # 0 means non-working day
     saturday_end = db.Column(db.Float, default=0.0)
     sunday_start = db.Column(db.Float, default=0.0)
     sunday_end = db.Column(db.Float, default=0.0)
     
     # Global break configuration
-    break_start = db.Column(db.Float, default=12.0)  # Break start time in decimal hours
-    break_duration = db.Column(db.Float, default=1.0)  # Break duration in hours
+    break_start = db.Column(db.Float, default=12.0)     # 12:00 Break start time
+    break_duration = db.Column(db.Float, default=0.5)   # 0.5 hours = 30 minutes
     
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -1780,6 +1782,7 @@ def log_event():
         # New fields from enhanced client
         category_id = data.get('category_id')
         matched_keyword = data.get('matched_keyword')
+        machine_type = data.get('machine_type', 'cnc')  # Default to 'cnc' for backward compatibility
         
         # Validate required fields
         if not all([path_id, change_type, file_path]):
@@ -1861,7 +1864,7 @@ def log_event():
         db.session.add(event)
         db.session.flush()  # Get the event ID
         
-        # Handle CNC analysis if provided
+        # Handle machine analysis (CNC or Accura) if provided
         cnc_analysis_data = data.get('cnc_analysis')
         if cnc_analysis_data:
             try:
@@ -1878,6 +1881,9 @@ def log_event():
                     print(f"[DEBUG] Deleted existing CNC analysis ID {existing_analysis.id} for event {event.id}")
                     db.session.flush()  # Ensure deletion happens before creating new records
                 
+                # Check if this is an Accura machine with static time
+                is_accura = cnc_analysis_data.get('MachineType') == 'accura' or cnc_analysis_data.get('StaticTimeUsed', False)
+                
                 # Map C# field names to database field names
                 # TotalTime is the complete cycle time (machine ops + movements) in minutes
                 total_time_minutes = cnc_analysis_data.get('TotalTime', 0.0)
@@ -1885,11 +1891,17 @@ def log_event():
                 cycle_time_seconds = total_time_minutes * 60  # Convert total time to seconds
                 
                 # Debug output
-                print(f"[DEBUG] CNC Analysis data received:")
-                print(f"  TotalTime: {cnc_analysis_data.get('TotalTime', 0.0)} min")
-                print(f"  MachineTime: {cnc_analysis_data.get('MachineTime', 0.0)} min")
-                print(f"  Storing cycle_time_seconds: {cycle_time_seconds} sec")
-                print(f"  Storing machine_time_minutes: {machine_time_minutes} min")
+                if is_accura:
+                    print(f"[DEBUG] Accura Machine Analysis data received:")
+                    print(f"  Machine Type: {machine_type}")
+                    print(f"  Static Time: {total_time_minutes} min")
+                    print(f"  Storing as cycle_time_seconds: {cycle_time_seconds} sec")
+                else:
+                    print(f"[DEBUG] CNC Analysis data received:")
+                    print(f"  TotalTime: {cnc_analysis_data.get('TotalTime', 0.0)} min")
+                    print(f"  MachineTime: {cnc_analysis_data.get('MachineTime', 0.0)} min")
+                    print(f"  Storing cycle_time_seconds: {cycle_time_seconds} sec")
+                    print(f"  Storing machine_time_minutes: {machine_time_minutes} min")
                 
                 # Store both the actual file path and the display name
                 # The C# app sends a display name in 'Filename' which could be a HOP file
@@ -1910,7 +1922,7 @@ def log_event():
                     file_path=display_name,  # Store the display name (HOP file if generic NC name)
                     cycle_time_seconds=cycle_time_seconds,
                     machine_time_minutes=machine_time_minutes,
-                    tool_changes=cnc_analysis_data.get('ToolChanges', 0),
+                    tool_changes=cnc_analysis_data.get('ToolChanges', 0) if not is_accura else 0,
                     rapid_moves=0,  # Not provided by C# analyzer yet
                     feed_moves=0,   # Not provided by C# analyzer yet
                     spindle_commands=0  # Not provided by C# analyzer yet
@@ -1918,8 +1930,8 @@ def log_event():
                 db.session.add(cnc_analysis)
                 db.session.flush()  # Get the CNC analysis ID
                 
-                # Store individual tool usage data (enhanced with timing details)
-                tool_usage_details = cnc_analysis_data.get('ToolUsageDetails', [])
+                # Store individual tool usage data (enhanced with timing details) - only for CNC machines
+                tool_usage_details = cnc_analysis_data.get('ToolUsageDetails', []) if not is_accura else []
                 tools_used_fallback = cnc_analysis_data.get('ToolsUsed', [])
                 
                 # Log the file being analyzed and tools being stored
@@ -3792,7 +3804,7 @@ def statistics():
             'unique_files': unique_files,
             'events_per_hour': round(events_per_hour, 2),
             'total_work_hours': round(total_work_minutes / 60, 1),
-            'total_machine_time': round(total_machine_time / 60, 1),  # Convert to hours
+            'total_machine_time': round(total_machine_time / 3600, 1),  # Convert seconds to hours
             'efficiency_overall': work_hours.calculate_efficiency(events_per_hour) if events_per_hour > 0 else 'low'
         },
         'time_grouping': time_grouping,
@@ -4086,11 +4098,13 @@ def add_user():
         email = request.form.get('email')
         password = request.form.get('password')
         role = request.form.get('role', 'operator')
+        machine_type = request.form.get('machine_type', 'cnc')
         
         user = User(
             username=username,
             email=email,
-            role=role
+            role=role,
+            machine_type=machine_type
         )
         user.set_password(password)
         
@@ -4104,6 +4118,22 @@ def add_user():
         return redirect(url_for('main.users'))
     
     return render_template('user_form.html')
+
+@main_bp.route('/user/update_machine_type/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def update_machine_type(id):
+    user = User.query.get_or_404(id)
+    data = request.get_json()
+    machine_type = data.get('machine_type', 'cnc')
+    
+    if machine_type not in ['cnc', 'accura']:
+        return jsonify({'error': 'Invalid machine type'}), 400
+    
+    user.machine_type = machine_type
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': f'Machine type updated to {machine_type}'})
 
 @main_bp.route('/user/toggle/<int:id>')
 @login_required
@@ -5539,6 +5569,32 @@ def create_default_categories_for_user(user):
         db.session.rollback()
         print(f"Error creating default categories for user {user.username}: {e}")
 
+def add_machine_type_to_users():
+    """Add machine_type column to existing users"""
+    with app.app_context():
+        try:
+            # Check if machine_type column exists
+            from sqlalchemy import inspect, text
+            inspector = inspect(db.engine)
+            columns = [col['name'] for col in inspector.get_columns('user')]
+            
+            if 'machine_type' not in columns:
+                print("Adding machine_type column to User table...")
+                # Add the column with a default value
+                db.session.execute(text('ALTER TABLE user ADD COLUMN machine_type VARCHAR(20) DEFAULT "cnc"'))
+                db.session.commit()
+                print("✓ Added machine_type column to User table")
+                
+                # Update all existing users to have 'cnc' as default
+                db.session.execute(text('UPDATE user SET machine_type = "cnc" WHERE machine_type IS NULL'))
+                db.session.commit()
+                print("✓ Set default machine_type to 'cnc' for all existing users")
+                return True
+            return True
+        except Exception as e:
+            print(f"Error adding machine_type column: {e}")
+            return False
+
 def create_default_categories():
     """Create default categories for existing users who don't have any"""
     with app.app_context():
@@ -5584,6 +5640,9 @@ def initialize_database():
             db.create_all()
             print("Database tables created successfully.")
             
+            # Add machine_type column to existing users BEFORE querying users
+            add_machine_type_to_users()
+            
             # Create backup directories
             os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'backups'), exist_ok=True)
             os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'backups', 'temp'), exist_ok=True)
@@ -5593,7 +5652,8 @@ def initialize_database():
                 admin = User(
                     username='admin',
                     email='admin@example.com',
-                    role='admin'
+                    role='admin',
+                    machine_type='cnc'  # Set default machine type
                 )
                 admin.set_password('admin123')
                 db.session.add(admin)

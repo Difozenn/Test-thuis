@@ -26,9 +26,13 @@ from .excel_processing_functions import (
     parse_excel_for_nesting, 
     parse_excel_for_accura, 
     parse_excel_for_boere,
+    parse_excel_for_massief,
+    parse_excel_for_handwerk,
     process_excel_for_all_types,
     generate_excel_for_accura,
-    generate_excel_for_boere
+    generate_excel_for_boere,
+    generate_excel_for_massief,
+    generate_excel_for_handwerk
 )
 
 class BackgroundImportService:
@@ -53,6 +57,8 @@ class BackgroundImportService:
             'nesting_imports_triggered': 0,  # New stat for nesting processing
             'accura_imports_triggered': 0,  # New stat for accura processing
             'boere_imports_triggered': 0,  # New stat for boere processing
+            'massief_imports_triggered': 0,  # New stat for massief processing
+            'handwerk_imports_triggered': 0,  # New stat for handwerk processing
             'total_imports_triggered': 0
         }
         
@@ -119,6 +125,8 @@ class BackgroundImportService:
         nesting_users = []
         accura_users = []
         boere_users = []
+        massief_users = []
+        handwerk_users = []
         
         for user in self.scanner_users:
             if (self.scanner_user_logic_active.get(user, False) and 
@@ -134,6 +142,10 @@ class BackgroundImportService:
                     accura_users.append(user)
                 elif processing_type == 'BOERE_PROCESSING':
                     boere_users.append(user)
+                elif processing_type == 'MASSIEF_PROCESSING':
+                    massief_users.append(user)
+                elif processing_type == 'HANDWERK_PROCESSING':
+                    handwerk_users.append(user)
 
         return {
             'service_enabled': True,
@@ -142,11 +154,15 @@ class BackgroundImportService:
             'nesting_processing_users': nesting_users,
             'accura_processing_users': accura_users,
             'boere_processing_users': boere_users,
+            'massief_processing_users': massief_users,
+            'handwerk_processing_users': handwerk_users,
             'hops_imports_triggered': self.stats['hops_imports_triggered'],
             'mdb_imports_triggered': self.stats['mdb_imports_triggered'],
             'nesting_imports_triggered': self.stats['nesting_imports_triggered'],
             'accura_imports_triggered': self.stats['accura_imports_triggered'],
             'boere_imports_triggered': self.stats['boere_imports_triggered'],
+            'massief_imports_triggered': self.stats['massief_imports_triggered'],
+            'handwerk_imports_triggered': self.stats['handwerk_imports_triggered'],
             'total_imports_triggered': self.stats['total_imports_triggered']
         }
         
@@ -238,8 +254,8 @@ class BackgroundImportService:
                 code_to_match = match.group(1)
                 self._log(f"  [HOPS] Extracted standard project code for matching: '{project_code}' -> '{code_to_match}'")
             else:
-                # Try to match REP format
-                match = re.match(r'(MO\d+_[^_]+(?:_[^_]+)?_REP(?:_[^_]+)?)', project_code, re.IGNORECASE)
+                # Try to match REP format - fixed regex to properly match MO#####_Description_REP_suffix
+                match = re.match(r'(MO\d+_[^_]+_REP(?:_[^_]+)*)', project_code, re.IGNORECASE)
                 if match:
                     code_to_match = match.group(1)
                     self._log(f"  [HOPS] Extracted REP project code for matching: '{project_code}' -> '{code_to_match}'")
@@ -323,6 +339,30 @@ class BackgroundImportService:
             )
             thread.start()
         
+        elif processing_type == 'MASSIEF_PROCESSING':
+            # For MASSIEF users - use unified Excel handling
+            self._log(f"MASSIEF_PROCESSING voor user '{user_type}': triggering unified Excel processing voor '{project_code}'")
+            
+            # Process ALL Excel users when any Excel user scans
+            # This ensures MASSIEF gets processed and Excel files are generated
+            thread = threading.Thread(
+                target=self._process_all_excel_users_unified,
+                args=(user_type, project_code, event_details, timestamp, user_specific_path)
+            )
+            thread.start()
+        
+        elif processing_type == 'HANDWERK_PROCESSING':
+            # For HANDWERK users - use unified Excel handling
+            self._log(f"HANDWERK_PROCESSING voor user '{user_type}': triggering unified Excel processing voor '{project_code}'")
+            
+            # Process ALL Excel users when any Excel user scans
+            # This ensures HANDWERK gets processed and Excel files are generated
+            thread = threading.Thread(
+                target=self._process_all_excel_users_unified,
+                args=(user_type, project_code, event_details, timestamp, user_specific_path)
+            )
+            thread.start()
+        
         elif processing_type:
             self._log(f"Onbekend processing_type '{processing_type}' voor gebruiker '{user_type}'.")
         else:
@@ -377,7 +417,7 @@ class BackgroundImportService:
                     
                     # Track Excel-based processing types
                     processing_type = user_to_processing_type.get(user)
-                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING']:
+                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
                         if user_dir not in excel_processing_users:
                             excel_processing_users[user_dir] = {}
                         excel_processing_users[user_dir][user] = processing_type
@@ -667,6 +707,60 @@ class BackgroundImportService:
                                     results[user]['generated_excel'] = excel_path
                             except Exception as e:
                                 self._log(f"[BOERE] Error generating Excel: {e}")
+                    
+                    elif proc_type == 'MASSIEF_PROCESSING':
+                        results[user] = {
+                            'has_work': result['item_count'] > 0,
+                            'item_count': result['item_count'],
+                            'mo_number': result['mo_number'],
+                            'so_number': result['so_number'],
+                            'customer_name': result['customer_name'],
+                            'color': result['color'],
+                            'items_list': result.get('items_list', [])
+                        }
+                        
+                        # Generate Excel file for MASSIEF if items found
+                        if result['item_count'] > 0 and result.get('items_list'):
+                            try:
+                                excel_path = generate_excel_for_massief(
+                                    result['items_list'],
+                                    result['mo_number'],
+                                    result['so_number'],
+                                    result['customer_name'],
+                                    project_code_to_log  # Pass the project name
+                                )
+                                if excel_path:
+                                    self._log(f"[MASSIEF] Generated Excel file: {excel_path}")
+                                    results[user]['generated_excel'] = excel_path
+                            except Exception as e:
+                                self._log(f"[MASSIEF] Error generating Excel: {e}")
+                    
+                    elif proc_type == 'HANDWERK_PROCESSING':
+                        results[user] = {
+                            'has_work': result['item_count'] > 0,
+                            'item_count': result['item_count'],
+                            'mo_number': result['mo_number'],
+                            'so_number': result['so_number'],
+                            'customer_name': result['customer_name'],
+                            'color': result['color'],
+                            'items_list': result.get('items_list', [])
+                        }
+                        
+                        # Generate Excel file for HANDWERK if items found
+                        if result['item_count'] > 0 and result.get('items_list'):
+                            try:
+                                excel_path = generate_excel_for_handwerk(
+                                    result['items_list'],
+                                    result['mo_number'],
+                                    result['so_number'],
+                                    result['customer_name'],
+                                    project_code_to_log  # Pass the project name
+                                )
+                                if excel_path:
+                                    self._log(f"[HANDWERK] Generated Excel file: {excel_path}")
+                                    results[user]['generated_excel'] = excel_path
+                            except Exception as e:
+                                self._log(f"[HANDWERK] Error generating Excel: {e}")
             
             # Send OPEN events for each processor that found work
             for user, processing_type in excel_processors.items():
@@ -702,6 +796,14 @@ class BackgroundImportService:
                             elif processing_type == 'BOERE_PROCESSING':
                                 item_count = results[user]['item_count']
                                 self._log(f"[UNIFIED_EXCEL] BOERE callback: {item_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'MASSIEF_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self._log(f"[UNIFIED_EXCEL] MASSIEF callback: {item_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'HANDWERK_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self._log(f"[UNIFIED_EXCEL] HANDWERK callback: {item_count} items")
                                 self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
                         else:
                             self._log(f"[UNIFIED_EXCEL] No log_callback available for triggering user {user}")
@@ -779,6 +881,14 @@ class BackgroundImportService:
                             # Add boere counts
                             if result_data.get('item_count'):
                                 data_open['item_count'] = int(result_data['item_count'])
+                        elif processing_type == 'MASSIEF_PROCESSING':
+                            # Add massief counts
+                            if result_data.get('item_count'):
+                                data_open['item_count'] = int(result_data['item_count'])
+                        elif processing_type == 'HANDWERK_PROCESSING':
+                            # Add handwerk counts
+                            if result_data.get('item_count'):
+                                data_open['item_count'] = int(result_data['item_count'])
                     
                     if timestamp:
                         data_open['timestamp'] = timestamp
@@ -806,6 +916,14 @@ class BackgroundImportService:
                                     item_count = results[user]['item_count']
                                     self._log(f"[UNIFIED_EXCEL] BOERE callback: {item_count} items")
                                     self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                                elif processing_type == 'MASSIEF_PROCESSING':
+                                    item_count = results[user]['item_count']
+                                    self._log(f"[UNIFIED_EXCEL] MASSIEF callback: {item_count} items")
+                                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                                elif processing_type == 'HANDWERK_PROCESSING':
+                                    item_count = results[user]['item_count']
+                                    self._log(f"[UNIFIED_EXCEL] HANDWERK callback: {item_count} items")
+                                    self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
                             else:
                                 self._log(f"[UNIFIED_EXCEL] No log_callback available for non-triggering user {user}")
                             
@@ -826,6 +944,32 @@ class BackgroundImportService:
                                     )
                             elif processing_type == 'BOERE_PROCESSING':
                                 self._update_boere_count_in_db(
+                                    project_code_to_log, user,
+                                    int(results[user]['item_count']),
+                                    timestamp
+                                )
+                                # Update file path if Excel was generated
+                                if results[user].get('generated_excel'):
+                                    self._update_open_event_with_file_path_and_count(
+                                        user, project_code_to_log,
+                                        results[user]['generated_excel'],
+                                        int(results[user]['item_count'])
+                                    )
+                            elif processing_type == 'MASSIEF_PROCESSING':
+                                self._update_massief_count_in_db(
+                                    project_code_to_log, user,
+                                    int(results[user]['item_count']),
+                                    timestamp
+                                )
+                                # Update file path if Excel was generated
+                                if results[user].get('generated_excel'):
+                                    self._update_open_event_with_file_path_and_count(
+                                        user, project_code_to_log,
+                                        results[user]['generated_excel'],
+                                        int(results[user]['item_count'])
+                                    )
+                            elif processing_type == 'HANDWERK_PROCESSING':
+                                self._update_handwerk_count_in_db(
                                     project_code_to_log, user,
                                     int(results[user]['item_count']),
                                     timestamp
@@ -873,6 +1017,12 @@ class BackgroundImportService:
                                 item_count = results[user]['item_count']
                                 self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
                             elif processing_type == 'BOERE_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'MASSIEF_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'HANDWERK_PROCESSING':
                                 item_count = results[user]['item_count']
                                 self.log_callback(f"BACKGROUND_NO_WORK_ITEMS:{project_code_to_log}:{user}:{item_count}")
                             else:
@@ -1112,8 +1262,8 @@ class BackgroundImportService:
                 project_code_for_matching = match.group(1)
                 self._log(f"  [MDB] Extracted standard project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
             else:
-                # Try to match REP format
-                match = re.match(r'(MO\d+_[^_]+(?:_[^_]+)?_REP(?:_[^_]+)?)', project_event_code, re.IGNORECASE)
+                # Try to match REP format - fixed regex to properly match MO#####_Description_REP_suffix
+                match = re.match(r'(MO\d+_[^_]+_REP(?:_[^_]+)*)', project_event_code, re.IGNORECASE)
                 if match:
                     project_code_for_matching = match.group(1)
                     self._log(f"  [MDB] Extracted REP project code for matching: '{project_event_code}' -> '{project_code_for_matching}'")
@@ -1378,7 +1528,7 @@ class BackgroundImportService:
             excel_processors = {}
             for user in open_users:
                 proc_type = user_processing_types.get(user)
-                if proc_type in ['NESTING_PROCESSING', 'ACCURA_PROCESSING', 'BOERE_PROCESSING']:
+                if proc_type in ['NESTING_PROCESSING', 'ACCURA_PROCESSING', 'BOERE_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
                     user_path = user_paths.get(user)
                     if user_path and os.path.isdir(user_path):
                         excel_processors[user] = proc_type
@@ -1427,6 +1577,10 @@ class BackgroundImportService:
                     self.stats['accura_imports_triggered'] += 1
                 elif processing_type == 'BOERE_PROCESSING':
                     self.stats['boere_imports_triggered'] += 1
+                elif processing_type == 'MASSIEF_PROCESSING':
+                    self.stats['massief_imports_triggered'] += 1
+                elif processing_type == 'HANDWERK_PROCESSING':
+                    self.stats['handwerk_imports_triggered'] += 1
                 self.stats['total_imports_triggered'] += 1
             
             self._log(f"{processing_type} gestart voor user '{user_type}', project '{project_code}', Excel: {excel_file_path}")
@@ -1477,6 +1631,34 @@ class BackgroundImportService:
                         f"BOERE_PROCESSING voltooid: {result['item_count']} items")
                 else:
                     self._log(f"BOERE_PROCESSING: Geen items gevonden in Excel {excel_file_path}")
+                    
+            elif processing_type == 'MASSIEF_PROCESSING':
+                result = parse_excel_for_massief(excel_file_path)
+                if result['item_count'] > 0:
+                    self._log(f"MASSIEF_PROCESSING voltooid: {result['item_count']} items")
+                    self._update_massief_count_in_db(
+                        project_code, user_type,
+                        result['item_count'],
+                        timestamp
+                    )
+                    self._log_import_event(user_type, project_code,
+                        f"MASSIEF_PROCESSING voltooid: {result['item_count']} items")
+                else:
+                    self._log(f"MASSIEF_PROCESSING: Geen items gevonden in Excel {excel_file_path}")
+                    
+            elif processing_type == 'HANDWERK_PROCESSING':
+                result = parse_excel_for_handwerk(excel_file_path)
+                if result['item_count'] > 0:
+                    self._log(f"HANDWERK_PROCESSING voltooid: {result['item_count']} items")
+                    self._update_handwerk_count_in_db(
+                        project_code, user_type,
+                        result['item_count'],
+                        timestamp
+                    )
+                    self._log_import_event(user_type, project_code,
+                        f"HANDWERK_PROCESSING voltooid: {result['item_count']} items")
+                else:
+                    self._log(f"HANDWERK_PROCESSING: Geen items gevonden in Excel {excel_file_path}")
             
             # Update with additional metadata if available
             if result and (result.get('mo_number') or result.get('customer_name') or result.get('color')):
@@ -1796,6 +1978,72 @@ class BackgroundImportService:
         except Exception as e:
             self.logger.error(f"Fout bij updaten OPEN event met boere count: {e}")
             self._log(f"Fout bij boere count API update: {str(e)}")
+    
+    def _update_massief_count_in_db(self, project_code, user_type, item_count, timestamp):
+        """Update database with MASSIEF count for the OPEN event."""
+        try:
+            config = get_config()
+            
+            # Ensure api_url is correctly retrieved
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor massief count update")
+                return
+
+            # Update item count via standard API (reuse existing item_count field)
+            # MASSIEF uses the existing item_count field in the database
+            data_update = {
+                'event': 'UPDATE',
+                'details': f"MASSIEF item count update: {item_count} items",
+                'project': project_code,
+                'user': user_type,
+                'item_count': item_count,
+                'timestamp': timestamp or datetime.now().isoformat()
+            }
+            
+            # For MASSIEF we can update the item_count field directly on the OPEN event
+            update_response = self._update_open_event_item_count(project_code, user_type, item_count, timestamp)
+            
+            if update_response:
+                self._log(f"OPEN event updated with massief count for: {user_type} - {project_code} (Items: {item_count})")
+                
+        except Exception as e:
+            self.logger.error(f"Fout bij updaten OPEN event met massief count: {e}")
+            self._log(f"Fout bij massief count API update: {str(e)}")
+    
+    def _update_handwerk_count_in_db(self, project_code, user_type, item_count, timestamp):
+        """Update database with HANDWERK count for the OPEN event."""
+        try:
+            config = get_config()
+            
+            # Ensure api_url is correctly retrieved
+            api_url = config.get('api_url', '').rstrip('/')
+            
+            if not api_url:
+                self._log("Geen API URL geconfigureerd voor handwerk count update")
+                return
+
+            # Update item count via standard API (reuse existing item_count field)
+            # HANDWERK uses the existing item_count field in the database
+            data_update = {
+                'event': 'UPDATE',
+                'details': f"HANDWERK item count update: {item_count} items",
+                'project': project_code,
+                'user': user_type,
+                'item_count': item_count,
+                'timestamp': timestamp or datetime.now().isoformat()
+            }
+            
+            # For HANDWERK we can update the item_count field directly on the OPEN event
+            update_response = self._update_open_event_item_count(project_code, user_type, item_count, timestamp)
+            
+            if update_response:
+                self._log(f"OPEN event updated with handwerk count for: {user_type} - {project_code} (Items: {item_count})")
+                
+        except Exception as e:
+            self.logger.error(f"Fout bij updaten OPEN event met handwerk count: {e}")
+            self._log(f"Fout bij handwerk count API update: {str(e)}")
 
     def _update_open_event_item_count(self, project_code, user_type, item_count, timestamp):
         """Update the item_count for the most recent OPEN event."""

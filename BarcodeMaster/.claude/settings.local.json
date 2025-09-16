@@ -13,7 +13,9 @@
       "Bash(sqlite3:*)",
       "Bash(curl:*)",
       "Bash(pkill:*)",
-      "Bash(killall:*)"
+      "Bash(killall:*)",
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMatch/gui/panels/**)",
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/enterprise-file-monitor/**)"
     ],
     "deny": []
   }

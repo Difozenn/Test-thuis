@@ -11,6 +11,8 @@
         "ACCURA",
         "OPUS",
         "KL GANNOMAT",
+        "HANDWERK",
+        "GR GANNOMAT",
         "BOERE"
     ],
     "scanner_user_to_processing_type_map": {
@@ -18,7 +20,9 @@
         "OPUS": "HOPS_PROCESSING",
         "KL GANNOMAT": "MDB_PROCESSING",
         "ACCURA": "ACCURA_PROCESSING",
-        "BOERE": "BOERE_PROCESSING"
+        "BOERE": "BOERE_PROCESSING",
+        "HANDWERK": "HANDWERK_PROCESSING",
+        "GR GANNOMAT": "MASSIEF_PROCESSING"
     },
     "scanner_panel_event_type": "OPEN",
     "scanner_panel_event_type_locked": true,
@@ -28,7 +32,9 @@
         "OPUS": true,
         "KL GANNOMAT": true,
         "ACCURA": true,
-        "BOERE": true
+        "BOERE": true,
+        "HANDWERK": true,
+        "GR GANNOMAT": true
     },
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,
@@ -37,7 +43,9 @@
         "OPUS": "//WIN-D62BRA7BHMI/Server/OPUS/KORPUS",
         "KL GANNOMAT": "//WIN-D62BRA7BHMI/Server/GANNOMAT",
         "ACCURA": "//WIN-D62BRA7BHMI/Server/Rapporten",
-        "BOERE": "//WIN-D62BRA7BHMI/Server/Rapporten"
+        "BOERE": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "HANDWERK": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "GR GANNOMAT": "//WIN-D62BRA7BHMI/Server/Rapporten"
     },
     "master_background_service_active": true,
     "backup_enabled": true,

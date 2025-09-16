@@ -263,11 +263,11 @@
                 <div class="row">
                     <div class="col-md-6">
                         <label for="break_start" class="form-label">{{ t('break_start') }}</label>
-                        <input type="time" class="form-control" id="break_start" value="12:00" onchange="updateSummary()">
+                        <input type="time" class="form-control" id="break_start" value="12:00" onchange="updateAllDayHours()">
                     </div>
                     <div class="col-md-6">
                         <label for="break_end" class="form-label">{{ t('break_end') }}</label>
-                        <input type="time" class="form-control" id="break_end" value="13:00" onchange="updateSummary()">
+                        <input type="time" class="form-control" id="break_end" value="13:00" onchange="updateAllDayHours()">
                     </div>
                 </div>
             </div>
@@ -783,40 +783,50 @@ function toggleDay(day, updateSummaryFlag = true) {
     }
 }
 
+// Update all day hours when break time changes
+function updateAllDayHours() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    days.forEach(day => {
+        if (document.getElementById(`${day}_enabled`).checked) {
+            updateHours(day);
+        }
+    });
+    updateSummary();
+}
+
 // Update hours display for a day
 function updateHours(day) {
     const enabled = document.getElementById(`${day}_enabled`).checked;
     if (!enabled) return;
-    
+
     const startTime = document.getElementById(`${day}_start`).value;
     const endTime = document.getElementById(`${day}_end`).value;
-    
+
     if (startTime && endTime) {
         const start = new Date(`2000-01-01 ${startTime}`);
         const end = new Date(`2000-01-01 ${endTime}`);
-        
-        // Calculate break duration from break start and end times
+
+        // Calculate gross hours
+        let hours = (end - start) / (1000 * 60 * 60);
+
+        // Get break duration from the inputs on the page
         const breakStart = document.getElementById('break_start').value;
         const breakEnd = document.getElementById('break_end').value;
-        let breakDuration = 0;
-        
+
         if (breakStart && breakEnd) {
             const breakStartTime = new Date(`2000-01-01 ${breakStart}`);
             const breakEndTime = new Date(`2000-01-01 ${breakEnd}`);
-            breakDuration = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-            breakDuration = Math.max(0, breakDuration); // Ensure positive duration
+            const breakDuration = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+
+            // Subtract break time if it's positive
+            if (breakDuration > 0) {
+                hours = Math.max(0, hours - breakDuration);
+            }
         }
-        
-        let hours = (end - start) / (1000 * 60 * 60);
-        
-        // Subtract break time for working days
-        if (hours > 0 && breakDuration > 0) {
-            hours = Math.max(0, hours - breakDuration);
-        }
-        
+
         document.getElementById(`${day}_hours`).innerHTML = `<span class="badge bg-primary">${hours.toFixed(1)} uur</span>`;
     }
-    
+
     updateSummary();
 }
 
@@ -832,28 +842,27 @@ function updateSummary() {
             workDays++;
             const startTime = document.getElementById(`${day}_start`).value;
             const endTime = document.getElementById(`${day}_end`).value;
-            
+
             if (startTime && endTime) {
                 const start = new Date(`2000-01-01 ${startTime}`);
                 const end = new Date(`2000-01-01 ${endTime}`);
                 let hours = (end - start) / (1000 * 60 * 60);
-                
-                // Calculate break duration from break start and end times
+
+                // Get break duration from the inputs on the page
                 const breakStart = document.getElementById('break_start').value;
                 const breakEnd = document.getElementById('break_end').value;
-                let breakDuration = 0;
-                
+
                 if (breakStart && breakEnd) {
                     const breakStartTime = new Date(`2000-01-01 ${breakStart}`);
                     const breakEndTime = new Date(`2000-01-01 ${breakEnd}`);
-                    breakDuration = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
-                    breakDuration = Math.max(0, breakDuration);
+                    const breakDuration = (breakEndTime - breakStartTime) / (1000 * 60 * 60);
+
+                    // Subtract break time if it's positive
+                    if (breakDuration > 0) {
+                        hours = Math.max(0, hours - breakDuration);
+                    }
                 }
-                
-                if (hours > 0 && breakDuration > 0) {
-                    hours = Math.max(0, hours - breakDuration);
-                }
-                
+
                 totalHours += hours;
             }
         }

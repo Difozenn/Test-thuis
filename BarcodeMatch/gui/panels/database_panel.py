@@ -120,9 +120,21 @@ class DatabasePanel(ttk.Frame):
         logs_frame = ttk.LabelFrame(frame, text="Logs", padding=10)
         logs_frame.pack(fill='both', expand=True, padx=10, pady=10)
         
-        self.logs_tree = ttk.Treeview(logs_frame, columns=("timestamp", "status", "project", "details", "user", "FilePath"), show="headings")
+        # Create a frame to hold the treeview and scrollbar
+        tree_frame = ttk.Frame(logs_frame)
+        tree_frame.pack(fill='both', expand=True)
+        
+        # Create vertical scrollbar
+        tree_scroll = ttk.Scrollbar(tree_frame, orient='vertical')
+        tree_scroll.pack(side='right', fill='y')
+        
+        self.logs_tree = ttk.Treeview(tree_frame, columns=("timestamp", "status", "project", "details", "user", "FilePath"), 
+                                     show="headings", yscrollcommand=tree_scroll.set)
         self._log_sort_column = None
         self._log_sort_reverse = False
+        
+        # Configure scrollbar
+        tree_scroll.config(command=self.logs_tree.yview)
         
         for col in ("timestamp", "status", "project", "details", "user", "FilePath"):
             self.logs_tree.heading(col, text=col.capitalize(), command=lambda c=col: self._sort_logs_tree(c))
@@ -131,7 +143,7 @@ class DatabasePanel(ttk.Frame):
             else:
                 self.logs_tree.column(col, width=100 if col not in ["details", "project"] else 180, anchor=tk.W)
         
-        self.logs_tree.pack(fill='both', expand=True)
+        self.logs_tree.pack(side='left', fill='both', expand=True)
 
         # Right-click context menu
         self.tree_menu = tk.Menu(self, tearoff=0)

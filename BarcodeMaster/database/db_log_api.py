@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, make_response, send_file, g
+from flask import Flask, request, jsonify, render_template, send_from_directory, make_response, send_file, g, session, redirect, url_for
 import sqlite3
 import json
+import base64
 import os
 from datetime import datetime, timedelta
 import logging
@@ -13,6 +14,8 @@ from collections import defaultdict
 import statistics
 import math
 import re
+import hashlib
+from functools import wraps
 
 # Add project root to path to allow imports from sibling directories
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -47,6 +50,9 @@ except ImportError:
 # Use the 'templates' directory in the same folder as this script
 template_dir = get_resource_path('database/templates')
 app = Flask(__name__, template_folder=template_dir)
+
+# Set up secret key for sessions (generate a random one if not configured)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-key-change-in-production-' + os.urandom(16).hex())
 
 # --- Helper Functions ---
 def normalize_project_id(project_name):
@@ -572,6 +578,105 @@ def init_db():
     finally:
         if conn:
             conn.close()
+
+# --- Authentication Functions ---
+# Simple authentication system for local network use
+AUTH_USERS = {
+    'admin': hashlib.sha256('$mintjensprojectlog1'.encode()).hexdigest(),
+}
+
+def check_password(username, password):
+    """Check if username and password are valid"""
+    if username in AUTH_USERS:
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        return AUTH_USERS[username] == password_hash
+    return False
+
+def login_required(f):
+    """Decorator to require login for routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if user is logged in
+        if 'user' not in session:
+            # For API endpoints, return JSON error
+            if request.path.startswith('/api/') or request.path == '/log':
+                return jsonify({'error': 'Authentication required'}), 401
+            # For web pages, redirect to login
+            return redirect(url_for('login', next=request.url))
+
+        # User is logged in, proceed
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page and authentication"""
+
+    # Check for remember me cookie
+    if request.method == 'GET':
+        remember_token = request.cookies.get('remember_token')
+        if remember_token:
+            # Verify the token (in production, this should be a secure token stored in database)
+            try:
+                token_data = json.loads(base64.b64decode(remember_token).decode('utf-8'))
+                if 'username' in token_data and 'expires' in token_data:
+                    expires = datetime.fromisoformat(token_data['expires'])
+                    if expires > datetime.now():
+                        # Token is valid, auto-login
+                        session['user'] = token_data['username']
+                        session.permanent = True
+                        next_page = request.args.get('next')
+                        if next_page and next_page.startswith('/'):
+                            return redirect(next_page)
+                        return redirect(url_for('dashboard_production_flow'))
+            except Exception as e:
+                logging.warning(f"Invalid remember token: {e}")
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = request.form.get('remember') == 'on'
+
+        if check_password(username, password):
+            session['user'] = username
+            session.permanent = True
+            app.permanent_session_lifetime = timedelta(hours=8)  # Session lasts 8 hours
+
+            # Determine redirect destination
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                redirect_url = next_page
+            else:
+                redirect_url = url_for('dashboard_production_flow')
+
+            # Create response with 302 redirect for password managers
+            response = redirect(redirect_url)
+
+            # Set remember me cookie if checkbox was checked
+            if remember:
+                # Create a token with username and expiry (30 days)
+                expires = datetime.now() + timedelta(days=30)
+                token_data = {
+                    'username': username,
+                    'expires': expires.isoformat()
+                }
+                token = base64.b64encode(json.dumps(token_data).encode('utf-8')).decode('utf-8')
+                response.set_cookie('remember_token', token, max_age=30*24*60*60, httponly=True, secure=False)  # secure=True in production
+
+            return response
+        else:
+            return render_template('login.html', error='Invalid username or password')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout user"""
+    session.pop('user', None)
+    response = make_response(redirect(url_for('login')))
+    # Clear the remember me cookie
+    response.set_cookie('remember_token', '', max_age=0)
+    return response
 
 # --- Configuration Management ---
 def get_config():
@@ -1441,11 +1546,16 @@ def determine_project_status(project_code, conn):
     configured_users = config.get('scanner_panel_open_event_users', [])
     
     # Get all events for this project
+    # Order by timestamp DESC, then prioritize AFGEMELD events when timestamps are equal
     c.execute("""
         SELECT timestamp, event, user, status
         FROM logs
         WHERE project = ?
-        ORDER BY timestamp DESC
+        ORDER BY timestamp DESC, 
+                CASE WHEN event = 'AFGEMELD' THEN 3 
+                     WHEN event = 'OPEN' THEN 2
+                     WHEN event = 'BEZIG' THEN 1
+                     ELSE 0 END DESC
     """, (project_code,))
     
     events = c.fetchall()
@@ -1470,15 +1580,20 @@ def determine_project_status(project_code, conn):
         involved_users.add(user)
         
         # Track most recent event of each type per user
-        if event['event'] == 'OPEN' and event['status'] == 'OPEN':
+        # Prioritize AFGEMELD over other events at the same timestamp
+        if event['event'] == 'AFGEMELD':
+            if user not in user_afgemeld_events:
+                user_afgemeld_events[user] = event
+                # If there's a BEZIG event at the same timestamp, remove it
+                if user in user_bezig_events and user_bezig_events[user]['timestamp'] == event['timestamp']:
+                    del user_bezig_events[user]
+        elif event['event'] == 'OPEN' and event['status'] == 'OPEN':
             if user not in user_open_events:
                 user_open_events[user] = event
         elif event['status'] == 'BEZIG':
-            if user not in user_bezig_events:
+            # Only track BEZIG if we haven't seen AFGEMELD at the same or later timestamp
+            if user not in user_bezig_events and user not in user_afgemeld_events:
                 user_bezig_events[user] = event
-        elif event['event'] == 'AFGEMELD':
-            if user not in user_afgemeld_events:
-                user_afgemeld_events[user] = event
     
     # Get involved users in workflow order
     active_workflow_order = [user for user in configured_users if user in involved_users]
@@ -1834,6 +1949,23 @@ def xlsx_updated():
             open_event = c.fetchone()
             actual_item_count = open_event['item_count'] if open_event and open_event['item_count'] is not None else 0
             
+            # Check if there's already an AFGEMELD event for this user/project
+            # This prevents invalid PROJECT_START entries after AFGEMELD
+            c.execute("""
+                SELECT COUNT(*) as count FROM logs 
+                WHERE event = 'AFGEMELD' 
+                AND project = ? 
+                AND user = ?
+            """, (data['project'], data['user']))
+            
+            afgemeld_check = c.fetchone()
+            if afgemeld_check and afgemeld_check['count'] > 0:
+                logging.warning(f"Blocking PROJECT_START for {data['user']} on {data['project']} - already has AFGEMELD event")
+                return jsonify({
+                    'success': False, 
+                    'error': 'Project already completed (AFGEMELD) for this user'
+                }), 400
+            
             # Use transaction for all related operations
             operations = [
                 # 1. Insert new session
@@ -1950,7 +2082,7 @@ def get_user_active_sessions(user):
         
         # Get all active sessions for this user
         c.execute("""
-            SELECT session_id, user, session_type, project, start_time
+            SELECT session_id, user, session_type, project, start_time, pause_start, total_pause_duration
             FROM sessions
             WHERE user = ? AND status = 'active'
             ORDER BY start_time DESC
@@ -1963,7 +2095,10 @@ def get_user_active_sessions(user):
                 'user': row['user'],
                 'session_type': row['session_type'],
                 'project': row['project'] or '',
-                'start_time': row['start_time']
+                'start_time': row['start_time'],
+                'pause_start': row['pause_start'],
+                'is_paused': row['pause_start'] is not None,
+                'total_pause_duration': row['total_pause_duration'] or 0
             })
         
         conn.close()
@@ -2286,13 +2421,18 @@ def pause_session():
         
         # Check if session exists and is active
         c.execute("""
-            SELECT session_id, user, project FROM sessions 
+            SELECT session_id, user, project, pause_start FROM sessions 
             WHERE session_id = ? AND status = 'active'
         """, (data['session_id'],))
         
         session = c.fetchone()
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
+        
+        # Check if session is already paused
+        if session.get('pause_start'):
+            logging.warning(f"Session {data['session_id']} is already paused since {session['pause_start']}. Ignoring duplicate pause request.")
+            return jsonify({'success': True, 'warning': 'Session was already paused', 'already_paused': True})
         
         # Store pause start time in session (add column if not exists)
         c.execute("PRAGMA table_info(sessions)")
@@ -3456,36 +3596,34 @@ def get_user_active_projects(user):
         c = conn.cursor()
         
         # Get projects where the user has OPEN or BEZIG status but not AFGEMELD
+        # Need to get the actual latest status from the most recent event
         c.execute("""
-            WITH user_project_status AS (
-                SELECT 
+            WITH user_project_latest AS (
+                SELECT
                     project,
                     MAX(timestamp) as last_activity,
-                    MAX(CASE WHEN event = 'OPEN' THEN timestamp END) as open_time,
-                    MAX(CASE WHEN event = 'BEZIG' THEN timestamp END) as bezig_time,
-                    MAX(CASE WHEN event = 'AFGEMELD' THEN timestamp END) as afgemeld_time,
-                    MAX(CASE WHEN status = 'OPEN' THEN 1 ELSE 0 END) as has_open,
-                    MAX(CASE WHEN status = 'BEZIG' THEN 1 ELSE 0 END) as has_bezig,
-                    MAX(item_count) as item_count
+                    MAX(item_count) as item_count,
+                    -- Get the actual status from the most recent log entry
+                    (SELECT status FROM logs l2
+                     WHERE l2.user = ? AND l2.project = logs.project
+                     AND l2.status IS NOT NULL
+                     ORDER BY l2.timestamp DESC LIMIT 1) as current_status,
+                    -- Check if project has been AFGEMELD
+                    MAX(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as is_afgemeld
                 FROM logs
                 WHERE user = ?
                 GROUP BY project
             )
-            SELECT 
+            SELECT
                 project,
                 last_activity,
-                CASE 
-                    WHEN afgemeld_time IS NOT NULL THEN 'AFGEMELD'
-                    WHEN bezig_time > COALESCE(open_time, '1900-01-01') THEN 'BEZIG'
-                    WHEN has_open = 1 THEN 'OPEN'
-                    ELSE 'UNKNOWN'
-                END as status,
+                COALESCE(current_status, 'OPEN') as status,
                 item_count
-            FROM user_project_status
-            WHERE (has_open = 1 OR has_bezig = 1)
-            AND afgemeld_time IS NULL
+            FROM user_project_latest
+            WHERE is_afgemeld = 0
+            AND current_status IN ('OPEN', 'BEZIG', 'PAUZE')
             ORDER BY last_activity DESC
-        """, (user,))
+        """, (user, user,))
         
         projects = []
         for row in c.fetchall():
@@ -3505,6 +3643,45 @@ def get_user_active_projects(user):
         
     except Exception as e:
         logging.error(f"Error getting active projects for {user}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/project/status', methods=['GET'])
+def check_project_status():
+    """Check if a project has been marked as AFGEMELD for a user"""
+    try:
+        project = request.args.get('project')
+        user = request.args.get('user')
+        
+        if not project or not user:
+            return jsonify({'success': False, 'error': 'Project and user are required'}), 400
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Check if there's an AFGEMELD event for this user/project
+        c.execute("""
+            SELECT COUNT(*) as count 
+            FROM logs 
+            WHERE event = 'AFGEMELD' 
+            AND project = ? 
+            AND user = ?
+        """, (project, user))
+        
+        result = c.fetchone()
+        has_afgemeld = result['count'] > 0 if result else False
+        
+        return jsonify({
+            'success': True,
+            'has_afgemeld': has_afgemeld,
+            'project': project,
+            'user': user
+        })
+        
+    except Exception as e:
+        logging.error(f"Error checking project status: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if conn:
@@ -3757,7 +3934,13 @@ def favicon():
 # Update the dashboard route in db_log_api.py to calculate metrics server-side
 
 @app.route('/')
+@login_required
+def index():
+    """Redirect root to production flow dashboard"""
+    return redirect(url_for('dashboard_production_flow'))
+
 @app.route('/dashboard')
+@login_required
 def dashboard():
     try:
         # Get configuration
@@ -3813,6 +3996,7 @@ def dashboard():
         
         # Query to get the latest meaningful status for each user-project combination
         # We need the latest event that has a status (OPEN, BEZIG, AFGEMELD)
+        # When multiple events have the same timestamp, prioritize AFGEMELD
         c.execute("""
             WITH latest_status_events AS (
                 SELECT user, project, MAX(timestamp) as max_timestamp
@@ -3828,6 +4012,20 @@ def dashboard():
                 ON l.user = lse.user 
                 AND l.project = lse.project 
                 AND l.timestamp = lse.max_timestamp
+            WHERE l.id = (
+                -- When multiple events at same timestamp, pick the right one
+                SELECT id FROM logs l2
+                WHERE l2.user = l.user 
+                AND l2.project = l.project 
+                AND l2.timestamp = l.timestamp
+                AND l2.status IS NOT NULL
+                ORDER BY 
+                    CASE WHEN l2.event = 'AFGEMELD' THEN 3 
+                         WHEN l2.event = 'OPEN' THEN 2
+                         WHEN l2.status = 'BEZIG' THEN 1
+                         ELSE 0 END DESC
+                LIMIT 1
+            )
             ORDER BY l.timestamp DESC
         """)
         
@@ -4001,7 +4199,237 @@ def dashboard():
     except Exception as e:
         logging.error(f"Dashboard error: {str(e)}", exc_info=True)
         return render_template('error.html', message=str(e)), 500
-        
+
+
+@app.route('/dashboard/enterprise')
+@login_required
+def dashboard_enterprise():
+    """Enterprise dashboard with simplified Odoo-style interface"""
+    try:
+        return render_template('dashboard_enterprise_simple.html', active_page='dashboard')
+    except Exception as e:
+        logging.error(f"Enterprise dashboard error: {str(e)}", exc_info=True)
+        return render_template('error.html', message=str(e)), 500
+
+
+@app.route('/dashboard/production-flow')
+@login_required
+def dashboard_production_flow():
+    """Production flow dashboard with pipeline visualization and bottleneck detection"""
+    try:
+        # Get configuration - EXACTLY like original dashboard
+        config = get_config()
+
+        # Get configured users for display - EXACTLY like original dashboard
+        dashboard_users = config.get('scanner_panel_open_event_users', [])
+
+        # If still empty, get unique users from recent logs
+        if not dashboard_users:
+            conn = get_db()
+            c = conn.cursor()
+            c.execute("""
+                SELECT DISTINCT user
+                FROM logs
+                WHERE user IS NOT NULL AND user != ''
+                ORDER BY user
+            """)
+            dashboard_users = [row[0] for row in c.fetchall()]
+
+        logging.info(f"Production flow dashboard users: {dashboard_users}")
+
+        # Get today's date
+        today = datetime.now().date()
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Initialize dept_stats for each user
+        dept_stats = {}
+        for user in dashboard_users:
+            dept_stats[user] = {
+                'active_projects': 0,
+                'queue': 0
+            }
+
+        # Get user projects similar to main dashboard
+        c.execute("""
+            WITH latest_status_events AS (
+                SELECT user, project, MAX(timestamp) as max_timestamp
+                FROM logs
+                WHERE user IS NOT NULL
+                AND project IS NOT NULL
+                AND status IS NOT NULL
+                GROUP BY user, project
+            )
+            SELECT l.*
+            FROM logs l
+            INNER JOIN latest_status_events lse
+                ON l.user = lse.user
+                AND l.project = lse.project
+                AND l.timestamp = lse.max_timestamp
+            WHERE l.id = (
+                SELECT id FROM logs l2
+                WHERE l2.user = l.user
+                AND l2.project = l.project
+                AND l2.timestamp = l.timestamp
+                AND l2.status IS NOT NULL
+                ORDER BY
+                    CASE WHEN l2.event = 'AFGEMELD' THEN 3
+                         WHEN l2.event = 'OPEN' THEN 2
+                         WHEN l2.status = 'BEZIG' THEN 1
+                         ELSE 0 END DESC
+                LIMIT 1
+            )
+            ORDER BY l.timestamp DESC
+        """)
+
+        logs_for_display = c.fetchall()
+
+        # Group by user
+        users_projects = {}
+        completed_projects = set()
+
+        c.execute("""
+            WITH latest_status_per_user AS (
+                SELECT user, project, MAX(timestamp) as max_ts
+                FROM logs
+                WHERE user IS NOT NULL
+                AND project IS NOT NULL
+                AND status IS NOT NULL
+                GROUP BY user, project
+            )
+            SELECT l.user, l.project
+            FROM logs l
+            INNER JOIN latest_status_per_user lspu
+                ON l.user = lspu.user
+                AND l.project = lspu.project
+                AND l.timestamp = lspu.max_ts
+            WHERE l.event = 'AFGEMELD'
+              AND DATE(l.timestamp) < ?
+        """, (today.isoformat(),))
+
+        for row in c.fetchall():
+            completed_projects.add((row['user'], row['project']))
+
+        for log in logs_for_display:
+            log_dict = dict(log)
+            user = log_dict.get('user')
+            project = log_dict.get('project')
+
+            if (user, project) in completed_projects:
+                continue
+
+            if user not in users_projects:
+                users_projects[user] = []
+
+            # Calculate duration
+            start_time = datetime.fromisoformat(log_dict.get('timestamp'))
+            duration = datetime.now() - start_time
+            hours = duration.total_seconds() / 3600
+
+            if hours < 1:
+                duration_str = f"{int(duration.total_seconds() / 60)} min"
+            else:
+                duration_str = f"{hours:.1f} hours"
+
+            # Get metadata for this project
+            c.execute("""
+                SELECT DISTINCT mo_number, so_number, customer_name, color
+                FROM logs
+                WHERE project = ?
+                AND (mo_number IS NOT NULL OR so_number IS NOT NULL OR customer_name IS NOT NULL OR color IS NOT NULL)
+                ORDER BY
+                    CASE WHEN mo_number IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN so_number IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN customer_name IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN color IS NOT NULL THEN 1 ELSE 0 END DESC
+                LIMIT 1
+            """, (project,))
+
+            metadata_row = c.fetchone()
+            mo_number = None
+            so_number = None
+            customer_name = None
+            color = None
+
+            if metadata_row:
+                mo_number = metadata_row['mo_number']
+                so_number = metadata_row['so_number']
+                customer_name = metadata_row['customer_name']
+                color = metadata_row['color']
+
+            # Extract MO from project name if not in database
+            if not mo_number:
+                mo_match = re.match(r'(MO\d+)', project)
+                if mo_match:
+                    mo_number = mo_match.group(1)
+
+            users_projects[user].append({
+                'project': project,
+                'status': log_dict.get('status', 'UNKNOWN'),
+                'timestamp': log_dict.get('timestamp'),
+                'duration': duration_str,
+                'item_count': log_dict.get('item_count', 0),
+                'mo_number': mo_number,
+                'so_number': so_number,
+                'customer_name': customer_name,
+                'color': color
+            })
+
+        # Count active projects for each user for the pipeline
+        for user, projects in users_projects.items():
+            if user in dept_stats:
+                dept_stats[user]['active_projects'] = len(projects)
+
+        # Get recent activity for feed
+        c.execute("""
+            SELECT
+                timestamp,
+                user,
+                project,
+                event,
+                details,
+                item_count
+            FROM logs
+            WHERE timestamp > datetime('now', '-2 hours')
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """)
+
+        recent_activity = []
+        for row in c.fetchall():
+            recent_activity.append({
+                'timestamp': row['timestamp'],
+                'user': row['user'],
+                'project': row['project'],
+                'event': row['event'],
+                'item_count': row['item_count']
+            })
+
+        # Calculate metrics - get overall totals and today's completed
+        c.execute("""
+            SELECT
+                (SELECT COUNT(DISTINCT project) FROM logs) as total_projects,
+                (SELECT COUNT(DISTINCT project) FROM logs WHERE status = 'BEZIG') as active_projects,
+                (SELECT COUNT(DISTINCT project) FROM logs WHERE event = 'AFGEMELD' AND DATE(timestamp) = DATE('now')) as completed_today
+        """)
+
+        metrics = c.fetchone()
+
+        return render_template('dashboard_production_flow.html',
+                             dept_stats=dept_stats,
+                             users_projects=users_projects,
+                             dashboard_users=dashboard_users,
+                             recent_activity=recent_activity,
+                             total_projects=metrics['total_projects'],
+                             active_projects=metrics['active_projects'],
+                             completed_today=metrics['completed_today'],
+                             active_page='dashboard')
+
+    except Exception as e:
+        logging.error(f"Production flow dashboard error: {str(e)}", exc_info=True)
+        return render_template('error.html', message=str(e)), 500
+
 
 # --- API Endpoints ---
 @app.route('/api/configured_users')
@@ -5406,6 +5834,7 @@ def get_linked_sessions(project):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/logs_project')
+@login_required
 def logs_project():
     config = get_config()
     configured_users = config.get('scanner_panel_open_event_users', [])
@@ -5612,7 +6041,504 @@ def logs_project():
 
 # Update the projects route in db_log_api.py
 
+@app.route('/sales_orders', methods=['GET'])
+@login_required
+def sales_orders():
+    """View all Sales Orders with aggregated metrics from their MOs"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Get all unique SO numbers with their MO counts and metrics
+        c.execute("""
+            SELECT 
+                so_number,
+                COUNT(DISTINCT mo_number) as unique_mo_count,
+                COUNT(DISTINCT project) as project_count,
+                COUNT(DISTINCT user) as user_count,
+                MIN(CASE WHEN event NOT IN ('AUTO_IMPORT', 'BACKGROUND_WORK_FOUND') THEN timestamp END) as first_activity,
+                MAX(timestamp) as last_activity,
+                GROUP_CONCAT(DISTINCT project) as projects,
+                GROUP_CONCAT(DISTINCT mo_number) as mo_numbers,
+                GROUP_CONCAT(DISTINCT customer_name) as customer_names
+            FROM logs 
+            WHERE so_number IS NOT NULL AND so_number != ''
+            GROUP BY so_number
+            ORDER BY so_number DESC
+        """)
+        
+        sales_orders = []
+        for row in c.fetchall():
+            # Calculate completion status
+            c.execute("""
+                SELECT 
+                    COUNT(DISTINCT project) as total_mos,
+                    COUNT(DISTINCT CASE WHEN event = 'AFGEMELD' THEN project END) as completed_mos
+                FROM logs
+                WHERE so_number = ?
+            """, (row['so_number'],))
+            status_row = c.fetchone()
+            
+            completion_percentage = 0
+            if status_row['total_mos'] > 0:
+                completion_percentage = (status_row['completed_mos'] / status_row['total_mos']) * 100
+            
+            # Get customer name (first non-null)
+            customer_name = None
+            if row['customer_names']:
+                names = [n for n in row['customer_names'].split(',') if n and n != 'None']
+                customer_name = names[0] if names else None
+            
+            # Calculate total items correctly - use processing chain logic like logs_project
+            total_items = 0
+            total_work_minutes = 0
+            total_project_minutes = 0
+            
+            if row['projects']:
+                projects_list = row['projects'].split(',')
+                config = get_config()
+                configured_users = config.get('scanner_panel_open_event_users', 
+                                             ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+                
+                for project in projects_list:
+                    project = project.strip()
+                    
+                    # Check users in reverse order to find the last one in the chain with items
+                    final_items = 0
+                    for user in reversed(configured_users):
+                        c.execute("""
+                            SELECT item_count 
+                            FROM logs 
+                            WHERE project = ? 
+                            AND user = ?
+                            AND item_count IS NOT NULL 
+                            AND item_count > 0
+                            ORDER BY timestamp DESC 
+                            LIMIT 1
+                        """, (project, user))
+                        item_row = c.fetchone()
+                        if item_row and item_row['item_count']:
+                            final_items = item_row['item_count']
+                            break  # Found the last user in chain with items
+                    
+                    total_items += final_items
+                    
+                    # Calculate work time using same method as sales_order_detail
+                    project_id = normalize_project_id(project)
+                    c.execute('''
+                        SELECT DISTINCT
+                            s.session_id,
+                            s.work_duration_minutes,
+                            s.status,
+                            COALESCE(sp.item_count, s.item_count) as item_count,
+                            (SELECT COUNT(*) FROM session_projects WHERE session_id = s.session_id) as total_projects_in_session,
+                            (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) as total_items_in_session
+                        FROM sessions s
+                        LEFT JOIN session_projects sp ON s.session_id = sp.session_id AND sp.project = ?
+                        WHERE s.project_id = ? 
+                           OR s.project = ?
+                           OR sp.project = ?
+                    ''', (project, project_id, project, project))
+                    
+                    for session in c.fetchall():
+                        work_minutes = session['work_duration_minutes'] or 0
+                        
+                        # For batch sessions with multiple projects, allocate proportionally
+                        if session['total_projects_in_session'] and session['total_projects_in_session'] > 1:
+                            project_items = session['item_count'] or 0
+                            total_items_session = session['total_items_in_session'] or 0
+                            
+                            if total_items_session > 0 and project_items > 0:
+                                proportion = project_items / total_items_session
+                                total_work_minutes += work_minutes * proportion
+                        else:
+                            # Single project session - use full time
+                            total_work_minutes += work_minutes
+                    
+                    # Calculate project time using v2 method
+                    try:
+                        v2_result = get_project_time_metrics_v2_internal(project, conn)
+                        
+                        if v2_result and v2_result.get('success'):
+                            project_minutes = v2_result.get('total_project_minutes', 0)
+                            if project_minutes > 0:
+                                total_project_minutes += project_minutes
+                    except Exception as e:
+                        logging.warning(f"Could not get project time for {project}: {e}")
+                        # Fallback calculation
+                        c.execute("""
+                            SELECT MIN(timestamp) as first_time, MAX(timestamp) as last_time
+                            FROM logs
+                            WHERE project = ?
+                        """, (project,))
+                        time_row = c.fetchone()
+                        if time_row and time_row['first_time'] and time_row['last_time']:
+                            project_minutes = calculate_work_minutes(time_row['first_time'], time_row['last_time'])
+                            if project_minutes > 0:
+                                total_project_minutes += project_minutes
+            
+            sales_orders.append({
+                'so_number': row['so_number'],
+                'mo_count': row['unique_mo_count'] if row['unique_mo_count'] else 0,
+                'user_count': row['user_count'],
+                'total_items': total_items,
+                'total_work_minutes': total_work_minutes,
+                'total_project_minutes': total_project_minutes,
+                'first_activity': row['first_activity'],
+                'last_activity': row['last_activity'],
+                'projects': row['projects'].split(',') if row['projects'] else [],
+                'customer_name': customer_name,
+                'completion_percentage': round(completion_percentage, 1),
+                'completed_mos': status_row['completed_mos'],
+                'total_mos': status_row['total_mos']
+            })
+        
+        conn.close()
+        
+        return render_template('sales_orders.html',
+                             sales_orders=sales_orders,
+                             total_count=len(sales_orders),
+                             active_page='sales_orders')
+        
+    except Exception as e:
+        logging.error(f"Error loading sales orders: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load sales orders.'), 500
+
+@app.route('/sales_order/<so_number>')
+@login_required  
+def sales_order_detail(so_number):
+    """Detailed view of a single Sales Order with all its MOs"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        
+        # First get all projects associated with this SO
+        c.execute("""
+            SELECT DISTINCT project
+            FROM logs
+            WHERE so_number = ?
+        """, (so_number,))
+        so_projects = [row['project'] for row in c.fetchall()]
+
+        # Get all MO projects for this SO with their activity data
+        mo_data = []
+        for project in so_projects:
+            c.execute("""
+                SELECT
+                    ? as project,
+                    MAX(mo_number) as mo_number,
+                    MIN(CASE WHEN event NOT IN ('AUTO_IMPORT', 'BACKGROUND_WORK_FOUND') THEN timestamp END) as first_activity,
+                    MAX(timestamp) as last_activity,
+                    COUNT(DISTINCT user) as user_count,
+                    SUM(item_count) as total_items,
+                    GROUP_CONCAT(DISTINCT user) as users,
+                    MAX(CASE WHEN event = 'AFGEMELD' THEN 1 ELSE 0 END) as is_completed
+                FROM logs
+                WHERE project = ?
+            """, (project, project))
+            result = c.fetchone()
+            if result:
+                mo_data.append(result)
+        
+        mo_projects = []
+        rep_projects = []
+        total_completed = 0
+        for row in mo_data:
+            # Get detailed status for each MO
+            status, _ = determine_project_status(row['project'], conn)
+            
+            if row['is_completed']:
+                total_completed += 1
+            
+            # Check if this is a REP variant
+            is_rep = '_REP' in row['project'].upper()
+                
+            # Use the EXACT same calculations as logs_project by calling the internal functions
+            # Get work duration from sessions
+            work_duration = 0
+            project_time = 0
+            
+            try:
+                # Call the v2 time metrics function directly (same as logs_project does)
+                v2_result = get_project_time_metrics_v2_internal(row['project'], conn)
+                
+                # Extract the project time from the v2 result
+                if v2_result and v2_result.get('success'):
+                    project_time = v2_result.get('total_project_minutes', 0)
+                
+                # Get work time from sessions (same calculation as logs_project)
+                project_id = normalize_project_id(row['project'])
+                c.execute('''
+                    SELECT DISTINCT
+                        s.session_id,
+                        s.work_duration_minutes,
+                        s.status,
+                        COALESCE(sp.item_count, s.item_count) as item_count,
+                        (SELECT COUNT(*) FROM session_projects WHERE session_id = s.session_id) as total_projects_in_session,
+                        (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) as total_items_in_session
+                    FROM sessions s
+                    LEFT JOIN session_projects sp ON s.session_id = sp.session_id AND sp.project = ?
+                    WHERE s.project_id = ? 
+                       OR s.project = ?
+                       OR sp.project = ?
+                ''', (row['project'], project_id, row['project'], row['project']))
+                
+                for session in c.fetchall():
+                    work_minutes = session['work_duration_minutes'] or 0
+                    
+                    # For batch sessions with multiple projects, allocate proportionally
+                    if session['total_projects_in_session'] and session['total_projects_in_session'] > 1:
+                        project_items = session['item_count'] or 0
+                        total_items = session['total_items_in_session'] or 0
+                        
+                        if total_items > 0 and project_items > 0:
+                            proportion = project_items / total_items
+                            work_duration += work_minutes * proportion
+                    else:
+                        # Single project session - use full time
+                        work_duration += work_minutes
+                        
+            except Exception as e:
+                logging.warning(f"Could not get time metrics for {row['project']}: {e}")
+                # Fallback to basic calculation if import fails
+                if row['first_activity'] and row['last_activity']:
+                    project_time = calculate_work_minutes(row['first_activity'], row['last_activity'])
+            
+            # Get the final item count from the last user in the processing chain
+            # Processing chain order (reverse for finding last user with items)
+            config = get_config()
+            configured_users = config.get('scanner_panel_open_event_users', 
+                                         ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+            
+            final_items = 0
+            # Check each user in reverse order (BOERE → KL GANNOMAT → OPUS → ACCURA → NESTING)
+            for user in reversed(configured_users):
+                c.execute("""
+                    SELECT item_count 
+                    FROM logs 
+                    WHERE project = ? 
+                    AND user = ?
+                    AND item_count IS NOT NULL 
+                    AND item_count > 0
+                    ORDER BY timestamp DESC 
+                    LIMIT 1
+                """, (row['project'], user))
+                item_row = c.fetchone()
+                if item_row and item_row['item_count']:
+                    final_items = item_row['item_count']
+                    break  # Found the last user in chain with items
+            
+            # If no items found from any user, use the total
+            if final_items == 0:
+                final_items = row['total_items'] or 0
+            
+            # Get individual user statuses for this project (same as logs_project)
+            c.execute('''
+                SELECT user, status
+                FROM logs l1
+                WHERE lower(project) = ? AND user != ''
+                AND timestamp = (
+                    SELECT MAX(timestamp) 
+                    FROM logs l2 
+                    WHERE l2.user = l1.user AND lower(l2.project) = lower(l1.project)
+                )
+                GROUP BY user
+            ''', (row['project'].lower(),))
+            
+            user_statuses = {}
+            for user_row in c.fetchall():
+                user_statuses[user_row['user']] = user_row['status']
+            
+            # Sort users according to processing chain order
+            raw_users = row['users'].split(',') if row['users'] else []
+            config = get_config()
+            configured_users = config.get('scanner_panel_open_event_users', 
+                                         ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+            
+            # Create a dict for ordering
+            user_order = {user: i for i, user in enumerate(configured_users)}
+            
+            # Sort users by their position in the configured order
+            sorted_users = sorted(raw_users, 
+                                key=lambda u: user_order.get(u, len(configured_users)))
+            
+            project_data = {
+                'project': row['project'],
+                'mo_number': row['mo_number'],
+                'first_activity': row['first_activity'],
+                'last_activity': row['last_activity'],
+                'user_count': row['user_count'],
+                'total_items': row['total_items'] or 0,
+                'final_items': final_items or 0,
+                'users': sorted_users,
+                'user_statuses': user_statuses,
+                'status': status,
+                'is_completed': bool(row['is_completed']),
+                'work_duration_minutes': work_duration,
+                'project_duration_minutes': project_time
+            }
+            
+            # Add to appropriate list based on REP status
+            if is_rep:
+                rep_projects.append(project_data)
+            else:
+                mo_projects.append(project_data)
+        
+        # Get all projects associated with this SO
+        c.execute("""
+            SELECT DISTINCT project
+            FROM logs
+            WHERE so_number = ?
+        """, (so_number,))
+        so_projects = [row['project'] for row in c.fetchall()]
+
+        # Get aggregate metrics for the SO
+        if so_projects:
+            placeholders = ','.join(['?'] * len(so_projects))
+            c.execute(f"""
+                SELECT
+                    MIN(CASE WHEN event NOT IN ('AUTO_IMPORT', 'BACKGROUND_WORK_FOUND') THEN timestamp END) as first_activity,
+                    MAX(timestamp) as last_activity,
+                    COUNT(DISTINCT user) as total_users,
+                    COUNT(DISTINCT CASE WHEN mo_number IS NOT NULL AND mo_number != '' THEN mo_number END) as unique_mo_count,
+                    MAX(customer_name) as customer_name
+                FROM logs
+                WHERE project IN ({placeholders})
+            """, so_projects)
+        else:
+            # Fallback to original query if no projects found
+            c.execute("""
+                SELECT
+                    MIN(CASE WHEN event NOT IN ('AUTO_IMPORT', 'BACKGROUND_WORK_FOUND') THEN timestamp END) as first_activity,
+                    MAX(timestamp) as last_activity,
+                    COUNT(DISTINCT user) as total_users,
+                    COUNT(DISTINCT CASE WHEN mo_number IS NOT NULL AND mo_number != '' THEN mo_number END) as unique_mo_count,
+                    MAX(customer_name) as customer_name
+                FROM logs
+                WHERE so_number = ?
+            """, (so_number,))
+        
+        so_info = c.fetchone()
+        
+        # Calculate totals across all MOs (including REP)
+        all_projects = mo_projects + rep_projects
+        total_work_duration = sum(project['work_duration_minutes'] for project in all_projects)
+        total_project_duration = sum(project['project_duration_minutes'] for project in all_projects)
+        total_items = sum(project['final_items'] for project in all_projects)
+        
+        # Count unique MO numbers from the projects (excluding REP variants since they don't have MO numbers)
+        unique_mo_numbers = set()
+        for project in mo_projects:
+            if project.get('mo_number'):
+                unique_mo_numbers.add(project['mo_number'])
+        total_unique_mos = len(unique_mo_numbers)
+        
+        completion_percentage = (total_completed / len(all_projects) * 100) if all_projects else 0
+        
+        conn.close()
+        
+        return render_template('sales_order_detail.html',
+                             so_number=so_number,
+                             customer_name=so_info['customer_name'],
+                             mo_projects=mo_projects,
+                             rep_projects=rep_projects,
+                             total_mos=total_unique_mos,
+                             total_users=so_info['total_users'],
+                             total_items=total_items,
+                             first_activity=so_info['first_activity'],
+                             last_activity=so_info['last_activity'],
+                             total_work_duration=total_work_duration,
+                             total_project_duration=total_project_duration,
+                             completion_percentage=round(completion_percentage, 1),
+                             total_completed=total_completed,
+                             active_page='sales_orders')
+        
+    except Exception as e:
+        logging.error(f"Error loading SO detail for {so_number}: {e}", exc_info=True)
+        return render_template('error.html', message=f'Could not load details for SO {so_number}.'), 500
+
+@app.route('/api/projects/all', methods=['GET'])
+@login_required
+def get_all_projects():
+    """Get all projects without pagination for client-side sorting"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get all unique projects
+        c.execute("""
+            SELECT DISTINCT project
+            FROM logs
+            WHERE project IS NOT NULL AND project != ''
+            ORDER BY project
+        """)
+
+        all_projects = [row['project'] for row in c.fetchall()]
+
+        projects = []
+
+        for project_code in all_projects:
+            # Determine the project status
+            try:
+                result = determine_project_status(project_code, conn)
+                if len(result) != 2:
+                    continue
+                project_status, current_user = result
+            except ValueError:
+                continue
+
+            # Get the latest timestamp
+            c.execute("""
+                SELECT MAX(timestamp) as latest_timestamp, COUNT(*) as event_count
+                FROM logs
+                WHERE project = ?
+            """, (project_code,))
+
+            result = c.fetchone()
+            latest_timestamp = result['latest_timestamp'] if result else None
+            event_count = result['event_count'] if result else 0
+
+            # Get metadata
+            c.execute("""
+                SELECT is_rep_variant, mo_number, so_number, customer_name, color
+                FROM logs
+                WHERE project = ?
+                ORDER BY
+                    CASE WHEN mo_number IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN so_number IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN customer_name IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN color IS NOT NULL THEN 1 ELSE 0 END DESC,
+                    timestamp DESC
+                LIMIT 1
+            """, (project_code,))
+
+            rep_result = c.fetchone()
+
+            projects.append({
+                'code': project_code,
+                'user': current_user or 'Onbekend',
+                'status': project_status,
+                'timestamp': latest_timestamp,
+                'event_count': event_count,
+                'is_rep_variant': rep_result and rep_result['is_rep_variant'] == 1,
+                'mo_number': rep_result['mo_number'] if rep_result else None,
+                'so_number': rep_result['so_number'] if rep_result else None,
+                'customer_name': rep_result['customer_name'] if rep_result else None,
+                'color': rep_result['color'] if rep_result else None
+            })
+
+        return jsonify({
+            'success': True,
+            'projects': projects,
+            'total': len(projects)
+        })
+
+    except Exception as e:
+        logging.error(f"Error getting all projects: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/projects', methods=['GET'])
+@login_required
 def projects():
     config = get_config()
     configured_users = config.get('scanner_panel_open_event_users', [])
@@ -5621,10 +6547,14 @@ def projects():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     
+    # Get search and sort parameters
+    search_query = request.args.get('search', '', type=str).strip()
+    sort_by = request.args.get('sort', 'recent', type=str)
+    
     # Ensure per_page is within reasonable bounds
     per_page = max(5, min(100, per_page))
     
-    logging.info(f'projects endpoint called - page: {page}, per_page: {per_page}')
+    logging.info(f'projects endpoint called - page: {page}, per_page: {per_page}, search: {search_query}, sort: {sort_by}')
     try:
         conn = get_db()
         c = conn.cursor()
@@ -5731,8 +6661,44 @@ def projects():
             
             projects.append(project_dict)
         
-        # Sort projects by timestamp (most recent first)
-        projects.sort(key=lambda x: x['timestamp'], reverse=True)
+        # Apply search filter if provided
+        if search_query:
+            search_lower = search_query.lower()
+            filtered_projects = []
+            for proj in projects:
+                # Search in multiple fields
+                searchable_text = (
+                    (proj['code'] or '').lower() + ' ' +
+                    (proj['user'] or '').lower() + ' ' +
+                    (proj['status'] or '').lower() + ' ' +
+                    (proj['mo_number'] or '').lower() + ' ' +
+                    (proj['so_number'] or '').lower() + ' ' +
+                    (proj['customer_name'] or '').lower() + ' ' +
+                    (proj['color'] or '').lower()
+                )
+                if search_lower in searchable_text:
+                    filtered_projects.append(proj)
+            projects = filtered_projects
+        
+        # Apply sorting based on sort parameter
+        if sort_by == 'recent':
+            # Sort by timestamp (most recent first)
+            projects.sort(key=lambda x: x['timestamp'], reverse=True)
+        elif sort_by == 'oldest':
+            # Sort by timestamp (oldest first)
+            projects.sort(key=lambda x: x['timestamp'])
+        elif sort_by == 'code':
+            # Sort by project code
+            projects.sort(key=lambda x: x['code'])
+        elif sort_by == 'customer':
+            # Sort by customer name, then by code for those without customer
+            projects.sort(key=lambda x: (x['customer_name'] or 'zzz', x['code']))
+        elif sort_by == 'status':
+            # Sort by status
+            projects.sort(key=lambda x: x['status'])
+        else:
+            # Default to recent
+            projects.sort(key=lambda x: x['timestamp'], reverse=True)
         
         # Apply pagination
         total_projects = len(projects)
@@ -5767,7 +6733,9 @@ def projects():
                              rep_variant_projects=rep_variant_projects,
                              completed_projects=completed_projects,
                              in_progress=in_progress,
-                             active_page='projects')
+                             active_page='projects',
+                             search_query=search_query,
+                             sort_by=sort_by)
     
     except Exception as e:
         logging.error(f"Failed to render projects page: {e}", exc_info=True)
@@ -5775,6 +6743,7 @@ def projects():
         
 
 @app.route('/users', methods=['GET'])
+@login_required
 def users():
     config = get_config()
     configured_users = config.get('scanner_panel_open_event_users', [])
@@ -5818,6 +6787,7 @@ def users():
         return render_template('error.html', message='Could not retrieve users from the database.'), 500
 
 @app.route('/user/<username>')
+@login_required
 def user_performance(username):
     """Individual user performance page with detailed analytics"""
     config = get_config()
@@ -5911,6 +6881,7 @@ def user_performance(username):
         return render_template('error.html', message='Could not load user performance data.'), 500
 
 @app.route('/statistics')
+@login_required
 def statistics():
     """Statistics page view with comprehensive analytics"""
     config = get_config()
@@ -5926,6 +6897,7 @@ def statistics():
         return render_template('error.html', message='Could not load statistics page.'), 500
 
 @app.route('/settings')
+@login_required
 def settings():
     """Settings page for work hours configuration"""
     config = get_config()
@@ -5940,6 +6912,7 @@ def settings():
         return render_template('error.html', message='Could not load settings page.'), 500
 
 @app.route('/database', methods=['GET'])
+@login_required
 def database():
     config = get_config()
     configured_users = config.get('scanner_panel_open_event_users', [])
@@ -8618,6 +9591,120 @@ def get_project_time_metrics(project):
         if conn:
             conn.close()
 
+def get_project_time_metrics_v2_internal(project, conn=None):
+    """
+    Internal version of get_project_time_metrics_v2 that doesn't close the connection.
+    Returns the metrics dict directly instead of a Flask response.
+    """
+    try:
+        # Use provided connection or create a new one
+        if conn is None:
+            conn = get_db()
+            should_close = True
+        else:
+            should_close = False
+            
+        c = conn.cursor()
+        
+        # Initialize response structure
+        metrics = {
+            'project': project,
+            'calculation_version': 'v2',
+            'success': True,
+            'total_project_minutes': 0  # Initialize this
+        }
+        
+        # Step 1: Calculate proportional batch time for SCANNER sessions
+        c.execute("""
+            SELECT 
+                sp.session_id,
+                sp.item_count as project_items,
+                s.user,
+                s.start_time,
+                s.end_time,
+                s.work_duration_minutes,
+                s.pause_duration_minutes,
+                (SELECT SUM(item_count) FROM session_projects WHERE session_id = sp.session_id) as total_batch_items
+            FROM session_projects sp
+            JOIN sessions s ON sp.session_id = s.session_id
+            WHERE sp.project = ?
+            AND s.session_type = 'SCANNER'
+            AND s.status = 'completed'
+            ORDER BY s.end_time DESC
+            LIMIT 1
+        """, (project,))
+        
+        batch_result = c.fetchone()
+        batch_proportional_minutes = 0
+        batch_end_time = None
+        
+        if batch_result and batch_result['total_batch_items'] and batch_result['project_items']:
+            proportion = batch_result['project_items'] / batch_result['total_batch_items']
+            work_minutes = batch_result['work_duration_minutes'] or 0
+            pause_minutes = batch_result['pause_duration_minutes'] or 0
+            batch_proportional_minutes = (work_minutes + pause_minutes) * proportion
+            batch_end_time = batch_result['end_time']
+            
+            logging.info(f"Batch calculation for {project}: {batch_result['project_items']}/{batch_result['total_batch_items']} items = {proportion*100:.1f}% = {batch_proportional_minutes:.1f} min")
+        else:
+            logging.info(f"No batch sessions found for {project}")
+        
+        # Step 2: Get timeline from logs
+        c.execute("""
+            SELECT 
+                MIN(timestamp) as first_event,
+                MAX(timestamp) as last_event
+            FROM logs
+            WHERE project = ?
+        """, (project,))
+        
+        timeline = c.fetchone()
+        
+        if not timeline or not timeline['first_event']:
+            if should_close and conn:
+                conn.close()
+            return {
+                'success': False,
+                'error': 'No events found for project',
+                'project': project,
+                'total_project_minutes': 0
+            }
+        
+        # Step 3: Calculate total project time (CRITICAL LOGIC)
+        if batch_proportional_minutes > 0 and batch_end_time:
+            # Project had batch processing
+            # Add elapsed time from batch end to last event
+            elapsed_minutes = calculate_work_minutes(batch_end_time, timeline['last_event'])
+            total_project_minutes = batch_proportional_minutes + max(0, elapsed_minutes)
+        else:
+            # No batch processing, calculate from first to last event
+            total_project_minutes = calculate_work_minutes(timeline['first_event'], timeline['last_event'])
+        
+        # Add detailed breakdown to metrics
+        metrics.update({
+            'total_project_minutes': round(total_project_minutes, 2),
+            'batch_proportional_minutes': round(batch_proportional_minutes, 2),
+            'batch_end_time': batch_end_time,
+            'project_start_time': timeline['first_event'],
+            'project_end_time': timeline['last_event']
+        })
+        
+        if should_close and conn:
+            conn.close()
+            
+        return metrics
+        
+    except Exception as e:
+        logging.error(f"Error in internal time-metrics-v2 for project {project}: {e}", exc_info=True)
+        if 'should_close' in locals() and should_close and conn:
+            conn.close()
+        return {
+            'success': False,
+            'error': str(e),
+            'project': project,
+            'total_project_minutes': 0
+        }
+
 @app.route('/api/project/<project>/time-metrics-v2', methods=['GET'])
 def get_project_time_metrics_v2(project):
     """
@@ -9084,9 +10171,9 @@ def get_project_productivity_metrics(project):
                     else:
                         status = 'WAITING'
             else:
-                # User has OPEN event but no work sessions yet - show blank data
+                # User has OPEN event but no work sessions yet - show as WAITING but keep item count
                 status = 'WAITING'
-                total_items = 0
+                # Keep total_items from project_items (don't reset to 0)
                 total_duration_minutes = 0
                 manual_items = 0
                 auto_items = 0

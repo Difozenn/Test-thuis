@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Project Datalog - Project {{ project }} Dashboard{% endblock %}
+{% block title %}Manufacturing Order - {{ project }} Dashboard{% endblock %}
 
 {% block extra_head %}
 <!-- Chart.js -->
@@ -703,7 +703,7 @@
                 <div class="mb-0">
                     {% if so_number or mo_number %}
                         <p class="mb-1 text-muted">
-                            {% if so_number %}Sales Order: <a href="/projects?search={{ so_number }}" class="text-decoration-none"><strong>{{ so_number }}</strong></a>{% endif %}
+                            {% if so_number %}Sales Order: <a href="/sales_order/{{ so_number }}" class="text-decoration-none"><strong>{{ so_number }}</strong></a>{% endif %}
                             {% if so_number and mo_number %} | {% endif %}
                             {% if mo_number %}Manufacturing Order: <strong>{{ mo_number }}</strong>{% endif %}
                         </p>
@@ -2296,9 +2296,10 @@ async function updatePerformanceMetrics() {
                     const userSessions = sessionsData.filter(session => session.user === user);
                     console.log(`Sessions for ${user} on project ${project}:`, userSessions);
                     
-                    // Get project items from logs
-                    const userProjectLogs = logData.filter(log => log.user === user && getItemCountForLog(log) > 0);
-                    const projectItems = userProjectLogs.length > 0 ? Math.max(...userProjectLogs.map(log => getItemCountForLog(log))) : 0;
+                    // Get project items from logs - include ALL items regardless of status
+                    const userProjectLogs = logData.filter(log => log.user === user);
+                    const allItemCounts = userProjectLogs.map(log => getItemCountForLog(log)).filter(count => count > 0);
+                    const projectItems = allItemCounts.length > 0 ? Math.max(...allItemCounts) : 0;
                     
                     let userSessionMinutes = 0;
                     
@@ -2364,9 +2365,10 @@ async function updatePerformanceMetrics() {
             const userSessions = sessionsData.filter(session => session.user === user);
             console.log(`Fallback calculation for ${user}:`, userSessions);
             
-            // Get project items from logs - use helper to get correct count
-            const userProjectLogs = logData.filter(log => log.user === user && getItemCountForLog(log) > 0);
-            const projectItems = userProjectLogs.length > 0 ? Math.max(...userProjectLogs.map(log => getItemCountForLog(log))) : 0;
+            // Get project items from logs - include ALL items regardless of status
+            const userProjectLogs = logData.filter(log => log.user === user);
+            const allItemCounts = userProjectLogs.map(log => getItemCountForLog(log)).filter(count => count > 0);
+            const projectItems = allItemCounts.length > 0 ? Math.max(...allItemCounts) : 0;
             
             let userSessionMinutes = 0;
             
@@ -2736,10 +2738,9 @@ async function updatePerformanceMetrics() {
     const actualTotalItems = Object.values(userStats).reduce((sum, user) => sum + (user.items || 0), 0);
     document.getElementById('total-items-completed').textContent = actualTotalItems.toString();
     const itemsBreakdown = Object.entries(userStats)
-        .filter(([user, stats]) => stats.items > 0)
-        .sort(([,a], [,b]) => b.items - a.items)
-        .slice(0, 3)
-        .map(([user, stats]) => `${user}: ${stats.items}`)
+        .filter(([user, stats]) => stats !== undefined)
+        .sort(([,a], [,b]) => (b.items || 0) - (a.items || 0))
+        .map(([user, stats]) => `${user}: ${stats.items || 0}`)
         .join(' | ');
     document.getElementById('items-breakdown').textContent = itemsBreakdown || 'Geen bewerkingen voltooid';
     

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Projecten - Project Datalog{% endblock %}
+{% block title %}Manufacturing Orders - Project Datalog{% endblock %}
 
 {% block extra_styles %}
 /* Section header styling (consistent with other pages) */
@@ -131,7 +131,28 @@
     color: var(--dark-blue);
 }
 
-/* Project stats */
+/* Sortable headers */
+.sortable {
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.sortable:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.sort-icon {
+    margin-left: 5px;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.sort-icon.fa-sort-up,
+.sort-icon.fa-sort-down {
+    color: var(--secondary-blue);
+}
+
+/* MO stats */
 .stats-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -176,7 +197,7 @@
     font-size: 0.875rem;
 }
 
-/* Project list */
+/* MO list */
 .project-list {
     background: white;
     border-radius: 15px;
@@ -263,8 +284,8 @@
 {% block content %}
 <!-- Page Header with Blue Underline -->
 <div class="page-header">
-    <h1>Projecten Overzicht</h1>
-    <p>Beheer en monitor alle projecten</p>
+    <h1>Manufacturing Orders Overzicht</h1>
+    <p>Beheer en monitor alle manufacturing orders</p>
 </div>
 
 <!-- Enhanced Search Section -->
@@ -278,6 +299,7 @@
                        id="projectSearch" 
                        placeholder="Zoek op project naam, klant, MO/SO nummer, status..."
                        autocomplete="off"
+                       value="{{ search_query }}"
                        style="height: 55px; font-size: 1.2rem;">
             </div>
         </div>
@@ -298,27 +320,33 @@
     
     <!-- Search Results Summary -->
     <div class="mt-3">
-        <small class="text-muted" id="search-summary">{{ projects|length }} projecten gevonden</small>
+        <small class="text-muted" id="search-summary">
+            {% if search_query %}
+                {{ pagination.total }} projecten gevonden voor "{{ search_query }}"
+            {% else %}
+                {{ pagination.total }} projecten totaal
+            {% endif %}
+        </small>
     </div>
 </div>
 
-<!-- Project List -->
+<!-- Manufacturing Order List -->
 <div class="project-list stats-section">
     <div class="section-header">
         <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
             <i class="fas fa-folder-open"></i>
         </div>
         <div>
-            <h2 class="section-title">Alle Projecten</h2>
+            <h2 class="section-title">Alle Manufacturing Orders</h2>
             <p class="section-subtitle">Overzicht van alle geregistreerde projecten en hun voortgang</p>
         </div>
         <div style="margin-left: auto;">
             <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
-                <option value="recent">Meest Recent</option>
-                <option value="oldest">Oudste Eerst</option>
-                <option value="code">Project Code</option>
-                <option value="customer">Klant</option>
-                <option value="status">Status</option>
+                <option value="recent" {{ 'selected' if sort_by == 'recent' else '' }}>Meest Recent</option>
+                <option value="oldest" {{ 'selected' if sort_by == 'oldest' else '' }}>Oudste Eerst</option>
+                <option value="code" {{ 'selected' if sort_by == 'code' else '' }}>MO Code</option>
+                <option value="customer" {{ 'selected' if sort_by == 'customer' else '' }}>Klant</option>
+                <option value="status" {{ 'selected' if sort_by == 'status' else '' }}>Status</option>
             </select>
         </div>
     </div>
@@ -329,12 +357,24 @@
         <table class="table table-hover mb-0" id="projectsTable">
             <thead class="table-light">
                 <tr>
-                    <th style="width: 25%;">Project</th>
-                    <th style="width: 18%;">Klant</th>
-                    <th style="width: 13%;">SO / MO</th>
-                    <th style="width: 9%;">Kleur</th>
-                    <th style="width: 9%;">Status</th>
-                    <th style="width: 13%;">Laatste Update</th>
+                    <th class="sortable" onclick="sortProjects('code')" style="width: 25%; cursor: pointer;">
+                        Manufacturing Order <i class="fas fa-sort sort-icon" data-column="code"></i>
+                    </th>
+                    <th class="sortable" onclick="sortProjects('customer')" style="width: 18%; cursor: pointer;">
+                        Klant <i class="fas fa-sort sort-icon" data-column="customer"></i>
+                    </th>
+                    <th class="sortable" onclick="sortProjects('so')" style="width: 13%; cursor: pointer;">
+                        SO / MO <i class="fas fa-sort sort-icon" data-column="so"></i>
+                    </th>
+                    <th class="sortable" onclick="sortProjects('color')" style="width: 9%; cursor: pointer;">
+                        Kleur <i class="fas fa-sort sort-icon" data-column="color"></i>
+                    </th>
+                    <th class="sortable" onclick="sortProjects('status')" style="width: 9%; cursor: pointer;">
+                        Status <i class="fas fa-sort sort-icon" data-column="status"></i>
+                    </th>
+                    <th class="sortable" onclick="sortProjects('timestamp')" style="width: 13%; cursor: pointer;">
+                        Laatste Update <i class="fas fa-sort sort-icon" data-column="timestamp"></i>
+                    </th>
                     <th style="width: 13%;">Acties</th>
                 </tr>
             </thead>
@@ -366,7 +406,7 @@
                     <td onclick="window.location.href='/logs_project?project={{ project.code }}'" style="cursor: pointer;">
                         <div>
                             {% if project.so_number %}
-                                <div><small>SO:</small> <strong>{{ project.so_number }}</strong></div>
+                                <div><small>SO:</small> <a href="/sales_order/{{ project.so_number }}" class="text-decoration-none" onclick="event.stopPropagation();"><strong>{{ project.so_number }}</strong></a></div>
                             {% endif %}
                             {% if project.mo_number %}
                                 <div><small>MO:</small> <strong>{{ project.mo_number }}</strong></div>
@@ -433,7 +473,7 @@
                     <!-- Previous button -->
                     <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
                         <a class="page-link" 
-                           href="{{ '?page=' + (pagination.prev_num|string) + '&per_page=' + (pagination.per_page|string) if pagination.has_prev else '#' }}"
+                           href="{{ '?page=' + (pagination.prev_num|string) + '&per_page=' + (pagination.per_page|string) + ('&search=' + search_query if search_query else '') + ('&sort=' + sort_by if sort_by and sort_by != 'recent' else '') if pagination.has_prev else '#' }}"
                            {{ 'tabindex="-1"' if not pagination.has_prev else '' }}>
                             <i class="fas fa-chevron-left me-1"></i>Vorige
                         </a>
@@ -443,7 +483,7 @@
                     {% for page_num in pagination.pages %}
                         <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
                             <a class="page-link" 
-                               href="?page={{ page_num }}&per_page={{ pagination.per_page }}">
+                               href="?page={{ page_num }}&per_page={{ pagination.per_page }}{{ '&search=' + search_query if search_query else '' }}{{ '&sort=' + sort_by if sort_by and sort_by != 'recent' else '' }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -452,7 +492,7 @@
                     <!-- Next button -->
                     <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
                         <a class="page-link" 
-                           href="{{ '?page=' + (pagination.next_num|string) + '&per_page=' + (pagination.per_page|string) if pagination.has_next else '#' }}"
+                           href="{{ '?page=' + (pagination.next_num|string) + '&per_page=' + (pagination.per_page|string) + ('&search=' + search_query if search_query else '') + ('&sort=' + sort_by if sort_by and sort_by != 'recent' else '') if pagination.has_next else '#' }}"
                            {{ 'tabindex="-1"' if not pagination.has_next else '' }}>
                             Volgende<i class="fas fa-chevron-right ms-1"></i>
                         </a>
@@ -478,6 +518,12 @@
 
 {% block scripts %}
 <script>
+    // Global variables for sorting
+    let allProjectsData = [];
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc';
+    let isLoadingAllProjects = false;
+
     // Project name formatting function
     function formatProjectDisplayName(projectCode) {
         // Extract clean project name from raw project code
@@ -505,135 +551,52 @@
         });
     });
 
-    // Enhanced search functionality with filter support
-    let currentFilter = 'all';
+    // Server-side search functionality
+    let searchTimeout;
     
-    function filterAndSearch() {
-        const searchValue = document.getElementById('projectSearch').value.toLowerCase();
-        const projectRows = document.querySelectorAll('#projectsTable tbody tr:not(.no-results-row)');
-        let visibleCount = 0;
-        
-        projectRows.forEach(row => {
-            const projectCode = row.getAttribute('data-project-code') || '';
-            const customer = row.getAttribute('data-customer') || '';
-            const moNumber = row.getAttribute('data-mo') || '';
-            const soNumber = row.getAttribute('data-so') || '';
-            const displayName = row.querySelector('.project-display-name')?.textContent || '';
-            const status = row.querySelector('.status-badge')?.textContent.trim().toLowerCase() || '';
+    // Search input handler (with debounce)
+    document.getElementById('projectSearch').addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const searchValue = e.target.value.trim();
+            const currentUrl = new URL(window.location);
             
-            // Apply filter
-            let matchesFilter = true;
-            if (currentFilter === 'active') {
-                matchesFilter = ['open', 'bezig'].includes(status);
-            } else if (currentFilter === 'completed') {
-                matchesFilter = ['afgemeld', 'afgerond'].includes(status);
-            }
-            
-            // Apply search
-            const searchableText = (projectCode + ' ' + customer + ' ' + moNumber + ' ' + soNumber + ' ' + displayName + ' ' + status).toLowerCase();
-            const matchesSearch = !searchValue || searchableText.includes(searchValue);
-            
-            if (matchesFilter && matchesSearch) {
-                row.style.display = '';
-                visibleCount++;
+            if (searchValue) {
+                currentUrl.searchParams.set('search', searchValue);
             } else {
-                row.style.display = 'none';
+                currentUrl.searchParams.delete('search');
             }
-        });
-        
-        // Update search summary
-        const searchSummary = document.getElementById('search-summary');
-        if (searchValue) {
-            searchSummary.textContent = `${visibleCount} projecten gevonden voor "${searchValue}"`;
-        } else {
-            searchSummary.textContent = `${visibleCount} projecten ${currentFilter === 'all' ? 'gevonden' : `(${currentFilter === 'active' ? 'actief' : 'afgerond'})`}`;
-        }
-        
-        // Handle no results
-        let noResultsRow = document.querySelector('.no-results-row');
-        if (visibleCount === 0) {
-            if (!noResultsRow) {
-                noResultsRow = document.createElement('tr');
-                noResultsRow.className = 'no-results-row';
-                noResultsRow.innerHTML = `
-                    <td colspan="7" class="text-center py-4">
-                        <i class="fas fa-search mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                        <p class="mb-0">Geen projecten gevonden</p>
-                        <small class="text-muted">Probeer andere zoektermen of filters</small>
-                    </td>
-                `;
-                document.querySelector('#projectsTable tbody').appendChild(noResultsRow);
-            }
-            noResultsRow.style.display = '';
-        } else if (noResultsRow) {
-            noResultsRow.style.display = 'none';
-        }
-    }
-    
-    // Search input handler
-    document.getElementById('projectSearch').addEventListener('input', filterAndSearch);
-    
-    // Filter button handlers
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Update active filter
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.getAttribute('data-filter');
+            currentUrl.searchParams.set('page', '1'); // Reset to first page on new search
             
-            // Apply filter
-            filterAndSearch();
-        });
+            // Preserve sort parameter
+            const sortValue = document.getElementById('sortSelect').value;
+            if (sortValue && sortValue !== 'recent') {
+                currentUrl.searchParams.set('sort', sortValue);
+            }
+            
+            window.location.href = currentUrl.toString();
+        }, 500); // Wait 500ms after user stops typing
     });
 
-    // Sort functionality for table
+    // Sort functionality
     document.getElementById('sortSelect').addEventListener('change', function(e) {
         const sortBy = e.target.value;
-        const tbody = document.querySelector('#projectsTable tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr:not(.no-results-row)'));
+        const currentUrl = new URL(window.location);
         
-        rows.sort((a, b) => {
-            switch(sortBy) {
-                case 'recent':
-                    // Sort by timestamp (most recent first)
-                    const timestampA = a.cells[5].textContent.trim();
-                    const timestampB = b.cells[5].textContent.trim();
-                    return timestampB.localeCompare(timestampA);
-                
-                case 'oldest':
-                    // Sort by timestamp (oldest first)
-                    const timestampA2 = a.cells[5].textContent.trim();
-                    const timestampB2 = b.cells[5].textContent.trim();
-                    return timestampA2.localeCompare(timestampB2);
-                
-                case 'code':
-                    // Sort by project code
-                    const codeA = a.getAttribute('data-project-code') || '';
-                    const codeB = b.getAttribute('data-project-code') || '';
-                    return codeA.localeCompare(codeB);
-                
-                case 'customer':
-                    // Sort by customer name
-                    const customerA = a.getAttribute('data-customer') || '';
-                    const customerB = b.getAttribute('data-customer') || '';
-                    return customerA.localeCompare(customerB);
-                
-                case 'status':
-                    // Sort by status
-                    const statusA = a.cells[4].textContent.trim();
-                    const statusB = b.cells[4].textContent.trim();
-                    return statusA.localeCompare(statusB);
-                
-                default:
-                    return 0;
-            }
-        });
+        if (sortBy && sortBy !== 'recent') {
+            currentUrl.searchParams.set('sort', sortBy);
+        } else {
+            currentUrl.searchParams.delete('sort');
+        }
         
-        // Reorder rows in table
-        rows.forEach(row => tbody.appendChild(row));
+        // Preserve search parameter
+        const searchValue = document.getElementById('projectSearch').value.trim();
+        if (searchValue) {
+            currentUrl.searchParams.set('search', searchValue);
+        }
         
-        // Apply current filter/search after sorting
-        filterAndSearch();
+        currentUrl.searchParams.set('page', '1'); // Reset to first page when changing sort
+        window.location.href = currentUrl.toString();
     });
 
     // Handle per-page selector change
@@ -643,6 +606,18 @@
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('per_page', e.target.value);
             currentUrl.searchParams.set('page', '1'); // Reset to first page when changing per_page
+            
+            // Preserve search and sort parameters
+            const searchValue = document.getElementById('projectSearch').value.trim();
+            if (searchValue) {
+                currentUrl.searchParams.set('search', searchValue);
+            }
+            
+            const sortValue = document.getElementById('sortSelect').value;
+            if (sortValue && sortValue !== 'recent') {
+                currentUrl.searchParams.set('sort', sortValue);
+            }
+            
             window.location.href = currentUrl.toString();
         });
     }
@@ -685,7 +660,7 @@
                             }, 500);
                             
                             // Show success message
-                            alert(`✅ Project "${projectCode}" is succesvol verwijderd.`);
+                            alert(`✅ Manufacturing Order "${projectCode}" is succesvol verwijderd.`);
                         } else {
                             // Re-enable button on error
                             button.disabled = false;
@@ -694,7 +669,7 @@
                             // Check if it's due to active sessions
                             if (data.active_direct_sessions > 0 || data.active_batch_sessions > 0) {
                                 let message = `⚠️ ACTIEVE SESSIES GEDETECTEERD!\n\n`;
-                                message += `Project "${projectCode}" kan niet worden verwijderd omdat er actieve sessies zijn:\n\n`;
+                                message += `Manufacturing Order "${projectCode}" kan niet worden verwijderd omdat er actieve sessies zijn:\n\n`;
                                 
                                 if (data.active_direct_sessions > 0) {
                                     message += `• ${data.active_direct_sessions} directe sessie(s) actief op dit project\n`;
@@ -721,5 +696,197 @@
             }
         }
     });
+
+    // Sorting functionality
+    async function sortProjects(column) {
+        // If we haven't loaded all projects yet, load them first
+        if (allProjectsData.length === 0 && !isLoadingAllProjects) {
+            isLoadingAllProjects = true;
+
+            // Show loading indicator
+            const tbody = document.getElementById('projectListContent');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading all projects for sorting...</td></tr>';
+
+            try {
+                // Fetch all projects (no pagination)
+                const response = await fetch('/api/projects/all');
+                const data = await response.json();
+
+                if (data.success) {
+                    allProjectsData = data.projects;
+                }
+            } catch (error) {
+                console.error('Error loading all projects:', error);
+                alert('Failed to load all projects for sorting');
+                window.location.reload();
+                return;
+            } finally {
+                isLoadingAllProjects = false;
+            }
+        }
+
+        // Determine sort order
+        if (currentSortColumn === column) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortOrder = 'asc';
+            currentSortColumn = column;
+        }
+
+        // Update sort icons
+        updateSortIcons(column, currentSortOrder);
+
+        // Sort the data
+        const sortedData = [...allProjectsData].sort((a, b) => {
+            let valueA, valueB;
+
+            switch(column) {
+                case 'code':
+                    valueA = a.code.toLowerCase();
+                    valueB = b.code.toLowerCase();
+                    break;
+                case 'customer':
+                    valueA = (a.customer_name || '').toLowerCase();
+                    valueB = (b.customer_name || '').toLowerCase();
+                    break;
+                case 'so':
+                    valueA = (a.so_number || a.mo_number || '').toLowerCase();
+                    valueB = (b.so_number || b.mo_number || '').toLowerCase();
+                    break;
+                case 'color':
+                    valueA = (a.color || '').toLowerCase();
+                    valueB = (b.color || '').toLowerCase();
+                    break;
+                case 'status':
+                    valueA = a.status;
+                    valueB = b.status;
+                    break;
+                case 'timestamp':
+                    valueA = new Date(a.timestamp || '1900-01-01');
+                    valueB = new Date(b.timestamp || '1900-01-01');
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (valueA < valueB) return currentSortOrder === 'asc' ? -1 : 1;
+            if (valueA > valueB) return currentSortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Display sorted data
+        displaySortedProjects(sortedData);
+    }
+
+    // Update sort icons
+    function updateSortIcons(column, order) {
+        // Reset all icons
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.classList.remove('fa-sort-up', 'fa-sort-down');
+            icon.classList.add('fa-sort');
+        });
+
+        // Update the active column icon
+        const icon = document.querySelector(`.sort-icon[data-column="${column}"]`);
+        if (icon) {
+            icon.classList.remove('fa-sort');
+            if (order === 'asc') {
+                icon.classList.add('fa-sort-up');
+            } else {
+                icon.classList.add('fa-sort-down');
+            }
+        }
+    }
+
+    // Display sorted projects
+    function displaySortedProjects(projects) {
+        const tbody = document.getElementById('projectListContent');
+        tbody.innerHTML = '';
+
+        // Hide pagination when showing all sorted projects
+        const paginationSection = document.querySelector('.pagination-section');
+        if (paginationSection) {
+            paginationSection.style.display = 'none';
+        }
+
+        // Add info about showing all projects
+        const cardHeader = document.querySelector('.card-header');
+        let infoDiv = document.getElementById('sortingInfo');
+        if (!infoDiv) {
+            infoDiv = document.createElement('div');
+            infoDiv.id = 'sortingInfo';
+            infoDiv.className = 'alert alert-info mb-3';
+            infoDiv.innerHTML = `
+                <i class="fas fa-info-circle"></i> Showing all ${projects.length} projects (sorted).
+                <a href="#" onclick="window.location.reload(); return false;">Return to paginated view</a>
+            `;
+            cardHeader.parentNode.insertBefore(infoDiv, cardHeader);
+        }
+
+        projects.forEach(project => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-project-code', project.code);
+            row.setAttribute('data-customer', project.customer_name || '');
+            row.setAttribute('data-so', project.so_number || '');
+            row.setAttribute('data-status', project.status);
+
+            const displayName = formatProjectDisplayName(project.code);
+            const statusBadge = getStatusBadge(project.status);
+            const timestamp = new Date(project.timestamp);
+            const formattedTime = timestamp.toLocaleString('nl-NL', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            row.innerHTML = `
+                <td>
+                    <a href="/logs_project?project=${encodeURIComponent(project.code)}"
+                       class="project-display-name text-decoration-none">
+                        ${displayName}
+                    </a>
+                </td>
+                <td>${project.customer_name || '<span class="text-muted">-</span>'}</td>
+                <td>
+                    ${project.so_number ? `<a href="/sales_order/${project.so_number}" class="text-primary text-decoration-none">${project.so_number}</a>` : ''}
+                    ${project.mo_number ? `<small class="text-muted">${project.mo_number}</small>` : ''}
+                </td>
+                <td>
+                    ${project.color ? `<span class="badge" style="background-color: ${project.color}; color: white;">${project.color}</span>` : '<span class="text-muted">-</span>'}
+                </td>
+                <td>${statusBadge}</td>
+                <td>
+                    <small class="text-muted">${formattedTime}</small>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="/logs_project?project=${encodeURIComponent(project.code)}"
+                           class="btn btn-sm btn-outline-primary" title="View Details">
+                            <i class="fas fa-eye"></i> Details
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="deleteProject('${project.code}', this)"
+                                title="Delete Project">
+                            <i class="fas fa-trash-alt"></i> Verwijder
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Helper function to get status badge HTML
+    function getStatusBadge(status) {
+        const badges = {
+            'AFGEMELD': '<span class="status-badge status-afgemeld">AFGEMELD</span>',
+            'BEZIG': '<span class="status-badge status-bezig">BEZIG</span>',
+            'OPEN': '<span class="status-badge status-open">OPEN</span>',
+            'AFGEROND': '<span class="status-badge status-afgerond">AFGEROND</span>',
+            'CLOSED': '<span class="status-badge status-closed">CLOSED</span>'
+        };
+        return badges[status] || `<span class="status-badge">${status}</span>`;
+    }
 </script>
 {% endblock %}

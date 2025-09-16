@@ -215,6 +215,49 @@
     margin-bottom: 15px;
     font-weight: 600;
 }
+
+/* Clickable project rows */
+#activeProjectsList tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+#activeProjectsList .project-name:hover {
+    color: var(--secondary-blue);
+    text-decoration: underline;
+}
+
+/* Search input styling */
+#projectSearchInput {
+    border-radius: 8px;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #dee2e6;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+}
+
+/* Sortable table headers */
+.sortable {
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.sortable:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.sort-icon {
+    margin-left: 5px;
+    color: #6c757d;
+}
+
+.sort-icon.fa-sort-up,
+.sort-icon.fa-sort-down {
+    color: var(--secondary-blue);
+}
 {% endblock %}
 
 {% block content %}
@@ -706,7 +749,25 @@
                 
                 <div id="activeProjectsContainer" style="display: none;">
                     <h6 class="mb-3">Actieve Projecten voor <span id="selectedUserName" class="text-primary"></span></h6>
-                    
+
+                    <!-- Search bar -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="projectSearchInput"
+                                       placeholder="Zoek project..."
+                                       onkeyup="filterProjects()">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearProjectSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <span class="text-muted">Tip: Klik op een project om details te bekijken</span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -714,10 +775,18 @@
                                     <th style="width: 40px;">
                                         <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
                                     </th>
-                                    <th>Project</th>
-                                    <th>Status</th>
-                                    <th>Laatste Activiteit</th>
-                                    <th>Items</th>
+                                    <th class="sortable" onclick="sortTable('project')" style="cursor: pointer;">
+                                        Project <i class="fas fa-sort sort-icon" data-column="project"></i>
+                                    </th>
+                                    <th class="sortable" onclick="sortTable('status')" style="cursor: pointer;">
+                                        Status <i class="fas fa-sort sort-icon" data-column="status"></i>
+                                    </th>
+                                    <th class="sortable" onclick="sortTable('lastActivity')" style="cursor: pointer;">
+                                        Laatste Activiteit <i class="fas fa-sort sort-icon" data-column="lastActivity"></i>
+                                    </th>
+                                    <th class="sortable" onclick="sortTable('items')" style="cursor: pointer;">
+                                        Items <i class="fas fa-sort sort-icon" data-column="items"></i>
+                                    </th>
                                     <th>Actie</th>
                                 </tr>
                             </thead>
@@ -1477,6 +1546,11 @@ setInterval(() => {
 }, 30000);
 
 // --- Manual Afgemeld Functions ---
+// Global variables for sorting
+let activeProjectsData = [];
+let currentSortColumn = null;
+let currentSortOrder = 'asc';
+
 // Load users with active projects when tab is shown
 document.querySelector('a[href="#manualAfgemeld"]')?.addEventListener('shown.bs.tab', function() {
     loadUsersWithActiveProjects();
@@ -1511,63 +1585,44 @@ async function loadUsersWithActiveProjects() {
 async function loadUserActiveProjects() {
     const userSelect = document.getElementById('userSelect');
     const selectedUser = userSelect.value;
-    
+
     if (!selectedUser) {
         document.getElementById('activeProjectsContainer').style.display = 'none';
         document.getElementById('noActiveProjects').style.display = 'none';
+        activeProjectsData = [];
         return;
     }
-    
+
     document.getElementById('selectedUserName').textContent = selectedUser;
-    
+
     try {
         const response = await fetch(`/api/users/active-projects/${encodeURIComponent(selectedUser)}`);
         const data = await response.json();
-        
+
         if (data.success) {
-            const tbody = document.getElementById('activeProjectsList');
-            tbody.innerHTML = '';
-            
             if (data.active_projects.length === 0) {
                 document.getElementById('activeProjectsContainer').style.display = 'none';
                 document.getElementById('noActiveProjects').style.display = 'block';
+                activeProjectsData = [];
                 return;
             }
-            
+
             document.getElementById('noActiveProjects').style.display = 'none';
             document.getElementById('activeProjectsContainer').style.display = 'block';
-            
-            data.active_projects.forEach((project, index) => {
-                const row = document.createElement('tr');
-                const lastActivity = new Date(project.last_activity);
-                const statusBadge = project.status === 'BEZIG' ? 
-                    '<span class="badge bg-warning">BEZIG</span>' : 
-                    '<span class="badge bg-info">OPEN</span>';
-                
-                row.innerHTML = `
-                    <td>
-                        <input type="checkbox" class="project-checkbox" 
-                               value="${project.project}" 
-                               data-user="${selectedUser}"
-                               onchange="updateSelectedCount()">
-                    </td>
-                    <td class="fw-semibold">${project.project}</td>
-                    <td>${statusBadge}</td>
-                    <td>${lastActivity.toLocaleString('nl-NL')}</td>
-                    <td>${project.item_count || 0}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" 
-                                onclick="sendSingleAfgemeld('${selectedUser}', '${project.project}')">
-                            <i class="fas fa-check"></i> Afmelden
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-            // Reset select all checkbox
-            document.getElementById('selectAll').checked = false;
-            updateSelectedCount();
+
+            // Store projects data globally for sorting
+            activeProjectsData = data.active_projects.map(project => ({
+                ...project,
+                user: selectedUser
+            }));
+
+            // Reset sort icons
+            resetSortIcons();
+            currentSortColumn = null;
+            currentSortOrder = 'asc';
+
+            // Display projects
+            displayProjects(activeProjectsData);
         }
     } catch (error) {
         console.error('Error loading active projects:', error);
@@ -1586,6 +1641,160 @@ function updateSelectedCount() {
     const selectedCount = document.querySelectorAll('.project-checkbox:checked').length;
     document.getElementById('selectedCount').textContent = `${selectedCount} project${selectedCount !== 1 ? 'en' : ''} geselecteerd`;
     document.getElementById('bulkAfgemeldBtn').disabled = selectedCount === 0;
+}
+
+// Open project details in logs_project page
+function openProjectDetails(project) {
+    window.open(`/logs_project?project=${project}`, '_blank');
+}
+
+// Filter projects based on search input
+function filterProjects() {
+    const searchInput = document.getElementById('projectSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#activeProjectsList tr');
+
+    rows.forEach(row => {
+        const projectName = row.querySelector('.project-name')?.textContent.toLowerCase() || '';
+        if (projectName.includes(searchInput)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update selected count after filtering
+    updateSelectedCount();
+}
+
+// Clear search input and show all projects
+function clearProjectSearch() {
+    document.getElementById('projectSearchInput').value = '';
+    filterProjects();
+}
+
+// Display projects in the table
+function displayProjects(projects) {
+    const tbody = document.getElementById('activeProjectsList');
+    tbody.innerHTML = '';
+
+    projects.forEach((project) => {
+        const row = document.createElement('tr');
+        const lastActivity = new Date(project.last_activity);
+        const statusBadge = project.status === 'BEZIG' ?
+            '<span class="status-badge status-bezig">BEZIG</span>' :
+            '<span class="status-badge status-open">OPEN</span>';
+
+        row.innerHTML = `
+            <td onclick="event.stopPropagation();">
+                <input type="checkbox" class="project-checkbox"
+                       value="${project.project}"
+                       data-user="${project.user}"
+                       onchange="updateSelectedCount()">
+            </td>
+            <td class="fw-semibold project-name" style="cursor: pointer;"
+                onclick="openProjectDetails('${encodeURIComponent(project.project)}')">${project.project}</td>
+            <td>${statusBadge}</td>
+            <td data-timestamp="${project.last_activity}">${lastActivity.toLocaleString('nl-NL')}</td>
+            <td>${project.item_count || 0}</td>
+            <td onclick="event.stopPropagation();">
+                <button class="btn btn-sm btn-warning"
+                        onclick="sendSingleAfgemeld('${project.user}', '${project.project}')">
+                    <i class="fas fa-check"></i> Afmelden
+                </button>
+            </td>
+        `;
+        row.style.cursor = 'pointer';
+        row.onclick = function(e) {
+            if (!e.target.closest('td').onclick) {
+                openProjectDetails(encodeURIComponent(project.project));
+            }
+        };
+        tbody.appendChild(row);
+    });
+
+    // Reset select all checkbox
+    document.getElementById('selectAll').checked = false;
+    updateSelectedCount();
+}
+
+// Sort table by column
+function sortTable(column) {
+    if (activeProjectsData.length === 0) return;
+
+    // Determine sort order
+    if (currentSortColumn === column) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortOrder = 'asc';
+        currentSortColumn = column;
+    }
+
+    // Update sort icons
+    updateSortIcons(column, currentSortOrder);
+
+    // Sort the data
+    const sortedData = [...activeProjectsData].sort((a, b) => {
+        let valueA, valueB;
+
+        switch(column) {
+            case 'project':
+                valueA = a.project.toLowerCase();
+                valueB = b.project.toLowerCase();
+                break;
+            case 'status':
+                valueA = a.status;
+                valueB = b.status;
+                break;
+            case 'lastActivity':
+                valueA = new Date(a.last_activity);
+                valueB = new Date(b.last_activity);
+                break;
+            case 'items':
+                valueA = a.item_count || 0;
+                valueB = b.item_count || 0;
+                break;
+            default:
+                return 0;
+        }
+
+        if (valueA < valueB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valueA > valueB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Display sorted data
+    displayProjects(sortedData);
+
+    // Reapply search filter if active
+    const searchInput = document.getElementById('projectSearchInput').value;
+    if (searchInput) {
+        filterProjects();
+    }
+}
+
+// Update sort icons
+function updateSortIcons(column, order) {
+    // Reset all icons
+    resetSortIcons();
+
+    // Update the active column icon
+    const icon = document.querySelector(`.sort-icon[data-column="${column}"]`);
+    if (icon) {
+        icon.classList.remove('fa-sort');
+        if (order === 'asc') {
+            icon.classList.add('fa-sort-up');
+        } else {
+            icon.classList.add('fa-sort-down');
+        }
+    }
+}
+
+// Reset all sort icons
+function resetSortIcons() {
+    document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.classList.remove('fa-sort-up', 'fa-sort-down');
+        icon.classList.add('fa-sort');
+    });
 }
 
 async function sendSingleAfgemeld(user, project) {

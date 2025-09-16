@@ -742,6 +742,33 @@ class ScannerPanel(tk.Frame):
             if response.ok and response.json().get('success'):
                 active_sessions = response.json().get('sessions', [])
                 for session in active_sessions:
+                    # Check if session was paused
+                    if session.get('is_paused'):
+                        print(f"[ScannerPanel] Found paused orphaned session: {session['session_id']}")
+                        # Send resume event first to maintain event log consistency
+                        resume_data = {
+                            'session_id': session['session_id'],
+                            'timestamp': datetime.now().isoformat(),
+                            'user': current_user,
+                            'project': session.get('project', '')
+                        }
+                        resume_response = requests.post(api_url.replace('/log', '/session/resume'), json=resume_data, timeout=1)
+                        if resume_response.ok:
+                            print(f"[ScannerPanel] Resumed paused session before cleanup: {session['session_id']}")
+                            # Also log SESSION_RESUME event
+                            log_data = {
+                                'event': 'SESSION_RESUME',
+                                'user': current_user,
+                                'project': session.get('project', ''),
+                                'session_id': session['session_id'],
+                                'details': 'Sessie hervat voor cleanup',
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            try:
+                                requests.post(api_url, json=log_data, timeout=1)
+                            except:
+                                pass  # Don't fail if event logging fails
+                    
                     # Close orphaned session
                     end_data = {
                         'session_id': session['session_id'],
@@ -1824,21 +1851,27 @@ class ScannerPanel(tk.Frame):
             # Send pause event to session endpoint
             response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=1)
             if response.ok:
-                self.log_message(f"⏸️ Actieve sessie gepauzeerd voor {current_user}", "info")
+                response_data = response.json()
                 
-                # Also log SESSION_PAUSE event for tracking
-                log_data = {
-                    'event': 'SESSION_PAUSE',
-                    'user': current_user,
-                    'project': current_project,
-                    'session_id': self.current_session_id,
-                    'details': 'Sessie 1 gepauzeerd',
-                    'timestamp': self.session1_pause_start.isoformat()
-                }
-                try:
-                    requests.post(api_url, json=log_data, timeout=1)
-                except:
-                    pass  # Don't fail the pause if event logging fails
+                # Check if session was already paused
+                if response_data.get('already_paused'):
+                    self.log_message(f"⚠️ Sessie 1 was al gepauzeerd voor {current_user}", "warning")
+                else:
+                    self.log_message(f"⏸️ Actieve sessie gepauzeerd voor {current_user}", "info")
+                    
+                    # Only log SESSION_PAUSE event if session wasn't already paused
+                    log_data = {
+                        'event': 'SESSION_PAUSE',
+                        'user': current_user,
+                        'project': current_project,
+                        'session_id': self.current_session_id,
+                        'details': 'Sessie 1 gepauzeerd',
+                        'timestamp': self.session1_pause_start.isoformat()
+                    }
+                    try:
+                        requests.post(api_url, json=log_data, timeout=1)
+                    except:
+                        pass  # Don't fail the pause if event logging fails
                 
                 # Update UI for Session 1 pause
                 self.session_status_label.config(text=f"Sessie 1 gepauzeerd: {current_user}", fg="#F39C12")
@@ -1889,21 +1922,27 @@ class ScannerPanel(tk.Frame):
             # Send pause event to session endpoint
             response = requests.post(api_url.replace('/log', '/session/pause'), json=data, timeout=1)
             if response.ok:
-                self.log_message(f"⏸️ Achtergrond sessie gepauzeerd voor {current_user}", "info")
+                response_data = response.json()
                 
-                # Also log SESSION_PAUSE event for tracking
-                log_data = {
-                    'event': 'SESSION_PAUSE',
-                    'user': current_user,
-                    'project': current_project,
-                    'session_id': self.background_session_id,
-                    'details': 'Sessie 2 gepauzeerd',
-                    'timestamp': self.session2_pause_start.isoformat()
-                }
-                try:
-                    requests.post(api_url, json=log_data, timeout=1)
-                except:
-                    pass  # Don't fail the pause if event logging fails
+                # Check if session was already paused
+                if response_data.get('already_paused'):
+                    self.log_message(f"⚠️ Sessie 2 was al gepauzeerd voor {current_user}", "warning")
+                else:
+                    self.log_message(f"⏸️ Achtergrond sessie gepauzeerd voor {current_user}", "info")
+                    
+                    # Only log SESSION_PAUSE event if the session wasn't already paused
+                    log_data = {
+                        'event': 'SESSION_PAUSE',
+                        'user': current_user,
+                        'project': current_project,
+                        'session_id': self.background_session_id,
+                        'details': 'Sessie 2 gepauzeerd',
+                        'timestamp': self.session2_pause_start.isoformat()
+                    }
+                    try:
+                        requests.post(api_url, json=log_data, timeout=1)
+                    except:
+                        pass  # Don't fail the pause if event logging fails
                 
                 # Update UI for Session 2 pause
                 # Change pause button to show resume
@@ -1960,8 +1999,28 @@ class ScannerPanel(tk.Frame):
             if response.ok:
                 self.log_message(f"▶️ Actieve sessie hervat voor {current_user}", "success")
                 
-                # Also log SESSION_RESUME event for tracking
+                # Also log SESSION_RESUME event for tracking - but check for AFGEMELD first
                 pause_minutes = round(pause_duration_seconds / 60, 1)
+                
+                # Check if project has been marked as AFGEMELD before sending SESSION_RESUME
+                check_data = {
+                    'project': current_project,
+                    'user': current_user
+                }
+                try:
+                    check_response = requests.get(
+                        api_url.replace('/log', '/project/status'),
+                        params=check_data,
+                        timeout=1
+                    )
+                    if check_response.ok:
+                        status_data = check_response.json()
+                        if status_data.get('has_afgemeld', False):
+                            self.log_message(f"⚠️ Cannot resume - project already AFGEMELD for {current_user}", "warning")
+                            return
+                except:
+                    pass  # Continue if check fails
+                
                 log_data = {
                     'event': 'SESSION_RESUME',
                     'user': current_user,
@@ -2030,8 +2089,28 @@ class ScannerPanel(tk.Frame):
             if response.ok:
                 self.log_message(f"▶️ Achtergrond sessie hervat voor {current_user}", "success")
                 
-                # Also log SESSION_RESUME event for tracking
+                # Also log SESSION_RESUME event for tracking - but check for AFGEMELD first
                 pause_minutes = round(pause_duration_seconds / 60, 1)
+                
+                # Check if project has been marked as AFGEMELD before sending SESSION_RESUME
+                check_data = {
+                    'project': current_project,
+                    'user': current_user
+                }
+                try:
+                    check_response = requests.get(
+                        api_url.replace('/log', '/project/status'),
+                        params=check_data,
+                        timeout=1
+                    )
+                    if check_response.ok:
+                        status_data = check_response.json()
+                        if status_data.get('has_afgemeld', False):
+                            self.log_message(f"⚠️ Cannot resume - project already AFGEMELD for {current_user}", "warning")
+                            return
+                except:
+                    pass  # Continue if check fails
+                
                 log_data = {
                     'event': 'SESSION_RESUME',
                     'user': current_user,

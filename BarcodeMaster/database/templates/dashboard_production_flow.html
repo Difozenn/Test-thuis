@@ -1,0 +1,771 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Production Flow Dashboard{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* Odoo-style Production Flow Dashboard */
+.production-container {
+    padding: 20px;
+    background: #f5f5f7;
+}
+
+/* Control Panel */
+.control-panel {
+    background: white;
+    padding: 15px 20px;
+    margin: -20px -20px 20px -20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.breadcrumb-nav .active {
+    color: var(--secondary-blue);
+    font-weight: 500;
+}
+
+.view-options {
+    display: flex;
+    gap: 10px;
+}
+
+.view-btn {
+    padding: 6px 14px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    border-color: var(--secondary-blue);
+    color: var(--secondary-blue);
+}
+
+.view-btn.active {
+    background: var(--secondary-blue);
+    border-color: var(--secondary-blue);
+    color: white;
+}
+
+/* Bottleneck Alert */
+.bottleneck-alert {
+    background: linear-gradient(135deg, #fff5f5, #ffebeb);
+    border: 1px solid #f5c6cb;
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bottleneck-icon {
+    width: 40px;
+    height: 40px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    animation: pulse-alert 2s infinite;
+}
+
+@keyframes pulse-alert {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.bottleneck-content {
+    flex: 1;
+}
+
+.bottleneck-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #721c24;
+    margin-bottom: 4px;
+}
+
+.bottleneck-details {
+    font-size: 13px;
+    color: #721c24;
+    opacity: 0.9;
+}
+
+.bottleneck-action {
+    padding: 8px 16px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bottleneck-action:hover {
+    background: #c82333;
+}
+
+/* Pipeline Section */
+.pipeline-section {
+    background: white;
+    border-radius: 15px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+
+.pipeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.pipeline-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.pipeline-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.pipeline-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pipeline-stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--secondary-blue);
+}
+
+.pipeline-stat-label {
+    font-size: 11px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Pipeline Flow */
+.pipeline-flow {
+    position: relative;
+    padding: 40px 0;
+    background: #f8f9fa;
+    border-radius: 15px;
+    margin-bottom: 24px;
+}
+
+.flow-line {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.flow-progress {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    z-index: 2;
+    animation: flow-animation 3s linear infinite;
+}
+
+@keyframes flow-animation {
+    0% { width: 0%; }
+    100% { width: 90%; }
+}
+
+.department-nodes {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: relative;
+    z-index: 3;
+}
+
+.dept-node {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 15px;
+    padding: 15px;
+    width: 140px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.dept-node:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border-color: var(--secondary-blue);
+}
+
+.dept-node.active {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f0fff4, #e6f4ea);
+}
+
+.dept-node.bottleneck {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff5f5, #ffebeb);
+}
+
+.dept-node-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dept-node-count {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.dept-node-label {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.dept-node-queue {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+}
+
+.queue-indicator {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.queue-fill {
+    height: 100%;
+    background: #ffc107;
+    border-radius: 2px;
+    transition: width 0.5s;
+}
+
+.queue-fill.critical {
+    background: #dc3545;
+}
+
+.bottleneck-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #dc3545;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* User Tabs Section */
+.users-section {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+
+.users-tabs {
+    display: flex;
+    gap: 5px;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.user-tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 14px;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    position: relative;
+}
+
+.user-tab:hover {
+    color: var(--secondary-blue);
+    background: #f8f9fa;
+}
+
+.user-tab.active {
+    color: var(--secondary-blue);
+    border-bottom-color: var(--secondary-blue);
+    font-weight: 500;
+}
+
+.user-status-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+}
+
+.user-status-dot.idle {
+    background: #ffc107;
+}
+
+.user-status-dot.offline {
+    background: #6c757d;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+.user-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+}
+
+.project-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.project-card:hover {
+    background: white;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.project-id {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.project-dept {
+    padding: 3px 8px;
+    background: var(--secondary-blue);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.project-details {
+    display: grid;
+    gap: 10px;
+}
+
+.project-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.project-detail-label {
+    color: #6c757d;
+}
+
+.project-detail-value {
+    color: #495057;
+    font-weight: 500;
+}
+
+.project-progress {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    border-radius: 3px;
+}
+
+/* Metrics Row */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border-top: 3px solid var(--secondary-blue);
+}
+
+.metric-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 20px;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-change {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 8px;
+}
+
+.metric-change.negative {
+    color: #dc3545;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.empty-text {
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .department-nodes {
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .dept-node {
+        width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .control-panel {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .pipeline-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .users-tabs {
+        flex-wrap: wrap;
+    }
+
+    .user-projects-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Project Management Dashboard</h1>
+    <p>Real-time production flow monitoring and bottleneck detection</p>
+</div>
+
+<div class="production-container">
+    <!-- Bottleneck Alert (shown when detected) -->
+    <div class="bottleneck-alert" id="bottleneckAlert" style="display: none;">
+        <div class="bottleneck-icon">⚠</div>
+        <div class="bottleneck-content">
+            <div class="bottleneck-title">Bottleneck Detected</div>
+            <div class="bottleneck-details" id="bottleneckDetails">
+                OPUS department has 15+ items in queue. Consider reallocating resources.
+            </div>
+        </div>
+        <button class="bottleneck-action" onclick="handleBottleneck()">Take Action</button>
+    </div>
+
+    <!-- Pipeline Flow -->
+    <div class="pipeline-section">
+        <div class="pipeline-header">
+            <h2 class="pipeline-title">Production Pipeline</h2>
+        </div>
+
+        <div class="pipeline-flow">
+            <div class="flow-line"></div>
+            <div class="flow-progress"></div>
+
+            <div class="department-nodes">
+                {% for user in dashboard_users %}
+                    {% set user_data = users_projects.get(user, []) %}
+                    {% set active_count = user_data|length %}
+                    {% set is_bottleneck = active_count > 5 %}
+
+                    <div class="dept-node {% if active_count > 0 %}active{% endif %} {% if is_bottleneck %}bottleneck{% endif %}" onclick="showDepartment('{{ user }}')">
+                        {% if is_bottleneck %}
+                            <div class="bottleneck-badge">!</div>
+                        {% endif %}
+                        <div class="dept-node-name">{{ user }}</div>
+                        <div class="dept-node-count">{{ active_count }}</div>
+                        <div class="dept-node-label">{% if active_count == 1 %}project{% elif active_count > 1 %}projects{% else %}idle{% endif %}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- User Tabs Section -->
+    <div class="users-section">
+        <div class="users-tabs">
+            {% for user in dashboard_users %}
+                {% set user_data = users_projects.get(user, []) %}
+                {% set has_active = user_data|length > 0 %}
+                <button class="user-tab {% if loop.first %}active{% endif %}" onclick="showUserProjects('{{ user }}', this)">
+                    {{ user }}
+                    <span class="user-status-dot {% if not has_active %}offline{% endif %}"></span>
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="tab-content">
+            <div id="userProjects" class="user-projects-grid">
+                <!-- Will be populated by JavaScript with actual user data -->
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Store user projects data from server
+const usersProjectsData = {{ users_projects | tojson }};
+const deptStats = {{ dept_stats | tojson }};
+
+// Bottleneck Detection with real data
+function detectBottlenecks() {
+    const thresholds = {
+        'NESTING': 10,
+        'ACCURA': 12,
+        'OPUS': 10,
+        'KL GANNOMAT': 8,
+        'HANDWERK': 8,
+        'GR GANNOMAT': 10,
+        'BOERE': 5
+    };
+
+    let bottlenecks = [];
+    for (const [dept, data] of Object.entries(deptStats)) {
+        const threshold = thresholds[dept] || 10;
+        if (data.queue > threshold) {
+            bottlenecks.push({
+                name: dept,
+                queue: data.queue,
+                threshold: threshold
+            });
+        }
+    }
+
+    if (bottlenecks.length > 0) {
+        const worst = bottlenecks.reduce((prev, current) =>
+            (current.queue / current.threshold) > (prev.queue / prev.threshold) ? current : prev
+        );
+
+        document.getElementById('bottleneckAlert').style.display = 'flex';
+        document.getElementById('bottleneckDetails').textContent =
+            `${worst.name.replace('_PROCESSING', '')} department has ${worst.queue} items in queue (threshold: ${worst.threshold}). Consider reallocating resources.`;
+    }
+}
+
+// Run bottleneck detection on load
+detectBottlenecks();
+setInterval(detectBottlenecks, 30000); // Check every 30 seconds
+
+// Show department details and switch to user tab
+function showDepartment(dept) {
+    // Find the corresponding user tab and click it
+    const userTabs = document.querySelectorAll('.user-tab');
+    userTabs.forEach(tab => {
+        if (tab.textContent.trim().includes(dept)) {
+            tab.click();
+            // Scroll to the user tabs section
+            document.querySelector('.users-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
+// Show user projects with real data
+function showUserProjects(user, tabElement) {
+    // Update active tab
+    document.querySelectorAll('.user-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    tabElement.classList.add('active');
+
+    const projectsContainer = document.getElementById('userProjects');
+    const userProjects = usersProjectsData[user] || [];
+
+    if (userProjects.length === 0) {
+        projectsContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">Geen actieve projecten voor ${user}</div>
+            </div>
+        `;
+    } else {
+        let projectsHTML = '';
+        userProjects.forEach(project => {
+            projectsHTML += `
+                <div class="project-card" onclick="window.location.href='/logs_project?project=${encodeURIComponent(project.project)}'">
+                    <div class="project-header">
+                        <span class="project-id">${project.project}</span>
+                    </div>
+                    <div class="project-details">
+                        ${project.mo_number ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">MO:</span>
+                            <span class="project-detail-value">${project.mo_number}</span>
+                        </div>` : ''}
+                        ${project.so_number ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">SO:</span>
+                            <span class="project-detail-value">${project.so_number}</span>
+                        </div>` : ''}
+                        ${project.customer_name ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">Klant:</span>
+                            <span class="project-detail-value">${project.customer_name}</span>
+                        </div>` : ''}
+                        ${project.color ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">Kleur:</span>
+                            <span class="project-detail-value">${project.color}</span>
+                        </div>` : ''}
+                        <div class="project-detail">
+                            <span class="project-detail-label">Status:</span>
+                            <span class="status-badge status-${project.status.toLowerCase()}">${project.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        projectsContainer.innerHTML = projectsHTML;
+    }
+}
+
+// Handle bottleneck action
+function handleBottleneck() {
+    console.log('Handling bottleneck...');
+    alert('Opening resource allocation panel...');
+}
+
+// Load first user's projects on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const firstTab = document.querySelector('.user-tab.active');
+    if (firstTab) {
+        const firstUser = firstTab.textContent.trim();
+        showUserProjects(firstUser, firstTab);
+    }
+});
+
+</script>
+{% endblock %}

@@ -50,6 +50,7 @@ class ScannerPanel(ttk.Frame):
         self.build_tab()
         self._load_config()
         self._on_scanner_type_change() # Set initial UI state
+        self._check_and_cleanup_orphaned_sessions() # Check for orphaned sessions on startup
 
     def build_tab(self):
         """Gebruikersinterface voor het scannerpaneel bouwen met grid-layout."""
@@ -63,22 +64,24 @@ class ScannerPanel(ttk.Frame):
         # --- Hoofdcontainer voor bovenste rij (Scannertype en Excel-bestand) ---
         top_row_frame = ttk.Frame(self)
         top_row_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
-        top_row_frame.columnconfigure(0, weight=1)
-        top_row_frame.columnconfigure(1, weight=1)
+        top_row_frame.columnconfigure(0, weight=1, uniform="equal")  # 50% width
+        top_row_frame.columnconfigure(1, weight=1, uniform="equal")  # 50% width
 
         # --- Scannertype Frame (links in top_row_frame) ---
         scanner_type_frame = ttk.Labelframe(top_row_frame, text="Scannertype")
         scanner_type_frame.grid(row=0, column=0, sticky="nsew", padx=(10,5), pady=5)
+        scanner_type_frame.rowconfigure(1, weight=1)  # Make row 1 expand for controls
 
         # --- Excel-bestand Frame (rechts in top_row_frame) ---
         excel_frame = ttk.Labelframe(top_row_frame, text="Excel-bestand")
         excel_frame.grid(row=0, column=1, sticky="nsew", padx=(5,10), pady=5)
         excel_frame.columnconfigure(1, weight=1) # Zorgt ervoor dat entry-widget uitbreidt
         
-        # --- Frame voor scanner-specifieke opties (onder top_row_frame) ---
-        scanner_options_frame = ttk.Frame(self)
-        scanner_options_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=0)
-        scanner_options_frame.columnconfigure(0, weight=1)
+        # --- Frame voor Afmelden button (onder top_row_frame, full width) ---
+        button_frame = ttk.Frame(self)
+        button_frame.grid(row=1, column=0, sticky="ew", padx=0, pady=0)
+        button_frame.columnconfigure(0, weight=1, uniform="equal")  # Empty space takes 50%
+        button_frame.columnconfigure(1, weight=1, uniform="equal")  # Afmelden button takes 50%
 
         # --- PanedWindow for resizable Treeview and Log Viewer ---
         main_paned_window = ttk.PanedWindow(self, orient=tk.VERTICAL)
@@ -97,16 +100,44 @@ class ScannerPanel(ttk.Frame):
         main_paned_window.add(log_frame, weight=1) # Give less initial space to log
 
         # --- Inhoud Scannertype Frame ---
-        ttk.Radiobutton(scanner_type_frame, text="USB-toetsenbord", variable=self.scanner_type_var, value="USB", command=self._on_scanner_type_change).pack(side="left", padx=10, pady=5)
-        ttk.Radiobutton(scanner_type_frame, text="COM-poort", variable=self.scanner_type_var, value="COM", command=self._on_scanner_type_change).pack(side="left", padx=10, pady=5)
+        # Radio buttons row
+        radio_frame = ttk.Frame(scanner_type_frame)
+        radio_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        ttk.Radiobutton(radio_frame, text="USB-toetsenbord", variable=self.scanner_type_var, value="USB", command=self._on_scanner_type_change).pack(side="left", padx=10)
+        ttk.Radiobutton(radio_frame, text="COM-poort", variable=self.scanner_type_var, value="COM", command=self._on_scanner_type_change).pack(side="left", padx=10)
 
-        # --- Scanner-specifieke frames (geplaatst in scanner_options_frame) ---
-        self.com_frame = ttk.Frame(scanner_options_frame)
+        # Scanner-specific controls (inside scanner_type_frame)
+        scanner_controls_frame = ttk.Frame(scanner_type_frame)
+        scanner_controls_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=(0,5))
+        
+        self.com_frame = ttk.Frame(scanner_controls_frame)
         self.com_frame.grid(row=0, column=0, sticky="ew")
         self.com_frame.columnconfigure(1, weight=1)
 
-        self.usb_frame = ttk.Frame(scanner_options_frame)
+        self.usb_frame = ttk.Frame(scanner_controls_frame)
         self.usb_frame.grid(row=0, column=0, sticky="ew")
+        
+        # --- Afmelden button (right side of button_frame, 50% width) ---
+        # Empty space on left (50%)
+        empty_label = ttk.Label(button_frame, text="")
+        empty_label.grid(row=0, column=0, sticky="ew", padx=(10, 5))  # Match left padding
+        
+        # Afmelden button on right (50%)
+        self.afmelden_button = ttk.Button(
+            button_frame,
+            text="Afmelden",
+            command=self._mark_project_afgemeld,
+            padding=(20, 12)
+        )
+        self.afmelden_button.grid(row=0, column=1, sticky="ew", padx=(5, 10), ipady=8)  # Match right padding
+        
+        # Try to style the button
+        try:
+            style = ttk.Style()
+            style.configure('Afmelden.TButton', font=('TkDefaultFont', 12, 'bold'))
+            self.afmelden_button.configure(style='Afmelden.TButton')
+        except:
+            pass
 
         # --- Inhoud Excel-bestand Frame ---
         ttk.Label(excel_frame, text="Bestandspad:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -315,6 +346,7 @@ class ScannerPanel(ttk.Frame):
         """Verwerkt UI-wijzigingen wanneer het scannertype wordt gewijzigd."""
         scanner_type = self.scanner_type_var.get()
         self._log(f"Scannertype gewijzigd naar {scanner_type}.")
+        
         if scanner_type == "COM":
             self.com_frame.grid(row=0, column=0, sticky="ew")
             self.usb_frame.grid_remove()
@@ -358,6 +390,134 @@ class ScannerPanel(ttk.Frame):
         )
         if file_path:
             self._load_excel_data(file_path)
+    
+    def _mark_project_afgemeld(self):
+        """Mark the current project as AFGEMELD (completed)."""
+        # Check if we have an Excel file loaded
+        excel_path = self.excel_file_path_var.get()
+        if not excel_path:
+            messagebox.showwarning("Geen project", "Selecteer eerst een Excel-bestand.")
+            return
+        
+        # Extract project name from the Excel file path
+        project_name = self._extract_project_from_filename(excel_path)
+        if not project_name:
+            messagebox.showwarning("Geen project", "Kan projectnaam niet bepalen uit bestandsnaam.")
+            return
+        
+        # Get item count from the treeview (all items that have been processed)
+        item_count = len(self.tree.get_children())
+        
+        # Show confirmation dialog with item count
+        result = messagebox.askyesno(
+            "Project Afmelden",
+            f"Wilt u project '{project_name}' afmelden?\n\n"
+            f"Aantal verwerkte items: {item_count}\n\n"
+            f"Dit zal:\n"
+            f"• De huidige sessie beëindigen\n"
+            f"• Het project markeren als voltooid\n"
+            f"• Het Excel-bestand archiveren"
+        )
+        
+        if not result:
+            return
+        
+        try:
+            config_file_path = get_config_path()
+            if not os.path.exists(config_file_path):
+                messagebox.showerror("Configuratiefout", "Configuratiebestand niet gevonden.")
+                return
+                
+            with open(config_file_path, 'r') as f:
+                config = json.load(f)
+            
+            api_url = self._ensure_url_protocol(config.get('api_url', ''))
+            if not api_url:
+                messagebox.showerror("Configuratiefout", "API URL niet geconfigureerd.")
+                return
+            
+            user = self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
+            
+            # First, end the current session if there is one
+            if self.current_session_id:
+                self._log(f"Sessie beëindigen voor AFGEMELD: {self.current_session_id}")
+                self._end_session()
+                # Give the session end a moment to complete
+                time.sleep(0.5)
+            
+            # Send AFGEMELD event
+            details = f"{project_name} afgemeld door {user} met {item_count} items"
+            afgemeld_data = {
+                'event': 'AFGEMELD',
+                'user': user,
+                'project': project_name,
+                'details': details,
+                'item_count': item_count,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = requests.post(api_url, json=afgemeld_data, timeout=3)
+            if response.ok:
+                self._log(f"Project {project_name} succesvol afgemeld met {item_count} items")
+                messagebox.showinfo(
+                    "Project Afgemeld",
+                    f"Project '{project_name}' is succesvol afgemeld.\n"
+                    f"Verwerkte items: {item_count}"
+                )
+                
+                # Archive the Excel file
+                self._archive_excel_file(excel_path)
+                
+                # Clear the UI
+                self.excel_file_path_var.set("")
+                self.tree.delete(*self.tree.get_children())
+                self.barcode_data = {}
+                
+            else:
+                messagebox.showerror("Fout", f"Kon project niet afmelden: {response.text}")
+                
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij afmelden project: {str(e)}")
+            self._log(f"[FOUT] Bij afmelden project: {e}", "error")
+    
+    def _archive_excel_file(self, file_path):
+        """Archive the Excel file to an 'Archief' subdirectory."""
+        try:
+            directory, filename = os.path.split(file_path)
+            archive_dir = os.path.join(directory, "Archief")
+            
+            # Create archive directory if it doesn't exist
+            if not os.path.exists(archive_dir):
+                os.makedirs(archive_dir)
+                self._log(f"Archief map aangemaakt: {archive_dir}")
+            
+            # Move the file to archive
+            archive_path = os.path.join(archive_dir, filename)
+            
+            # If file already exists in archive, add timestamp
+            if os.path.exists(archive_path):
+                name, ext = os.path.splitext(filename)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                archive_path = os.path.join(archive_dir, f"{name}_{timestamp}{ext}")
+            
+            import shutil
+            shutil.move(file_path, archive_path)
+            self._log(f"Bestand gearchiveerd naar: {archive_path}")
+            
+            # Also move the _updated version if it exists
+            updated_path = self._generate_updated_path(file_path)
+            if updated_path and os.path.exists(updated_path):
+                _, updated_filename = os.path.split(updated_path)
+                updated_archive_path = os.path.join(archive_dir, updated_filename)
+                if os.path.exists(updated_archive_path):
+                    name, ext = os.path.splitext(updated_filename)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    updated_archive_path = os.path.join(archive_dir, f"{name}_{timestamp}{ext}")
+                shutil.move(updated_path, updated_archive_path)
+                self._log(f"Updated bestand ook gearchiveerd: {updated_archive_path}")
+                
+        except Exception as e:
+            self._log(f"[WAARSCHUWING] Kon bestand niet archiveren: {e}", "warning")
 
     def _generate_updated_path(self, original_path):
         """Generates the path for the '_updated' version of an Excel file."""
@@ -831,30 +991,60 @@ class ScannerPanel(ttk.Frame):
                                 print(f"[PAUSE_API] Session pause response body: {response.text}")
                                 
                                 if response.ok:
+                                    response_data = response.json()
+                                    
+                                    # Check if session was already paused
+                                    if response_data.get('already_paused'):
+                                        print(f"[PAUSE_API] Session was already paused, skipping SESSION_PAUSE event")
+                                        self._log(f"Session was already paused: {self.current_session_id}")
+                                        return  # Don't send duplicate SESSION_PAUSE event
+                                    
                                     print(f"[PAUSE_API] Session pause successful")
                                     self._log(f"Session paused: {self.current_session_id}")
                                     
-                                    # Also log SESSION_PAUSE event for tracking
-                                    # Use pause_start_time if available, otherwise use current time
-                                    pause_timestamp = self.pause_start_time.isoformat() if self.pause_start_time else datetime.now().isoformat()
-                                    log_data = {
-                                        'event': 'SESSION_PAUSE',
-                                        'user': user,
+                                    # Check if project has been marked as AFGEMELD before sending SESSION_PAUSE
+                                    check_data = {
                                         'project': project,
-                                        'session_id': self.current_session_id,
-                                        'details': f'Session paused - panel hidden',
-                                        'status': 'PAUZE',  # Add status for visibility
-                                        'timestamp': pause_timestamp
+                                        'user': user
                                     }
-                                    print(f"[PAUSE_API] Sending SESSION_PAUSE event to {api_url}")
-                                    print(f"[PAUSE_API] Event data: {log_data}")
-                                    
+                                    should_send_pause = True
                                     try:
-                                        pause_log_response = requests.post(api_url, json=log_data, timeout=3)
-                                        print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
-                                        print(f"[PAUSE_API] SESSION_PAUSE event body: {pause_log_response.text}")
-                                    except Exception as log_error:
-                                        print(f"[PAUSE_API ERROR] Failed to send SESSION_PAUSE event: {log_error}")
+                                        check_response = requests.get(
+                                            api_url.replace('/log', '/project/status'),
+                                            params=check_data,
+                                            timeout=1
+                                        )
+                                        if check_response.ok:
+                                            status_data = check_response.json()
+                                            if status_data.get('has_afgemeld', False):
+                                                print(f"[PAUSE_API] Skipping SESSION_PAUSE - project already AFGEMELD for {user}")
+                                                self._log(f"Cannot pause - project already AFGEMELD for {user}")
+                                                should_send_pause = False
+                                    except:
+                                        pass  # Continue if check fails
+                                    
+                                    if should_send_pause:
+                                        # Also log SESSION_PAUSE event for tracking
+                                        # Use pause_start_time if available, otherwise use current time
+                                        pause_timestamp = self.pause_start_time.isoformat() if self.pause_start_time else datetime.now().isoformat()
+                                        log_data = {
+                                            'event': 'SESSION_PAUSE',
+                                            'user': user,
+                                            'project': project,
+                                            'session_id': self.current_session_id,
+                                            'details': f'Session paused - panel hidden',
+                                            'status': 'PAUZE',  # Add status for visibility
+                                            'timestamp': pause_timestamp
+                                        }
+                                        print(f"[PAUSE_API] Sending SESSION_PAUSE event to {api_url}")
+                                        print(f"[PAUSE_API] Event data: {log_data}")
+                                        
+                                        try:
+                                            pause_log_response = requests.post(api_url, json=log_data, timeout=3)
+                                            print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
+                                            print(f"[PAUSE_API] SESSION_PAUSE event body: {pause_log_response.text}")
+                                        except Exception as log_error:
+                                            print(f"[PAUSE_API ERROR] Failed to send SESSION_PAUSE event: {log_error}")
                                 else:
                                     # Reset flag if pause failed
                                     print(f"[PAUSE_API ERROR] Session pause failed with status {response.status_code}: {response.text}")
@@ -920,8 +1110,28 @@ class ScannerPanel(ttk.Frame):
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
                                     
-                                    # Also log SESSION_RESUME event for tracking
+                                    # Also log SESSION_RESUME event for tracking - but check for AFGEMELD first
                                     pause_minutes = round(pause_duration_seconds / 60, 1)
+                                    
+                                    # Check if project has been marked as AFGEMELD before sending SESSION_RESUME
+                                    check_data = {
+                                        'project': project,
+                                        'user': user
+                                    }
+                                    try:
+                                        check_response = requests.get(
+                                            api_url.replace('/log', '/project/status'),
+                                            params=check_data,
+                                            timeout=1
+                                        )
+                                        if check_response.ok:
+                                            status_data = check_response.json()
+                                            if status_data.get('has_afgemeld', False):
+                                                self._log(f"Cannot resume - project already AFGEMELD for {user}")
+                                                return
+                                    except:
+                                        pass  # Continue if check fails
+                                    
                                     log_data = {
                                         'event': 'SESSION_RESUME',
                                         'user': user,
@@ -986,6 +1196,75 @@ class ScannerPanel(ttk.Frame):
         if self.current_session_id and not self.session_paused:
             self._pause_session()
         super().place_forget()
+    
+    def _check_and_cleanup_orphaned_sessions(self):
+        """Check for orphaned sessions from this user and close them on startup"""
+        try:
+            config_file_path = get_config_path()
+            if not os.path.exists(config_file_path):
+                return
+                
+            with open(config_file_path, 'r') as f:
+                config = json.load(f)
+            
+            api_url = self._ensure_url_protocol(config.get('api_url', ''))
+            if not api_url:
+                return
+                
+            user = config.get('user', 'UNKNOWN')
+            
+            # Query database for active sessions from this user
+            response = requests.get(f"{api_url.replace('/log', '')}/api/user/{user}/active-sessions", timeout=5)
+            if response.ok and response.json().get('success'):
+                active_sessions = response.json().get('sessions', [])
+                for session in active_sessions:
+                    session_id = session['session_id']
+                    is_paused = session.get('is_paused', False)
+                    
+                    print(f"[ScannerPanel] Found orphaned session: {session_id} (paused: {is_paused})")
+                    
+                    # If session was paused, send resume first to maintain event consistency
+                    if is_paused:
+                        resume_data = {
+                            'session_id': session_id,
+                            'timestamp': datetime.now().isoformat(),
+                            'user': user,
+                            'project': session.get('project', '')
+                        }
+                        resume_response = requests.post(api_url.replace('/log', '/session/resume'), json=resume_data, timeout=1)
+                        if resume_response.ok:
+                            print(f"[ScannerPanel] Resumed paused session before cleanup: {session_id}")
+                            # Also log SESSION_RESUME event
+                            log_data = {
+                                'event': 'SESSION_RESUME',
+                                'user': user,
+                                'project': session.get('project', ''),
+                                'session_id': session_id,
+                                'details': 'Session resumed for cleanup',
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            try:
+                                requests.post(api_url, json=log_data, timeout=1)
+                            except:
+                                pass  # Don't fail if event logging fails
+                    
+                    # Close orphaned session
+                    end_data = {
+                        'session_id': session_id,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
+                    if close_response.ok:
+                        print(f"[ScannerPanel] Cleaned up orphaned session: {session_id}")
+                    else:
+                        print(f"[ScannerPanel] Failed to clean up session: {session_id}")
+            elif response.status_code == 404:
+                # Endpoint doesn't exist yet
+                print("[ScannerPanel] Active sessions endpoint not available, skipping cleanup")
+        except requests.exceptions.RequestException as e:
+            print(f"[ScannerPanel] Error checking for orphaned sessions: {e}")
+        except Exception as e:
+            print(f"[ScannerPanel] Unexpected error during session cleanup: {e}")
     
     def shutdown(self):
         """Gracefully pause session on app shutdown."""

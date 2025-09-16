@@ -660,6 +660,64 @@ def process_excel_for_all_types(excel_path, processor_types):
                 
                 results[proc_type] = result
                 
+            elif proc_type == 'MASSIEF_PROCESSING':
+                result = {
+                    'item_count': 0,
+                    'mo_number': mo_number,
+                    'so_number': so_number,
+                    'customer_name': customer_name,
+                    'color': color,
+                    'items_list': []
+                }
+                
+                if 'Materiaal' in df.columns:
+                    for idx, row in df.iterrows():
+                        materiaal_value = str(row['Materiaal']) if pd.notna(row['Materiaal']) else ''
+                        # Check if row contains "Massief_" (case-insensitive)
+                        if 'massief_' in materiaal_value.lower():
+                            result['item_count'] += 1
+                            
+                            # Use Wand Naam for item list (not Positie - Wand Naam format)
+                            wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                            
+                            # Add Wand Naam directly as the item
+                            if wand_naam:
+                                result['items_list'].append(wand_naam)
+                            else:
+                                # Fallback to material name if no Wand Naam
+                                result['items_list'].append(materiaal_value)
+                
+                results[proc_type] = result
+                
+            elif proc_type == 'HANDWERK_PROCESSING':
+                result = {
+                    'item_count': 0,
+                    'mo_number': mo_number,
+                    'so_number': so_number,
+                    'customer_name': customer_name,
+                    'color': color,
+                    'items_list': []
+                }
+                
+                if 'Commentaar' in df.columns:
+                    for idx, row in df.iterrows():
+                        commentaar_value = str(row['Commentaar']) if pd.notna(row['Commentaar']) else ''
+                        # Check if row contains "(HAND)" (case-insensitive)
+                        if '(hand)' in commentaar_value.lower():
+                            result['item_count'] += 1
+                            
+                            # Use Wand Naam for item list
+                            wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                            
+                            # Add Wand Naam directly as the item
+                            if wand_naam:
+                                result['items_list'].append(wand_naam)
+                            else:
+                                # Fallback to row description if no Wand Naam
+                                result['items_list'].append(f"HAND item {result['item_count']}")
+                
+                results[proc_type] = result
+                
     except Exception as e:
         print(f"Error processing Excel for multiple types: {e}")
         traceback.print_exc()
@@ -811,5 +869,331 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         
     except Exception as e:
         print(f"Error generating Excel for BOERE: {e}")
+        traceback.print_exc()
+        return None
+
+
+def parse_excel_for_massief(excel_path):
+    """
+    Parse Excel file for MASSIEF processing.
+    Look in 1 PLATEN tab at Materiaal column.
+    Every row with "Massief_" in Materiaal = 1 count
+    Use "Wand Naam" column for item list
+    
+    Returns:
+        dict with item_count, mo_number, so_number, customer_name, items_list
+    """
+    try:
+        # Get correct sheet name
+        sheet_name = get_sheet_name(excel_path)
+        if not sheet_name:
+            print(f"[MASSIEF] No valid sheet found in {excel_path}")
+            return {
+                'item_count': 0,
+                'mo_number': None,
+                'so_number': None,
+                'customer_name': None,
+                'color': None,
+                'items_list': []
+            }
+        
+        # Find header row
+        header_row = find_header_row(excel_path, sheet_name)
+        
+        # Read Excel file with correct header row
+        df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
+        
+        result = {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []  # List of items for Excel generation
+        }
+        
+        # Extract MO/SO numbers and customer
+        filename = os.path.basename(excel_path)
+        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        if mo_match:
+            result['mo_number'] = mo_match.group(1).upper()
+        
+        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+        if so_match:
+            result['so_number'] = so_match.group(1).upper()
+            
+        customer_match = re.search(r'_([^_]+)\.xls', filename)
+        if customer_match:
+            result['customer_name'] = customer_match.group(1)
+        
+        # Extract color from Excel
+        result['color'] = extract_color_from_excel(excel_path, sheet_name)
+        
+        # Count Massief entries and collect items
+        if 'Materiaal' in df.columns:
+            for idx, row in df.iterrows():
+                materiaal_value = str(row['Materiaal']) if pd.notna(row['Materiaal']) else ''
+                # Check if row contains "Massief_" (case-insensitive)
+                if 'massief_' in materiaal_value.lower():
+                    result['item_count'] += 1
+                    
+                    # Use Wand Naam for item list (not Positie - Wand Naam format)
+                    wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                    
+                    # Add Wand Naam directly as the item
+                    if wand_naam:
+                        result['items_list'].append(wand_naam)
+                    else:
+                        # Fallback to material name if no Wand Naam
+                        result['items_list'].append(materiaal_value)
+            
+        return result
+        
+    except Exception as e:
+        print(f"Error parsing Excel for MASSIEF: {e}")
+        traceback.print_exc()
+        return {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []
+        }
+
+
+def generate_excel_for_massief(items_list, mo_number, so_number, customer_name, project_name=None):
+    """
+    Generate Excel file for MASSIEF processing with item list.
+    
+    Args:
+        items_list: List of items (Wand Naam values)
+        mo_number: MO number for filename
+        so_number: SO number for filename
+        customer_name: Customer name for filename
+        project_name: Optional project name from BarcodeMaster
+    
+    Returns:
+        Path to generated Excel file or None if failed
+    """
+    try:
+        # Get output directory from config or use default
+        from config_utils import get_config
+        config = get_config()
+        
+        if os.name == 'nt':  # Windows
+            output_dir = config.get('massief_output_dir', "C:/MASSIEF")
+        else:  # Linux/Unix
+            output_dir = config.get('massief_output_dir', "/tmp/MASSIEF")
+        
+        # Normalize path
+        output_dir = os.path.normpath(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Use project name if provided to ensure consistency
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if project_name:
+            # Use the actual project name to prevent duplicate project issues
+            filename = f"{project_name}_{timestamp}.xlsx"
+        else:
+            # Fallback: use only MO number to avoid confusion
+            filename = f"{mo_number}_{timestamp}.xlsx"
+        output_path = os.path.join(output_dir, filename)
+        
+        # Create DataFrame with Item and Status columns
+        df = pd.DataFrame({
+            'Item': items_list,
+            'Status': [''] * len(items_list)  # Empty status column
+        })
+        
+        # Save to Excel with metadata if project_name provided
+        if project_name:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # Main data sheet
+                df.to_excel(writer, sheet_name='Items', index=False)
+                
+                # Add metadata sheet
+                metadata_df = pd.DataFrame({
+                    'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
+                    'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
+                })
+                metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+                
+                # Hide the metadata sheet
+                workbook = writer.book
+                worksheet = workbook['_ProjectInfo']
+                worksheet.sheet_state = 'hidden'
+        else:
+            # Fallback to simple Excel write
+            df.to_excel(output_path, index=False, sheet_name='Items')
+        
+        print(f"[MASSIEF] Excel file generated: {output_path}")
+        return output_path
+        
+    except Exception as e:
+        print(f"Error generating Excel for MASSIEF: {e}")
+        traceback.print_exc()
+        return None
+
+
+def parse_excel_for_handwerk(excel_path):
+    """
+    Parse Excel file for HANDWERK processing.
+    Look in 1 PLATEN tab at Commentaar column.
+    Every row with "(HAND)" in Commentaar = 1 count
+    Use "Wand Naam" column for item list
+    
+    Returns:
+        dict with item_count, mo_number, so_number, customer_name, items_list
+    """
+    try:
+        # Get correct sheet name
+        sheet_name = get_sheet_name(excel_path)
+        if not sheet_name:
+            print(f"[HANDWERK] No valid sheet found in {excel_path}")
+            return {
+                'item_count': 0,
+                'mo_number': None,
+                'so_number': None,
+                'customer_name': None,
+                'color': None,
+                'items_list': []
+            }
+        
+        # Find header row
+        header_row = find_header_row(excel_path, sheet_name)
+        
+        # Read Excel file with correct header row
+        df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
+        
+        result = {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []  # List of items for Excel generation
+        }
+        
+        # Extract MO/SO numbers and customer
+        filename = os.path.basename(excel_path)
+        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        if mo_match:
+            result['mo_number'] = mo_match.group(1).upper()
+        
+        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+        if so_match:
+            result['so_number'] = so_match.group(1).upper()
+            
+        customer_match = re.search(r'_([^_]+)\.xls', filename)
+        if customer_match:
+            result['customer_name'] = customer_match.group(1)
+        
+        # Extract color from Excel
+        result['color'] = extract_color_from_excel(excel_path, sheet_name)
+        
+        # Count (HAND) entries and collect items
+        if 'Commentaar' in df.columns:
+            for idx, row in df.iterrows():
+                commentaar_value = str(row['Commentaar']) if pd.notna(row['Commentaar']) else ''
+                # Check if row contains "(HAND)" (case-insensitive)
+                if '(hand)' in commentaar_value.lower():
+                    result['item_count'] += 1
+                    
+                    # Use Wand Naam for item list
+                    wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+                    
+                    # Add Wand Naam directly as the item
+                    if wand_naam:
+                        result['items_list'].append(wand_naam)
+                    else:
+                        # Fallback to row description if no Wand Naam
+                        result['items_list'].append(f"HAND item {result['item_count']}")
+            
+        return result
+        
+    except Exception as e:
+        print(f"Error parsing Excel for HANDWERK: {e}")
+        traceback.print_exc()
+        return {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []
+        }
+
+
+def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name, project_name=None):
+    """
+    Generate Excel file for HANDWERK processing with item list.
+    
+    Args:
+        items_list: List of items (Wand Naam values)
+        mo_number: MO number for filename
+        so_number: SO number for filename
+        customer_name: Customer name for filename
+        project_name: Optional project name from BarcodeMaster
+    
+    Returns:
+        Path to generated Excel file or None if failed
+    """
+    try:
+        # Get output directory from config or use default
+        from config_utils import get_config
+        config = get_config()
+        
+        if os.name == 'nt':  # Windows
+            output_dir = config.get('handwerk_output_dir', "C:/HANDWERK")
+        else:  # Linux/Unix
+            output_dir = config.get('handwerk_output_dir', "/tmp/HANDWERK")
+        
+        # Normalize path
+        output_dir = os.path.normpath(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Use project name if provided to ensure consistency
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if project_name:
+            # Use the actual project name to prevent duplicate project issues
+            filename = f"{project_name}_{timestamp}.xlsx"
+        else:
+            # Fallback: use only MO number to avoid confusion
+            filename = f"{mo_number}_{timestamp}.xlsx"
+        output_path = os.path.join(output_dir, filename)
+        
+        # Create DataFrame with Item and Status columns
+        df = pd.DataFrame({
+            'Item': items_list,
+            'Status': [''] * len(items_list)  # Empty status column
+        })
+        
+        # Save to Excel with metadata if project_name provided
+        if project_name:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # Main data sheet
+                df.to_excel(writer, sheet_name='Items', index=False)
+                
+                # Add metadata sheet
+                metadata_df = pd.DataFrame({
+                    'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
+                    'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
+                })
+                metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+                
+                # Hide the metadata sheet
+                workbook = writer.book
+                worksheet = workbook['_ProjectInfo']
+                worksheet.sheet_state = 'hidden'
+        else:
+            # Fallback to simple Excel write
+            df.to_excel(output_path, index=False, sheet_name='Items')
+        
+        print(f"[HANDWERK] Excel file generated: {output_path}")
+        return output_path
+        
+    except Exception as e:
+        print(f"Error generating Excel for HANDWERK: {e}")
         traceback.print_exc()
         return None

@@ -2321,15 +2321,16 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
+        remember = request.form.get('remember') == 'on'
+
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password) and user.is_active:
-            login_user(user)
+            login_user(user, remember=remember)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
         else:
             flash(get_translation('invalid_credentials'), 'danger')
-    
+
     return render_template('login.html')
 
 @auth_bp.route('/logout')
@@ -3022,9 +3023,9 @@ def dashboard():
                 if not (lunch_start <= event_hour < lunch_end):
                     work_hour_events += 1
         
-        # Calculate average for the entire work day (not real-time)
-        # Use total configured work hours for the day (e.g., 8 hours)
-        hourly_average = work_hour_events / today_work_hours if today_work_hours > 0 else 0
+        # Calculate average based on actual elapsed work hours (real-time)
+        # Use hours_passed to get current items/hr rate during work hours
+        hourly_average = work_hour_events / hours_passed if hours_passed > 0 else 0
     else:
         hourly_average = 0  # Non-working day
         work_hour_events = 0
@@ -5655,10 +5656,10 @@ def initialize_database():
                     role='admin',
                     machine_type='cnc'  # Set default machine type
                 )
-                admin.set_password('admin123')
+                admin.set_password('$machinelog1')
                 db.session.add(admin)
                 db.session.commit()
-                print("Default admin user created: admin/admin123")
+                print("Default admin user created: admin/$machinelog1")
             else:
                 print("Admin user already exists.")
             
@@ -5739,7 +5740,7 @@ if __name__ == '__main__':
             print("="*50)
             print("Enterprise File Monitor is running!")
             print("URL: http://localhost:5002")
-            print("Default login: admin / admin123")
+            print("Default login: admin / $machinelog1")
             print("Note: File monitoring is handled by client applications")
             print("="*50)
         

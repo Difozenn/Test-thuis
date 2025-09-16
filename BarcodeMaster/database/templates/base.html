@@ -347,21 +347,25 @@
         <div class="header-content">
             <div class="user-section">
                 <div class="user-info">
-                    <i class="fas fa-user"></i> {{ current_user|default('Administrator') }}
+                    <i class="fas fa-user"></i> {{ session.get('user', 'Guest') }}
+                    {% if session.get('user') == 'admin' %}
                     <span class="badge bg-danger">Admin</span>
+                    {% endif %}
                 </div>
                 <div class="dropdown">
                     <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-cog"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#">
-                            <i class="fas fa-key"></i> Wachtwoord wijzigen
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">
+                        {% if session.get('user') %}
+                        <li><a class="dropdown-item" href="/logout">
                             <i class="fas fa-sign-out-alt"></i> Uitloggen
                         </a></li>
+                        {% else %}
+                        <li><a class="dropdown-item" href="/login">
+                            <i class="fas fa-sign-in-alt"></i> Inloggen
+                        </a></li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -375,11 +379,14 @@
             <div class="col-md-3 col-lg-2 px-0">
                 <div class="sidebar">
                     <nav class="nav flex-column p-3">
-                        <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">
+                        <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard/production-flow">
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
                         <a class="nav-link {% if active_page == 'projects' %}active{% endif %}" href="/projects">
-                            <i class="fas fa-project-diagram"></i> Projecten
+                            <i class="fas fa-project-diagram"></i> Manufacturing Orders
+                        </a>
+                        <a class="nav-link {% if active_page == 'sales_orders' %}active{% endif %}" href="/sales_orders">
+                            <i class="fas fa-file-invoice"></i> Sales Orders
                         </a>
                         <a class="nav-link {% if active_page == 'users' %}active{% endif %}" href="/users">
                             <i class="fas fa-users"></i> Gebruikers

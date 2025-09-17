@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Week Calculation Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .error { color: red; font-weight: bold; }
+        .correct { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Week Calculation Debugging</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test with week 36 (0-indexed as 35)
+        const currentYear = 2025;
+        const currentWeek = 35; // Week 36 in 0-indexed
+        
+        results.innerHTML += '<h2>Testing Week 36 (index 35) of 2025</h2>';
+        
+        // Method 1: Old calculation (incorrect)
+        results.innerHTML += '<div class="result"><h3>Old Method (First Monday approach):</h3>';
+        const startOfYear = new Date(currentYear, 0, 1);
+        let firstMonday = new Date(startOfYear);
+        const dayOfWeek = firstMonday.getDay();
+        if (dayOfWeek === 0) {
+            firstMonday.setDate(firstMonday.getDate() + 1);
+        } else if (dayOfWeek > 1) {
+            firstMonday.setDate(firstMonday.getDate() - (dayOfWeek - 1));
+        }
+        const weekStartOld = new Date(firstMonday);
+        weekStartOld.setDate(weekStartOld.getDate() + (currentWeek * 7));
+        
+        results.innerHTML += `First Monday: ${firstMonday.toDateString()}<br>`;
+        results.innerHTML += `Week 36 Monday: ${weekStartOld.toDateString()}<br>`;
+        
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(weekStartOld);
+            date.setDate(weekStartOld.getDate() + i);
+            const isCorrect = (i === 0 && date.getDate() === 1) || (i === 4 && date.getDate() === 5);
+            results.innerHTML += `Day ${i+1}: ${date.toDateString()} ${isCorrect ? '<span class="correct">✓</span>' : '<span class="error">✗</span>'}<br>`;
+        }
+        results.innerHTML += '</div>';
+        
+        // Method 2: ISO week calculation (correct)
+        results.innerHTML += '<div class="result"><h3>New Method (ISO Week approach):</h3>';
+        const jan4 = new Date(currentYear, 0, 4);
+        const jan4Day = jan4.getDay();
+        const daysToMonday = jan4Day === 0 ? -6 : 1 - jan4Day;
+        const week1Monday = new Date(jan4);
+        week1Monday.setDate(jan4.getDate() + daysToMonday);
+        const targetMonday = new Date(week1Monday);
+        targetMonday.setDate(week1Monday.getDate() + (currentWeek * 7));
+        
+        results.innerHTML += `Jan 4, 2025: ${jan4.toDateString()}<br>`;
+        results.innerHTML += `Week 1 Monday: ${week1Monday.toDateString()}<br>`;
+        results.innerHTML += `Week 36 Monday: ${targetMonday.toDateString()}<br>`;
+        
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(targetMonday);
+            date.setDate(targetMonday.getDate() + i);
+            const dayNum = date.getDate();
+            const monthNum = date.getMonth() + 1;
+            const isCorrect = (i === 0 && dayNum === 1) || (i === 4 && dayNum === 5);
+            results.innerHTML += `Day ${i+1}: ${date.toDateString()} (${dayNum}/${monthNum}) ${isCorrect ? '<span class="correct">✓</span>' : ''}<br>`;
+        }
+        results.innerHTML += '</div>';
+        
+        // Show what's expected
+        results.innerHTML += '<div class="result"><h3>Expected for Week 36:</h3>';
+        results.innerHTML += 'Monday: Sept 1, 2025<br>';
+        results.innerHTML += 'Tuesday: Sept 2, 2025<br>';
+        results.innerHTML += 'Wednesday: Sept 3, 2025<br>';
+        results.innerHTML += 'Thursday: Sept 4, 2025<br>';
+        results.innerHTML += 'Friday: Sept 5, 2025<br>';
+        results.innerHTML += '</div>';
+        
+        // Test localStorage
+        results.innerHTML += '<div class="result"><h3>LocalStorage Values:</h3>';
+        results.innerHTML += `currentWeek: ${localStorage.getItem('currentWeek')}<br>`;
+        results.innerHTML += `currentYear: ${localStorage.getItem('currentYear')}<br>`;
+        results.innerHTML += '<button onclick="localStorage.clear(); location.reload();">Clear localStorage and Reload</button>';
+        results.innerHTML += '</div>';
+    </script>
+</body>
+</html>

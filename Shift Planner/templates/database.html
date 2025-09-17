@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Database Beheer - Shift Planner{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .section-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        padding: 0;
+    }
+
+    .section-header {
+        background: #f5f5f5;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 20px;
+        font-weight: 500;
+        color: #333;
+        font-size: 1.1rem;
+    }
+
+    .section-body {
+        padding: 20px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        background: #fff;
+        color: #333;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    .btn:hover {
+        background: #f8f9fa;
+        border-color: #999;
+    }
+
+    .btn-primary {
+        background: #0056b3;
+        color: white;
+        border-color: #0056b3;
+    }
+
+    .btn-primary:hover {
+        background: #004494;
+        border-color: #004494;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+        border-color: #218838;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #333;
+        border-color: #ffc107;
+    }
+
+    .btn-warning:hover {
+        background: #e0a800;
+        border-color: #e0a800;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+        border-color: #c82333;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        border-color: #5a6268;
+    }
+
+    .activity-log {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 3px;
+        padding: 15px;
+        max-height: 250px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+    }
+
+    .log-entry {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+        color: #495057;
+    }
+
+    .log-entry:last-child {
+        border-bottom: none;
+    }
+
+    .log-timestamp {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    .validation-results {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 3px;
+        border: 1px solid #dee2e6;
+    }
+
+    .issue-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        background: #fff;
+        border-left: 3px solid #ffc107;
+        border-radius: 3px;
+    }
+
+    .danger-zone {
+        border: 1px solid #dc3545;
+        background: #fff5f5;
+    }
+
+    .danger-zone .section-header {
+        background: #dc3545;
+        color: white;
+        border-bottom: 1px solid #dc3545;
+    }
+
+    .info-text {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 15px;
+    }
+
+    .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .file-size {
+        color: #666;
+        font-size: 0.875rem;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Database Beheer</h2>
+</div>
+
+<div class="container-fluid">
+    <!-- Statistics -->
+    <div class="stats-row" id="statsContainer">
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Medewerkers</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Machines</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Taken</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Sjablonen</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Rooster</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">-</div>
+            <div class="stat-label">Vaardigheden</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Backup & Restore -->
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-save"></i> Back-up & Herstel
+                </div>
+                <div class="section-body">
+                    <p class="info-text">Maak back-ups van uw database of herstel van een eerdere back-up.</p>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="backupDatabase()">
+                            <i class="fas fa-download"></i> Back-up Maken
+                        </button>
+                        <button class="btn btn-secondary" onclick="showRestoreDialog()">
+                            <i class="fas fa-upload"></i> Back-up Herstellen
+                        </button>
+                        <button class="btn" onclick="exportData()">
+                            <i class="fas fa-file-export"></i> Exporteren naar CSV
+                        </button>
+                    </div>
+                    <div class="file-size" id="dbFileSize">Database grootte: berekenen...</div>
+                </div>
+            </div>
+
+            <!-- Data Validation -->
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-check-circle"></i> Gegevensvalidatie
+                </div>
+                <div class="section-body">
+                    <p class="info-text">Controleer uw database op inconsistenties en problemen met gegevensintegriteit.</p>
+                    <button class="btn btn-success" onclick="validateDatabase()">
+                        <i class="fas fa-search"></i> Validatiecontrole Uitvoeren
+                    </button>
+                    <div id="validationResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Maintenance -->
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-tools"></i> Onderhoud
+                </div>
+                <div class="section-body">
+                    <p class="info-text">Voer routineonderhoudstaken uit om uw database geoptimaliseerd te houden.</p>
+                    <div class="button-group">
+                        <button class="btn" onclick="cleanupDatabase('remove_orphaned')">
+                            <i class="fas fa-broom"></i> Weesrecords Verwijderen
+                        </button>
+                        <button class="btn" onclick="cleanupDatabase('remove_duplicates')">
+                            <i class="fas fa-copy"></i> Duplicaten Verwijderen
+                        </button>
+                        <button class="btn" onclick="cleanupDatabase('fix_null_quantities')">
+                            <i class="fas fa-wrench"></i> NULL Hoeveelheden Repareren
+                        </button>
+                        <button class="btn btn-warning" onclick="cleanupDatabase('clear_old_schedule')">
+                            <i class="fas fa-calendar-times"></i> Oud Rooster Wissen (>30 dagen)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-history"></i> Activiteitenlogboek
+                </div>
+                <div class="section-body">
+                    <div class="activity-log" id="activityLog">
+                        <div class="log-entry">
+                            <span class="log-timestamp">Systeem gereed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-card danger-zone">
+        <div class="section-header">
+            <i class="fas fa-exclamation-triangle"></i> Gevarenzone
+        </div>
+        <div class="section-body">
+            <p class="info-text"><strong>Waarschuwing:</strong> Deze actie zal alle gegevens permanent uit de database verwijderen. Dit kan niet ongedaan worden gemaakt.</p>
+            <button class="btn btn-danger" onclick="clearAllData()">
+                <i class="fas fa-trash"></i> Alle Gegevens Verwijderen
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+// Load statistics on page load
+$(document).ready(function() {
+    loadStatistics();
+});
+
+function loadStatistics() {
+    $.get('/api/database/stats', function(data) {
+        const statsContainer = $('#statsContainer');
+        statsContainer.html('');
+        
+        // Main stats
+        const mainStats = ['people', 'machines', 'jobs', 'job_templates', 'schedule', 'skills'];
+        mainStats.forEach(stat => {
+            statsContainer.append(`
+                <div class="stat-box">
+                    <div class="stat-number">${data[stat] || 0}</div>
+                    <div class="stat-label">${stat.replace('_', ' ')}</div>
+                </div>
+            `);
+        });
+        
+        // File size
+        if (data.file_size) {
+            const sizeInMB = (data.file_size / 1024 / 1024).toFixed(2);
+            $('#dbFileSize').text(`Database grootte: ${sizeInMB} MB`);
+        }
+        
+        // Check for issues
+        if (data.orphaned_schedule > 0 || data.orphaned_skills > 0) {
+            addLog(`Waarschuwing: ${data.orphaned_schedule} weesroosteritems en ${data.orphaned_skills} weesvaardigheidsitems gevonden`);
+        }
+    });
+}
+
+function backupDatabase() {
+    $.post('/api/database/backup', function(response) {
+        if (response.status === 'success') {
+            addLog(`Back-up gemaakt: ${response.filename}`);
+            showAlert('success', 'Back-up succesvol gemaakt');
+        } else {
+            showAlert('danger', 'Back-up mislukt: ' + response.message);
+        }
+    });
+}
+
+function showRestoreDialog() {
+    if (confirm('Weet u zeker dat u wilt herstellen van een back-up? Dit vervangt alle huidige gegevens.')) {
+        // In a real implementation, you would show a file picker
+        // For now, we'll use a prompt for the backup filename
+        const filename = prompt('Voer back-up bestandsnaam in (bijv. backups/shift_planner_20240101_120000.db):');
+        if (filename) {
+            restoreDatabase(filename);
+        }
+    }
+}
+
+function restoreDatabase(filename) {
+    $.post('/api/database/restore', {backup_file: filename}, function(response) {
+        if (response.status === 'success') {
+            addLog('Database hersteld van back-up');
+            showAlert('success', 'Database succesvol hersteld');
+            loadStatistics();
+        } else {
+            showAlert('danger', 'Herstel mislukt: ' + response.message);
+        }
+    });
+}
+
+function validateDatabase() {
+    $.post('/api/database/validate', function(response) {
+        const resultsDiv = $('#validationResults');
+        resultsDiv.html('');
+        
+        if (response.status === 'success') {
+            resultsDiv.html('<div class="alert alert-success mt-3">Geen problemen gevonden. Database is gezond.</div>');
+            addLog('Validatiecontrole: Geen problemen gevonden');
+        } else {
+            let html = '<div class="validation-results">';
+            html += '<h6>Problemen Gevonden:</h6>';
+            response.issues.forEach(issue => {
+                html += `<div class="issue-item">${issue.message}</div>`;
+            });
+            html += '</div>';
+            resultsDiv.html(html);
+            addLog(`Validatiecontrole: ${response.issues.length} problemen gevonden`);
+        }
+    });
+}
+
+function cleanupDatabase(action) {
+    let confirmMsg = 'Weet u zeker dat u deze opruimactie wilt uitvoeren?';
+    if (action === 'clear_old_schedule') {
+        confirmMsg = 'Dit zal alle roosteritems ouder dan 30 dagen verwijderen. Doorgaan?';
+    }
+    
+    if (confirm(confirmMsg)) {
+        $.post('/api/database/cleanup', {action: action}, function(response) {
+            if (response.status === 'success') {
+                addLog(`Cleanup: ${response.message}`);
+                showAlert('success', response.message);
+                loadStatistics();
+            } else {
+                showAlert('danger', 'Opruimen mislukt: ' + response.message);
+            }
+        });
+    }
+}
+
+function exportData() {
+    window.location.href = '/api/database/export';
+    addLog('Gegevens geëxporteerd naar CSV');
+}
+
+function clearAllData() {
+    const confirmation = prompt('Typ "DELETE_ALL_DATA" om te bevestigen dat u alle gegevens wilt verwijderen:');
+    if (confirmation === 'DELETE_ALL_DATA') {
+        $.post('/api/database/clear_all', {confirm: 'DELETE_ALL_DATA'}, function(response) {
+            if (response.status === 'success') {
+                addLog('Alle gegevens uit database gewist');
+                showAlert('success', 'Alle gegevens zijn verwijderd');
+                loadStatistics();
+            } else {
+                showAlert('danger', 'Gegevens wissen mislukt: ' + response.message);
+            }
+        });
+    }
+}
+
+function addLog(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `<div class="log-entry"><span class="log-timestamp">[${timestamp}]</span> ${message}</div>`;
+    $('#activityLog').prepend(logEntry);
+    
+    // Keep only last 50 entries
+    const entries = $('#activityLog .log-entry');
+    if (entries.length > 50) {
+        entries.last().remove();
+    }
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('.container-fluid').prepend(alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 5000);
+}
+</script>
+{% endblock %}

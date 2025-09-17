@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Beschikbaarheidskalender - Shift Planner{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .calendar-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--dark-blue);
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #dee2e6;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .calendar-day-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .calendar-day {
+        background: white;
+        min-height: 100px;
+        padding: 8px;
+        position: relative;
+    }
+    
+    .calendar-day:hover {
+        background: #f8f9fa;
+    }
+    
+    .day-number {
+        font-weight: 600;
+        color: var(--dark-blue);
+        margin-bottom: 5px;
+    }
+    
+    .day-other-month {
+        background: #f8f9fa;
+    }
+    
+    .day-other-month .day-number {
+        color: #adb5bd;
+    }
+    
+    .day-today {
+        background: #e3f2fd;
+    }
+    
+    .day-today .day-number {
+        color: var(--primary-blue);
+    }
+    
+    .absence-entry {
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        margin: 2px 0;
+        border-radius: 4px;
+        background: #ffebee;
+        color: #c62828;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .absence-entry:hover {
+        background: #ffcdd2;
+    }
+    
+    .absence-form {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .absence-list {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .absence-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--danger-red);
+        background: #fff5f5;
+        border-radius: 8px;
+    }
+    
+    .month-navigation {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .month-navigation button {
+        background: var(--secondary-blue);
+        color: white;
+        border: none;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .month-navigation button:hover {
+        background: var(--primary-blue);
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-calendar-times"></i> Beschikbaarheidskalender</h2>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="calendar-title" id="calendar-month-year">januari 2025</div>
+                <div class="month-navigation">
+                    <button onclick="changeMonth(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button onclick="goToToday()">Vandaag</button>
+                    <button onclick="changeMonth(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Calendar will be rendered here -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="absence-form">
+            <h5><i class="fas fa-user-times"></i> Afwezigheid Markeren</h5>
+            <form id="absence-form">
+                <div class="mb-3">
+                    <label for="person-select" class="form-label">Medewerker</label>
+                    <select class="form-select" id="person-select" required>
+                        <option value="">Selecteer Medewerker</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="absence-date" class="form-label">Datum</label>
+                    <input type="date" class="form-control" id="absence-date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="absence-reason" class="form-label">Reden</label>
+                    <select class="form-select" id="absence-reason">
+                        <option>Vakantie</option>
+                        <option>Ziekteverlof</option>
+                        <option>Training</option>
+                        <option>Persoonlijk Verlof</option>
+                        <option>Overig</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-plus"></i> Afwezigheid Markeren
+                </button>
+            </form>
+        </div>
+        
+        <div class="absence-list">
+            <h5><i class="fas fa-list"></i> Aankomende Afwezigheden</h5>
+            <div id="absence-list">
+                <!-- Absences will be listed here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let people = [];
+    let absences = [];
+    
+    async function loadData() {
+        try {
+            const peopleRes = await fetch('/api/people');
+            people = await peopleRes.json();
+            
+            populatePersonSelect();
+            await loadAbsences();
+            renderCalendar();
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+    
+    async function loadAbsences() {
+        const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+        const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+        
+        try {
+            const response = await fetch(`/api/availability?start_date=${startDate}&end_date=${endDate}`);
+            absences = await response.json();
+            renderAbsences();
+        } catch (error) {
+            console.error('Error loading absences:', error);
+        }
+    }
+    
+    function populatePersonSelect() {
+        const select = document.getElementById('person-select');
+        select.innerHTML = '<option value="">Selecteer Medewerker</option>' +
+            people.map(person => 
+                `<option value="${person.id}">${person.name}</option>`
+            ).join('');
+    }
+    
+    function renderCalendar() {
+        const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+                           'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+        const dayNames = ['Zon', 'Maa', 'Din', 'Woe', 'Don', 'Vrij', 'Zat'];
+        
+        document.getElementById('calendar-month-year').textContent = 
+            `${monthNames[currentMonth]} ${currentYear}`;
+        
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+        
+        const grid = document.getElementById('calendar-grid');
+        let html = '';
+        
+        // Day headers
+        dayNames.forEach(day => {
+            html += `<div class="calendar-day-header">${day}</div>`;
+        });
+        
+        // Previous month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            html += `<div class="calendar-day day-other-month">
+                        <div class="day-number">${day}</div>
+                     </div>`;
+        }
+        
+        // Current month days
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(currentYear, currentMonth, day);
+            const dateStr = date.toISOString().split('T')[0];
+            const isToday = date.toDateString() === today.toDateString();
+            const dayAbsences = absences.filter(a => a.date === dateStr);
+            
+            html += `<div class="calendar-day ${isToday ? 'day-today' : ''}" data-date="${dateStr}">
+                        <div class="day-number">${day}</div>
+                        ${dayAbsences.map(a => 
+                            `<div class="absence-entry" title="${a.reason}">${a.person_name}</div>`
+                        ).join('')}
+                     </div>`;
+        }
+        
+        // Next month days
+        const totalDays = firstDay + daysInMonth;
+        const remainingDays = totalDays % 7 === 0 ? 0 : 7 - (totalDays % 7);
+        for (let day = 1; day <= remainingDays; day++) {
+            html += `<div class="calendar-day day-other-month">
+                        <div class="day-number">${day}</div>
+                     </div>`;
+        }
+        
+        grid.innerHTML = html;
+    }
+    
+    function renderAbsences() {
+        const list = document.getElementById('absence-list');
+        const upcomingAbsences = absences.filter(a => 
+            new Date(a.date) >= new Date()
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        if (upcomingAbsences.length === 0) {
+            list.innerHTML = '<p class="text-muted">Geen aankomende afwezigheden</p>';
+            return;
+        }
+        
+        list.innerHTML = upcomingAbsences.slice(0, 5).map(absence => `
+            <div class="absence-item">
+                <div>
+                    <strong>${absence.person_name}</strong><br>
+                    <small>${new Date(absence.date).toLocaleDateString()} - ${absence.reason}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeAbsence(${absence.person_id}, '${absence.date}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    function changeMonth(delta) {
+        currentMonth += delta;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        loadAbsences();
+        renderCalendar();
+    }
+    
+    function goToToday() {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        loadAbsences();
+        renderCalendar();
+    }
+    
+    document.getElementById('absence-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const data = {
+            person_id: parseInt(document.getElementById('person-select').value),
+            date: document.getElementById('absence-date').value,
+            available: 0,
+            reason: document.getElementById('absence-reason').value
+        };
+        
+        try {
+            const response = await fetch('/api/availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                document.getElementById('absence-form').reset();
+                await loadAbsences();
+                renderCalendar();
+            }
+        } catch (error) {
+            console.error('Error marking absence:', error);
+        }
+    });
+    
+    async function removeAbsence(personId, date) {
+        if (!confirm('Deze afwezigheid verwijderen?')) return;
+        // Implementation would remove the absence
+        await loadAbsences();
+        renderCalendar();
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remove week selector for this page
+        const weekSelector = document.querySelector('.week-selector');
+        if (weekSelector) weekSelector.style.display = 'none';
+        
+        loadData();
+    });
+</script>
+{% endblock %}

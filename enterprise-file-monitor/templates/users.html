@@ -49,8 +49,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            <select class="form-select form-select-sm machine-type-select" 
-                                    data-user-id="{{ user.id }}" 
+                            <select class="form-select form-select-sm machine-type-select"
+                                    data-user-id="{{ user.id }}"
                                     style="width: auto;">
                                 <option value="cnc" {% if user.machine_type == 'cnc' %}selected{% endif %}>CNC</option>
                                 <option value="accura" {% if user.machine_type == 'accura' %}selected{% endif %}>Accura</option>

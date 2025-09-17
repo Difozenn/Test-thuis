@@ -1,0 +1,960 @@
+{% extends "base.html" %}
+
+{% block title %}Rooster - Shift Planner{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-controls {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .schedule-timeline {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .timeline-header {
+        display: flex;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 2px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .machine-label {
+        width: 150px;
+        padding: 15px;
+        font-weight: 600;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .days-header {
+        display: flex;
+        flex: 1;
+    }
+    
+    .day-column {
+        flex: 1;
+        padding: 15px;
+        text-align: center;
+        border-right: 1px solid var(--border-color);
+        font-weight: 600;
+        color: var(--dark-blue);
+    }
+    
+    .day-column:last-child {
+        border-right: none;
+    }
+    
+    .day-column small {
+        display: block;
+        color: #6c757d;
+        font-weight: 400;
+        margin-top: 5px;
+    }
+    
+    .timeline-body {
+        min-height: 500px;
+        max-height: calc(100vh - 400px);
+        overflow-y: auto;
+    }
+    
+    .machine-row {
+        display: flex;
+        border-bottom: 1px solid #e9ecef;
+        min-height: 100px;
+        transition: background 0.3s ease;
+    }
+    
+    .machine-row:hover {
+        background: rgba(52, 152, 219, 0.03);
+    }
+
+    .unassigned-row {
+        display: flex;
+        border-bottom: 2px solid var(--primary-blue);
+        min-height: 120px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        margin-top: 10px;
+    }
+
+    .unassigned-row .machine-name {
+        background: var(--primary-blue);
+        color: white;
+        font-weight: 600;
+    }
+
+    .unassigned-person {
+        background: white;
+        color: #495057;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin: 4px;
+        border: 1px solid #dee2e6;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .unassigned-person i {
+        color: #6c757d;
+        font-size: 0.75rem;
+    }
+
+    .machine-name {
+        width: 150px;
+        padding: 15px;
+        font-weight: 500;
+        background: #f8f9fa;
+        border-right: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark-blue);
+    }
+    
+    .machine-schedule {
+        display: flex;
+        flex: 1;
+    }
+    
+    .day-slot {
+        flex: 1;
+        border-right: 1px solid #e9ecef;
+        padding: 10px;
+        min-height: 80px;
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-content: flex-start;
+    }
+    
+    .day-slot:last-child {
+        border-right: none;
+    }
+    
+    .assignment-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        flex: 0 1 calc(50% - 5px);
+        min-width: 120px;
+    }
+    
+    /* Single operator takes full width */
+    .day-slot .assignment-box:only-child {
+        flex: 1 1 100%;
+    }
+    
+    .assignment-box:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+    }
+    
+    .assignment-box.skill-1 { background: linear-gradient(135deg, #f44336, #e91e63); }
+    .assignment-box.skill-2 { background: linear-gradient(135deg, #ff9800, #ff5722); }
+    .assignment-box.skill-3 { background: linear-gradient(135deg, #ffc107, #ff9800); }
+    .assignment-box.skill-4 { background: linear-gradient(135deg, #8bc34a, #4caf50); }
+    .assignment-box.skill-5 { background: linear-gradient(135deg, #4caf50, #009688); }
+    
+    .assignment-box.high-priority {
+        border: 2px solid #ff4444;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255,68,68,0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255,68,68,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,68,68,0); }
+    }
+    
+    .person-name {
+        font-weight: 600;
+        margin-bottom: 4px;
+        font-size: 0.95rem;
+    }
+    
+    .job-info {
+        font-size: 0.75rem;
+        opacity: 0.95;
+    }
+    
+    .time-info {
+        font-size: 0.7rem;
+        opacity: 0.9;
+        margin-top: 4px;
+    }
+    
+    .day-slot.disabled {
+        background: #fff5f5;
+        border: 2px solid #dc3545;
+        position: relative;
+        opacity: 0.8;
+    }
+    
+    .day-slot.disabled::after {
+        content: 'UITGESCHAKELD';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #dc3545;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    
+    .disable-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+    
+    .day-slot:hover .disable-btn {
+        opacity: 1;
+    }
+    
+    .day-slot.disabled .disable-btn {
+        background: #28a745;
+        opacity: 0.8;
+    }
+    
+    .day-slot.disabled:hover .disable-btn {
+        opacity: 1;
+    }
+    
+    .disable-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .legend {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+    }
+    
+    .status-bar {
+        background: white;
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    
+    .status-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+    
+    .status-indicator.active {
+        background: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-indicator.disabled {
+        background: #dc3545;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-calendar-week"></i> Weekrooster</h2>
+</div>
+
+<div class="status-bar" id="statusBar">
+    <div class="status-section">
+        <div class="status-item">
+            <span class="status-indicator active"></span>
+            <span>Actieve Machines: <strong id="activeMachineCount">0</strong></span>
+        </div>
+        <div class="status-item">
+            <span class="status-indicator disabled"></span>
+            <span>Uitgeschakelde Slots: <strong id="disabledSlotCount">0</strong></span>
+        </div>
+    </div>
+    <div class="status-item">
+        <i class="fas fa-info-circle text-muted"></i>
+        <span class="text-muted">Hover over een dag slot om een machine uit/in te schakelen</span>
+    </div>
+</div>
+
+<div class="schedule-controls">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="btn-group" role="group">
+                <button class="btn btn-primary" onclick="generateSchedule(false)">
+                    <i class="fas fa-magic"></i> Rooster Genereren
+                </button>
+                <button class="btn btn-warning" onclick="generateSchedule(true)">
+                    <i class="fas fa-sync-alt"></i> Hergenereren
+                </button>
+                <button class="btn btn-secondary" onclick="exportSchedule()">
+                    <i class="fas fa-file-export"></i> Exporteren CSV
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="clearSchedule()">
+                    <i class="fas fa-trash"></i> Week Wissen
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="text-muted">
+                <i class="fas fa-info-circle"></i> Rechts-klik toewijzingen om voortgang bij te werken
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="schedule-timeline">
+    <div class="timeline-header">
+        <div class="machine-label">
+            <i class="fas fa-cogs me-2"></i> Machines
+        </div>
+        <div class="days-header" id="days-header">
+            <!-- Dagen worden gevuld door JavaScript -->
+        </div>
+    </div>
+    <div class="timeline-body" id="timeline-body">
+        <!-- Machine rijen worden gevuld door JavaScript -->
+    </div>
+</div>
+
+<div class="legend">
+    <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #f44336, #e91e63);"></div>
+        <span>Niveau 1 (Beginner)</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #ff9800, #ff5722);"></div>
+        <span>Niveau 2 (Basis)</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #ffc107, #ff9800);"></div>
+        <span>Niveau 3 (Bekwaam)</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #8bc34a, #4caf50);"></div>
+        <span>Niveau 4 (Gevorderd)</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #4caf50, #009688);"></div>
+        <span>Niveau 5 (Expert)</span>
+    </div>
+</div>
+
+<!-- Voortgang Bijwerken Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Voortgang Taak Bijwerken</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="progress-form">
+                    <div class="mb-3">
+                        <label class="form-label">Taak: <span id="progress-job-name" class="fw-bold"></span></label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Machine: <span id="progress-machine-name" class="fw-bold"></span></label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="completed-quantity" class="form-label">Voltooide Hoeveelheid</label>
+                        <input type="number" class="form-control" id="completed-quantity" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="remaining-hours" class="form-label">Resterende Uren</label>
+                        <input type="number" class="form-control" id="remaining-hours" min="0" step="0.5">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-primary" onclick="updateProgress()">Voortgang Bijwerken</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let schedule = [];
+    let machines = [];
+    let people = [];
+    let jobs = [];
+    
+    // Override the global getWeekDates to ensure consistency
+    function getWeekDates() {
+        // Get the Monday of the ISO week
+        // ISO weeks start on Monday and week 1 is the week containing January 4th
+        
+        // Find January 4th of the current year (always in week 1)
+        const jan4 = new Date(currentYear, 0, 4);
+        
+        // Find the Monday of week 1
+        const dayOfWeek = jan4.getDay();
+        const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const week1Monday = new Date(jan4);
+        week1Monday.setDate(jan4.getDate() + daysToMonday);
+        
+        // Calculate the Monday of the target week
+        // currentWeek is 0-indexed, so add it directly
+        const targetMonday = new Date(week1Monday);
+        targetMonday.setDate(week1Monday.getDate() + (currentWeek * 7));
+        
+        // Get Monday to Friday dates
+        const dates = [];
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(targetMonday);
+            date.setDate(targetMonday.getDate() + i);
+            // Format as YYYY-MM-DD with proper timezone handling
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            dates.push(`${year}-${month}-${day}`);
+        }
+        return dates;
+    }
+    
+    async function loadWeekData() {
+        const dates = getWeekDates();
+        const startDate = dates[0];
+        const endDate = dates[4];
+        
+        console.log(`Loading schedule for week ${currentWeek + 1} of ${currentYear}: ${startDate} to ${endDate}`);
+        
+        try {
+            // Load all data
+            const [scheduleRes, machinesRes, peopleRes, jobsRes] = await Promise.all([
+                fetch(`/api/schedule?start_date=${startDate}&end_date=${endDate}`),
+                fetch('/api/machines'),
+                fetch('/api/people'),
+                fetch('/api/jobs')
+            ]);
+            
+            schedule = await scheduleRes.json();
+            machines = await machinesRes.json();
+            people = await peopleRes.json();
+            jobs = await jobsRes.json();
+            
+            console.log(`Loaded ${schedule.length} assignments, ${machines.length} machines, ${people.length} people, ${jobs.length} jobs`);
+            
+            // Show indicator if schedule has data
+            if (schedule.length > 0) {
+                showAlert(`${schedule.length} geplande toewijzingen geladen voor deze week`, 'info');
+            }
+            
+            renderTimeline();
+            // Ensure disabled machines are loaded before rendering schedule
+            await loadDisabledMachines();
+            renderSchedule();
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+    
+    function renderTimeline() {
+        const dates = getWeekDates();
+        const dayNames = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag'];
+        
+        // Render days header
+        const daysHeader = document.getElementById('days-header');
+        daysHeader.innerHTML = dates.map((date, i) => {
+            const d = new Date(date);
+            return `
+                <div class="day-column">
+                    ${dayNames[i]}
+                    <small>${d.getDate()}/${d.getMonth() + 1}</small>
+                </div>
+            `;
+        }).join('');
+        
+        // Render machine rows
+        const timelineBody = document.getElementById('timeline-body');
+        timelineBody.innerHTML = machines.map(machine => `
+            <div class="machine-row" data-machine-id="${machine.id}">
+                <div class="machine-name">${machine.name}</div>
+                <div class="machine-schedule">
+                    ${dates.map(date => `
+                        <div class="day-slot" data-date="${date}" data-machine="${machine.id}">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('') + `
+            <div class="unassigned-row">
+                <div class="machine-name">
+                    <i class="fas fa-users"></i> Niet Toegewezen
+                </div>
+                <div class="machine-schedule">
+                    ${dates.map(date => `
+                        <div class="day-slot unassigned-slot" data-date="${date}">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    function renderSchedule() {
+        // Clear all slots
+        document.querySelectorAll('.day-slot').forEach(slot => {
+            slot.innerHTML = '';
+            slot.classList.remove('disabled'); // Clear disabled state
+        });
+        
+        // Group assignments by machine and date for better visualization
+        const slotAssignments = {};
+        
+        schedule.forEach(assignment => {
+            const key = `${assignment.date}_${assignment.machine_id}`;
+            if (!slotAssignments[key]) {
+                slotAssignments[key] = [];
+            }
+            slotAssignments[key].push(assignment);
+        });
+        
+        // Render grouped assignments
+        Object.keys(slotAssignments).forEach(key => {
+            const [date, machineId] = key.split('_');
+            const slot = document.querySelector(
+                `.day-slot[data-date="${date}"][data-machine="${machineId}"]`
+            );
+            
+            if (slot) {
+                slotAssignments[key].forEach(assignment => {
+                    const person = people.find(p => p.id === assignment.person_id);
+                    const job = jobs.find(j => j.id === assignment.job_id);
+                    const machine = machines.find(m => m.id === parseInt(machineId));
+                    
+                    const skillLevel = person && person.skills && machine ? 
+                        (person.skills[machine.name] || 1) : 1;
+                    
+                    const isHighPriority = job && job.priority > 0;
+                    
+                    const assignmentBox = document.createElement('div');
+                    assignmentBox.className = `assignment-box skill-${skillLevel} ${isHighPriority ? 'high-priority' : ''}`;
+                    assignmentBox.innerHTML = `
+                        <div class="person-name">${assignment.person_name}</div>
+                        <div class="job-info">${assignment.job_name || 'Geen taak'}</div>
+                        <div class="time-info">${assignment.start_time} - ${assignment.end_time}</div>
+                    `;
+                    
+                    assignmentBox.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        showProgressModal(assignment);
+                    });
+                    
+                    slot.appendChild(assignmentBox);
+                });
+                
+                // No longer showing available slots indicator
+            }
+        });
+
+        // Calculate and display unassigned people for each day
+        const dates = getWeekDates();
+        dates.forEach(date => {
+            // Get all people assigned on this date
+            const assignedPeopleIds = new Set();
+            schedule.forEach(assignment => {
+                if (assignment.date === date) {
+                    assignedPeopleIds.add(assignment.person_id);
+                }
+            });
+
+            // Find unassigned people
+            const unassignedPeople = people.filter(person => !assignedPeopleIds.has(person.id));
+
+            // Render unassigned people in the unassigned row
+            const unassignedSlot = document.querySelector(`.unassigned-slot[data-date="${date}"]`);
+            if (unassignedSlot) {
+                if (unassignedPeople.length > 0) {
+                    unassignedSlot.innerHTML = unassignedPeople.map(person => `
+                        <div class="unassigned-person" title="${person.name} is beschikbaar">
+                            <i class="fas fa-user"></i> ${person.name}
+                        </div>
+                    `).join('');
+                } else {
+                    unassignedSlot.innerHTML = '<div style="color: #6c757d; font-style: italic; padding: 10px;">Iedereen toegewezen</div>';
+                }
+            }
+        });
+
+        // Apply disabled states FIRST
+        updateDisabledSlots();
+
+        // Add disable buttons to all slots (but not unassigned slots)
+        document.querySelectorAll('.day-slot').forEach(slot => {
+            // Skip unassigned slots
+            if (slot.classList.contains('unassigned-slot')) {
+                return;
+            }
+
+            const disableBtn = document.createElement('button');
+            disableBtn.className = 'disable-btn';
+            disableBtn.innerHTML = slot.classList.contains('disabled') ?
+                'Inschakelen' : 'Uitschakelen';
+            disableBtn.title = slot.classList.contains('disabled') ?
+                'Machine inschakelen voor deze dag' : 'Machine uitschakelen voor deze dag';
+            disableBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleMachineDay(slot.dataset.machine, slot.dataset.date);
+            };
+            slot.appendChild(disableBtn);
+        });
+        
+        // Update status bar
+        updateStatusBar();
+    }
+    
+    function updateStatusBar() {
+        const totalMachines = document.querySelectorAll('.machine-row:not(.unassigned-row)').length;
+        const disabledSlots = document.querySelectorAll('.day-slot.disabled:not(.unassigned-slot)').length;
+        const activeMachines = totalMachines - Math.floor(disabledSlots / 5); // Approximate active machines
+        
+        document.getElementById('activeMachineCount').textContent = Math.max(0, activeMachines);
+        document.getElementById('disabledSlotCount').textContent = disabledSlots;
+    }
+    
+    function showProgressModal(assignment) {
+        document.getElementById('progress-job-name').textContent = assignment.job_name;
+        document.getElementById('progress-machine-name').textContent = assignment.machine_name;
+        
+        const modal = document.getElementById('progressModal');
+        modal.dataset.jobId = assignment.job_id;
+        modal.dataset.machineId = assignment.machine_id;
+        modal.dataset.date = assignment.date;
+        
+        const job = jobs.find(j => j.id === assignment.job_id);
+        if (job) {
+            document.getElementById('completed-quantity').value = job.completed_quantity || 0;
+            document.getElementById('completed-quantity').max = job.quantity;
+        }
+        
+        new bootstrap.Modal(modal).show();
+    }
+    
+    async function generateSchedule(regenerate = false) {
+        const dates = getWeekDates();
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verwerken...';
+        
+        try {
+            const response = await fetch('/api/generate_schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: dates[0],
+                    end_date: dates[4],
+                    regenerate: regenerate
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                await loadWeekData();
+                
+                // Show success message
+                if (result.message) {
+                    if (result.message.includes('already exists')) {
+                        showAlert('Rooster bestaat al voor deze week. Gebruik "Hergenereren" om het te vervangen.', 'info');
+                    } else if (result.assignments && result.assignments.length > 0) {
+                        showAlert(`Rooster ${regenerate ? 'hergegenereerd' : 'gegenereerd'} succesvol! ${result.assignments.length} toewijzingen gemaakt.`, 'success');
+                    } else {
+                        showAlert('Geen nieuwe toewijzingen gegenereerd. Controleer uw taken en beschikbaarheid.', 'warning');
+                    }
+                }
+            } else {
+                showAlert('Fout bij genereren rooster. Probeer opnieuw.', 'danger');
+            }
+        } catch (error) {
+            console.error('Error generating schedule:', error);
+            showAlert('Fout bij genereren rooster: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+    
+    async function clearSchedule() {
+        if (!confirm('Weet u zeker dat u het rooster van deze week wilt wissen?')) return;
+        
+        const dates = getWeekDates();
+        
+        try {
+            // We'll use the regenerate endpoint but generate empty schedule
+            const response = await fetch('/api/schedule', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: dates[0],
+                    end_date: dates[4]
+                })
+            });
+            
+            if (response.ok) {
+                await loadWeekData();
+                showAlert('Rooster succesvol gewist.', 'success');
+            }
+        } catch (error) {
+            console.error('Error clearing schedule:', error);
+            showAlert('Fout bij wissen rooster: ' + error.message, 'danger');
+        }
+    }
+    
+    function showAlert(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+    
+    async function updateProgress() {
+        const modal = document.getElementById('progressModal');
+        const data = {
+            job_id: parseInt(modal.dataset.jobId),
+            machine_id: parseInt(modal.dataset.machineId),
+            date: modal.dataset.date,
+            completed_quantity: parseInt(document.getElementById('completed-quantity').value),
+            remaining_hours: parseFloat(document.getElementById('remaining-hours').value) || 0
+        };
+        
+        try {
+            const response = await fetch('/api/update_progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                bootstrap.Modal.getInstance(modal).hide();
+                await loadWeekData();
+            }
+        } catch (error) {
+            console.error('Error updating progress:', error);
+        }
+    }
+    
+    // Track disabled machines per day
+    let disabledMachines = {};
+    
+    async function loadDisabledMachines() {
+        try {
+            const response = await fetch('/api/disabled_machines');
+            const data = await response.json();
+            disabledMachines = {};
+            console.log('Loaded disabled machines:', data);
+            data.forEach(item => {
+                const key = `${item.machine_id}_${item.date}`;
+                disabledMachines[key] = true;
+            });
+            console.log('Disabled machines map:', disabledMachines);
+        } catch (error) {
+            console.error('Error loading disabled machines:', error);
+        }
+    }
+    
+    function updateDisabledSlots() {
+        const slots = document.querySelectorAll('.day-slot');
+        console.log(`Updating ${slots.length} slots for disabled state`);
+        slots.forEach(slot => {
+            const key = `${slot.dataset.machine}_${slot.dataset.date}`;
+            if (disabledMachines[key]) {
+                slot.classList.add('disabled');
+                console.log(`Marked slot as disabled: ${key}`);
+            } else {
+                slot.classList.remove('disabled');
+            }
+        });
+    }
+    
+    async function toggleMachineDay(machineId, date) {
+        console.log('Toggling machine:', machineId, 'for date:', date);
+        const key = `${machineId}_${date}`;
+        const isDisabled = disabledMachines[key];
+        console.log('Current state - isDisabled:', isDisabled);
+        
+        try {
+            const response = await fetch('/api/disabled_machines', {
+                method: isDisabled ? 'DELETE' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    machine_id: parseInt(machineId), 
+                    date: date 
+                })
+            });
+            
+            const responseData = await response.text();
+            console.log('Response:', response.status, responseData);
+            
+            if (response.ok) {
+                if (isDisabled) {
+                    delete disabledMachines[key];
+                    console.log('Machine ingeschakeld');
+                } else {
+                    disabledMachines[key] = true;
+                    console.log('Machine uitgeschakeld');
+                }
+                // Re-render to update UI
+                await loadWeekData();  // Reload schedule data
+                renderSchedule();      // Re-render UI
+                updateStatusBar();     // Update status counts
+            } else {
+                console.error('Server error:', responseData);
+                alert('Fout: ' + responseData);
+            }
+        } catch (error) {
+            console.error('Error toggling machine:', error);
+            alert('Fout bij omschakelen machine: ' + error.message);
+        }
+    }
+    
+    function saveSchedule() {
+        // Implement save functionality
+        alert('Rooster succesvol opgeslagen!');
+    }
+    
+    function exportSchedule() {
+        const dates = getWeekDates();
+        window.location.href = `/api/export_schedule?start_date=${dates[0]}&end_date=${dates[4]}`;
+    }
+    
+    // Check if there's schedule data in other weeks and navigate there if current week is empty
+    async function checkAndNavigateToScheduledWeek() {
+        try {
+            // First check if current week has data
+            const dates = getWeekDates();
+            const response = await fetch(`/api/schedule?start_date=${dates[0]}&end_date=${dates[4]}`);
+            const currentWeekData = await response.json();
+            
+            if (currentWeekData.length === 0) {
+                // No data in current week, check for any existing schedule
+                const allScheduleResponse = await fetch('/api/schedule');
+                const allSchedule = await allScheduleResponse.json();
+                
+                if (allSchedule.length > 0) {
+                    // Find the week containing the first schedule entry
+                    const firstScheduleDate = new Date(allSchedule[0].date);
+                    
+                    // Calculate which week this date falls in
+                    const targetYear = firstScheduleDate.getFullYear();
+                    
+                    // Get ISO week number for the target date
+                    const date = new Date(firstScheduleDate);
+                    date.setHours(0, 0, 0, 0);
+                    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+                    const week1 = new Date(date.getFullYear(), 0, 4);
+                    const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
+                                            - 3 + (week1.getDay() + 6) % 7) / 7);
+                    
+                    // Navigate to that week
+                    currentWeek = weekNum - 1;
+                    currentYear = targetYear;
+                    saveCurrentWeek();
+                    console.log(`Genavigeerd naar week ${weekNum} van ${targetYear} die roostergegevens bevat`);
+                    updateWeekDisplay();
+                }
+            }
+        } catch (error) {
+            console.error('Error checking for scheduled week:', error);
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async function() {
+        initializeCurrentWeek();  // Make sure we have the right week
+        await checkAndNavigateToScheduledWeek();  // Check and navigate to week with data
+        updateWeekDisplay();      // Update the display
+        loadWeekData();           // Load the data
+    });
+</script>
+{% endblock %}

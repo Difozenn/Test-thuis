@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Medewerkers Beheer - Shift Planner{% endblock %}
+
+{% block header_controls %}
+<!-- No week selector on this page -->
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .person-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .person-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+    
+    .person-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0 auto 15px;
+    }
+    
+    .person-name {
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark-blue);
+        margin-bottom: 15px;
+    }
+    
+    .skills-section {
+        border-top: 1px solid #e9ecef;
+        padding-top: 15px;
+        margin-top: 15px;
+    }
+    
+    .skill-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        margin: 3px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        background: #f8f9fa;
+    }
+    
+    .skill-level-1 { background: linear-gradient(135deg, #ffebee, #ffcdd2); color: #c62828; }
+    .skill-level-2 { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: #e65100; }
+    .skill-level-3 { background: linear-gradient(135deg, #fff8e1, #ffecb3); color: #f57c00; }
+    .skill-level-4 { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: #2e7d32; }
+    .skill-level-5 { background: linear-gradient(135deg, #e0f2f1, #b2dfdb); color: #00695c; }
+    
+    .search-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .skill-matrix-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .skill-cell {
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .skill-cell:hover {
+        background: rgba(52, 152, 219, 0.1);
+    }
+    
+    .skill-level-select {
+        border: none;
+        background: transparent;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-users"></i> Medewerkers Beheer</h2>
+        <button class="btn btn-primary" onclick="showAddPersonModal()">
+            <i class="fas fa-user-plus"></i> Medewerker Toevoegen
+        </button>
+    </div>
+</div>
+
+<div class="search-bar">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" id="search-people"
+                       placeholder="Zoeken op naam of vaardigheid...">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="view-toggle">
+                <button class="btn btn-outline-secondary active" onclick="switchView('cards')">
+                    <i class="fas fa-th"></i> Kaarten
+                </button>
+                <button class="btn btn-outline-secondary" onclick="switchView('matrix')">
+                    <i class="fas fa-table"></i> Vaardigheidsmatrix
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cards View -->
+<div id="cards-view">
+    <div class="row" id="people-cards">
+        <!-- People cards will be rendered here -->
+    </div>
+</div>
+
+<!-- Matrix View -->
+<div id="matrix-view" style="display: none;">
+    <div class="skill-matrix-table">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr id="matrix-header">
+                    <!-- Header will be populated -->
+                </tr>
+            </thead>
+            <tbody id="matrix-body">
+                <!-- Matrix rows will be populated -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Person Modal -->
+<div class="modal fade" id="personModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="person-modal-title">Nieuwe Medewerker Toevoegen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="person-form">
+                    <input type="hidden" id="person-id">
+                    <div class="mb-3">
+                        <label for="person-name" class="form-label">Naam</label>
+                        <input type="text" class="form-control" id="person-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Machine Vaardigheden</label>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Stel vaardigheidsniveaus (1-5) in voor elke machine. Niveau 4+ kan precisiewerk aan.
+                        </div>
+                        <div id="skills-container" class="row">
+                            <!-- Skill inputs will be populated -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-primary" id="save-person-btn" onclick="savePerson()">Opslaan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Skills Modal -->
+<div class="modal fade" id="editSkillsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vaardigheidsniveau Bijwerken</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Werk vaardigheidsniveau bij voor <strong id="edit-person-name"></strong> op <strong id="edit-machine-name"></strong>:</p>
+                <select class="form-select" id="edit-skill-level">
+                    <option value="0">Geen Vaardigheid</option>
+                    <option value="1">Niveau 1 - Beginner</option>
+                    <option value="2">Niveau 2 - Basis</option>
+                    <option value="3">Niveau 3 - Bekwaam</option>
+                    <option value="4">Niveau 4 - Gevorderd (Precisie)</option>
+                    <option value="5">Niveau 5 - Expert (Precisie)</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-primary" onclick="updateSkill()">Bijwerken</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let people = [];
+    let machines = [];
+    let currentView = 'cards';
+    
+    async function loadPeople() {
+        try {
+            const [peopleRes, machinesRes] = await Promise.all([
+                fetch('/api/people'),
+                fetch('/api/machines')
+            ]);
+            
+            people = await peopleRes.json();
+            machines = await machinesRes.json();
+            
+            renderPeople();
+            populateSkillsForm();
+        } catch (error) {
+            console.error('Fout bij laden medewerkers:', error);
+        }
+    }
+    
+    function renderPeople() {
+        if (currentView === 'cards') {
+            renderCardsView();
+        } else {
+            renderMatrixView();
+        }
+    }
+    
+    function renderCardsView() {
+        const container = document.getElementById('people-cards');
+        
+        if (people.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nog geen medewerkers toegevoegd</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = people.map(person => {
+            const initials = person.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            
+            const skillsHtml = Object.entries(person.skills || {}).map(([machine, level]) => 
+                `<span class="skill-badge skill-level-${level}">${machine}: L${level}</span>`
+            ).join('');
+            
+            return `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="person-card">
+                        <div class="person-avatar">${initials}</div>
+                        <div class="person-name">${person.name}</div>
+                        <div class="skills-section">
+                            <small class="text-muted d-block mb-2">Vaardigheden:</small>
+                            ${skillsHtml || '<span class="text-muted">Geen vaardigheden toegewezen</span>'}
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editPerson(${person.id})">
+                                <i class="fas fa-edit"></i> Bewerken
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePerson(${person.id})">
+                                <i class="fas fa-trash"></i> Verwijderen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function renderMatrixView() {
+        // Render header
+        const header = document.getElementById('matrix-header');
+        header.innerHTML = '<th>Medewerker</th>' + 
+            machines.map(m => `<th class="text-center">${m.name}</th>`).join('');
+        
+        // Render body
+        const body = document.getElementById('matrix-body');
+        body.innerHTML = people.map(person => {
+            const cells = machines.map(machine => {
+                const level = person.skills && person.skills[machine.name] || 0;
+                const colorClass = level > 0 ? `skill-level-${level}` : '';
+                return `
+                    <td class="skill-cell" onclick="showEditSkillModal(${person.id}, ${machine.id})">
+                        <span class="skill-level-select ${colorClass}">
+                            ${level > 0 ? `L${level}` : '-'}
+                        </span>
+                    </td>
+                `;
+            }).join('');
+            
+            return `<tr><td><strong>${person.name}</strong></td>${cells}</tr>`;
+        }).join('');
+    }
+    
+    function switchView(view) {
+        currentView = view;
+        
+        // Update button states
+        document.querySelectorAll('.view-toggle button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Show/hide views
+        if (view === 'cards') {
+            document.getElementById('cards-view').style.display = 'block';
+            document.getElementById('matrix-view').style.display = 'none';
+        } else {
+            document.getElementById('cards-view').style.display = 'none';
+            document.getElementById('matrix-view').style.display = 'block';
+        }
+        
+        renderPeople();
+    }
+    
+    function populateSkillsForm() {
+        const container = document.getElementById('skills-container');
+        container.innerHTML = machines.map(machine => `
+            <div class="col-md-6 mb-3">
+                <label class="form-label">${machine.name}</label>
+                <select class="form-select" name="skill_${machine.name}">
+                    <option value="0">Geen Vaardigheid</option>
+                    <option value="1">Niveau 1 - Beginner</option>
+                    <option value="2">Niveau 2 - Basis</option>
+                    <option value="3">Niveau 3 - Bekwaam</option>
+                    <option value="4">Niveau 4 - Gevorderd</option>
+                    <option value="5">Niveau 5 - Expert</option>
+                </select>
+            </div>
+        `).join('');
+    }
+    
+    function showAddPersonModal() {
+        document.getElementById('person-form').reset();
+        document.getElementById('person-id').value = '';
+        document.getElementById('person-modal-title').textContent = 'Nieuwe Medewerker Toevoegen';
+        document.getElementById('save-person-btn').textContent = 'Medewerker Toevoegen';
+        
+        // Reset all skill selects to 0
+        machines.forEach(machine => {
+            const select = document.querySelector(`select[name="skill_${machine.name}"]`);
+            if (select) select.value = '0';
+        });
+        
+        new bootstrap.Modal(document.getElementById('personModal')).show();
+    }
+    
+    function editPerson(personId) {
+        const person = people.find(p => p.id === personId);
+        if (!person) return;
+        
+        document.getElementById('person-id').value = personId;
+        document.getElementById('person-name').value = person.name;
+        document.getElementById('person-modal-title').textContent = 'Medewerker Bewerken';
+        document.getElementById('save-person-btn').textContent = 'Medewerker Bijwerken';
+        
+        // Set current skill levels
+        machines.forEach(machine => {
+            const select = document.querySelector(`select[name="skill_${machine.name}"]`);
+            if (select) {
+                const currentLevel = person.skills && person.skills[machine.name] || 0;
+                select.value = currentLevel.toString();
+            }
+        });
+        
+        new bootstrap.Modal(document.getElementById('personModal')).show();
+    }
+    
+    function showEditSkillModal(personId, machineId) {
+        const person = people.find(p => p.id === personId);
+        const machine = machines.find(m => m.id === machineId);
+        
+        document.getElementById('edit-person-name').textContent = person.name;
+        document.getElementById('edit-machine-name').textContent = machine.name;
+        
+        const currentLevel = person.skills && person.skills[machine.name] || 0;
+        document.getElementById('edit-skill-level').value = currentLevel;
+        
+        const modal = document.getElementById('editSkillsModal');
+        modal.dataset.personId = personId;
+        modal.dataset.machineId = machineId;
+        
+        new bootstrap.Modal(modal).show();
+    }
+    
+    async function savePerson() {
+        const personId = document.getElementById('person-id').value;
+        const name = document.getElementById('person-name').value;
+        const skills = {};
+        
+        machines.forEach(machine => {
+            const select = document.querySelector(`select[name="skill_${machine.name}"]`);
+            if (select && select.value !== '0') {
+                skills[machine.name] = parseInt(select.value);
+            }
+        });
+        
+        try {
+            if (personId) {
+                // Update existing person
+                const response = await fetch(`/api/people/${personId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: parseInt(personId), name, skills })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('personModal')).hide();
+                    await loadPeople();
+                }
+            } else {
+                // Add new person
+                const response = await fetch('/api/people', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, skills })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('personModal')).hide();
+                    await loadPeople();
+                }
+            }
+        } catch (error) {
+            console.error('Fout bij opslaan medewerker:', error);
+        }
+    }
+    
+    async function updateSkill() {
+        const modal = document.getElementById('editSkillsModal');
+        const personId = modal.dataset.personId;
+        const machineId = modal.dataset.machineId;
+        const level = document.getElementById('edit-skill-level').value;
+        
+        // Implementation would update the skill level
+        // For now, just close the modal and reload
+        bootstrap.Modal.getInstance(modal).hide();
+        await loadPeople();
+    }
+    
+    async function deletePerson(id) {
+        if (!confirm('Weet je zeker dat je deze medewerker wilt verwijderen?')) return;
+        
+        try {
+            const response = await fetch('/api/people', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            
+            if (response.ok) {
+                await loadPeople();
+            }
+        } catch (error) {
+            console.error('Fout bij verwijderen medewerker:', error);
+        }
+    }
+    
+    // Search functionality
+    document.getElementById('search-people').addEventListener('input', (e) => {
+        const search = e.target.value.toLowerCase();
+        // Implement search filtering
+    });
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPeople();
+    });
+</script>
+{% endblock %}

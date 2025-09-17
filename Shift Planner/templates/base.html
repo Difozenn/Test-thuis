@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Shift Planner{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        :root {
+            --primary-blue: #0071b4;
+            --secondary-blue: #3498db;
+            --dark-blue: #2c3e50;
+            --light-blue: #f4f7f6;
+            --border-color: #dee2e6;
+            --hover-bg: #f8f9fa;
+            --success-green: #2ecc71;
+            --warning-orange: #f39c12;
+            --danger-red: #e74c3c;
+        }
+
+        body {
+            background-color: var(--light-blue);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Header styling */
+        .main-header {
+            background: #0056b3;
+            padding: 30px 20px;
+            margin: 20px;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-header .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-header h1 {
+            color: white;
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: var(--dark-blue);
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .week-selector button {
+            background: var(--secondary-blue);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .week-selector button:hover {
+            background: var(--primary-blue);
+            transform: scale(1.1);
+        }
+
+        #current-week {
+            min-width: 180px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--dark-blue);
+        }
+
+        /* Page headings */
+        .page-header {
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .page-header h2 {
+            color: var(--dark-blue);
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-blue);
+            display: inline-block;
+        }
+        
+        /* Main container */
+        .main-container {
+            padding: 0 20px 20px 20px;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            min-height: calc(100vh - 200px);
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-right: 20px;
+        }
+        
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 14px 20px;
+            border-radius: 10px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-blue);
+            border-left-color: var(--secondary-blue);
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background: #0056b3;
+            color: white;
+            border-left-color: #004494;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 86, 179, 0.2);
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .sidebar hr {
+            margin: 20px;
+            border-color: var(--border-color);
+        }
+
+        .sidebar small.text-muted {
+            padding: 0 20px;
+            font-weight: 600;
+            color: var(--dark-blue) !important;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        
+        /* Main content area */
+        .main-content {
+            padding: 0 20px 40px 0;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 8px 8px 0 0 !important;
+            padding: 20px;
+        }
+
+        .card-header h5 {
+            color: var(--dark-blue);
+            margin-bottom: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h5 i {
+            background: var(--secondary-blue);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        /* Button styling */
+        .btn {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #0056b3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.875rem;
+        }
+        
+        /* Form styling */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        /* Table styling */
+        .table {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .table thead {
+            background: #0056b3;
+            color: white;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+            cursor: pointer;
+        }
+
+        /* Badge styling */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        /* Alert styling */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #01579b;
+        }
+
+        /* Loading spinner */
+        .spinner-border {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-width: 0.2em;
+        }
+
+        /* Modal styling */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: #0056b3;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 20px;
+        }
+
+        .modal-header .btn-close {
+            background: transparent;
+            opacity: 1;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            
+            .main-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="main-header">
+        <div class="header-content">
+            <h1><i class="fas fa-calendar-alt"></i> Dienstroosters Systeem</h1>
+            <div class="user-section">
+                {% block header_controls %}
+                <div class="week-selector">
+                    <button onclick="changeWeek(-1)" title="Vorige Week">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="current-week">Week 1 - jan 2025</span>
+                    <button onclick="changeWeek(1)" title="Volgende Week">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button onclick="resetToCurrentWeek()" title="Ga naar huidige week" style="margin-left: 10px; padding: 2px 8px; background: #17a2b8; color: white; border: none; border-radius: 4px;">
+                        <i class="fas fa-calendar-day"></i> Vandaag
+                    </button>
+                </div>
+                {% endblock %}
+                <div class="user-info">
+                    <i class="fas fa-user"></i> Admin
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-md-3 col-lg-2 px-0">
+                    <div class="sidebar">
+                        <nav class="nav flex-column p-3">
+                            <a class="nav-link {{ 'active' if active_page == 'schedule' else '' }}" 
+                               href="{{ url_for('schedule') }}">
+                                <i class="fas fa-calendar-week"></i> Rooster
+                            </a>
+                            <a class="nav-link {{ 'active' if active_page == 'jobs' else '' }}" 
+                               href="{{ url_for('jobs') }}">
+                                <i class="fas fa-tasks"></i> Takenlijst
+                            </a>
+                            
+                            <hr>
+                            <small class="text-muted">Beheer</small>
+                            
+                            <a class="nav-link {{ 'active' if active_page == 'people' else '' }}" 
+                               href="{{ url_for('people') }}">
+                                <i class="fas fa-users"></i> Medewerkers
+                            </a>
+                            <a class="nav-link {{ 'active' if active_page == 'machines' else '' }}" 
+                               href="{{ url_for('machines') }}">
+                                <i class="fas fa-cogs"></i> Machines
+                            </a>
+                            <a class="nav-link {{ 'active' if active_page == 'templates' else '' }}" 
+                               href="{{ url_for('templates') }}">
+                                <i class="fas fa-file-alt"></i> Taak Sjablonen
+                            </a>
+                            <a class="nav-link {{ 'active' if active_page == 'availability' else '' }}" 
+                               href="{{ url_for('availability') }}">
+                                <i class="fas fa-calendar-times"></i> Beschikbaarheid
+                            </a>
+                            
+                            <hr>
+                            <small class="text-muted">Rapporten</small>
+                            
+                            <a class="nav-link {{ 'active' if active_page == 'reports' else '' }}" 
+                               href="{{ url_for('reports') }}">
+                                <i class="fas fa-chart-bar"></i> Rapporten
+                            </a>
+                            
+                            <hr>
+                            <small class="text-muted">Systeem</small>
+                            
+                            <a class="nav-link {{ 'active' if active_page == 'database' else '' }}" 
+                               href="{{ url_for('database') }}">
+                                <i class="fas fa-database"></i> Database
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10">
+                    <div class="main-content">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (for simpler AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Global functions
+        let currentWeek = 0;
+        let currentYear = new Date().getFullYear();
+        
+        // Initialize to current week or restore from localStorage
+        function initializeCurrentWeek() {
+            // Try to restore from localStorage
+            const savedWeek = localStorage.getItem('currentWeek');
+            const savedYear = localStorage.getItem('currentYear');
+            
+            if (savedWeek !== null && savedYear !== null) {
+                currentWeek = parseInt(savedWeek);
+                currentYear = parseInt(savedYear);
+                console.log(`Hersteld week ${currentWeek + 1} van ${currentYear} uit localStorage`);
+            } else {
+                // Calculate current ISO week number
+                const today = new Date();
+                currentYear = today.getFullYear();
+                
+                // Get ISO week number (Monday-based weeks)
+                const date = new Date(today);
+                date.setHours(0, 0, 0, 0);
+                // Thursday in current week decides the year
+                date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+                // January 4 is always in week 1
+                const week1 = new Date(date.getFullYear(), 0, 4);
+                // Adjust to Thursday in week 1 and count number of weeks between
+                const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
+                                        - 3 + (week1.getDay() + 6) % 7) / 7);
+                
+                currentWeek = weekNum - 1; // Zero-indexed
+                saveCurrentWeek();
+                console.log(`Geïnitialiseerd naar huidige ISO week ${weekNum} van ${currentYear}`);
+            }
+        }
+        
+        // Save current week to localStorage
+        function saveCurrentWeek() {
+            localStorage.setItem('currentWeek', currentWeek);
+            localStorage.setItem('currentYear', currentYear);
+        }
+        
+        function resetToCurrentWeek() {
+            // Clear localStorage
+            localStorage.removeItem('currentWeek');
+            localStorage.removeItem('currentYear');
+            
+            // Reinitialize to current week
+            initializeCurrentWeek();
+            updateWeekDisplay();
+            if (typeof loadWeekData === 'function') {
+                loadWeekData();
+            }
+        }
+        
+        function changeWeek(delta) {
+            currentWeek += delta;
+            if (currentWeek < 0) {
+                currentWeek = 51;
+                currentYear--;
+            } else if (currentWeek > 51) {
+                currentWeek = 0;
+                currentYear++;
+            }
+            saveCurrentWeek();  // Save the new week
+            updateWeekDisplay();
+            if (typeof loadWeekData === 'function') {
+                loadWeekData();
+            }
+        }
+        
+        function updateWeekDisplay() {
+            const dates = getWeekDates();
+            const startDate = new Date(dates[0]);
+            const endDate = new Date(dates[4]);
+            
+            const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+            const startMonth = monthNames[startDate.getMonth()];
+            const endMonth = monthNames[endDate.getMonth()];
+            
+            let displayText;
+            if (startMonth === endMonth) {
+                displayText = `${startDate.getDate()}-${endDate.getDate()} ${startMonth} ${currentYear}`;
+            } else {
+                displayText = `${startDate.getDate()} ${startMonth} - ${endDate.getDate()} ${endMonth} ${currentYear}`;
+            }
+            
+            // Add week number
+            const weekNum = getWeekNumber(startDate);
+            displayText = `Week ${weekNum}: ${displayText}`;
+            
+            document.getElementById('current-week').textContent = displayText;
+        }
+        
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+        
+        function getWeekDates() {
+            // Get the Monday of the ISO week
+            // ISO weeks start on Monday and week 1 is the week containing January 4th
+            
+            // Find January 4th of the current year (always in week 1)
+            const jan4 = new Date(currentYear, 0, 4);
+            
+            // Find the Monday of week 1
+            const dayOfWeek = jan4.getDay();
+            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const week1Monday = new Date(jan4);
+            week1Monday.setDate(jan4.getDate() + daysToMonday);
+            
+            // Calculate the Monday of the target week
+            // currentWeek is 0-indexed, so add it directly
+            const targetMonday = new Date(week1Monday);
+            targetMonday.setDate(week1Monday.getDate() + (currentWeek * 7));
+            
+            // Get Monday to Friday dates - use local date formatting to avoid timezone issues
+            const dates = [];
+            for (let i = 0; i < 5; i++) {
+                const date = new Date(targetMonday);
+                date.setDate(targetMonday.getDate() + i);
+                // Format as YYYY-MM-DD using local date values
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                dates.push(`${year}-${month}-${day}`);
+            }
+            return dates;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCurrentWeek();
+            updateWeekDisplay();
+        });
+    </script>
+</body>
+</html>

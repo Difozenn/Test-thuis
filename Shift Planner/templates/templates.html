@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Taak Sjablonen - Shift Planner{% endblock %}
+
+{% block header_controls %}
+<!-- No week selector on this page -->
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .template-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-blue);
+    }
+    
+    .template-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+    
+    .template-code {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-right: 10px;
+    }
+    
+    .template-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark-blue);
+        margin-bottom: 10px;
+    }
+    
+    .template-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .detail-item i {
+        color: var(--secondary-blue);
+    }
+    
+    .machine-sequence {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-file-alt"></i> Taak Sjablonen</h2>
+        <button class="btn btn-primary" onclick="showAddTemplateModal()">
+            <i class="fas fa-plus"></i> Sjabloon Toevoegen
+        </button>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    Sjablonen stellen je in staat om snel taken te maken met voorgedefinieerde machine volgordes en instellingen.
+    Gebruik sjabloon codes zoals #101, #102 voor gemakkelijke referentie.
+</div>
+
+<div id="templates-container">
+    <!-- Sjablonen worden hier weergegeven -->
+</div>
+
+<!-- Sjabloon Toevoegen Modal -->
+<div class="modal fade" id="addTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Taak Sjabloon Toevoegen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="template-form">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="template-code" class="form-label">Sjabloon Code</label>
+                            <input type="text" class="form-control" id="template-code"
+                                   placeholder="bijv., 101" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="template-name" class="form-label">Sjabloon Naam</label>
+                            <input type="text" class="form-control" id="template-name"
+                                   placeholder="bijv., Standaard Widget" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="template-machines" class="form-label">Machine Volgorde</label>
+                        <input type="text" class="form-control" id="template-machines"
+                               placeholder="bijv., Machine A, Machine B, Machine C" required>
+                        <small class="text-muted">Voer machines in volgorde in, gescheiden door komma's</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="template-hours" class="form-label">Geschatte Uren</label>
+                            <input type="number" class="form-control" id="template-hours" 
+                                   min="0.5" step="0.5" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="template-precision">
+                                <label class="form-check-label" for="template-precision">
+                                    Precisie Vereist (Alleen Level 4+ operators)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-primary" onclick="addTemplate()">Sjabloon Toevoegen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let templates = [];
+    
+    async function loadTemplates() {
+        try {
+            const response = await fetch('/api/job_templates');
+            templates = await response.json();
+            renderTemplates();
+        } catch (error) {
+            console.error('Error loading templates:', error);
+        }
+    }
+    
+    function renderTemplates() {
+        const container = document.getElementById('templates-container');
+        
+        if (templates.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nog geen sjablonen gemaakt</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = templates.map(template => `
+            <div class="template-card">
+                <div>
+                    <span class="template-code">#${template.code}</span>
+                    <span class="template-name">${template.name}</span>
+                </div>
+                
+                <div class="machine-sequence">
+                    <strong>Volgorde:</strong> ${template.machine_sequence}
+                </div>
+                
+                <div class="template-details">
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${template.estimated_hours} uren geschat</span>
+                    </div>
+                    ${template.precision_required ? `
+                        <div class="detail-item">
+                            <i class="fas fa-star"></i>
+                            <span class="badge bg-warning">Precisie Vereist</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-danger float-end" onclick="deleteTemplate(${template.id})">
+                        <i class="fas fa-trash"></i> Verwijderen
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function showAddTemplateModal() {
+        document.getElementById('template-form').reset();
+        new bootstrap.Modal(document.getElementById('addTemplateModal')).show();
+    }
+    
+    async function addTemplate() {
+        const data = {
+            code: document.getElementById('template-code').value,
+            name: document.getElementById('template-name').value,
+            machine_sequence: document.getElementById('template-machines').value,
+            estimated_hours: parseFloat(document.getElementById('template-hours').value),
+            precision_required: document.getElementById('template-precision').checked
+        };
+        
+        try {
+            const response = await fetch('/api/job_templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addTemplateModal')).hide();
+                await loadTemplates();
+            }
+        } catch (error) {
+            console.error('Error adding template:', error);
+        }
+    }
+    
+    async function deleteTemplate(id) {
+        if (!confirm('Weet je zeker dat je dit sjabloon wilt verwijderen?')) return;
+        
+        // Implementation would delete the template
+        await loadTemplates();
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTemplates();
+    });
+</script>
+{% endblock %}

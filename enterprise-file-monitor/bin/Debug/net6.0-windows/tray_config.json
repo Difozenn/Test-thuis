@@ -1,0 +1,13 @@
+{
+  "Username": "accura1",
+  "WebAppUrl": "http://localhost:5002",
+  "Language": "en",
+  "ScanFileContents": true,
+  "EnableCNCAnalysis": true,
+  "MaxFileSizeMB": 10,
+  "MonitoringEnabled": false,
+  "MachineType": "accura",
+  "MachineTimeSettings": {
+    "accura": 0.33
+  }
+}

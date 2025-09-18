@@ -5413,9 +5413,9 @@ def start_monitor():
     """Start monitor (placeholder)"""
     return jsonify({'status': 'Monitor is handled by client application'})
 
-@api_bp.route('/monitor/status')
+@api_bp.route('/monitor/details')
 @login_required
-def monitor_status_api():
+def monitor_details_api():
     """Get detailed monitor status"""
     paths_query = MonitoredPath.query.filter_by(is_active=True)
     

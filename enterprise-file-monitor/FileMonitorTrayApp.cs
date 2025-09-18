@@ -3696,20 +3696,50 @@ namespace FileMonitorTray
                 Enabled = autoLoginCheckbox.Checked
             };
             testAutoLoginButton.Click += async (s, e) => {
-                if (await AutoLogin())
+                // Disable button during test
+                testAutoLoginButton.Enabled = false;
+                testAutoLoginButton.Text = "Testing...";
+
+                try
                 {
-                    MessageBox.Show($"Auto login successful! Logged in as {currentUser}", "Success", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    loginButton.Text = $"Logged in as {currentUser}";
-                    loginButton.Enabled = false;
-                    logoutButton.Enabled = true;
-                    statusLabel.Text = "✓ Connected";
-                    statusLabel.ForeColor = Color.Green;
+                    bool loginResult = await AutoLogin();
+
+                    // Small delay to ensure authentication state is propagated
+                    await Task.Delay(500);
+
+                    // Check actual authentication state after login attempt
+                    if (authenticated)
+                    {
+                        MessageBox.Show($"Auto login successful! Logged in as {currentUser}", "Success",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        loginButton.Text = $"Logged in as {currentUser}";
+                        loginButton.Enabled = false;
+                        logoutButton.Enabled = true;
+                        statusLabel.Text = "✓ Connected";
+                        statusLabel.ForeColor = Color.Green;
+                    }
+                    else if (loginResult)
+                    {
+                        // Login method returned true but authenticated is false - race condition
+                        MessageBox.Show("Login is being processed. Please wait a moment and check status.", "Info",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Auto login failed. Please check credentials and server connection.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Auto login failed. Please check credentials.", "Error", 
+                    MessageBox.Show($"Error during auto login test: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    // Re-enable button
+                    testAutoLoginButton.Enabled = autoLoginCheckbox.Checked;
+                    testAutoLoginButton.Text = "Test Auto Login";
                 }
             };
             autoLoginGroup.Controls.Add(testAutoLoginButton);
@@ -3726,7 +3756,7 @@ namespace FileMonitorTray
 
         private void CreateMonitoringTab(TabPage tab)
         {
-            var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10) };
+            var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10), AutoScroll = true };
             tab.Controls.Add(panel);
 
             int yPos = 10;
@@ -4678,7 +4708,7 @@ namespace FileMonitorTray
                         else
                         {
                             this.Invoke(new Action(() =>
-                                MessageBox.Show(localization.T("login_failed"), localization.T("login_failed"),
+                                MessageBox.Show(localization.T("login_failed"), "Error",
                                     MessageBoxButtons.OK, MessageBoxIcon.Error)));
                         }
                     });

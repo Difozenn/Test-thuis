@@ -178,10 +178,9 @@ class ScannerPanel(ttk.Frame):
             self._log(f"[WARN] Kon vetgedrukt lettertype niet aanmaken voor 'OK' status (Algemene Fout): {e}. Gebruikt standaard.")
 
         # Configure OK tag (bold font removed as it applies to the whole row)
-        self.tree.tag_configure('OK', background='light green')
-        self.tree.tag_configure('DUPLICATE', background='orange')
-        self.tree.tag_configure('NOT_FOUND', background='light coral')
-        self.tree.tag_configure('NOT_OK', background='white')
+        # Using hex colors for better compatibility with compiled exe
+        self.tree.tag_configure('OK', background='#90EE90')  # light green
+        self.tree.tag_configure('NOT_OK', background='#FFFFFF')  # white
         
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree.xview)
@@ -1343,6 +1342,20 @@ class ScannerPanel(ttk.Frame):
                     original_barcode_from_excel = key
                     self._log(f"Flexibele match gevonden! Scanner: '{barcode}', Excel: '{original_barcode_from_excel}'")
                     break # Stop after finding the first match
+
+        # If still no match, try matching by filename only (without path)
+        if not item:
+            self._log(f"Poging tot match op bestandsnaam zonder pad...")
+            # Extract filename from the scanned barcode (handles both Unix and Windows paths)
+            scanned_filename = os.path.basename(barcode)
+            if scanned_filename:
+                for key, value in self.barcode_data.items():
+                    # Compare the filename from scan with the item name from Excel
+                    if key == scanned_filename:
+                        item = value
+                        original_barcode_from_excel = key
+                        self._log(f"Match gevonden op bestandsnaam! Scanner pad: '{barcode}', Excel item: '{original_barcode_from_excel}'")
+                        break
 
         if not item:
             self._log(f"[NIET GEVONDEN] Barcode {barcode} niet in de lijst.", "error")

@@ -81195,3 +81195,15 @@ UnboundLocalError: cannot access local variable 'json' where it is not associate
 2025-09-15 19:18:56,134 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
 2025-09-16 06:40:26,335 INFO [DatabasePanel] Shutdown called.
 2025-09-16 06:40:26,335 INFO Shutdown requested for DB API server
+2025-09-18 18:11:56,570 INFO [INIT] Background service log callback initialized
+2025-09-18 18:11:56,570 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-09-18 18:11:56,905 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-09-18 18:11:56,906 INFO Database initialization complete.
+2025-09-18 18:11:56,924 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-09-18 18:11:58,511 INFO [CALLBACK] Scanner panel callback registered
+2025-09-18 18:12:03,936 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-09-18 18:12:10,404 INFO logs_project endpoint called for project: 'MO06784_Lage_kast_Hoofdeinde_(2-16)'
+2025-09-18 18:12:10,515 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
+2025-09-19 18:09:45,392 INFO [DatabasePanel] Shutdown called.
+2025-09-19 18:09:45,393 INFO Shutdown requested for DB API server
+2025-09-19 18:09:46,495 INFO Shutdown requested for DB API server

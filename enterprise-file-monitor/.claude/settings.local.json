@@ -27,7 +27,8 @@
       "Bash(\"./CNC DATALOG.exe\":*)",
       "Bash(sed:*)",
       "Bash(where:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Read(//mnt/c/**)"
     ],
     "deny": []
   }

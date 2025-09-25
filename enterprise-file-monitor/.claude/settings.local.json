@@ -28,7 +28,9 @@
       "Bash(sed:*)",
       "Bash(where:*)",
       "Bash(awk:*)",
-      "Read(//mnt/c/**)"
+      "Read(//mnt/c/**)",
+      "Bash(\"/mnt/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" CNCDatalog_Framework.csproj /p:Configuration=Release /p:Platform=AnyCPU)",
+      "Bash(\"/mnt/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe\" CNCDatalog_Framework.csproj /p:Configuration=Release /p:Platform=AnyCPU)"
     ],
     "deny": []
   }

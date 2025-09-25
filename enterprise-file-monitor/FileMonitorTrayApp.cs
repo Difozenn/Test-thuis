@@ -5539,6 +5539,8 @@ var payload = new
         // Track last processed timestamp in Accura SystemLog.txt
         private DateTime? lastAccuraLogDate = null;
         private TimeSpan? lastAccuraLogTime = null;
+        // Track if we're starting fresh today (for date-based filtering)
+        private DateTime? lastAccuraSessionDate = null;
         
         private async Task<string> ParseAccuraSystemLog(string filePath)
         {
@@ -5554,12 +5556,24 @@ var payload = new
                     List<string> newEntries = new List<string>();
                     DateTime? currentFileDate = null;
                     
+                    // Get today's date for filtering
+                    DateTime today = DateTime.Today;
+
+                    // Check if we need to reset for a new day
+                    if (lastAccuraSessionDate != null && lastAccuraSessionDate.Value.Date != today)
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] New day detected - resetting Accura tracking");
+                        lastAccuraLogDate = null;
+                        lastAccuraLogTime = null;
+                    }
+                    lastAccuraSessionDate = today;
+
                     // Read all lines and process them
                     while ((line = await reader.ReadLineAsync()) != null)
                     {
                         line = line.Trim();
                         if (string.IsNullOrEmpty(line)) continue;
-                        
+
                         // Check if this is a date line (format: DD.MM.YYYY)
                         var dateMatch = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{2})\.(\d{2})\.(\d{4})$");
                         if (dateMatch.Success)
@@ -5568,21 +5582,63 @@ var payload = new
                             int month = int.Parse(dateMatch.Groups[2].Value);
                             int year = int.Parse(dateMatch.Groups[3].Value);
                             currentFileDate = new DateTime(year, month, day);
+
+                            // Skip if this is not today's date
+                            if (currentFileDate.Value.Date != today)
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Skipping old date in SystemLog: {currentFileDate.Value:dd.MM.yyyy}");
+                                // Skip all lines until we find today's date or another date
+                                while ((line = await reader.ReadLineAsync()) != null)
+                                {
+                                    line = line.Trim();
+                                    // Check if we hit another date line
+                                    var nextDateMatch = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{2})\.(\d{2})\.(\d{4})$");
+                                    if (nextDateMatch.Success)
+                                    {
+                                        int nextDay = int.Parse(nextDateMatch.Groups[1].Value);
+                                        int nextMonth = int.Parse(nextDateMatch.Groups[2].Value);
+                                        int nextYear = int.Parse(nextDateMatch.Groups[3].Value);
+                                        currentFileDate = new DateTime(nextYear, nextMonth, nextDay);
+
+                                        if (currentFileDate.Value.Date == today)
+                                        {
+                                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Found today's date in SystemLog: {currentFileDate.Value:dd.MM.yyyy}");
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // If still not today after scanning, skip
+                                if (currentFileDate.Value.Date != today)
+                                {
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Processing today's entries: {currentFileDate.Value:dd.MM.yyyy}");
+                            }
                             continue;
                         }
                         
                         // Parse timestamp from line (format: "HH:mm:ss  Entry text  [data]")
                         var timeMatch = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{2}):(\d{2}):(\d{2})\s+(.+)");
                         if (!timeMatch.Success) continue;
-                        
+
+                        // Skip if we don't have a current date or it's not today
+                        if (currentFileDate == null || currentFileDate.Value.Date != today)
+                        {
+                            continue;
+                        }
+
                         int hour = int.Parse(timeMatch.Groups[1].Value);
                         int minute = int.Parse(timeMatch.Groups[2].Value);
                         int second = int.Parse(timeMatch.Groups[3].Value);
                         TimeSpan currentTime = new TimeSpan(hour, minute, second);
                         string entryText = timeMatch.Groups[4].Value;
-                        
+
                         // Combine date and time
-                        DateTime entryDateTime = (currentFileDate ?? DateTime.Today) + currentTime;
+                        DateTime entryDateTime = currentFileDate.Value + currentTime;
                         
                         // Check if this entry is new (after our last processed timestamp)
                         bool isNewEntry = false;

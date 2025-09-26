@@ -3,7 +3,7 @@
   "WebAppUrl": "http://localhost:5002",
   "Language": "nl",
   "ScanFileContents": true,
-  "EnableCNCAnalysis": true,
+  "EnableCNCAnalysis": false,
   "MaxFileSizeMB": 10,
   "MonitoringEnabled": true,
   "MachineType": "accura",

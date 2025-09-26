@@ -5541,11 +5541,90 @@ var payload = new
         private TimeSpan? lastAccuraLogTime = null;
         // Track if we're starting fresh today (for date-based filtering)
         private DateTime? lastAccuraSessionDate = null;
-        
+
+        private async Task<(DateTime? date, TimeSpan? time)> GetLastAccuraEntryFromAPI()
+        {
+            try
+            {
+                // Use the authenticated httpClient from the main app
+                var response = await httpClient.GetAsync($"{webAppUrl}/api/accura/last-entry");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string jsonContent = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(jsonContent);
+                    var root = doc.RootElement;
+
+                    if (root.GetProperty("success").GetBoolean())
+                    {
+                        // Check if we have a date and time
+                        if (root.TryGetProperty("date", out var dateElem) &&
+                            root.TryGetProperty("time", out var timeElem) &&
+                            dateElem.ValueKind != JsonValueKind.Null &&
+                            timeElem.ValueKind != JsonValueKind.Null)
+                        {
+                            string dateStr = dateElem.GetString();
+                            string timeStr = timeElem.GetString();
+
+                            // Parse date (DD.MM.YYYY format)
+                            var dateMatch = System.Text.RegularExpressions.Regex.Match(dateStr, @"^(\d{2})\.(\d{2})\.(\d{4})$");
+                            if (dateMatch.Success)
+                            {
+                                int day = int.Parse(dateMatch.Groups[1].Value);
+                                int month = int.Parse(dateMatch.Groups[2].Value);
+                                int year = int.Parse(dateMatch.Groups[3].Value);
+                                DateTime lastDate = new DateTime(year, month, day);
+
+                                // Parse time (HH:MM:SS format)
+                                var timeMatch = System.Text.RegularExpressions.Regex.Match(timeStr, @"^(\d{2}):(\d{2}):(\d{2})$");
+                                if (timeMatch.Success)
+                                {
+                                    int hour = int.Parse(timeMatch.Groups[1].Value);
+                                    int minute = int.Parse(timeMatch.Groups[2].Value);
+                                    int second = int.Parse(timeMatch.Groups[3].Value);
+                                    TimeSpan lastTime = new TimeSpan(hour, minute, second);
+
+                                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Retrieved last Accura entry from API: {dateStr} {timeStr}");
+                                    return (lastDate, lastTime);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Failed to get last Accura entry from API: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Error querying last Accura entry from API: {ex.Message}");
+            }
+
+            // Return nulls if no previous entry or error
+            return (null, null);
+        }
+
         private async Task<string> ParseAccuraSystemLog(string filePath)
         {
             try
             {
+                // Query API for last processed entry if we don't have it yet
+                if (lastAccuraLogDate == null || lastAccuraLogTime == null)
+                {
+                    var (apiDate, apiTime) = await GetLastAccuraEntryFromAPI();
+                    if (apiDate.HasValue && apiTime.HasValue)
+                    {
+                        lastAccuraLogDate = apiDate.Value;
+                        lastAccuraLogTime = apiTime.Value;
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Initialized from API - will skip entries before: {lastAccuraLogDate:dd.MM.yyyy} {lastAccuraLogTime}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No previous Accura entries found in database - processing all today's entries");
+                    }
+                }
+
                 // Wait a bit to ensure file write is complete
                 await Task.Delay(500);
                 
@@ -5642,15 +5721,21 @@ var payload = new
                         
                         // Check if this entry is new (after our last processed timestamp)
                         bool isNewEntry = false;
-                        if (lastAccuraLogDate == null || lastAccuraLogTime == null)
-                        {
-                            // First run - don't process existing entries, just remember the last timestamp
-                            isNewEntry = false;
-                        }
-                        else
+                        if (lastAccuraLogDate != null && lastAccuraLogTime != null)
                         {
                             DateTime lastProcessed = lastAccuraLogDate.Value.Date + lastAccuraLogTime.Value;
                             isNewEntry = entryDateTime > lastProcessed;
+
+                            if (!isNewEntry)
+                            {
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Skipping already processed entry at {entryDateTime:HH:mm:ss} (last processed: {lastProcessed:HH:mm:ss})");
+                            }
+                        }
+                        else
+                        {
+                            // No previous entries - process all today's entries
+                            isNewEntry = true;
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] No previous entries found - will process entry at {entryDateTime:HH:mm:ss}");
                         }
                         
                         // Process the entry if it's new
@@ -5682,9 +5767,19 @@ var payload = new
                             }
                         }
                         
-                        // Update last processed timestamp (even for non-matching entries)
-                        lastAccuraLogDate = currentFileDate ?? DateTime.Today;
-                        lastAccuraLogTime = currentTime;
+                        // Always update the last seen timestamp for relevant entries
+                        // This ensures we track progress through the file
+                        if (entryText.Contains("M1 von KAM1 Retour1") || entryText.Contains("Rifo 2 Ende erreicht"))
+                        {
+                            // Only update if this timestamp is newer than what we have
+                            if (lastAccuraLogDate == null || lastAccuraLogTime == null ||
+                                entryDateTime > (lastAccuraLogDate.Value.Date + lastAccuraLogTime.Value))
+                            {
+                                lastAccuraLogDate = currentFileDate ?? DateTime.Today;
+                                lastAccuraLogTime = currentTime;
+                                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Updated last processed timestamp to {lastAccuraLogDate.Value:dd.MM.yyyy} {lastAccuraLogTime:hh\\:mm\\:ss}");
+                            }
+                        }
                     }
                     
                     // If this is the first run, just log that we're ready
@@ -5735,16 +5830,14 @@ var payload = new
                     }
                     else
                     {
-                        staticTime = 0.33; // 20 seconds for narrow pieces
+                        staticTime = 20.0 / 60.0; // Exactly 20 seconds (20/60 = 0.3333... minutes)
                         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Narrow piece detected (B={width}), using 20 seconds machine time");
                     }
                 }
                 else
                 {
-                    // Default time if no width found (e.g., for "Rifo 2 Ende erreicht")
-                    staticTime = config.MachineTimeSettings.ContainsKey("accura") 
-                        ? config.MachineTimeSettings["accura"] 
-                        : 0.33; // Default 20 seconds (0.33 minutes)
+                    // For "Rifo 2 Ende erreicht" - use 1 minute
+                    staticTime = 1.0; // 1 minute for Rifo 2 Ende erreicht
                 }
                 
                 var machineAnalysisPayload = new

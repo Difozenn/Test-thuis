@@ -1,0 +1,8 @@
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\CNCDatalog.pdb
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\static\cncmenu.ico
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\D3DCompiler_47_cor3.dll
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\PenImc_cor3.dll
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\PresentationNative_cor3.dll
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\vcruntime140_cor3.dll
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\wpfgfx_cor3.dll
+C:\Users\Rob_v\Desktop\Test-thuis\enterprise-file-monitor\publish-standalone-full\CNCDatalog.exe

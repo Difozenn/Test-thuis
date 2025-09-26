@@ -2315,6 +2315,54 @@ def get_holidays():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@api_bp.route('/accura/last-entry', methods=['GET'])
+@login_required
+def get_last_accura_entry():
+    """Get the timestamp of the last Accura machine entry"""
+    try:
+        # Find the most recent event with Accura CNC analysis
+        # Look for events that have CNC analysis with Accura-specific characteristics
+        last_entry = db.session.query(Event, CNCAnalysis).join(
+            CNCAnalysis, Event.id == CNCAnalysis.event_id
+        ).filter(
+            Event.user_id == current_user.id,
+            # Accura entries are manual entries with specific patterns
+            Event.event_type == 'manual'
+        ).order_by(Event.timestamp.desc()).first()
+
+        if last_entry:
+            event, cnc_analysis = last_entry
+            # Extract date and time from the event's file_path
+            # Format is "Manual Entry: M1 von KAM1 Retour1 BC= 154 L= 490 B= 584 D= 22"
+            # or "Manual Entry: Rifo 2 Ende erreicht!"
+            file_path = event.file_path
+
+            # Get the timestamp and format it as date and time strings
+            timestamp = event.timestamp
+            # Convert to local time if needed (assuming Europe/Berlin for German system)
+            local_tz = pytz.timezone('Europe/Berlin')
+            local_time = timestamp.replace(tzinfo=timezone.utc).astimezone(local_tz)
+
+            return jsonify({
+                'success': True,
+                'date': local_time.strftime('%d.%m.%Y'),
+                'time': local_time.strftime('%H:%M:%S'),
+                'entry_type': 'rifo' if 'Rifo' in file_path else 'm1',
+                'timestamp': timestamp.isoformat()
+            })
+        else:
+            # No previous entries found
+            return jsonify({
+                'success': True,
+                'date': None,
+                'time': None,
+                'entry_type': None,
+                'timestamp': None
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Routes - Authentication Blueprint
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -3007,8 +3055,8 @@ def dashboard():
         today_start_utc = today_start_local.astimezone(pytz.UTC)
         today_end_utc = today_end_local.astimezone(pytz.UTC)
         
-        for event in Event.query.filter(
-            Event.user_id == target_user_id,
+        # Use the same events_query that's used elsewhere for consistency
+        for event in events_query.filter(
             Event.timestamp >= today_start_utc,
             Event.timestamp < today_end_utc
         ).all():
@@ -3138,7 +3186,7 @@ def dashboard():
         else:
             date_key = stat.date.strftime('%Y-%m-%d')
         machine_time_data[date_key] = float(stat.cycle_time or 0) / 3600  # Convert seconds to hours
-    
+
     machine_time_vs_work_hours_data = {
         'labels': list(machine_time_data.keys())[-7:],  # Last 7 days
         'machine_time': list(machine_time_data.values())[-7:],

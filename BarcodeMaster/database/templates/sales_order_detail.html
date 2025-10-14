@@ -185,12 +185,15 @@
     </div>
 </div>
 
-<!-- Metric Cards -->
-<div class="row mb-4">
+<!-- Regular MO Metric Cards -->
+<div class="mb-2">
+    <h5 class="text-muted mb-2"><i class="fas fa-industry"></i> Manufacturing Orders</h5>
+</div>
+<div class="row mb-3">
     <div class="col-md-3">
         <div class="card">
             <div class="card-body text-center">
-                <h2 class="mb-1">{{ total_mos }}</h2>
+                <h2 class="mb-1" style="color: var(--secondary-blue);">{{ total_mos }}</h2>
                 <p class="text-muted mb-0" data-translate="metric_total_mos">Totaal MOs</p>
             </div>
         </div>
@@ -198,40 +201,93 @@
     <div class="col-md-3">
         <div class="card">
             <div class="card-body text-center">
-                <h2 class="mb-1">{{ total_items }}</h2>
-                <p class="text-muted mb-0" data-translate="metric_total_items">Totaal Items</p>
+                <h2 class="mb-1" style="color: var(--secondary-blue);">{{ mo_items }}</h2>
+                <p class="text-muted mb-0" data-translate="metric_mo_items">Items</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card">
             <div class="card-body text-center">
-                <h2 class="mb-1">
-                    {% if total_work_duration %}
-                        {{ "%d"|format(total_work_duration // 60) }}h {{ "%d"|format(total_work_duration % 60) }}m
+                <h2 class="mb-1" style="color: var(--secondary-blue);">
+                    {% if mo_work_duration %}
+                        {{ "%d"|format(mo_work_duration // 60) }}h {{ "%d"|format(mo_work_duration % 60) }}m
                     {% else %}
                         0h 0m
                     {% endif %}
                 </h2>
-                <p class="text-muted mb-0" data-translate="metric_work_time">Totale Werktijd</p>
+                <p class="text-muted mb-0" data-translate="metric_mo_work_time">Werktijd</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card">
             <div class="card-body text-center">
-                <h2 class="mb-1">
-                    {% if total_project_duration %}
-                        {{ "%d"|format(total_project_duration // 60) }}h {{ "%d"|format(total_project_duration % 60) }}m
+                <h2 class="mb-1" style="color: var(--secondary-blue);">
+                    {% if mo_project_duration %}
+                        {{ "%d"|format(mo_project_duration // 60) }}h {{ "%d"|format(mo_project_duration % 60) }}m
                     {% else %}
                         0h 0m
                     {% endif %}
                 </h2>
-                <p class="text-muted mb-0" data-translate="metric_project_time">Totale Projecttijd</p>
+                <p class="text-muted mb-0" data-translate="metric_mo_project_time">Projecttijd</p>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Reparaties Metric Cards -->
+{% if rep_projects %}
+<div class="mb-2">
+    <h5 class="text-muted mb-2"><i class="fas fa-tools"></i> Reparaties</h5>
+</div>
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 class="mb-1" style="color: #e67e22;">{{ total_reparaties }}</h2>
+                <p class="text-muted mb-0" data-translate="metric_total_reparaties">Reparaties</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 class="mb-1" style="color: #e67e22;">{{ rep_items }}</h2>
+                <p class="text-muted mb-0" data-translate="metric_rep_items">Items</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 class="mb-1" style="color: #e67e22;">
+                    {% if rep_work_duration %}
+                        {{ "%d"|format(rep_work_duration // 60) }}h {{ "%d"|format(rep_work_duration % 60) }}m
+                    {% else %}
+                        0h 0m
+                    {% endif %}
+                </h2>
+                <p class="text-muted mb-0" data-translate="metric_rep_work_time">Werktijd</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 class="mb-1" style="color: #e67e22;">
+                    {% if rep_project_duration %}
+                        {{ "%d"|format(rep_project_duration // 60) }}h {{ "%d"|format(rep_project_duration % 60) }}m
+                    {% else %}
+                        0h 0m
+                    {% endif %}
+                </h2>
+                <p class="text-muted mb-0" data-translate="metric_rep_project_time">Projecttijd</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 
 <!-- Manufacturing Orders Table -->
@@ -403,6 +459,13 @@ const translations = {
         'completed_label': '{{ total_completed }} Voltooid',
         'in_progress_label': '{{ total_mos - total_completed }} In Uitvoering',
         'metric_total_mos': 'Totaal MOs',
+        'metric_mo_items': 'Items',
+        'metric_mo_work_time': 'Werktijd',
+        'metric_mo_project_time': 'Projecttijd',
+        'metric_total_reparaties': 'Reparaties',
+        'metric_rep_items': 'Items',
+        'metric_rep_work_time': 'Werktijd',
+        'metric_rep_project_time': 'Projecttijd',
         'metric_departments': 'Afdelingen',
         'metric_total_items': 'Totaal Items',
         'metric_work_time': 'Totale Werktijd',
@@ -424,6 +487,13 @@ const translations = {
         'completed_label': '{{ total_completed }} Completed',
         'in_progress_label': '{{ total_mos - total_completed }} In Progress',
         'metric_total_mos': 'Total MOs',
+        'metric_mo_items': 'Items',
+        'metric_mo_work_time': 'Work Time',
+        'metric_mo_project_time': 'Project Time',
+        'metric_total_reparaties': 'Repairs',
+        'metric_rep_items': 'Items',
+        'metric_rep_work_time': 'Work Time',
+        'metric_rep_project_time': 'Project Time',
         'metric_departments': 'Departments',
         'metric_total_items': 'Total Items',
         'metric_work_time': 'Total Work Time',

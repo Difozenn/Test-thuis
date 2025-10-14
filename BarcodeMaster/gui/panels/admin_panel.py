@@ -670,52 +670,55 @@ class AdminPanel(tk.Frame):
         """Create Excel output directories configuration tab"""
         # Get current config
         config = get_config()
-        
+
         # --- Excel Output Settings Frame ---
         settings_frame = ttk.LabelFrame(tab, text="Excel Output Directory Configuratie")
         settings_frame.pack(fill='x', padx=5, pady=5)
         settings_frame.columnconfigure(1, weight=1)
-        
+
         # Info label
         info_label = ttk.Label(
             settings_frame,
-            text="Configureer de output directories voor ACCURA en BOERE Excel bestanden.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.",
+            text="Configureer de output directories voor alle gebruikers die Excel bestanden genereren.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.",
             wraplength=500
         )
         info_label.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 15), sticky='w')
-        
-        # ACCURA output directory
-        ttk.Label(settings_frame, text="ACCURA Output Directory:").grid(row=1, column=0, padx=5, pady=5, sticky='w')
-        
-        self.accura_output_var = tk.StringVar(value=config.get('accura_output_dir', 'C:/ACCURA' if os.name == 'nt' else '/tmp/ACCURA'))
-        self.accura_entry = ttk.Entry(settings_frame, textvariable=self.accura_output_var, state='readonly')
-        self.accura_entry.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-        
-        self.accura_browse_btn = ttk.Button(settings_frame, text="Browse", command=lambda: self._browse_output_dir('ACCURA', self.accura_output_var))
-        self.accura_browse_btn.grid(row=1, column=2, padx=5, pady=5)
-        
-        # BOERE output directory
-        ttk.Label(settings_frame, text="BOERE Output Directory:").grid(row=2, column=0, padx=5, pady=5, sticky='w')
-        
-        self.boere_output_var = tk.StringVar(value=config.get('boere_output_dir', 'C:/BOERE' if os.name == 'nt' else '/tmp/BOERE'))
-        self.boere_entry = ttk.Entry(settings_frame, textvariable=self.boere_output_var, state='readonly')
-        self.boere_entry.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
-        
-        self.boere_browse_btn = ttk.Button(settings_frame, text="Browse", command=lambda: self._browse_output_dir('BOERE', self.boere_output_var))
-        self.boere_browse_btn.grid(row=2, column=2, padx=5, pady=5)
-        
+
+        # Define all users that need Excel output directories
+        # Note: NESTING only reads Excel files, doesn't generate output
+        excel_users = ['ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
+        self.excel_output_vars = {}
+        self.excel_entries = {}
+        self.excel_browse_btns = {}
+
+        # Create entry for each user
+        for idx, user in enumerate(excel_users, start=1):
+            ttk.Label(settings_frame, text=f"{user} Output Directory:").grid(row=idx, column=0, padx=5, pady=5, sticky='w')
+
+            # Get default path based on user type
+            default_dir = f'C:/{user}' if os.name == 'nt' else f'/tmp/{user}'
+            self.excel_output_vars[user] = tk.StringVar(value=config.get(f'{user.lower()}_output_dir', default_dir))
+            self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
+            self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
+
+            self.excel_browse_btns[user] = ttk.Button(
+                settings_frame,
+                text="Browse",
+                command=lambda u=user: self._browse_output_dir(u, self.excel_output_vars[u])
+            )
+            self.excel_browse_btns[user].grid(row=idx, column=2, padx=5, pady=5)
+
         # Status Frame
         status_frame = ttk.LabelFrame(tab, text="Directory Status")
         status_frame.pack(fill='x', padx=5, pady=(10, 5))
         status_frame.columnconfigure(1, weight=1)
-        
-        # Status labels
-        self.accura_status_label = ttk.Label(status_frame, text="")
-        self.accura_status_label.grid(row=0, column=0, columnspan=2, padx=5, pady=2, sticky='w')
-        
-        self.boere_status_label = ttk.Label(status_frame, text="")
-        self.boere_status_label.grid(row=1, column=0, columnspan=2, padx=5, pady=2, sticky='w')
-        
+
+        # Status labels for each user
+        self.excel_status_labels = {}
+        for idx, user in enumerate(excel_users):
+            self.excel_status_labels[user] = ttk.Label(status_frame, text="")
+            self.excel_status_labels[user].grid(row=idx, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+
         # Update status on creation
         self._update_excel_output_status()
     
@@ -733,31 +736,22 @@ class AdminPanel(tk.Frame):
     
     def _update_excel_output_status(self):
         """Update the status labels for Excel output directories"""
-        # Check ACCURA directory
-        accura_dir = self.accura_output_var.get()
-        if os.path.exists(accura_dir) and os.path.isdir(accura_dir):
-            self.accura_status_label.config(
-                text=f"✓ ACCURA directory bestaat: {accura_dir}",
-                foreground="green"
-            )
-        else:
-            self.accura_status_label.config(
-                text=f"✗ ACCURA directory bestaat niet: {accura_dir}",
-                foreground="red"
-            )
-        
-        # Check BOERE directory
-        boere_dir = self.boere_output_var.get()
-        if os.path.exists(boere_dir) and os.path.isdir(boere_dir):
-            self.boere_status_label.config(
-                text=f"✓ BOERE directory bestaat: {boere_dir}",
-                foreground="green"
-            )
-        else:
-            self.boere_status_label.config(
-                text=f"✗ BOERE directory bestaat niet: {boere_dir}",
-                foreground="red"
-            )
+        # Note: NESTING only reads Excel files, doesn't generate output
+        excel_users = ['ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
+
+        for user in excel_users:
+            if user in self.excel_output_vars and user in self.excel_status_labels:
+                directory = self.excel_output_vars[user].get()
+                if os.path.exists(directory) and os.path.isdir(directory):
+                    self.excel_status_labels[user].config(
+                        text=f"✓ {user} directory bestaat: {directory}",
+                        foreground="green"
+                    )
+                else:
+                    self.excel_status_labels[user].config(
+                        text=f"✗ {user} directory bestaat niet: {directory}",
+                        foreground="red"
+                    )
 
     def process_log_queue(self):
         """Periodically called method to process messages from the log queue."""

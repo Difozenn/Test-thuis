@@ -429,20 +429,16 @@
             <div class="metric-label">Items {{ user.period_label }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" id="current-items-per-hour">{{ user.avg_items_per_hour }}</div>
+            <div class="metric-value" id="current-items-per-hour">--</div>
             <div class="metric-label">Items/Uur</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" id="goal-progress">{{ user.performance_percentage }}%</div>
+            <div class="metric-value" id="goal-progress">--</div>
             <div class="metric-label">Doel Progress</div>
-            <div class="performance-progress mt-3">
-                <div class="progress-bar {{ user.performance_class }}" 
-                     style="width: {{ user.performance_percentage }}%; height: 100%;"></div>
+            <div class="performance-progress mt-3" id="progress-bar-container">
+                <div class="progress-bar"
+                     style="width: 0%; height: 100%;"></div>
             </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value" id="active-days-count">{{ user.active_days_count|default(0) }}</div>
-            <div class="metric-label">Actieve Dagen</div>
         </div>
     </div>
 </div>
@@ -461,6 +457,17 @@
     </div>
     <div class="chart-container">
         <canvas id="performanceChart"></canvas>
+    </div>
+    <div class="text-center mt-3">
+        <span class="badge bg-secondary" style="font-size: 0.9rem; padding: 8px 12px; margin-right: 10px;">
+            <i class="fas fa-chart-line"></i> Gemiddeld: <span id="average-performance">-</span> Items/Uur
+        </span>
+        <span id="goal-status-badge" class="badge" style="font-size: 0.9rem; padding: 8px 12px; margin-right: 10px;">
+            <i class="fas fa-bullseye"></i> Doel: <span id="goal-performance">-</span> Items/Uur
+        </span>
+        <span id="trend-indicator" class="badge" style="font-size: 0.9rem; padding: 8px 12px;">
+            <i class="fas fa-arrow-up"></i> <span id="trend-text">Trend</span>
+        </span>
     </div>
 </div>
 
@@ -681,21 +688,21 @@ function buildQueryParams() {
     return params.toString();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Initialize filters from URL/server data FIRST
     initializeFiltersFromURL();
-    
+
     // Update UI to reflect current filter state
     updatePeriodDisplay();
     updateActivePeriodButton();
-    
+
     // If no parameters provided and default to month view, ensure button is highlighted
     if (!window.location.search && currentPeriod === 30) {
         const monthBtn = document.querySelector('.period-btn[data-period="month"]');
         if (monthBtn) monthBtn.classList.add('active');
     }
-    // Load efficiency targets first
-    loadEfficiencyTargets();
+    // Load efficiency targets first and wait for it to complete
+    await loadEfficiencyTargets();
     
     // Period Filter Functionality (matching statistics page)
     const periodBtns = document.querySelectorAll('.period-btn');
@@ -792,22 +799,288 @@ document.addEventListener('DOMContentLoaded', function() {
         const hours = parseFloat(element.textContent);
         element.textContent = formatHumanTime(hours);
     });
-    
-    // Performance chart
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    const activityData = {{ user.activity_data | tojson }};
-    
-    const chartData = {
+
+    // Function to create the performance chart
+    function createPerformanceChart() {
+        // Performance chart
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const rawActivityData = {{ user.activity_data | tojson }};
+
+        // Aggregate data by date (multiple projects per day -> single day entry)
+        const dateMap = {};
+        rawActivityData.forEach(d => {
+            if (!dateMap[d.date]) {
+                dateMap[d.date] = { items: 0, hours: 0 };
+            }
+            dateMap[d.date].items += d.items;
+            dateMap[d.date].hours += d.hours;
+        });
+
+        // Convert to array and calculate items_per_hour for each date
+        // Filter out entries with 0 items (incomplete/test data)
+        const activityData = Object.entries(dateMap)
+            .map(([date, data]) => ({
+                date: date,
+                items: data.items,
+                hours: data.hours,
+                items_per_hour: data.hours > 0 ? data.items / data.hours : 0
+            }))
+            .filter(d => d.items > 0)  // Exclude projects with 0 items (test/incomplete data)
+            .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
+        // Calculate moving average for trendline
+        const itemsPerHourValues = activityData.map(d => d.items_per_hour);
+
+        // Calculate overall weighted average for display (total items / total hours)
+        const totalItems = activityData.reduce((sum, d) => sum + d.items, 0);
+        const totalHours = activityData.reduce((sum, d) => sum + d.hours, 0);
+        const overallAverage = totalHours > 0 ? totalItems / totalHours : 0;
+
+        // Debug: Log the data being used for average
+        console.log('Chart data points:', activityData.length);
+        console.log('Date range in chart:', activityData.length > 0 ? `${activityData[0].date} to ${activityData[activityData.length - 1].date}` : 'No data');
+        console.log('Total items:', totalItems);
+        console.log('Total hours:', totalHours);
+        console.log('Frontend weighted average:', overallAverage);
+        console.log('Backend database average:', '{{ user.database_avg_items_per_hour }}');
+
+        // Check for discrepancy
+        const backendAvg = '{{ user.database_avg_items_per_hour }}';
+        if (backendAvg !== '--' && Math.abs(parseFloat(backendAvg) - overallAverage) > 1) {
+            console.warn('DISCREPANCY DETECTED:');
+            console.warn('Backend says:', backendAvg, 'items/hour');
+            console.warn('Frontend calculated:', overallAverage.toFixed(1), 'items/hour');
+            console.warn('This suggests the activity_data might be incomplete or calculated differently');
+        }
+
+        // Display average and goal in badges (will update with trendline average later)
+        const avgElement = document.getElementById('average-performance');
+        if (avgElement) {
+            // Initially show weighted average, will be updated with trendline average
+            avgElement.textContent = overallAverage.toFixed(1);
+        }
+
+        const goalElement = document.getElementById('goal-performance');
+        if (goalElement) {
+            goalElement.textContent = userTarget.toFixed(1);
+        }
+
+        // Update goal status badge color based on performance
+        const goalStatusBadge = document.getElementById('goal-status-badge');
+        if (goalStatusBadge) {
+            if (overallAverage >= userTarget) {
+                goalStatusBadge.className = 'badge bg-success';
+                goalStatusBadge.style.cssText = 'font-size: 0.9rem; padding: 8px 12px; margin-right: 10px;';
+            } else if (overallAverage >= userTarget * 0.8) {
+                goalStatusBadge.className = 'badge bg-warning';
+                goalStatusBadge.style.cssText = 'font-size: 0.9rem; padding: 8px 12px; margin-right: 10px;';
+            } else {
+                goalStatusBadge.className = 'badge bg-danger';
+                goalStatusBadge.style.cssText = 'font-size: 0.9rem; padding: 8px 12px; margin-right: 10px;';
+            }
+        }
+
+        // Calculate linear regression trendline (best-fit line)
+        const linearTrendline = [];
+
+        if (itemsPerHourValues.length > 1) {
+            // Calculate linear regression
+            const n = itemsPerHourValues.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+            for (let i = 0; i < n; i++) {
+                sumX += i;
+                sumY += itemsPerHourValues[i];
+                sumXY += i * itemsPerHourValues[i];
+                sumX2 += i * i;
+            }
+
+            // Calculate slope and intercept
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Generate trendline points
+            for (let i = 0; i < n; i++) {
+                linearTrendline.push(intercept + slope * i);
+            }
+
+            // Determine trend direction and if it's above goal
+            const trendStart = linearTrendline[0];
+            const trendEnd = linearTrendline[linearTrendline.length - 1];
+            // Use overall weighted average instead of trendline average for consistency
+            const displayAverage = overallAverage;  // This is totalItems / totalHours
+
+            console.log('Trendline calculation:');
+            console.log('- Trendline start:', trendStart);
+            console.log('- Trendline end:', trendEnd);
+            console.log('- Weighted average (used for display):', displayAverage);
+            console.log('- Individual project values:', itemsPerHourValues);
+            var isAboveGoal = displayAverage >= userTarget;
+            var isImproving = trendEnd > trendStart; // Positive slope means improving
+            var trendPercentChange = ((trendEnd - trendStart) / Math.max(trendStart, 0.1)) * 100; // Percentage change
+
+            // Update the average display to show weighted average
+            if (avgElement) {
+                avgElement.textContent = displayAverage.toFixed(1);
+            }
+
+            // Update Key Metrics section - use weighted average
+            const currentItemsPerHourElement = document.getElementById('current-items-per-hour');
+            if (currentItemsPerHourElement) {
+                // Use weighted average for consistency
+                currentItemsPerHourElement.textContent = displayAverage.toFixed(1);
+                console.log('Items/Uur set to weighted average:', displayAverage.toFixed(1));
+            }
+
+            // Update goal progress based on weighted average
+            const goalProgressElement = document.getElementById('goal-progress');
+            const progressBarContainer = document.getElementById('progress-bar-container');
+            if (goalProgressElement && userTarget > 0) {
+                // Use weighted average for consistency
+                const progressPercentage = Math.min(100, (displayAverage / userTarget) * 100);
+                goalProgressElement.textContent = Math.round(progressPercentage) + '%';
+                console.log('Goal Progress:', Math.round(progressPercentage) + '%', 'based on weighted avg:', displayAverage, '/ target:', userTarget);
+
+                // Update progress bar
+                if (progressBarContainer) {
+                    const progressBar = progressBarContainer.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = progressPercentage + '%';
+
+                        // Set color class based on performance
+                        progressBar.className = 'progress-bar';
+                        if (progressPercentage >= 90) {
+                            progressBar.classList.add('bg-success');
+                        } else if (progressPercentage >= 70) {
+                            progressBar.classList.add('bg-warning');
+                        } else {
+                            progressBar.classList.add('bg-danger');
+                        }
+                    }
+                }
+            }
+        } else if (itemsPerHourValues.length === 1) {
+            // Single point - use that value
+            linearTrendline.push(itemsPerHourValues[0]);
+            var isAboveGoal = itemsPerHourValues[0] >= userTarget;
+
+            // Update the average display for single point
+            if (avgElement) {
+                avgElement.textContent = itemsPerHourValues[0].toFixed(1);
+            }
+
+            // Update Key Metrics for single point
+            const currentItemsPerHourElement = document.getElementById('current-items-per-hour');
+            if (currentItemsPerHourElement) {
+                currentItemsPerHourElement.textContent = itemsPerHourValues[0].toFixed(1);
+            }
+
+            // Update goal progress for single point
+            const goalProgressElement = document.getElementById('goal-progress');
+            const progressBarContainer = document.getElementById('progress-bar-container');
+            if (goalProgressElement && userTarget > 0) {
+                const progressPercentage = Math.min(100, (itemsPerHourValues[0] / userTarget) * 100);
+                goalProgressElement.textContent = Math.round(progressPercentage) + '%';
+
+                if (progressBarContainer) {
+                    const progressBar = progressBarContainer.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = progressPercentage + '%';
+                        progressBar.className = 'progress-bar';
+                        if (progressPercentage >= 90) {
+                            progressBar.classList.add('bg-success');
+                        } else if (progressPercentage >= 70) {
+                            progressBar.classList.add('bg-warning');
+                        } else {
+                            progressBar.classList.add('bg-danger');
+                        }
+                    }
+                }
+            }
+
+            var isImproving = false;
+        } else {
+            // No data
+            var isAboveGoal = false;
+            var isImproving = false;
+
+            // Update Key Metrics for no data case
+            const currentItemsPerHourElement = document.getElementById('current-items-per-hour');
+            if (currentItemsPerHourElement) {
+                currentItemsPerHourElement.textContent = '--';
+            }
+
+            const goalProgressElement = document.getElementById('goal-progress');
+            if (goalProgressElement) {
+                goalProgressElement.textContent = '0%';
+            }
+            var trendPercentChange = 0;
+        }
+
+        // Update trend indicator
+        const trendIndicator = document.getElementById('trend-indicator');
+        const trendText = document.getElementById('trend-text');
+        if (trendIndicator && trendText && itemsPerHourValues.length > 1) {
+            if (isImproving) {
+                trendIndicator.className = 'badge bg-success';
+                trendIndicator.innerHTML = '<i class="fas fa-arrow-up"></i> <span id="trend-text">Stijgend</span>';
+            } else if (Math.abs(trendPercentChange) < 2) { // Less than 2% change - stable
+                trendIndicator.className = 'badge bg-info';
+                trendIndicator.innerHTML = '<i class="fas fa-arrows-alt-h"></i> <span id="trend-text">Stabiel</span>';
+            } else {
+                trendIndicator.className = 'badge bg-danger';
+                trendIndicator.innerHTML = '<i class="fas fa-arrow-down"></i> <span id="trend-text">Dalend</span>';
+            }
+            trendIndicator.style.cssText = 'font-size: 0.9rem; padding: 8px 12px;';
+        } else if (trendIndicator) {
+            // Not enough data for trend
+            trendIndicator.className = 'badge bg-secondary';
+            trendIndicator.innerHTML = '<i class="fas fa-minus"></i> <span id="trend-text">Onvoldoende data</span>';
+            trendIndicator.style.cssText = 'font-size: 0.9rem; padding: 8px 12px;';
+        }
+
+        // Create goal line data (horizontal line at target value)
+        const goalLineData = activityData.map(() => userTarget);
+
+        const chartData = {
         labels: activityData.map(d => d.date),
-        datasets: [{
-            label: 'Items/Uur',
-            data: activityData.map(d => d.items_per_hour),
-            borderColor: 'var(--secondary-blue)',
-            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4
-        }]
+        datasets: [
+            {
+                label: 'Items/Uur',
+                data: activityData.map(d => d.items_per_hour),
+                borderColor: 'var(--secondary-blue)',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                order: 2  // Draw this second
+            },
+            {
+                label: 'Trendlijn',
+                data: linearTrendline,
+                borderColor: isImproving ? 'rgba(46, 204, 113, 0.9)' : 'rgba(231, 76, 60, 0.9)',  // Green if improving, red if declining
+                borderWidth: 2,
+                borderDash: [8, 4],  // Dashed line
+                fill: false,
+                pointRadius: 0,  // No points on the trend line
+                pointHoverRadius: 0, // No hover points
+                tension: 0,  // Straight line (linear)
+                order: 1  // Draw this third (on top)
+            },
+            {
+                label: `Doel (${userTarget} items/uur)`,
+                data: goalLineData,
+                borderColor: 'rgba(155, 89, 182, 0.7)',  // Purple color for goal line
+                backgroundColor: 'rgba(155, 89, 182, 0.05)',
+                borderWidth: 2,
+                borderDash: [10, 5],  // Long dash pattern
+                fill: '+1',  // Fill area between this line and trend line
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0,  // Straight line
+                order: 3  // Draw this first (at bottom)
+            }
+        ]
     };
     
     new Chart(ctx, {
@@ -818,7 +1091,30 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += Math.round(context.parsed.y * 10) / 10;
+                            if (context.dataset.label === 'Trendlijn') {
+                                label += ' (trend)';
+                            }
+                            return label;
+                        }
+                    }
                 }
             },
             scales: {
@@ -838,6 +1134,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    }  // End of createPerformanceChart function
+
+    // Call the chart creation function after targets are loaded
+    // Add small delay to ensure DOM is fully ready
+    setTimeout(() => {
+        createPerformanceChart();
+    }, 100);
 });
 
 // Export Functions for User Performance
@@ -851,8 +1154,6 @@ async function exportUserPerformanceToPDF() {
         // Get current metrics values
         const currentItemsPerHour = document.getElementById('current-items-per-hour').textContent;
         const goalProgress = document.getElementById('goal-progress').textContent;
-        const activeDaysElement = document.getElementById('active-days-count');
-        const activeDays = activeDaysElement ? activeDaysElement.textContent : '{{ user.active_days_count|default(0) }}';
         
         // Get activity table data
         const activityTable = document.querySelector('.stats-table tbody');
@@ -943,10 +1244,6 @@ async function exportUserPerformanceToPDF() {
                             <div class="metric-label">Doel Progress (%)</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-value">${activeDays}</div>
-                            <div class="metric-label">Actieve Dagen (30d)</div>
-                        </div>
-                        <div class="metric-card">
                             <div class="metric-value">--</div>
                             <div class="metric-label">Kwaliteitsscore (%)</div>
                         </div>
@@ -1003,8 +1300,7 @@ async function exportUserDataToExcel() {
         csvContent += "PERFORMANCE METRICS\n";
         csvContent += "Metric,Waarde\n";
         csvContent += `Huidig Items/Uur,${document.getElementById('current-items-per-hour').textContent}\n`;
-        csvContent += `Doel Progress (%),${document.getElementById('goal-progress').textContent}\n`;
-        csvContent += `Actieve Dagen,${activeDays}\n\n`;
+        csvContent += `Doel Progress (%),${document.getElementById('goal-progress').textContent}\n\n`;
         
         // Detailed Activity Data
         csvContent += "GEDETAILLEERDE ACTIVITEIT\n";

@@ -1579,9 +1579,26 @@ def get_categories():
 def get_tool_statistics():
     """Get tool usage statistics for charts"""
     try:
-        days = request.args.get('days', 30, type=int)
+        # Support both date range and days parameter
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        days = request.args.get('days', type=int)
         user_filter = request.args.get('user_id', type=int)
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+
+        # Determine the cutoff date and end date
+        if start_date_str and end_date_str:
+            # Use specific date range
+            local_tz = get_local_timezone()
+            cutoff_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(tzinfo=local_tz).astimezone(timezone.utc)
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=local_tz).astimezone(timezone.utc)
+        elif days:
+            # Use days parameter (backwards compatibility)
+            end_date = datetime.now(timezone.utc)
+            cutoff_date = end_date - timedelta(days=days)
+        else:
+            # Default to last 30 days
+            end_date = datetime.now(timezone.utc)
+            cutoff_date = end_date - timedelta(days=30)
         
         print(f"[DEBUG] Tool statistics requested for last {days} days (since {cutoff_date})")
         print(f"[DEBUG] Current user: {current_user.username} (role: {current_user.role})")
@@ -1602,7 +1619,8 @@ def get_tool_statistics():
             func.sum(ToolUsage.move_count).label('total_moves'),
             func.avg(ToolUsage.total_time).label('avg_time_per_use')
         ).join(CNCAnalysis).join(Event).filter(
-            CNCAnalysis.created_at >= cutoff_date
+            CNCAnalysis.created_at >= cutoff_date,
+            CNCAnalysis.created_at <= end_date
         )
         
         # Filter by user based on role and selection
@@ -3071,9 +3089,9 @@ def dashboard():
                 if not (lunch_start <= event_hour < lunch_end):
                     work_hour_events += 1
         
-        # Calculate average based on actual elapsed work hours (real-time)
-        # Use hours_passed to get current items/hr rate during work hours
-        hourly_average = work_hour_events / hours_passed if hours_passed > 0 else 0
+        # Calculate average based on total configured work hours for the day (same as weekly chart)
+        # This provides consistency with the weekly activity normalized chart
+        hourly_average = work_hour_events / today_work_hours if today_work_hours > 0 else 0
     else:
         hourly_average = 0  # Non-working day
         work_hour_events = 0
@@ -3877,6 +3895,7 @@ def statistics():
             'labels': [datetime.strptime(str(d['date']), '%Y-%m-%d').strftime('%m/%d') for d in efficiency_by_day],
             'machine_time': [next(((m.total_machine_time_seconds or 0) / 3600 for m in machine_time_analysis if str(m.date) == str(d['date'])), 0) for d in efficiency_by_day],
             'work_hours': [d['work_hours'] for d in efficiency_by_day],
+            'events': [d['events'] for d in efficiency_by_day],  # Add total events per day
             'events_per_hour': [d['events_per_hour'] for d in efficiency_by_day],
             'efficiency_levels': [d['efficiency'] for d in efficiency_by_day]
         },

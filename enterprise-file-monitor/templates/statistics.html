@@ -479,33 +479,65 @@ new Chart(machineTimeCtx, {
 // Events per Work Hour Trend Chart
 const eventsPerHourCtx = document.getElementById('eventsPerHourChart').getContext('2d');
 new Chart(eventsPerHourCtx, {
-    type: 'line',
+    type: 'bar',
     data: {
         labels: {{ statistics_data.machine_time_vs_work_hours.labels|tojson }},
-        datasets: [{
-            label: '{{ t("events_per_hour") }}',
-            data: {{ statistics_data.machine_time_vs_work_hours.events_per_hour|tojson }},
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.4,
-            fill: true,
-            pointBackgroundColor: function(context) {
-                const efficiency = {{ statistics_data.machine_time_vs_work_hours.efficiency_levels|tojson }}[context.dataIndex];
-                return efficiency === 'high' ? '#10b981' : efficiency === 'medium' ? '#f59e0b' : '#6b7280';
+        datasets: [
+            {
+                label: '{{ t("events") }}',
+                data: {{ statistics_data.machine_time_vs_work_hours.events|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
             },
-            pointBorderColor: '#fff',
-            pointRadius: 6
-        }]
+            {
+                label: '{{ t("events_per_hour") }}',
+                data: {{ statistics_data.machine_time_vs_work_hours.events_per_hour|tojson }},
+                type: 'line',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: false,
+                pointBackgroundColor: function(context) {
+                    const efficiency = {{ statistics_data.machine_time_vs_work_hours.efficiency_levels|tojson }}[context.dataIndex];
+                    return efficiency === 'high' ? '#10b981' : efficiency === 'medium' ? '#f59e0b' : '#6b7280';
+                },
+                pointBorderColor: '#fff',
+                pointRadius: 6,
+                yAxisID: 'y1'
+            }
+        ]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
         scales: {
             y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: '{{ t("events") }}'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
                 beginAtZero: true,
                 title: {
                     display: true,
                     text: '{{ t("events_per_hour") }}'
+                },
+                grid: {
+                    drawOnChartArea: false,
                 }
             }
         },
@@ -513,8 +545,11 @@ new Chart(eventsPerHourCtx, {
             tooltip: {
                 callbacks: {
                     label: function(context) {
-                        const efficiency = {{ statistics_data.machine_time_vs_work_hours.efficiency_levels|tojson }}[context.dataIndex];
-                        return '{{ t("events_per_hour") }}: ' + context.parsed.y.toFixed(2) + ' (' + efficiency + ' efficiency)';
+                        if (context.dataset.label === '{{ t("events_per_hour") }}') {
+                            const efficiency = {{ statistics_data.machine_time_vs_work_hours.efficiency_levels|tojson }}[context.dataIndex];
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' (' + efficiency + ' efficiency)';
+                        }
+                        return context.dataset.label + ': ' + context.parsed.y;
                     }
                 }
             }
@@ -793,8 +828,12 @@ async function loadToolUsageData() {
         // Get the user filter from the form
         const userFilter = document.getElementById('user-filter')?.value || '';
         const userParam = userFilter ? `&user_id=${userFilter}` : '';
-        
-        const response = await fetch(`/api/tool_statistics?days=30${userParam}`);
+
+        // Pass the actual date range from the statistics page
+        const startDate = '{{ start_date }}';
+        const endDate = '{{ end_date }}';
+
+        const response = await fetch(`/api/tool_statistics?start_date=${startDate}&end_date=${endDate}${userParam}`);
         const data = await response.json();
         
         if (data.success && data.tools.length > 0) {

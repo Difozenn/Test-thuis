@@ -640,7 +640,8 @@
     
     <!-- Logs Tab -->
     <div class="tab-pane fade" id="logs">
-        <div class="card">
+        <!-- Database Logs Section -->
+        <div class="card mb-3">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-file-alt"></i> Database Logs</h5>
@@ -662,6 +663,42 @@
                     <div class="text-center py-4">
                         <i class="fas fa-spinner fa-spin"></i> Logs laden...
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login History Section -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-sign-in-alt"></i> Login Historie</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshLoginHistory()">
+                        <i class="fas fa-sync-alt"></i> Vernieuwen
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="sticky-top bg-light">
+                            <tr>
+                                <th>Tijd</th>
+                                <th>Gebruiker</th>
+                                <th>IP Adres</th>
+                                <th>Browser/Device</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Sessie Duur</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loginHistoryBody">
+                            <tr>
+                                <td colspan="7" class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin"></i> Laden...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -834,13 +871,23 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDatabaseInfo();
     refreshBackupList();
     refreshLogs();
-    
+    refreshLoginHistory();
+
     // Load sessions when tab is shown
     const sessionsTab = document.querySelector('a[href="#sessions"]');
     if (sessionsTab) {
         sessionsTab.addEventListener('shown.bs.tab', function() {
             loadActiveSessions();
             loadRecentSessions();
+        });
+    }
+
+    // Load login history when logs tab is shown
+    const logsTab = document.querySelector('a[href="#logs"]');
+    if (logsTab) {
+        logsTab.addEventListener('shown.bs.tab', function() {
+            refreshLoginHistory();
+            refreshLogs();
         });
     }
 });
@@ -1441,6 +1488,105 @@ async function resetDatabase() {
         showNotification('Fout bij resetten database', 'error');
     } finally {
         hideLoading();
+    }
+}
+
+// Login History
+async function refreshLoginHistory() {
+    try {
+        const response = await fetch('/api/database/login-history?limit=50');
+        const data = await response.json();
+
+        const tbody = document.getElementById('loginHistoryBody');
+
+        if (data.success) {
+            if (data.logins.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-3 text-muted">
+                            <i class="fas fa-history"></i> Geen login historie gevonden
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.logins.map(login => {
+                // Parse user agent for simpler display
+                let browserInfo = login.user_agent;
+                if (browserInfo && browserInfo.length > 50) {
+                    // Extract browser name and OS if possible
+                    const matches = browserInfo.match(/(Chrome|Firefox|Safari|Edge|Opera)\/[\d.]+/);
+                    const osMatches = browserInfo.match(/(Windows|Mac|Linux|Android|iPhone|iPad)/);
+                    if (matches || osMatches) {
+                        browserInfo = `${matches ? matches[0] : ''} ${osMatches ? osMatches[0] : ''}`.trim();
+                    } else {
+                        browserInfo = browserInfo.substring(0, 50) + '...';
+                    }
+                }
+
+                // Format login time
+                const loginTime = new Date(login.login_time);
+                const timeStr = loginTime.toLocaleString('nl-NL', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                // Format session duration
+                let duration = '-';
+                if (login.session_duration_minutes) {
+                    const hours = Math.floor(login.session_duration_minutes / 60);
+                    const minutes = Math.round(login.session_duration_minutes % 60);
+                    if (hours > 0) {
+                        duration = `${hours}u ${minutes}m`;
+                    } else {
+                        duration = `${minutes}m`;
+                    }
+                }
+
+                // Status badge
+                const statusBadge = login.login_success
+                    ? '<span class="badge bg-success">Success</span>'
+                    : '<span class="badge bg-danger">Failed</span>';
+
+                // Login type badge
+                const typeBadge = login.login_type === 'cookie'
+                    ? '<span class="badge bg-info">Auto</span>'
+                    : '<span class="badge bg-secondary">Manual</span>';
+
+                return `
+                    <tr>
+                        <td class="text-nowrap">${timeStr}</td>
+                        <td><strong>${login.username}</strong></td>
+                        <td>${login.ip_address}</td>
+                        <td title="${login.user_agent}">${browserInfo}</td>
+                        <td>${typeBadge}</td>
+                        <td>${statusBadge}</td>
+                        <td>${duration}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-3 text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Fout bij laden van login historie
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading login history:', error);
+        document.getElementById('loginHistoryBody').innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-3 text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Fout bij laden van login historie
+                </td>
+            </tr>
+        `;
     }
 }
 

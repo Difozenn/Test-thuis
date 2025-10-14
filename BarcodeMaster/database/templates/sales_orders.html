@@ -110,6 +110,8 @@
                 <option value="mos" data-translate="sort_most_mos">Meeste MOs</option>
                 <option value="items" data-translate="sort_most_items">Meeste Items</option>
                 <option value="completion" data-translate="sort_completion">Voltooiing %</option>
+                <option value="activity-desc" data-translate="sort_activity_newest">Activiteit (Nieuwste)</option>
+                <option value="activity-asc" data-translate="sort_activity_oldest">Activiteit (Oudste)</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -125,25 +127,26 @@
     <table class="table so-table" id="soTable">
         <thead>
             <tr>
-                <th data-translate="th_so_number">SO Nummer</th>
-                <th data-translate="th_customer">Klant</th>
-                <th data-translate="th_mo_count">MO Aantal</th>
-                <th data-translate="th_total_items">Totaal Items</th>
+                <th style="cursor: pointer;" onclick="sortTable('so')" data-translate="th_so_number">SO Nummer <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('customer')" data-translate="th_customer">Klant <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('mos')" data-translate="th_mo_count">MO Aantal <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('items')" data-translate="th_total_items">Totaal Items <i class="fas fa-sort"></i></th>
                 <th data-translate="th_work_time">Werktijd</th>
                 <th data-translate="th_project_time">Projecttijd</th>
-                <th data-translate="th_status">Status</th>
-                <th data-translate="th_last_activity">Laatste Activiteit</th>
+                <th style="cursor: pointer;" onclick="sortTable('completion')" data-translate="th_status">Status <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('activity')" data-translate="th_activity">ACTIVITEIT <i class="fas fa-sort"></i></th>
             </tr>
         </thead>
         <tbody>
             {% for so in sales_orders %}
             <tr onclick="window.location.href='/sales_order/{{ so.so_number }}'"
-                data-so="{{ so.so_number }}" 
+                data-so="{{ so.so_number }}"
                 data-customer="{{ so.customer_name or '' }}"
                 data-status="{% if so.completion_percentage == 100 %}completed{% else %}in-progress{% endif %}"
                 data-mos="{{ so.mo_count }}"
                 data-items="{{ so.total_items }}"
-                data-completion="{{ so.completion_percentage }}">
+                data-completion="{{ so.completion_percentage }}"
+                data-activity="{{ so.last_activity or '' }}">
                 
                 <td>
                     <a href="/sales_order/{{ so.so_number }}" class="so-link" onclick="event.stopPropagation();">
@@ -192,6 +195,38 @@
 </div>
 
 <script>
+// Helper function to parse dates from various formats
+function parseDate(dateStr) {
+    if (!dateStr || dateStr === '-' || dateStr === '') return new Date(0); // Return epoch for empty/invalid dates
+
+    // Replace space with 'T' for ISO format compatibility (SQLite returns "YYYY-MM-DD HH:MM:SS")
+    let dateStrNormalized = dateStr.replace(' ', 'T');
+
+    // Try to parse as ISO format
+    let date = new Date(dateStrNormalized);
+
+    // If invalid, try parsing DD-MM-YYYY HH:MM format (used by projects page display)
+    if (isNaN(date.getTime())) {
+        const parts = dateStr.match(/(\d{2})-(\d{2})-(\d{4})\s*(\d{2})?:?(\d{2})?/);
+        if (parts) {
+            const day = parseInt(parts[1]);
+            const month = parseInt(parts[2]) - 1; // JS months are 0-indexed
+            const year = parseInt(parts[3]);
+            const hour = parts[4] ? parseInt(parts[4]) : 0;
+            const minute = parts[5] ? parseInt(parts[5]) : 0;
+            date = new Date(year, month, day, hour, minute);
+        }
+    }
+
+    // If still invalid, return epoch
+    if (isNaN(date.getTime())) {
+        console.warn('Failed to parse date:', dateStr);
+        return new Date(0);
+    }
+
+    return date;
+}
+
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
@@ -234,6 +269,12 @@ function applyFilters() {
                 return parseInt(b.dataset.items) - parseInt(a.dataset.items);
             case 'completion':
                 return parseFloat(b.dataset.completion) - parseFloat(a.dataset.completion);
+            case 'activity-desc':
+                // Parse dates for proper comparison (newest first)
+                return parseDate(b.dataset.activity) - parseDate(a.dataset.activity);
+            case 'activity-asc':
+                // Parse dates for proper comparison (oldest first)
+                return parseDate(a.dataset.activity) - parseDate(b.dataset.activity);
             default:
                 return 0;
         }
@@ -246,6 +287,37 @@ function applyFilters() {
 
 // Real-time search
 document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+// Header sorting
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
+function sortTable(column) {
+    // Toggle direction if clicking same column
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+
+    // Update sort select dropdown to match
+    if (column === 'so') {
+        document.getElementById('sortBy').value = currentSortDirection === 'desc' ? 'so-desc' : 'so-asc';
+    } else if (column === 'customer') {
+        document.getElementById('sortBy').value = 'customer';
+    } else if (column === 'mos') {
+        document.getElementById('sortBy').value = 'mos';
+    } else if (column === 'items') {
+        document.getElementById('sortBy').value = 'items';
+    } else if (column === 'completion') {
+        document.getElementById('sortBy').value = 'completion';
+    } else if (column === 'activity') {
+        document.getElementById('sortBy').value = currentSortDirection === 'desc' ? 'activity-desc' : 'activity-asc';
+    }
+
+    applyFilters();
+}
 
 // Language translations
 const translations = {
@@ -261,6 +333,8 @@ const translations = {
         'sort_most_mos': 'Meeste MOs',
         'sort_most_items': 'Meeste Items',
         'sort_completion': 'Voltooiing %',
+        'sort_activity_newest': 'Activiteit (Nieuwste)',
+        'sort_activity_oldest': 'Activiteit (Oudste)',
         'apply_button': 'Toepassen',
         'th_so_number': 'SO Nummer',
         'th_customer': 'Klant',
@@ -271,7 +345,7 @@ const translations = {
         'th_departments': 'Afdelingen',
         'th_status': 'Status',
         'th_progress': 'Voortgang',
-        'th_last_activity': 'Laatste Activiteit',
+        'th_activity': 'ACTIVITEIT',
         'status_completed': 'Voltooid',
         'status_in_progress': 'In Uitvoering',
         'no_sales_orders': 'Geen Sales Orders gevonden met SO nummers in de database.'
@@ -288,6 +362,8 @@ const translations = {
         'sort_most_mos': 'Most MOs',
         'sort_most_items': 'Most Items',
         'sort_completion': 'Completion %',
+        'sort_activity_newest': 'Activity (Newest)',
+        'sort_activity_oldest': 'Activity (Oldest)',
         'apply_button': 'Apply',
         'th_so_number': 'SO Number',
         'th_customer': 'Customer',
@@ -298,7 +374,7 @@ const translations = {
         'th_departments': 'Departments',
         'th_status': 'Status',
         'th_progress': 'Progress',
-        'th_last_activity': 'Last Activity',
+        'th_activity': 'ACTIVITY',
         'status_completed': 'Completed',
         'status_in_progress': 'In Progress',
         'no_sales_orders': 'No Sales Orders found with SO numbers in the database.'
@@ -310,10 +386,20 @@ function translatePage(lang) {
     elements.forEach(el => {
         const key = el.getAttribute('data-translate');
         if (translations[lang] && translations[lang][key]) {
-            el.textContent = translations[lang][key];
+            // Check if element has a sort icon
+            const sortIcon = el.querySelector('.fa-sort');
+            if (sortIcon) {
+                // Preserve the sort icon by only replacing text nodes
+                const textNode = Array.from(el.childNodes).find(node => node.nodeType === 3);
+                if (textNode) {
+                    textNode.textContent = translations[lang][key] + ' ';
+                }
+            } else {
+                el.textContent = translations[lang][key];
+            }
         }
     });
-    
+
     // Translate placeholders
     const placeholderElements = document.querySelectorAll('[data-translate-placeholder]');
     placeholderElements.forEach(el => {

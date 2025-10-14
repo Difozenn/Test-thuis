@@ -218,11 +218,12 @@
     border: 2px solid #dee2e6;
     border-radius: 15px;
     padding: 15px;
-    width: 140px;
+    width: 160px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
+    min-height: 180px;
 }
 
 .dept-node:hover {
@@ -231,15 +232,15 @@
     border-color: var(--secondary-blue);
 }
 
-.dept-node.active {
+/* .dept-node.active {
     border-color: #28a745;
     background: linear-gradient(135deg, #f0fff4, #e6f4ea);
-}
+} */
 
-.dept-node.bottleneck {
+/* .dept-node.bottleneck {
     border-color: #dc3545;
     background: linear-gradient(135deg, #fff5f5, #ffebeb);
-}
+} */
 
 .dept-node-name {
     font-size: 12px;
@@ -260,6 +261,62 @@
 .dept-node-label {
     font-size: 10px;
     color: #6c757d;
+}
+
+.dept-node-time {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+    font-size: 11px;
+}
+
+.dept-node-items {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.dept-node-items i {
+    color: var(--secondary-blue);
+}
+
+.time-estimates {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.time-label {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.time-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--secondary-blue);
+}
+
+.time-value.goal {
+    color: #28a745;
+}
+
+.time-value.warning {
+    color: #ff6b6b;
+}
+
+.time-value.no-data {
+    color: #999;
+    font-weight: normal;
 }
 
 .dept-node-queue {
@@ -370,6 +427,134 @@
 
 .tab-content {
     padding: 20px 0;
+}
+
+/* Production Time Estimates Section */
+.production-time-section {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-refresh {
+    padding: 6px 12px;
+    background: var(--secondary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-refresh:hover {
+    opacity: 0.8;
+}
+
+.production-estimates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.estimate-card {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.estimate-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.estimate-user {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estimate-items {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.estimate-time {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 6px;
+}
+
+.time-label {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.time-value {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.time-actual {
+    color: var(--secondary-blue);
+}
+
+.time-goal {
+    color: #28a745;
+}
+
+.efficiency-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.efficiency-good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.efficiency-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.efficiency-poor {
+    background: #f8d7da;
+    color: #721c24;
 }
 
 .user-projects-grid {
@@ -527,7 +712,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .department-nodes {
         flex-wrap: wrap;
         gap: 15px;
@@ -535,7 +720,14 @@
     }
 
     .dept-node {
-        width: 120px;
+        width: 150px;
+    }
+}
+
+@media (max-width: 992px) {
+    .dept-node {
+        width: 140px;
+        min-height: 160px;
     }
 }
 
@@ -569,26 +761,18 @@
 <!-- Page Header -->
 <div class="page-header">
     <h1>Project Management Dashboard</h1>
-    <p>Real-time production flow monitoring and bottleneck detection</p>
+    <p>Real-time production flow monitoring</p>
 </div>
 
 <div class="production-container">
-    <!-- Bottleneck Alert (shown when detected) -->
-    <div class="bottleneck-alert" id="bottleneckAlert" style="display: none;">
-        <div class="bottleneck-icon">⚠</div>
-        <div class="bottleneck-content">
-            <div class="bottleneck-title">Bottleneck Detected</div>
-            <div class="bottleneck-details" id="bottleneckDetails">
-                OPUS department has 15+ items in queue. Consider reallocating resources.
-            </div>
-        </div>
-        <button class="bottleneck-action" onclick="handleBottleneck()">Take Action</button>
-    </div>
 
     <!-- Pipeline Flow -->
     <div class="pipeline-section">
         <div class="pipeline-header">
-            <h2 class="pipeline-title">Production Pipeline</h2>
+            <h2 class="pipeline-title">Production Pipeline & Tijdschattingen</h2>
+            <button class="btn-refresh" onclick="refreshProductionEstimates()" title="Vernieuw tijdschattingen">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
 
         <div class="pipeline-flow">
@@ -599,20 +783,23 @@
                 {% for user in dashboard_users %}
                     {% set user_data = users_projects.get(user, []) %}
                     {% set active_count = user_data|length %}
-                    {% set is_bottleneck = active_count > 5 %}
 
-                    <div class="dept-node {% if active_count > 0 %}active{% endif %} {% if is_bottleneck %}bottleneck{% endif %}" onclick="showDepartment('{{ user }}')">
-                        {% if is_bottleneck %}
-                            <div class="bottleneck-badge">!</div>
-                        {% endif %}
+                    <div class="dept-node {% if active_count > 0 %}active{% endif %}"
+                         onclick="showDepartment('{{ user }}')"
+                         data-user="{{ user }}">
                         <div class="dept-node-name">{{ user }}</div>
                         <div class="dept-node-count">{{ active_count }}</div>
                         <div class="dept-node-label">{% if active_count == 1 %}project{% elif active_count > 1 %}projects{% else %}idle{% endif %}</div>
+                        <div class="dept-node-time" id="time-{{ user|replace(' ', '_') }}">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 10px;"></i>
+                            <span style="font-size: 11px;">laden...</span>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
     </div>
+
 
     <!-- User Tabs Section -->
     <div class="users-section">
@@ -641,44 +828,44 @@
 const usersProjectsData = {{ users_projects | tojson }};
 const deptStats = {{ dept_stats | tojson }};
 
-// Bottleneck Detection with real data
-function detectBottlenecks() {
-    const thresholds = {
-        'NESTING': 10,
-        'ACCURA': 12,
-        'OPUS': 10,
-        'KL GANNOMAT': 8,
-        'HANDWERK': 8,
-        'GR GANNOMAT': 10,
-        'BOERE': 5
-    };
+// Bottleneck Detection - DISABLED FOR NOW
+// function detectBottlenecks() {
+//     const thresholds = {
+//         'NESTING': 10,
+//         'ACCURA': 12,
+//         'OPUS': 10,
+//         'KL GANNOMAT': 8,
+//         'HANDWERK': 8,
+//         'GR GANNOMAT': 10,
+//         'BOERE': 5
+//     };
 
-    let bottlenecks = [];
-    for (const [dept, data] of Object.entries(deptStats)) {
-        const threshold = thresholds[dept] || 10;
-        if (data.queue > threshold) {
-            bottlenecks.push({
-                name: dept,
-                queue: data.queue,
-                threshold: threshold
-            });
-        }
-    }
+//     let bottlenecks = [];
+//     for (const [dept, data] of Object.entries(deptStats)) {
+//         const threshold = thresholds[dept] || 10;
+//         if (data.queue > threshold) {
+//             bottlenecks.push({
+//                 name: dept,
+//                 queue: data.queue,
+//                 threshold: threshold
+//             });
+//         }
+//     }
 
-    if (bottlenecks.length > 0) {
-        const worst = bottlenecks.reduce((prev, current) =>
-            (current.queue / current.threshold) > (prev.queue / prev.threshold) ? current : prev
-        );
+//     if (bottlenecks.length > 0) {
+//         const worst = bottlenecks.reduce((prev, current) =>
+//             (current.queue / current.threshold) > (prev.queue / prev.threshold) ? current : prev
+//         );
 
-        document.getElementById('bottleneckAlert').style.display = 'flex';
-        document.getElementById('bottleneckDetails').textContent =
-            `${worst.name.replace('_PROCESSING', '')} department has ${worst.queue} items in queue (threshold: ${worst.threshold}). Consider reallocating resources.`;
-    }
-}
+//         document.getElementById('bottleneckAlert').style.display = 'flex';
+//         document.getElementById('bottleneckDetails').textContent =
+//             `${worst.name.replace('_PROCESSING', '')} department has ${worst.queue} items in queue (threshold: ${worst.threshold}). Consider reallocating resources.`;
+//     }
+// }
 
-// Run bottleneck detection on load
-detectBottlenecks();
-setInterval(detectBottlenecks, 30000); // Check every 30 seconds
+// Run bottleneck detection on load - DISABLED
+// detectBottlenecks();
+// setInterval(detectBottlenecks, 30000); // Check every 30 seconds
 
 // Show department details and switch to user tab
 function showDepartment(dept) {
@@ -752,14 +939,176 @@ function showUserProjects(user, tabElement) {
     }
 }
 
-// Handle bottleneck action
-function handleBottleneck() {
-    console.log('Handling bottleneck...');
-    alert('Opening resource allocation panel...');
+// Handle bottleneck action - DISABLED FOR NOW
+// function handleBottleneck() {
+//     console.log('Handling bottleneck...');
+//     alert('Opening resource allocation panel...');
+// }
+
+// Function to load production time estimates
+async function loadProductionEstimates() {
+    try {
+        const response = await fetch('/api/production-time-estimates');
+        const data = await response.json();
+
+        if (data.success) {
+            // Update department nodes with time estimates
+            data.estimates.forEach(estimate => {
+                const userId = estimate.user.replace(/ /g, '_');
+                const timeElement = document.getElementById(`time-${userId}`);
+
+                if (timeElement) {
+                    // Build the enhanced display with items and both time estimates
+                    let html = '';
+
+                    // Add items count
+                    html += `<div class="dept-node-items">
+                        <i class="fas fa-box"></i> ${estimate.total_items} items
+                    </div>`;
+
+                    // Add time estimates section
+                    html += '<div class="time-estimates">';
+
+                    // Estimated time row
+                    const estimatedClass = (estimate.estimated_time_str === 'Geen data') ? 'no-data' : '';
+                    html += `
+                        <div class="time-row">
+                            <span class="time-label">Geschat:</span>
+                            <span class="time-value ${estimatedClass}">${estimate.estimated_time_str}</span>
+                        </div>
+                    `;
+
+                    // Goal time row
+                    const goalClass = (estimate.goal_time_str === 'Geen data') ? 'no-data' : 'goal';
+                    html += `
+                        <div class="time-row">
+                            <span class="time-label">Doel:</span>
+                            <span class="time-value ${goalClass}">${estimate.goal_time_str}</span>
+                        </div>
+                    `;
+
+                    // Performance indicators
+                    if (estimate.avg_items_per_hour !== null || estimate.target_items_per_hour !== null) {
+                        html += '<div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #f0f0f0;">';
+
+                        // Average performance
+                        if (estimate.avg_items_per_hour !== null) {
+                            html += `<div class="time-row">
+                                <span class="time-label">Gem:</span>
+                                <span class="time-value" style="font-size: 10px;">${estimate.avg_items_per_hour}/uur</span>
+                            </div>`;
+                        }
+
+                        // Target performance
+                        if (estimate.target_items_per_hour !== null) {
+                            html += `<div class="time-row">
+                                <span class="time-label">Target:</span>
+                                <span class="time-value goal" style="font-size: 10px;">${estimate.target_items_per_hour}/uur</span>
+                            </div>`;
+                        }
+
+                        html += '</div>';
+                    }
+
+                    html += '</div>';
+
+                    timeElement.innerHTML = html;
+
+                    // Visual efficiency indicators disabled
+                    // const node = timeElement.closest('.dept-node');
+                    // if (node && estimate.efficiency_ratio !== null && estimate.efficiency_ratio !== undefined) {
+                    //     if (estimate.efficiency_ratio >= 90) {
+                    //         node.style.borderColor = '#51cf66';
+                    //     } else if (estimate.efficiency_ratio < 70) {
+                    //         node.style.borderColor = '#ff6b6b';
+                    //     } else {
+                    //         node.style.borderColor = '#ffd43b';
+                    //     }
+                    // }
+                }
+            });
+
+            // For users without estimates, show idle or no data
+            const allUsers = document.querySelectorAll('.dept-node');
+            allUsers.forEach(node => {
+                const user = node.getAttribute('data-user');
+                const hasEstimate = data.estimates.some(e => e.user === user);
+                if (!hasEstimate) {
+                    const userId = user.replace(/ /g, '_');
+                    const timeElement = document.getElementById(`time-${userId}`);
+                    if (timeElement) {
+                        const projectCount = parseInt(node.querySelector('.dept-node-count').textContent) || 0;
+                        if (projectCount === 0) {
+                            timeElement.innerHTML = `
+                                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                                    <div style="text-align: center;">
+                                        <i class="fas fa-pause" style="font-size: 16px; color: #999;"></i>
+                                        <div style="font-size: 11px; color: #999; margin-top: 4px;">Inactief</div>
+                                    </div>
+                                </div>
+                            `;
+                            node.style.borderColor = '#dee2e6';
+                        } else {
+                            timeElement.innerHTML = `
+                                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                                    <div style="text-align: center;">
+                                        <i class="fas fa-question-circle" style="font-size: 16px; color: #999;"></i>
+                                        <div style="font-size: 11px; color: #999; margin-top: 4px;">Geen data</div>
+                                    </div>
+                                </div>
+                            `;
+                            node.style.borderColor = '#dee2e6';
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading production estimates:', error);
+        // On error, show error state in all time elements
+        const timeElements = document.querySelectorAll('.dept-node-time');
+        timeElements.forEach(el => {
+            el.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 16px; color: #dc3545;"></i>
+                        <div style="font-size: 11px; color: #dc3545; margin-top: 4px;">Fout bij laden</div>
+                    </div>
+                </div>
+            `;
+            const node = el.closest('.dept-node');
+            if (node) {
+                node.style.borderColor = '#dee2e6';
+            }
+        });
+    }
+}
+
+// Refresh function
+function refreshProductionEstimates() {
+    const btn = document.querySelector('.btn-refresh');
+    const icon = btn.querySelector('i');
+
+    // Add spinning animation
+    icon.classList.add('fa-spin');
+
+    // Load estimates
+    loadProductionEstimates().then(() => {
+        // Remove spinning after loading
+        setTimeout(() => {
+            icon.classList.remove('fa-spin');
+        }, 500);
+    });
 }
 
 // Load first user's projects on page load
 window.addEventListener('DOMContentLoaded', function() {
+    // Load production estimates
+    loadProductionEstimates();
+
+    // Refresh estimates every 60 seconds
+    setInterval(loadProductionEstimates, 60000);
+
     const firstTab = document.querySelector('.user-tab.active');
     if (firstTab) {
         const firstUser = firstTab.textContent.trim();

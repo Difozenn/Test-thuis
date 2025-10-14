@@ -15,7 +15,11 @@
       "Bash(pkill:*)",
       "Bash(killall:*)",
       "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMatch/gui/panels/**)",
-      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/enterprise-file-monitor/**)"
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/enterprise-file-monitor/**)",
+      "Bash(timeout:*)",
+      "Bash(python3:*)",
+      "Bash(xargs ls:*)",
+      "Read(//mnt/c/Users/Rob/Desktop/Test-thuis/**)"
     ],
     "deny": []
   }

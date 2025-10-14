@@ -817,88 +817,136 @@
         </div>
     </div>
 
-    <div class="chart-card mb-4">
-        <div class="chart-title">Rep Projecten Analyse - Totaal & Percentage</div>
-        <div class="chart-container">
-            <canvas id="combinedRepAnalysisChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Rep Time Metrics Chart -->
-    <div class="chart-card mb-4">
-        <div class="chart-title">Rep Time vs Total Work Time</div>
-        <div class="chart-container" style="height: 400px;">
-            <canvas id="repTimeMetricsChart"></canvas>
-        </div>
-    </div>
-
     <div class="metrics-grid" id="quality-metrics">
         <div class="metric-card">
             <div class="metric-value" id="total-rep-projects">-</div>
             <div class="metric-label">Totaal Rep Projecten</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" id="rep-percentage">-</div>
-            <div class="metric-label">Rep Percentage (%)</div>
+            <div class="metric-value" id="total-rep-items">-</div>
+            <div class="metric-label">Totaal Rep Items</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" id="rep-avg-time">-</div>
-            <div class="metric-label">Gem. Rep Tijd</div>
+            <div class="metric-value" id="total-rep-work-hours">-</div>
+            <div class="metric-label">Totaal Rep Werktijd</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="total-rep-project-hours">-</div>
+            <div class="metric-label">Totaal Rep Projecttijd</div>
         </div>
     </div>
 </div>
 
-<!-- 3. Team Utilization Analysis Section -->
+<!-- 3. Project Completion Time Analysis & Estimator -->
 <div class="stats-section">
     <div class="section-header">
-        <div class="section-icon" style="background: linear-gradient(135deg, #27ae60, #229954);">
-            <i class="fas fa-users"></i>
+        <div class="section-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+            <i class="fas fa-chart-scatter"></i>
         </div>
         <div>
-            <h2 class="section-title">Team Utilization Analysis</h2>
-            <p class="section-subtitle">Benut van geplande werkuren vs werkelijke sessietijd</p>
+            <h2 class="section-title">Project Doorlooptijd Analyse</h2>
+            <p class="section-subtitle">Historische projecten: items vs tijd (totaal & werk)</p>
         </div>
     </div>
 
-    <!-- Utilization Overview Cards -->
-    <div class="metrics-grid" id="utilization-overview">
-        <!-- Will be populated by JavaScript -->
+    <!-- Historical scatter plot -->
+    <div class="chart-card">
+        <div class="chart-title">Historische Projecten: Items vs Doorlooptijd</div>
+        <div class="chart-container" style="height: 400px;">
+            <canvas id="projectCompletionScatter"></canvas>
+        </div>
+        <div class="text-center mt-2" style="font-size: 0.85rem; color: #666;">
+            <i class="fas fa-info-circle"></i> Blauwe punten = Totale project tijd | Groene punten = Actieve werk tijd
+        </div>
     </div>
 
-    <!-- Utilization Trends -->
-    <div class="mt-4">
-        <div class="table-container">
-            <h3 class="chart-title">Utilization Trends</h3>
-            <div class="chart-container">
-                <canvas id="utilizationTrendsChart"></canvas>
+    <!-- Key metrics from historical data -->
+    <div class="metrics-grid mt-4">
+        <div class="metric-card">
+            <div class="metric-value" id="avg-total-time-per-item">-</div>
+            <div class="metric-label">Gem. Totale Tijd per Item (min)</div>
+            <div class="metric-trend" style="font-size: 0.75rem; margin-top: 8px; color: #666;">
+                Inclusief idle tijd
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="avg-work-time-per-item">-</div>
+            <div class="metric-label">Gem. Werk Tijd per Item (min)</div>
+            <div class="metric-trend" style="font-size: 0.75rem; margin-top: 8px; color: #666;">
+                Alleen actieve sessies
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="historical-projects-count">-</div>
+            <div class="metric-label">Geanalyseerde Projecten</div>
+            <div class="metric-trend" style="font-size: 0.75rem; margin-top: 8px; color: #666;">
+                Afgeronde projecten
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="idle-time-percentage">-</div>
+            <div class="metric-label">Gemiddelde Idle Tijd</div>
+            <div class="metric-trend" style="font-size: 0.75rem; margin-top: 8px; color: #666;">
+                (Totaal - Werk) / Totaal
             </div>
         </div>
     </div>
 
-    <!-- Individual User Utilization -->
-    <div class="mt-4">
-        <div class="table-container">
-            <h3 class="chart-title">Individuele Gebruiker Utilization</h3>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Gebruiker</th>
-                            <th>Utilization %</th>
-                            <th>Sessie Uren</th>
-                            <th>Geplande Uren</th>
-                            <th>Sessies</th>
-                            <th>Actieve Dagen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-utilization-table">
-                        <!-- Will be populated by JavaScript -->
-                    </tbody>
-                </table>
+    <!-- Simple estimator -->
+    <div class="mt-4" style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(46, 204, 113, 0.05)); padding: 25px; border-radius: 12px; border: 1px solid rgba(52, 152, 219, 0.2);">
+        <h5 style="color: var(--dark-blue); margin-bottom: 20px;">
+            <i class="fas fa-calculator"></i> Schat Project Doorlooptijd
+        </h5>
+
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" style="font-weight: 600;">Aantal Items</label>
+                <input type="number" id="estimate-items" class="form-control" placeholder="bijv. 150" min="1">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100" onclick="calculateProjectEstimate()">
+                    <i class="fas fa-bolt"></i> Bereken
+                </button>
+            </div>
+        </div>
+
+        <div id="estimate-results" class="mt-4" style="display: none;">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="font-size: 2rem; font-weight: 700; color: #3498db;" id="estimate-total-time">-</div>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">Geschatte Totale Tijd</div>
+                        <div style="color: #999; font-size: 0.75rem; margin-top: 5px;">(inclusief idle)</div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="font-size: 2rem; font-weight: 700; color: #27ae60;" id="estimate-work-time">-</div>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">Geschatte Werk Tijd</div>
+                        <div style="color: #999; font-size: 0.75rem; margin-top: 5px;">(alleen actief werk)</div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="font-size: 2rem; font-weight: 700; color: #e67e22;" id="estimate-best-case">-</div>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">Best Case Scenario</div>
+                        <div style="color: #999; font-size: 0.75rem; margin-top: 5px;">(snelste historische rate)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3" style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+                <div style="font-size: 0.85rem; color: #555;">
+                    <strong><i class="fas fa-info-circle"></i> Berekeningsinfo:</strong><br>
+                    Gebaseerd op <span id="calc-based-on">-</span> afgeronde projecten uit de geselecteerde periode.<br>
+                    Totale tijd = gemiddeld <span id="calc-total-min">-</span> min/item | Werk tijd = gemiddeld <span id="calc-work-min">-</span> min/item
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+</div> <!-- Close main-container -->
 
 {% endblock %}
 
@@ -1159,12 +1207,12 @@ function updateActivePeriodButton() {
 // Load all statistics data
 async function loadAllStatistics() {
     showLoadingStates();
-    
+
     try {
         await Promise.all([
             loadProjectTimeAnalysis(),
             loadQualityControl(),
-            loadTeamUtilization()
+            loadHistoricalThroughput()
         ]);
     } catch (error) {
         console.error('Error loading statistics:', error);
@@ -1354,9 +1402,10 @@ async function loadQualityControl() {
 }
 
 function updateQualityMetrics(overallMetrics) {
-    document.getElementById('total-rep-projects').textContent = overallMetrics.rep_projects || '0';
-    document.getElementById('rep-percentage').textContent = (overallMetrics.rep_percentage || '0') + '%';
-    document.getElementById('rep-avg-time').textContent = formatHumanTime(overallMetrics.avg_rep_hours || 0);
+    document.getElementById('total-rep-projects').textContent = overallMetrics.total_rep_projects || '0';
+    document.getElementById('total-rep-items').textContent = overallMetrics.total_rep_items || '0';
+    document.getElementById('total-rep-work-hours').textContent = formatHumanTime(overallMetrics.total_rep_work_hours || 0);
+    document.getElementById('total-rep-project-hours').textContent = formatHumanTime(overallMetrics.total_rep_project_hours || 0);
 }
 
 function updateRepProjectsTable(repProjects) {
@@ -1368,132 +1417,7 @@ function updateRepProjectsTable(repProjects) {
 }
 
 function updateQualityCharts(data) {
-    // Combined Rep Analysis Chart (Totaal & Percentage)
-    const combinedRepCtx = document.getElementById('combinedRepAnalysisChart').getContext('2d');
-    
-    if (charts.combinedRepAnalysis) {
-        charts.combinedRepAnalysis.destroy();
-    }
-    
-    const overall = data.overall_metrics;
-    const totalProjects = overall.normal_projects + overall.rep_projects;
-    const repPercentage = totalProjects > 0 ? (overall.rep_projects / totalProjects * 100) : 0;
-    const normalPercentage = 100 - repPercentage;
-    
-    charts.combinedRepAnalysis = new Chart(combinedRepCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Normale Projecten', 'Rep Projecten'],
-            datasets: [{
-                label: 'Aantal Projecten',
-                data: [overall.normal_projects, overall.rep_projects],
-                backgroundColor: [
-                    'rgba(39, 174, 96, 0.8)',
-                    'rgba(231, 76, 60, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(39, 174, 96, 1)',
-                    'rgba(231, 76, 60, 1)'
-                ],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label;
-                            const value = context.parsed.y;
-                            const percentage = label === 'Rep Projecten' ? repPercentage : normalPercentage;
-                            return `${label}: ${value} projecten (${percentage.toFixed(1)}%)`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Aantal Projecten'
-                    }
-                }
-            }
-        }
-    });
-    
-    // 3. Rep Time vs Total Work Time Chart
-    const repTimeCtx = document.getElementById('repTimeMetricsChart').getContext('2d');
-    
-    if (charts.repTimeMetrics) {
-        charts.repTimeMetrics.destroy();
-    }
-    
-    const normalTime = overall.normal_hours || 0;
-    const repTime = overall.rep_hours || 0;
-    const totalTime = normalTime + repTime;
-    
-    charts.repTimeMetrics = new Chart(repTimeCtx, {
-        type: 'line',
-        data: {
-            labels: ['Normale Projecten', 'Rep Projecten', 'Totaal'],
-            datasets: [{
-                label: 'Tijd (uren)',
-                data: [normalTime, repTime, totalTime],
-                borderColor: 'rgba(52, 152, 219, 1)',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: ['rgba(39, 174, 96, 1)', 'rgba(231, 76, 60, 1)', 'rgba(52, 152, 219, 1)'],
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Tijd: ' + formatHumanTime(context.parsed.y);
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Tijd (uren)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return formatHumanTime(value);
-                        }
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Project Type'
-                    }
-                }
-            }
-        }
-    });
+    // Charts removed - only metric cards are used now
 }
 
 // 3. Export Functions
@@ -1846,198 +1770,102 @@ function updatePeriodDisplay(periodText) {
     }
 }
 
-// Team Utilization Analysis Functions
-async function loadTeamUtilization() {
+// Project Completion Analysis - Global variable to store analysis data
+let projectAnalysisData = null;
+
+async function loadHistoricalThroughput() {
     try {
-        console.log('Loading team utilization data...');
-        
-        // Build query parameters using existing function
-        const params = buildQueryParams();
-        
-        // Load team utilization data
-        const response = await fetch(`/api/utilization/team?${params}`);
+        const queryParams = buildQueryParams();
+        const response = await fetch(`/api/statistics/project-completion-analysis?${queryParams}`);
         const data = await response.json();
-        
+
         if (data.success) {
-            renderUtilizationOverview(data);
-            renderUserUtilizationTable(data.user_utilizations);
-            await loadUtilizationTrends();
-        } else {
-            console.error('Failed to load team utilization:', data.error);
-            showUtilizationError(data.error);
+            projectAnalysisData = data; // Store for calculator use
+            updateProjectCompletionScatter(data);
+            updateProjectAnalysisMetrics(data);
         }
     } catch (error) {
-        console.error('Error loading team utilization:', error);
-        showUtilizationError('Netwerkfout bij laden van utilization data');
+        console.error('Error loading project completion analysis:', error);
     }
 }
 
-function renderUtilizationOverview(data) {
-    const container = document.getElementById('utilization-overview');
-    const metrics = data.team_metrics;
-    
-    // Calculate utilization status
-    let utilizationStatus = 'good';
-    let statusColor = '#27ae60';
-    let statusIcon = 'fa-check-circle';
-    
-    if (metrics.team_utilization_rate < 60) {
-        utilizationStatus = 'low';
-        statusColor = '#e74c3c';
-        statusIcon = 'fa-exclamation-triangle';
-    } else if (metrics.team_utilization_rate < 75) {
-        utilizationStatus = 'moderate';
-        statusColor = '#f39c12';
-        statusIcon = 'fa-clock';
-    }
-    
-    container.innerHTML = `
-        <div class="metric-card">
-            <div class="metric-icon" style="background-color: ${statusColor}; color: white;">
-                <i class="fas ${statusIcon}"></i>
-            </div>
-            <div class="metric-value">${metrics.team_utilization_rate}%</div>
-            <div class="metric-label">Team Utilization Rate</div>
-            <div class="metric-trend" style="color: ${statusColor};">
-                <i class="fas fa-users"></i> ${metrics.active_users}/${metrics.total_users} actieve gebruikers
-            </div>
-        </div>
-        
-    `;
-}
+function updateProjectCompletionScatter(data) {
+    const ctx = document.getElementById('projectCompletionScatter').getContext('2d');
 
-function renderUserUtilizationTable(userUtilizations) {
-    const tbody = document.getElementById('user-utilization-table');
-    
-    if (!userUtilizations || userUtilizations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Geen utilization data beschikbaar</td></tr>';
-        return;
+    if (charts.projectCompletion) {
+        charts.projectCompletion.destroy();
     }
-    
-    tbody.innerHTML = userUtilizations.map(user => {
-        // Determine utilization status
-        let statusClass = 'text-success';
-        let statusIcon = 'fa-check-circle';
-        
-        if (user.utilization_rate < 60) {
-            statusClass = 'text-danger';
-            statusIcon = 'fa-exclamation-triangle';
-        } else if (user.utilization_rate < 75) {
-            statusClass = 'text-warning';
-            statusIcon = 'fa-clock';
-        }
-        
-        return `
-            <tr>
-                <td>
-                    <strong>${user.user}</strong>
-                    <small class="text-muted d-block">
-                        <i class="fas ${statusIcon} ${statusClass}"></i>
-                        ${user.utilization_rate >= 75 ? 'Hoge utilization' : 
-                          user.utilization_rate >= 60 ? 'Gemiddelde utilization' : 'Lage utilization'}
-                    </small>
-                </td>
-                <td>
-                    <span class="badge ${user.utilization_rate >= 75 ? 'bg-success' : 
-                                       user.utilization_rate >= 60 ? 'bg-warning' : 'bg-danger'} fs-6">
-                        ${user.utilization_rate}%
-                    </span>
-                </td>
-                <td>${formatHumanTime(user.session_hours)}</td>
-                <td>${formatHumanTime(user.scheduled_hours)}</td>
-                <td>${user.session_count}</td>
-                <td>${user.active_days}</td>
-            </tr>
-        `;
-    }).join('');
-}
 
-async function loadUtilizationTrends() {
-    try {
-        const params = buildQueryParams();
-        const response = await fetch(`/api/utilization/trends?${params}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            renderUtilizationTrendsChart(data.trends);
-        } else {
-            console.error('Failed to load utilization trends:', data.error);
-        }
-    } catch (error) {
-        console.error('Error loading utilization trends:', error);
-    }
-}
+    // Prepare scatter data: items vs time
+    const totalTimeData = data.projects.map(p => ({
+        x: p.items,
+        y: p.total_hours,
+        project: p.project
+    }));
 
-function renderUtilizationTrendsChart(trends) {
-    const canvas = document.getElementById('utilizationTrendsChart');
-    const ctx = canvas.getContext('2d');
-    
-    // Destroy existing chart if it exists
-    if (charts.utilizationTrends) {
-        charts.utilizationTrends.destroy();
-    }
-    
-    const labels = trends.map(t => {
-        const date = new Date(t.date);
-        return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-    });
-    
-    const utilizationData = trends.map(t => t.utilization_rate);
-    
-    charts.utilizationTrends = new Chart(ctx, {
-        type: 'line',
+    const workTimeData = data.projects.map(p => ({
+        x: p.items,
+        y: p.work_hours,
+        project: p.project
+    }));
+
+    charts.projectCompletion = new Chart(ctx, {
+        type: 'scatter',
         data: {
-            labels: labels,
-            datasets: [{
-                label: 'Team Utilization %',
-                data: utilizationData,
-                borderColor: '#27ae60',
-                backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#27ae60',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 4
-            }]
+            datasets: [
+                {
+                    label: 'Totale Project Tijd',
+                    data: totalTimeData,
+                    backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: 'Actieve Werk Tijd',
+                    data: workTimeData,
+                    backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    borderWidth: 1,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Aantal Items'
+                    },
+                    beginAtZero: true
                 },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    borderColor: '#27ae60',
-                    borderWidth: 1,
-                    callbacks: {
-                        label: function(context) {
-                            return `Utilization: ${context.parsed.y}%`;
-                        }
-                    }
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Tijd (uren)'
+                    },
+                    beginAtZero: true
                 }
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
+            plugins: {
+                legend: {
+                    position: 'top'
                 },
-                x: {
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const point = context.raw;
+                            return [
+                                `Project: ${point.project}`,
+                                `Items: ${point.x}`,
+                                `Tijd: ${formatHumanTime(point.y)}`
+                            ];
+                        }
                     }
                 }
             }
@@ -2045,15 +1873,61 @@ function renderUtilizationTrendsChart(trends) {
     });
 }
 
+function updateProjectAnalysisMetrics(data) {
+    document.getElementById('avg-total-time-per-item').textContent =
+        data.averages.total_minutes_per_item ? data.averages.total_minutes_per_item.toFixed(1) : '-';
 
-function showUtilizationError(message) {
-    const containers = ['utilization-overview', 'user-utilization-table'];
-    containers.forEach(id => {
-        const container = document.getElementById(id);
-        if (container) {
-            container.innerHTML = `<div class="text-center text-muted p-4">⚠️ ${message}</div>`;
-        }
-    });
+    document.getElementById('avg-work-time-per-item').textContent =
+        data.averages.work_minutes_per_item ? data.averages.work_minutes_per_item.toFixed(1) : '-';
+
+    document.getElementById('historical-projects-count').textContent =
+        data.projects.length || '0';
+
+    document.getElementById('idle-time-percentage').textContent =
+        data.averages.idle_percentage ? data.averages.idle_percentage.toFixed(1) + '%' : '-';
+}
+
+function calculateProjectEstimate() {
+    const items = parseInt(document.getElementById('estimate-items').value);
+
+    if (!items || items <= 0) {
+        alert('Voer een geldig aantal items in (groter dan 0)');
+        return;
+    }
+
+    if (!projectAnalysisData) {
+        alert('Historische data wordt nog geladen. Wacht even en probeer opnieuw.');
+        return;
+    }
+
+    const avg = projectAnalysisData.averages;
+
+    // Calculate estimates
+    const totalMinutes = items * avg.total_minutes_per_item;
+    const workMinutes = items * avg.work_minutes_per_item;
+    const bestCaseMinutes = items * avg.best_minutes_per_item;
+
+    // Convert to hours for display
+    const totalHours = totalMinutes / 60;
+    const workHours = workMinutes / 60;
+    const bestCaseHours = bestCaseMinutes / 60;
+
+    // Display results
+    document.getElementById('estimate-total-time').textContent = formatHumanTime(totalHours);
+    document.getElementById('estimate-work-time').textContent = formatHumanTime(workHours);
+    document.getElementById('estimate-best-case').textContent = formatHumanTime(bestCaseHours);
+
+    // Show calculation info
+    document.getElementById('calc-based-on').textContent = projectAnalysisData.projects.length;
+    document.getElementById('calc-total-min').textContent = avg.total_minutes_per_item.toFixed(1);
+    document.getElementById('calc-work-min').textContent = avg.work_minutes_per_item.toFixed(1);
+
+    // Show results section
+    document.getElementById('estimate-results').style.display = 'block';
+}
+
+function refreshStatistics() {
+    loadAllStatistics();
 }
 </script>
 {% endblock %}

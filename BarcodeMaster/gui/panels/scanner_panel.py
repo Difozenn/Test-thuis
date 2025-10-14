@@ -115,9 +115,10 @@ class ScannerPanel(tk.Frame):
         self.log_viewer_frame = tk.LabelFrame(self, text="Activiteitenlog", bg="#f0f0f0", padx=10, pady=5)
         self.log_viewer_frame.pack(pady=(0, 10), fill='both', expand=True, padx=20)
 
-        # Add clear button
+        # Add clear button and manual entry button
         log_button_frame = tk.Frame(self.log_viewer_frame, bg="#f0f0f0")
         log_button_frame.pack(fill='x', pady=(0, 5))
+        tk.Button(log_button_frame, text="Handmatige Invoer", command=self.open_manual_entry_dialog, bg="#4CAF50", fg="white").pack(side='left', padx=5)
         tk.Button(log_button_frame, text="Log wissen", command=self.clear_log).pack(side='right')
 
         self.log_text = tk.Text(self.log_viewer_frame, height=10, bg="white", fg="black", state='disabled', wrap=tk.WORD)
@@ -2533,7 +2534,46 @@ class ScannerPanel(tk.Frame):
 
         # Use current time for the scan timestamp
         scan_timestamp = datetime.now().isoformat()
-        
+
+        # NEW: First extract data for confirmation
+        self.log_message(f"📋 Data wordt geanalyseerd voor project {project_code_to_log}...", "info")
+
+        # Disable scanning while processing
+        self.usb_entry.config(state='disabled')
+        self.com_entry.config(state='disabled')
+
+        # Store pending scan data for confirmation
+        self.pending_scan_confirmation = {
+            'project': project_code_to_log,
+            'base_mo_code': base_project_code,
+            'scanned_code': code,
+            'current_user': current_user,
+            'api_url': api_url,
+            'config': config,
+            'timestamp': scan_timestamp,
+            'session_data': session_data,
+            'is_rep_variant': bool(re.search(r'_REP(?:_|$)', project_code_to_log, re.IGNORECASE)),
+            'extracted_data': None,
+            'state': 'extracting'
+        }
+
+        # Start extraction (read-only, no side effects)
+        self.background_import_service.process_scan_for_open_event_async(
+            project_code_to_log=project_code_to_log,
+            base_project_code=base_project_code,
+            scanned_code=code,
+            current_user_scanner=current_user,
+            api_url=None,  # Don't send to API yet
+            config_data=config,
+            timestamp=scan_timestamp,
+            extract_only=True,
+            extraction_callback=self.handle_extraction_complete
+        )
+
+        # Stop here - the rest will be handled after confirmation
+        return
+
+        # OLD CODE BELOW (will be moved to commit phase)
         # Now send OPEN event for the current user
         data_open = {
             'event': 'OPEN',
@@ -2544,11 +2584,11 @@ class ScannerPanel(tk.Frame):
             'user': current_user,
             **session_data
         }
-        
+
         # Add timestamp if available
         if scan_timestamp:
             data_open['timestamp'] = scan_timestamp
-        
+
         try:
             resp_open = requests.post(api_url, json=data_open, timeout=3)  # Increased timeout
             if not resp_open.ok:
@@ -2942,8 +2982,1031 @@ class ScannerPanel(tk.Frame):
             import threading
             threading.Thread(target=self.log_scan_event, args=(code,), daemon=True).start()
 
+    def open_manual_entry_dialog(self):
+        """Open dialog for manual project entry (mimics NESTING_PROCESSING)"""
+        dialog = tk.Toplevel(self)
+        dialog.title("Handmatige Project Invoer")
+        dialog.geometry("700x800")
+        dialog.configure(bg="#f0f0f0")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Get configured users
+        config = get_config()
+        configured_users = config.get('scanner_panel_open_event_users', [])
+        user_processing_types = config.get('scanner_user_to_processing_type_map', {})
+
+        # Main frame with scrollbar
+        main_frame = tk.Frame(dialog, bg="#f0f0f0")
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        canvas = tk.Canvas(main_frame, bg="#f0f0f0")
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Project Information Section
+        info_frame = tk.LabelFrame(scrollable_frame, text="Project Informatie", bg="#f0f0f0", padx=10, pady=10)
+        info_frame.pack(fill='x', padx=5, pady=5)
+
+        # Project Code
+        tk.Label(info_frame, text="Project Code:", bg="#f0f0f0").grid(row=0, column=0, sticky='w', pady=5)
+        project_code_var = tk.StringVar()
+        tk.Entry(info_frame, textvariable=project_code_var, width=50).grid(row=0, column=1, pady=5, padx=5)
+        tk.Label(info_frame, text="(bijv. MO12345_Project_(1-1))", fg="gray", bg="#f0f0f0").grid(row=0, column=2, sticky='w')
+
+        # MO Number
+        tk.Label(info_frame, text="MO Nummer:", bg="#f0f0f0").grid(row=1, column=0, sticky='w', pady=5)
+        mo_number_var = tk.StringVar()
+        tk.Entry(info_frame, textvariable=mo_number_var, width=50).grid(row=1, column=1, pady=5, padx=5)
+
+        # SO Number
+        tk.Label(info_frame, text="SO Nummer:", bg="#f0f0f0").grid(row=2, column=0, sticky='w', pady=5)
+        so_number_var = tk.StringVar()
+        tk.Entry(info_frame, textvariable=so_number_var, width=50).grid(row=2, column=1, pady=5, padx=5)
+
+        # Customer Name
+        tk.Label(info_frame, text="Klant Naam:", bg="#f0f0f0").grid(row=3, column=0, sticky='w', pady=5)
+        customer_name_var = tk.StringVar()
+        tk.Entry(info_frame, textvariable=customer_name_var, width=50).grid(row=3, column=1, pady=5, padx=5)
+
+        # Color
+        tk.Label(info_frame, text="Kleur:", bg="#f0f0f0").grid(row=4, column=0, sticky='w', pady=5)
+        color_var = tk.StringVar()
+        tk.Entry(info_frame, textvariable=color_var, width=50).grid(row=4, column=1, pady=5, padx=5)
+
+        # User Items Section
+        users_frame = tk.LabelFrame(scrollable_frame, text="Items per Gebruiker", bg="#f0f0f0", padx=10, pady=10)
+        users_frame.pack(fill='x', padx=5, pady=5)
+
+        tk.Label(users_frame, text="Voer aantal items in per gebruiker (0 = geen werk gevonden)",
+                 bg="#f0f0f0", font=("Arial", 9, "italic")).pack(pady=5)
+
+        user_entries = {}
+
+        for idx, user in enumerate(configured_users):
+            user_frame = tk.Frame(users_frame, bg="#f0f0f0")
+            user_frame.pack(fill='x', pady=3)
+
+            processing_type = user_processing_types.get(user, 'GEEN_PROCESSING')
+
+            tk.Label(user_frame, text=f"{user}:", bg="#f0f0f0", width=20, anchor='w').pack(side='left', padx=5)
+
+            # For NESTING, add separate fields for nesting_count and opdeelzaag_count
+            if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                nesting_var = tk.StringVar(value="0")
+                opdeelzaag_var = tk.StringVar(value="0")
+
+                tk.Label(user_frame, text="Nesting:", bg="#f0f0f0").pack(side='left', padx=5)
+                tk.Entry(user_frame, textvariable=nesting_var, width=10).pack(side='left', padx=2)
+                tk.Label(user_frame, text="Opdeelzaag:", bg="#f0f0f0").pack(side='left', padx=5)
+                tk.Entry(user_frame, textvariable=opdeelzaag_var, width=10).pack(side='left', padx=2)
+
+                user_entries[user] = {
+                    'nesting_count': nesting_var,
+                    'opdeelzaag_count': opdeelzaag_var,
+                    'processing_type': processing_type
+                }
+
+            # For ACCURA, add fields for aantal_items and aantal_sides
+            elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                items_var = tk.StringVar(value="0")
+                sides_var = tk.StringVar(value="0")
+
+                tk.Label(user_frame, text="Items:", bg="#f0f0f0").pack(side='left', padx=5)
+                tk.Entry(user_frame, textvariable=items_var, width=10).pack(side='left', padx=2)
+                tk.Label(user_frame, text="Sides:", bg="#f0f0f0").pack(side='left', padx=5)
+                tk.Entry(user_frame, textvariable=sides_var, width=10).pack(side='left', padx=2)
+
+                user_entries[user] = {
+                    'item_count': items_var,
+                    'aantal_sides': sides_var,
+                    'processing_type': processing_type
+                }
+
+            # For other users, just item count
+            else:
+                item_var = tk.StringVar(value="0")
+                tk.Entry(user_frame, textvariable=item_var, width=15).pack(side='left', padx=5)
+                tk.Label(user_frame, text="items", bg="#f0f0f0").pack(side='left')
+
+                user_entries[user] = {
+                    'item_count': item_var,
+                    'processing_type': processing_type
+                }
+
+        # Buttons
+        button_frame = tk.Frame(scrollable_frame, bg="#f0f0f0")
+        button_frame.pack(fill='x', pady=20)
+
+        def submit_manual_entry():
+            """Process and submit the manual entry"""
+            project_code = project_code_var.get().strip()
+
+            if not project_code:
+                messagebox.showerror("Fout", "Project code is verplicht!")
+                return
+
+            # Extract base_mo_code from project code
+            base_mo_code_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
+            base_mo_code = base_mo_code_match.group(1).upper() if base_mo_code_match else project_code
+
+            # Get values (use base_mo_code as fallback for mo_number)
+            mo_number = mo_number_var.get().strip() or (base_mo_code if base_mo_code_match else None)
+            so_number = so_number_var.get().strip() or None
+            customer_name = customer_name_var.get().strip() or None
+            color = color_var.get().strip() or None
+
+            # Start processing in background thread
+            threading.Thread(
+                target=self._process_manual_entry,
+                args=(project_code, base_mo_code, mo_number, so_number, customer_name, color, user_entries),
+                daemon=True
+            ).start()
+
+            dialog.destroy()
+            self.log_message(f"✓ Handmatige invoer gestart voor {project_code}", "success")
+
+        tk.Button(button_frame, text="Annuleren", command=dialog.destroy, width=15).pack(side='left', padx=10)
+        tk.Button(button_frame, text="Invoeren", command=submit_manual_entry, bg="#4CAF50", fg="white", width=15).pack(side='right', padx=10)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+    def _process_manual_entry(self, project_code, base_mo_code, mo_number, so_number, customer_name, color, user_entries):
+        """Process manual entry and send events via API (mimics NESTING_PROCESSING flow)"""
+        config = get_config()
+        api_url = config.get('api_url', '').rstrip('/')
+        current_user = config.get('user', 'NESTING')
+
+        if not api_url:
+            self.log_message("❌ API URL niet geconfigureerd", "error")
+            return
+
+        timestamp = datetime.now().isoformat()
+
+        # Determine which session to use
+        session_data = {}
+        if self.active_scan_session == 2 and self.session2_id:
+            session_data['session_id'] = self.session2_id
+        elif self.active_scan_session == 1 and self.session1_id:
+            session_data['session_id'] = self.session1_id
+        elif self.current_session_id:
+            session_data['session_id'] = self.current_session_id
+
+        try:
+            # Generate Excel files for users that need them (ACCURA, BOERE, MASSIEF, HANDWERK)
+            from services.excel_processing_functions import (
+                generate_excel_for_accura,
+                generate_excel_for_boere,
+                generate_excel_for_massief,
+                generate_excel_for_handwerk
+            )
+
+            # Store generated Excel paths for each user
+            excel_paths = {}
+
+            for user, entry_data in user_entries.items():
+                processing_type = entry_data.get('processing_type')
+                item_count = 0
+
+                # Get item count for this user
+                if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                    nesting_count = int(entry_data['nesting_count'].get() or 0)
+                    opdeelzaag_count = int(entry_data['opdeelzaag_count'].get() or 0)
+                    item_count = nesting_count + opdeelzaag_count
+                elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                    item_count = int(entry_data['item_count'].get() or 0)
+                else:
+                    item_count = int(entry_data.get('item_count', tk.StringVar(value="0")).get() or 0)
+
+                # Generate Excel for users that need it
+                if item_count > 0:
+                    items_list = [f"Item {i+1}" for i in range(item_count)]
+                    excel_path = None
+
+                    try:
+                        if processing_type == 'ACCURA_PROCESSING':
+                            excel_path = generate_excel_for_accura(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.log_message(f"✓ Excel gegenereerd voor ACCURA: {excel_path}", "success")
+                                excel_paths[user] = excel_path
+                        elif processing_type == 'BOERE_PROCESSING':
+                            excel_path = generate_excel_for_boere(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.log_message(f"✓ Excel gegenereerd voor BOERE: {excel_path}", "success")
+                                excel_paths[user] = excel_path
+                        elif processing_type == 'MASSIEF_PROCESSING':
+                            excel_path = generate_excel_for_massief(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.log_message(f"✓ Excel gegenereerd voor MASSIEF: {excel_path}", "success")
+                                excel_paths[user] = excel_path
+                        elif processing_type == 'HANDWERK_PROCESSING':
+                            excel_path = generate_excel_for_handwerk(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.log_message(f"✓ Excel gegenereerd voor HANDWERK: {excel_path}", "success")
+                                excel_paths[user] = excel_path
+                    except Exception as e:
+                        self.log_message(f"⚠️ Excel genereren voor {user} gefaald: {e}", "warning")
+
+            # First send BACKGROUND_WORK_FOUND for each user with items
+            for user, entry_data in user_entries.items():
+                processing_type = entry_data.get('processing_type')
+
+                # Calculate total items for this user
+                total_items = 0
+
+                if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                    nesting_count = int(entry_data['nesting_count'].get() or 0)
+                    opdeelzaag_count = int(entry_data['opdeelzaag_count'].get() or 0)
+                    total_items = nesting_count + opdeelzaag_count
+                elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                    total_items = int(entry_data['item_count'].get() or 0)
+                else:
+                    total_items = int(entry_data.get('item_count', tk.StringVar(value="0")).get() or 0)
+
+                if total_items > 0:
+                    # Send BACKGROUND_WORK_FOUND callback
+                    self.log_message(f"BACKGROUND_WORK_FOUND:{project_code}:{user}:{total_items}", "info")
+                    time.sleep(0.3)  # Small delay between users
+
+            # Now send OPEN events for each user with items
+            for user, entry_data in user_entries.items():
+                processing_type = entry_data.get('processing_type')
+
+                # Build OPEN event data
+                data_open = {
+                    'event': 'OPEN',
+                    'details': 'Manual entry',
+                    'project': project_code,
+                    'base_mo_code': base_mo_code,
+                    'user': user,
+                    'session_type': 'SCANNER',  # Use SCANNER type for batch processing
+                    'timestamp': timestamp,
+                    **session_data
+                }
+
+                # Add optional fields
+                if mo_number:
+                    data_open['mo_number'] = mo_number
+                if so_number:
+                    data_open['so_number'] = so_number
+                if customer_name:
+                    data_open['customer_name'] = customer_name
+                if color:
+                    data_open['color'] = color
+
+                # Add generated Excel file path if available
+                if user in excel_paths:
+                    data_open['file_path'] = excel_paths[user]
+
+                # Add user-specific counts
+                if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                    nesting_count = int(entry_data['nesting_count'].get() or 0)
+                    opdeelzaag_count = int(entry_data['opdeelzaag_count'].get() or 0)
+                    total_items = nesting_count + opdeelzaag_count
+
+                    if total_items > 0:
+                        data_open['nesting_count'] = nesting_count
+                        data_open['opdeelzaag_count'] = opdeelzaag_count
+                        data_open['item_count'] = total_items
+                    else:
+                        continue  # Skip users with 0 items
+
+                elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                    item_count = int(entry_data['item_count'].get() or 0)
+                    aantal_sides = int(entry_data['aantal_sides'].get() or 0)
+
+                    if item_count > 0:
+                        data_open['item_count'] = item_count
+                        data_open['aantal_sides'] = aantal_sides
+                    else:
+                        continue  # Skip users with 0 items
+
+                else:
+                    item_count = int(entry_data.get('item_count', tk.StringVar(value="0")).get() or 0)
+
+                    if item_count > 0:
+                        data_open['item_count'] = item_count
+                    else:
+                        continue  # Skip users with 0 items
+
+                # Send OPEN event
+                delay = 0.5 + (0.3 * list(user_entries.keys()).index(user))
+                time.sleep(delay)
+
+                try:
+                    resp = requests.post(api_url, json=data_open, timeout=3)
+                    if resp.ok:
+                        self.log_message(f"✓ OPEN event verstuurd voor {user} op {project_code}", "success")
+                    else:
+                        self.log_message(f"⚠️ OPEN event voor {user} gefaald (HTTP {resp.status_code})", "warning")
+                except Exception as e:
+                    self.log_message(f"❌ Fout bij versturen OPEN event voor {user}: {e}", "error")
+
+            # Send BEZIG event for triggering user (typically NESTING)
+            if current_user in user_entries:
+                time.sleep(0.5)
+                data_bezig = {
+                    'event': 'BEZIG',
+                    'details': 'Started processing manual entry',
+                    'project': project_code,
+                    'user': current_user,
+                    'status': 'BEZIG',
+                    'timestamp': timestamp
+                }
+
+                try:
+                    resp = requests.post(api_url, json=data_bezig, timeout=3)
+                    if resp.ok:
+                        self.log_message(f"✓ BEZIG event verstuurd voor {current_user}", "success")
+                except Exception as e:
+                    self.log_message(f"⚠️ BEZIG event gefaald: {e}", "warning")
+
+            # Update session project tracking and display
+            session_to_update = None
+
+            if self.active_scan_session == 1 and self.session1_id:
+                session_to_update = self.session1_id
+                self.session1_project = project_code  # Keep track of last project
+                if project_code not in self.session1_projects:
+                    self.session1_projects.append(project_code)
+                # Show multiple projects if batch
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code}")
+            elif self.active_scan_session == 2 and self.session2_id:
+                session_to_update = self.session2_id
+                self.session2_project = project_code  # Keep track of last project
+                if project_code not in self.session2_projects:
+                    self.session2_projects.append(project_code)
+                # Show multiple projects if batch
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code}")
+
+            # Link project to session in database
+            if session_to_update and api_url:
+                try:
+                    # Calculate total items from all users
+                    total_items = 0
+                    for user, entry_data in user_entries.items():
+                        processing_type = entry_data.get('processing_type')
+                        if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                            nesting_count = int(entry_data['nesting_count'].get() or 0)
+                            opdeelzaag_count = int(entry_data['opdeelzaag_count'].get() or 0)
+                            total_items += nesting_count + opdeelzaag_count
+                        elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                            total_items += int(entry_data['item_count'].get() or 0)
+                        else:
+                            total_items += int(entry_data.get('item_count', tk.StringVar(value="0")).get() or 0)
+
+                    link_data = {
+                        'session_id': session_to_update,
+                        'project': project_code,
+                        'item_count': total_items,
+                        'timestamp': timestamp
+                    }
+                    # Build the correct URL - api_url is base URL, not the /log endpoint
+                    base_url = api_url.replace('/log', '') if '/log' in api_url else api_url
+                    link_url = f"{base_url}/session/add_project"
+                    response = requests.post(link_url, json=link_data, timeout=1)
+                    if response.ok:
+                        self.log_message(f"✓ Project {project_code} gekoppeld aan sessie {session_to_update}", "debug")
+                except Exception as e:
+                    self.log_message(f"⚠️ Fout bij koppelen project aan sessie: {e}", "warning")
+
+            # Log processing complete message
+            self.log_message(f"✅ Handmatige invoer verwerking voltooid voor {project_code}", "success")
+
+        except Exception as e:
+            self.log_message(f"❌ Fout bij verwerken handmatige invoer: {e}", "error")
+
     def save_com_port(self, *args):
         save_config({'scanner_panel_com_port': self.com_port_var.get()})
 
     def save_baud_rate(self, *args):
         save_config({'scanner_panel_baud_rate': self.baud_rate_var.get()})
+
+    def handle_extraction_complete(self, extraction_result):
+        """
+        Called when background service completes data extraction.
+        Shows confirmation popup with 3 options: Correct/Edit/Delete
+        """
+        try:
+            # Store extracted data
+            self.pending_scan_confirmation['extracted_data'] = extraction_result
+            self.pending_scan_confirmation['state'] = 'awaiting_confirmation'
+
+            # Log extraction results
+            if extraction_result.get('extraction_complete'):
+                self.log_message(f"✓ Data geëxtraheerd voor project {extraction_result.get('project')}", "success")
+
+                # Show user counts
+                for user, data in extraction_result.get('users', {}).items():
+                    total_items = data.get('total_items', 0)
+                    if total_items > 0:
+                        self.log_message(f"  • {user}: {total_items} items gevonden", "info")
+
+                # Show metadata if found
+                if extraction_result.get('mo_number'):
+                    self.log_message(f"  • MO: {extraction_result.get('mo_number')}", "info")
+                if extraction_result.get('so_number'):
+                    self.log_message(f"  • SO: {extraction_result.get('so_number')}", "info")
+                if extraction_result.get('customer_name'):
+                    self.log_message(f"  • Klant: {extraction_result.get('customer_name')}", "info")
+
+                # Show errors if any
+                for error in extraction_result.get('errors', []):
+                    self.log_message(f"  ⚠️ {error}", "warning")
+
+                # Show confirmation dialog
+                self.show_scan_confirmation_dialog()
+            else:
+                self.log_message(f"❌ Extraction failed for project {extraction_result.get('project')}", "error")
+                # Re-enable scanning
+                self.usb_entry.config(state='normal')
+                self.com_entry.config(state='normal')
+
+        except Exception as e:
+            self.log_message(f"❌ Error handling extraction: {e}", "error")
+            # Re-enable scanning
+            self.usb_entry.config(state='normal')
+            self.com_entry.config(state='normal')
+
+    def show_scan_confirmation_dialog(self):
+        """Show confirmation popup with Correct/Edit/Delete options"""
+        if not self.pending_scan_confirmation:
+            return
+
+        extracted = self.pending_scan_confirmation.get('extracted_data', {})
+
+        # Create confirmation dialog
+        dialog = tk.Toplevel(self)
+        dialog.title("Bevestig Scan Data")
+        dialog.geometry("500x300")
+        dialog.configure(bg="#f0f0f0")
+        dialog.transient(self)
+        dialog.grab_set()  # Modal dialog
+
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Question label
+        question_label = tk.Label(
+            dialog,
+            text="Is deze data correct?",
+            font=('Arial', 16, 'bold'),
+            bg="#f0f0f0",
+            fg="#333"
+        )
+        question_label.pack(pady=20)
+
+        # Info label
+        info_text = f"Project: {extracted.get('project', 'Onbekend')}\n"
+        if extracted.get('mo_number'):
+            info_text += f"MO: {extracted.get('mo_number')}\n"
+        if extracted.get('so_number'):
+            info_text += f"SO: {extracted.get('so_number')}\n"
+        if extracted.get('customer_name'):
+            info_text += f"Klant: {extracted.get('customer_name')}\n"
+
+        # Count items per user
+        total_items = 0
+        for user, data in extracted.get('users', {}).items():
+            items = data.get('total_items', 0)
+            if items > 0:
+                info_text += f"\n{user}: {items} items"
+                total_items += items
+
+        info_label = tk.Label(
+            dialog,
+            text=info_text,
+            font=('Arial', 11),
+            bg="#f0f0f0",
+            fg="#555",
+            justify='left'
+        )
+        info_label.pack(pady=10)
+
+        # Button frame
+        button_frame = tk.Frame(dialog, bg="#f0f0f0")
+        button_frame.pack(pady=20)
+
+        def on_correct():
+            """User confirms data is correct - commit everything"""
+            dialog.destroy()
+            self.commit_scan_data()
+
+        def on_edit():
+            """User wants to edit - open manual entry with pre-filled data"""
+            dialog.destroy()
+            self.open_manual_entry_with_data()
+
+        def on_delete():
+            """User wants to cancel/delete - discard everything"""
+            dialog.destroy()
+            self.cancel_scan_data()
+
+        # Create buttons
+        correct_btn = tk.Button(
+            button_frame,
+            text="✓ Ja, Correct",
+            command=on_correct,
+            bg="#28a745",
+            fg="white",
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=10,
+            relief='raised',
+            bd=2
+        )
+        correct_btn.pack(side='left', padx=10)
+
+        edit_btn = tk.Button(
+            button_frame,
+            text="✏️ Nee, Aanpassen",
+            command=on_edit,
+            bg="#ffc107",
+            fg="black",
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=10,
+            relief='raised',
+            bd=2
+        )
+        edit_btn.pack(side='left', padx=10)
+
+        delete_btn = tk.Button(
+            button_frame,
+            text="🗑️ Verwijderen",
+            command=on_delete,
+            bg="#dc3545",
+            fg="white",
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=10,
+            relief='raised',
+            bd=2
+        )
+        delete_btn.pack(side='left', padx=10)
+
+        # Focus on correct button by default
+        correct_btn.focus_set()
+
+        # Bind Enter key to correct
+        dialog.bind('<Return>', lambda e: on_correct())
+        # Bind Escape key to delete
+        dialog.bind('<Escape>', lambda e: on_delete())
+
+    def commit_scan_data(self):
+        """Commit the scan data - generate files and write to database"""
+        import requests
+        from config_utils import get_config
+
+        if not self.pending_scan_confirmation:
+            self.log_message("❌ Geen pending scan data om te committen", "error")
+            return
+
+        self.log_message(f"✅ Data bevestigd, wordt nu verwerkt...", "success")
+
+        # Get data from pending confirmation
+        project_code_to_log = self.pending_scan_confirmation['project']
+        base_project_code = self.pending_scan_confirmation['base_mo_code']
+        code = self.pending_scan_confirmation['scanned_code']
+        current_user = self.pending_scan_confirmation['current_user']
+        api_url = self.pending_scan_confirmation['api_url']
+        config = self.pending_scan_confirmation['config']
+        scan_timestamp = self.pending_scan_confirmation['timestamp']
+        session_data = self.pending_scan_confirmation['session_data']
+        is_rep_variant = self.pending_scan_confirmation['is_rep_variant']
+        extracted_data = self.pending_scan_confirmation.get('extracted_data', {})
+
+        all_ok = True
+
+        try:
+            # PHASE 1: Send OPEN event for current user
+            data_open = {
+                'event': 'OPEN',
+                'details': code,
+                'project': project_code_to_log,
+                'base_mo_code': base_project_code,
+                'is_rep_variant': is_rep_variant,
+                'user': current_user,
+                **session_data
+            }
+
+            # Add timestamp
+            data_open['timestamp'] = scan_timestamp
+
+            # Add extracted metadata if available
+            if extracted_data.get('mo_number'):
+                data_open['mo_number'] = extracted_data['mo_number']
+            if extracted_data.get('so_number'):
+                data_open['so_number'] = extracted_data['so_number']
+            if extracted_data.get('customer_name'):
+                data_open['customer_name'] = extracted_data['customer_name']
+            if extracted_data.get('color'):
+                data_open['color'] = extracted_data['color']
+
+            # Add item count for current user if available
+            if current_user in extracted_data.get('users', {}):
+                user_data = extracted_data['users'][current_user]
+                if 'nesting_count' in user_data:
+                    data_open['nesting_count'] = user_data['nesting_count']
+                    data_open['opdeelzaag_count'] = user_data.get('opdeelzaag_count', 0)
+                    data_open['item_count'] = user_data['total_items']
+                elif 'item_count' in user_data:
+                    data_open['item_count'] = user_data['item_count']
+                if 'aantal_sides' in user_data:
+                    data_open['aantal_sides'] = user_data['aantal_sides']
+
+            # Send OPEN event
+            resp_open = requests.post(api_url, json=data_open, timeout=3)
+            if not resp_open.ok:
+                self.log_message(f"⚠️ Waarschuwing: Project open event niet geregistreerd (HTTP {resp_open.status_code})", "warning")
+
+            # Show project opened
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            self.current_project = project_code_to_log
+
+            # Update project in session display
+            session_to_update = None
+
+            if self.active_scan_session == 1 and self.session1_id:
+                session_to_update = self.session1_id
+                self.session1_project = project_code_to_log
+                if project_code_to_log not in self.session1_projects:
+                    self.session1_projects.append(project_code_to_log)
+                if len(self.session1_projects) > 1:
+                    self.active_project_label.config(text=f"Batch: {len(self.session1_projects)} projecten")
+                else:
+                    self.active_project_label.config(text=f"Project: {project_code_to_log}")
+            elif self.active_scan_session == 2 and self.session2_id:
+                session_to_update = self.session2_id
+                self.session2_project = project_code_to_log
+                if project_code_to_log not in self.session2_projects:
+                    self.session2_projects.append(project_code_to_log)
+                if len(self.session2_projects) > 1:
+                    self.background_project_label.config(text=f"Batch: {len(self.session2_projects)} projecten")
+                else:
+                    self.background_project_label.config(text=f"Project: {project_code_to_log}")
+            else:
+                self.log_message(f"⚠️ Sessie {self.active_scan_session} is niet actief.", "warning")
+
+        except requests.exceptions.Timeout:
+            self.log_message(f"⚠️ Waarschuwing: Project open event timeout", "warning")
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            self.current_project = project_code_to_log
+        except Exception as e:
+            self.log_message(f"⚠️ Netwerkwaarschuwing: {str(e)[:50]}", "warning")
+            self.log_message(f"✓ Project {project_code_to_log} geopend door {current_user}", "success")
+            self.current_project = project_code_to_log
+
+        # PHASE 2: Link project to session
+        if session_to_update and api_url:
+            try:
+                initial_item_count = 0
+                if current_user in extracted_data.get('users', {}):
+                    initial_item_count = extracted_data['users'][current_user].get('total_items', 0)
+
+                link_data = {
+                    'session_id': session_to_update,
+                    'project': project_code_to_log,
+                    'item_count': initial_item_count,
+                    'timestamp': scan_timestamp
+                }
+                base_url = api_url.replace('/log', '') if '/log' in api_url else api_url
+                link_url = f"{base_url}/session/add_project"
+                response = requests.post(link_url, json=link_data, timeout=1)
+                if response.ok:
+                    self.log_message(f"✓ Project {project_code_to_log} gekoppeld aan sessie {session_to_update}", "debug")
+                else:
+                    self.log_message(f"⚠️ Kon project niet koppelen: {response.text}", "warning")
+            except Exception as e:
+                self.log_message(f"⚠️ Kon project niet koppelen aan sessie: {e}", "warning")
+
+        # PHASE 3: Trigger background service for Excel generation and other users
+        excel_processors = ['NESTING', 'ACCURA', 'BOERE']
+        if current_user in excel_processors:
+            self.after(500, lambda: self.log_message(f"🔄 Excel verwerking wordt gestart voor alle gebruikers...", "info"))
+
+        # Now trigger the NORMAL background service (not extract_only) with commit data
+        self.background_import_service.process_scan_for_open_event_async(
+            project_code_to_log=project_code_to_log,
+            base_project_code=base_project_code,
+            scanned_code=code,
+            current_user_scanner=current_user,
+            api_url=api_url,  # Pass API URL for database writes
+            config_data=config,
+            timestamp=scan_timestamp,
+            extract_only=False  # Normal processing mode - generates files
+        )
+
+        if all_ok:
+            self.open_projects.add(project_code_to_log)
+
+            # Update display
+            if self.active_scan_session == 1 and self.session1_id:
+                self.session1_project = project_code_to_log
+            elif self.active_scan_session == 2 and self.session2_id:
+                self.session2_project = project_code_to_log
+
+        # Clear pending data and re-enable scanning
+        self.pending_scan_confirmation = None
+        self.usb_entry.config(state='normal')
+        self.com_entry.config(state='normal')
+        self.usb_entry.config(bg='light green')
+        self.after(2000, lambda: self.usb_entry.config(bg='white'))
+
+    def open_manual_entry_with_data(self):
+        """Open manual entry dialog pre-filled with extracted data"""
+        if not self.pending_scan_confirmation:
+            return
+
+        extracted = self.pending_scan_confirmation.get('extracted_data', {})
+
+        # Open the manual entry dialog
+        dialog = tk.Toplevel(self)
+        dialog.title("Handmatige Project Invoer - Aanpassen")
+        dialog.geometry("700x800")
+        dialog.configure(bg="#f0f0f0")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Center the dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Create a frame for content with scrollbar
+        main_frame = tk.Frame(dialog, bg="#f0f0f0")
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        canvas = tk.Canvas(main_frame, bg="#f0f0f0")
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Title label
+        title_label = tk.Label(
+            scrollable_frame,
+            text="Project Gegevens Aanpassen",
+            font=('Arial', 14, 'bold'),
+            bg="#f0f0f0",
+            fg="#333"
+        )
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky='w')
+
+        # Project code (pre-filled from extraction)
+        tk.Label(scrollable_frame, text="Project Code:", font=('Arial', 10), bg="#f0f0f0").grid(row=1, column=0, sticky='w', pady=5)
+        project_code_var = tk.StringVar(value=extracted.get('project', ''))
+        project_entry = tk.Entry(scrollable_frame, textvariable=project_code_var, width=30, font=('Arial', 10))
+        project_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # Base MO Code (pre-filled)
+        tk.Label(scrollable_frame, text="Base MO Code:", font=('Arial', 10), bg="#f0f0f0").grid(row=2, column=0, sticky='w', pady=5)
+        base_mo_code_var = tk.StringVar(value=extracted.get('base_mo_code', ''))
+        base_mo_entry = tk.Entry(scrollable_frame, textvariable=base_mo_code_var, width=30, font=('Arial', 10))
+        base_mo_entry.grid(row=2, column=1, sticky='ew', pady=5)
+
+        # MO Number (pre-filled from extracted metadata)
+        tk.Label(scrollable_frame, text="MO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=3, column=0, sticky='w', pady=5)
+        mo_number_var = tk.StringVar(value=extracted.get('mo_number', '') or '')
+        mo_entry = tk.Entry(scrollable_frame, textvariable=mo_number_var, width=30, font=('Arial', 10))
+        mo_entry.grid(row=3, column=1, sticky='ew', pady=5)
+
+        # SO Number (pre-filled)
+        tk.Label(scrollable_frame, text="SO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=4, column=0, sticky='w', pady=5)
+        so_number_var = tk.StringVar(value=extracted.get('so_number', '') or '')
+        so_entry = tk.Entry(scrollable_frame, textvariable=so_number_var, width=30, font=('Arial', 10))
+        so_entry.grid(row=4, column=1, sticky='ew', pady=5)
+
+        # Customer Name (pre-filled)
+        tk.Label(scrollable_frame, text="Klantnaam:", font=('Arial', 10), bg="#f0f0f0").grid(row=5, column=0, sticky='w', pady=5)
+        customer_name_var = tk.StringVar(value=extracted.get('customer_name', '') or '')
+        customer_entry = tk.Entry(scrollable_frame, textvariable=customer_name_var, width=30, font=('Arial', 10))
+        customer_entry.grid(row=5, column=1, sticky='ew', pady=5)
+
+        # Color (pre-filled)
+        tk.Label(scrollable_frame, text="Kleur:", font=('Arial', 10), bg="#f0f0f0").grid(row=6, column=0, sticky='w', pady=5)
+        color_var = tk.StringVar(value=extracted.get('color', '') or '')
+        color_entry = tk.Entry(scrollable_frame, textvariable=color_var, width=30, font=('Arial', 10))
+        color_entry.grid(row=6, column=1, sticky='ew', pady=5)
+
+        # Separator
+        separator = tk.Frame(scrollable_frame, height=2, bg="#ddd")
+        separator.grid(row=7, column=0, columnspan=2, sticky='ew', pady=10)
+
+        # User entries section
+        tk.Label(scrollable_frame, text="Gebruiker Aantallen", font=('Arial', 12, 'bold'), bg="#f0f0f0").grid(row=8, column=0, columnspan=2, pady=(10, 5), sticky='w')
+
+        # Store user entry variables
+        user_entries = {}
+        row_num = 9
+
+        # Get configured users from config
+        from config_utils import get_config
+        config = get_config()
+        user_to_processing_type = config.get('scanner_user_to_processing_type_map', {})
+
+        # Process each user from extracted data
+        for user, user_data in extracted.get('users', {}).items():
+            processing_type = user_data.get('processing_type')
+
+            # User label
+            tk.Label(scrollable_frame, text=f"{user}:", font=('Arial', 10, 'bold'), bg="#f0f0f0", fg="#2c3e50").grid(row=row_num, column=0, sticky='w', pady=5)
+
+            user_frame = tk.Frame(scrollable_frame, bg="#f0f0f0")
+            user_frame.grid(row=row_num, column=1, sticky='ew', pady=5)
+
+            if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                # NESTING has special fields
+                tk.Label(user_frame, text="Nesting:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                nesting_var = tk.StringVar(value=str(user_data.get('nesting_count', 0)))
+                tk.Entry(user_frame, textvariable=nesting_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                tk.Label(user_frame, text="Opdeelzaag:", font=('Arial', 9), bg="#f0f0f0").pack(side='left', padx=(10, 0))
+                opdeelzaag_var = tk.StringVar(value=str(user_data.get('opdeelzaag_count', 0)))
+                tk.Entry(user_frame, textvariable=opdeelzaag_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                user_entries[user] = {
+                    'processing_type': processing_type,
+                    'nesting_count': nesting_var,
+                    'opdeelzaag_count': opdeelzaag_var
+                }
+
+            elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                # ACCURA has item count and aantal sides
+                tk.Label(user_frame, text="Items:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                item_var = tk.StringVar(value=str(user_data.get('item_count', 0)))
+                tk.Entry(user_frame, textvariable=item_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                tk.Label(user_frame, text="Aantal Sides:", font=('Arial', 9), bg="#f0f0f0").pack(side='left', padx=(10, 0))
+                sides_var = tk.StringVar(value=str(user_data.get('aantal_sides', 0)))
+                tk.Entry(user_frame, textvariable=sides_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                user_entries[user] = {
+                    'processing_type': processing_type,
+                    'item_count': item_var,
+                    'aantal_sides': sides_var
+                }
+            else:
+                # Other users just have item count
+                tk.Label(user_frame, text="Items:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                item_var = tk.StringVar(value=str(user_data.get('item_count', 0) or user_data.get('total_items', 0)))
+                tk.Entry(user_frame, textvariable=item_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                user_entries[user] = {
+                    'processing_type': processing_type,
+                    'item_count': item_var
+                }
+
+            row_num += 1
+
+        # Also add users that weren't in extracted data but are configured
+        for user, processing_type in user_to_processing_type.items():
+            if user not in extracted.get('users', {}):
+                tk.Label(scrollable_frame, text=f"{user}:", font=('Arial', 10, 'bold'), bg="#f0f0f0", fg="#999").grid(row=row_num, column=0, sticky='w', pady=5)
+
+                user_frame = tk.Frame(scrollable_frame, bg="#f0f0f0")
+                user_frame.grid(row=row_num, column=1, sticky='ew', pady=5)
+
+                if user == 'NESTING' and processing_type == 'NESTING_PROCESSING':
+                    tk.Label(user_frame, text="Nesting:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                    nesting_var = tk.StringVar(value="0")
+                    tk.Entry(user_frame, textvariable=nesting_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                    tk.Label(user_frame, text="Opdeelzaag:", font=('Arial', 9), bg="#f0f0f0").pack(side='left', padx=(10, 0))
+                    opdeelzaag_var = tk.StringVar(value="0")
+                    tk.Entry(user_frame, textvariable=opdeelzaag_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                    user_entries[user] = {
+                        'processing_type': processing_type,
+                        'nesting_count': nesting_var,
+                        'opdeelzaag_count': opdeelzaag_var
+                    }
+                elif user == 'ACCURA' and processing_type == 'ACCURA_PROCESSING':
+                    tk.Label(user_frame, text="Items:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                    item_var = tk.StringVar(value="0")
+                    tk.Entry(user_frame, textvariable=item_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                    tk.Label(user_frame, text="Aantal Sides:", font=('Arial', 9), bg="#f0f0f0").pack(side='left', padx=(10, 0))
+                    sides_var = tk.StringVar(value="0")
+                    tk.Entry(user_frame, textvariable=sides_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                    user_entries[user] = {
+                        'processing_type': processing_type,
+                        'item_count': item_var,
+                        'aantal_sides': sides_var
+                    }
+                else:
+                    tk.Label(user_frame, text="Items:", font=('Arial', 9), bg="#f0f0f0").pack(side='left')
+                    item_var = tk.StringVar(value="0")
+                    tk.Entry(user_frame, textvariable=item_var, width=8, font=('Arial', 9)).pack(side='left', padx=2)
+
+                    user_entries[user] = {
+                        'processing_type': processing_type,
+                        'item_count': item_var
+                    }
+
+                row_num += 1
+
+        # Button frame at bottom
+        button_frame = tk.Frame(dialog, bg="#f0f0f0")
+        button_frame.pack(fill='x', pady=20)
+
+        def submit_manual_entry():
+            """Process and submit the edited manual entry"""
+            project_code = project_code_var.get().strip()
+
+            if not project_code:
+                messagebox.showerror("Fout", "Project code is verplicht!")
+                return
+
+            base_mo_code = base_mo_code_var.get().strip() or project_code.split('-')[0]
+            mo_number = mo_number_var.get().strip()
+            so_number = so_number_var.get().strip()
+            customer_name = customer_name_var.get().strip()
+            color = color_var.get().strip()
+
+            # Close dialog
+            dialog.destroy()
+
+            # Process the manual entry with the edited data
+            self._process_manual_entry(
+                project_code, base_mo_code, mo_number, so_number,
+                customer_name, color, user_entries
+            )
+
+            # Clear pending scan data and re-enable scanning
+            self.pending_scan_confirmation = None
+            self.usb_entry.config(state='normal')
+            self.com_entry.config(state='normal')
+
+        submit_btn = tk.Button(
+            button_frame,
+            text="✓ Verwerken",
+            command=submit_manual_entry,
+            bg="#28a745",
+            fg="white",
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=10
+        )
+        submit_btn.pack(side='left', padx=10)
+
+        cancel_btn = tk.Button(
+            button_frame,
+            text="Annuleren",
+            command=lambda: [dialog.destroy(), self.cancel_scan_data()],
+            bg="#dc3545",
+            fg="white",
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=10
+        )
+        cancel_btn.pack(side='left', padx=10)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+    def cancel_scan_data(self):
+        """Cancel/delete the scan - discard everything"""
+        self.log_message(f"❌ Scan geannuleerd voor project {self.pending_scan_confirmation.get('project')}", "warning")
+
+        # Clear pending data
+        self.pending_scan_confirmation = None
+
+        # Re-enable scanning
+        self.usb_entry.config(state='normal')
+        self.com_entry.config(state='normal')

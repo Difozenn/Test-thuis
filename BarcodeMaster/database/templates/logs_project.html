@@ -1034,53 +1034,110 @@ let idleTimeBreakdown = {
     totalIdleMinutes: 0
 };
 
-// Function to calculate handoff delays from logs
+// Function to calculate TRUE idle/handoff time from logs
+// Idle = At least one AFGEMELD + At least one OPEN + Nobody BEZIG
 function calculateHandoffDelaysFromLogs() {
     const logs = logData || [];
     let handoffDetails = {};
     let totalHandoffMinutes = 0;
-    
-    // Filter for relevant events
-    const relevantLogs = logs.filter(log => 
-        ['OPEN', 'BEZIG', 'PROJECT_START', 'AFGEMELD'].includes(log.event) && log.user
+
+    // Filter for status events (OPEN, BEZIG, AFGEMELD)
+    const statusLogs = logs.filter(log =>
+        ['OPEN', 'BEZIG', 'AFGEMELD'].includes(log.event) && log.user
     );
-    
-    // Sort logs by timestamp
-    const sortedLogs = [...relevantLogs].sort((a, b) => 
+
+    // Sort by timestamp
+    const sortedLogs = [...statusLogs].sort((a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-    
-    // Track last activity by user
-    let lastActivityByUser = {};
-    
-    for (let i = 0; i < sortedLogs.length; i++) {
-        const log = sortedLogs[i];
-        const user = log.user;
-        const timestamp = new Date(log.timestamp);
-        
-        // Check if this is a handoff (different user than previous activity)
-        if (i > 0) {
-            const prevLog = sortedLogs[i - 1];
-            const prevUser = prevLog.user;
-            const prevTimestamp = new Date(prevLog.timestamp);
-            
-            // If different user, count as handoff (no arbitrary time limits!)
-            if (user !== prevUser && prevUser) {
-                // Calculate actual work minutes between the two events (excluding breaks/non-work hours)
-                const workMinutesInHandoff = calculateWorkMinutes(prevTimestamp, timestamp);
-                
-                // Only count as handoff if there's actual work time between events
-                if (workMinutesInHandoff > 0) {
-                    const transition = `${prevUser} → ${user}`;
-                    handoffDetails[transition] = (handoffDetails[transition] || 0) + workMinutesInHandoff;
-                    totalHandoffMinutes += workMinutesInHandoff;
-                }
-            }
-        }
-        
-        lastActivityByUser[user] = timestamp;
+
+    if (sortedLogs.length === 0) {
+        return { totalHandoffMinutes: 0, handoffDetails: {} };
     }
-    
+
+    // Track current status for each user as we process events
+    let currentStatus = {};
+    for (const user of configuredUsers) {
+        currentStatus[user] = null; // No status initially
+    }
+
+    let currentIdleStart = null;
+    let waitingForUsers = [];
+
+    for (let i = 0; i < sortedLogs.length; i++) {
+        const event = sortedLogs[i];
+        const timestamp = new Date(event.timestamp);
+
+        // Update status for this user
+        currentStatus[event.user] = event.event;
+
+        // Check idle conditions
+        const hasAfgemeld = Object.values(currentStatus).some(status => status === 'AFGEMELD');
+        const hasOpen = Object.values(currentStatus).some(status => status === 'OPEN');
+        const hasBezig = Object.values(currentStatus).some(status => status === 'BEZIG');
+
+        const isIdle = hasAfgemeld && hasOpen && !hasBezig;
+
+        if (isIdle && currentIdleStart === null) {
+            // Start of idle period
+            currentIdleStart = timestamp;
+            waitingForUsers = Object.entries(currentStatus)
+                .filter(([user, status]) => status === 'OPEN')
+                .map(([user, status]) => user);
+
+            console.log(`Idle period started at ${timestamp.toISOString()}`, {
+                waitingFor: waitingForUsers,
+                statusSnapshot: {...currentStatus}
+            });
+        } else if (!isIdle && currentIdleStart !== null) {
+            // End of idle period
+            const idleMinutes = calculateWorkMinutes(currentIdleStart, timestamp);
+
+            if (idleMinutes > 0) {
+                // Create transition label showing who we were waiting for
+                const transition = waitingForUsers.length > 0
+                    ? `Wachten op ${waitingForUsers.join(', ')}`
+                    : 'Handoff vertraging';
+
+                handoffDetails[transition] = (handoffDetails[transition] || 0) + idleMinutes;
+                totalHandoffMinutes += idleMinutes;
+
+                console.log(`Idle period ended at ${timestamp.toISOString()}`, {
+                    duration: idleMinutes,
+                    transition: transition
+                });
+            }
+
+            currentIdleStart = null;
+            waitingForUsers = [];
+        }
+    }
+
+    // Handle case where project ends while still idle
+    if (currentIdleStart !== null && sortedLogs.length > 0) {
+        const lastTimestamp = new Date(sortedLogs[sortedLogs.length - 1].timestamp);
+        const idleMinutes = calculateWorkMinutes(currentIdleStart, lastTimestamp);
+
+        if (idleMinutes > 0) {
+            const transition = waitingForUsers.length > 0
+                ? `Wachten op ${waitingForUsers.join(', ')}`
+                : 'Handoff vertraging';
+
+            handoffDetails[transition] = (handoffDetails[transition] || 0) + idleMinutes;
+            totalHandoffMinutes += idleMinutes;
+
+            console.log('Project ended during idle period', {
+                duration: idleMinutes,
+                transition: transition
+            });
+        }
+    }
+
+    console.log('Total handoff calculation:', {
+        totalMinutes: totalHandoffMinutes,
+        details: handoffDetails
+    });
+
     return {
         totalHandoffMinutes: totalHandoffMinutes,
         handoffDetails: handoffDetails
@@ -1325,10 +1382,6 @@ function showIdleDetailsModal() {
                     html += '</tr>';
                 }
             }
-            html += '<tr style="border-top: 2px solid #dee2e6;">';
-            html += '<td style="padding: 8px 0; font-weight: 600; color: #495057;">Totaal Pauze</td>';
-            html += `<td style="text-align: right; padding: 8px 0; color: #ffc107; font-weight: 700;">${Math.round(totalPauseMinutes)} minuten</td>`;
-            html += '</tr>';
             html += '</table>';
         } else {
             html += '<p style="color: #6c757d; margin: 0;">Geen pauzes geregistreerd</p>';
@@ -1352,10 +1405,6 @@ function showIdleDetailsModal() {
                     html += '</tr>';
                 }
             }
-            html += '<tr style="border-top: 2px solid #dee2e6;">';
-            html += '<td style="padding: 8px 0; font-weight: 600; color: #495057;">Totaal Handoff</td>';
-            html += `<td style="text-align: right; padding: 8px 0; color: #28a745; font-weight: 700;">${Math.round(totalHandoffMinutes)} minuten</td>`;
-            html += '</tr>';
             html += '</table>';
         } else {
             html += '<p style="color: #6c757d; margin: 0;">Geen handoff tijd geregistreerd</p>';
@@ -2277,13 +2326,22 @@ async function updatePerformanceMetrics() {
                     if (user === 'NESTING') {
                         const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
                         const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
-                        
+
                         nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
                         opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
                     }
-                    
+
+                    // For ACCURA users, get sides count
+                    let sidesCount = 0;
+                    if (user === 'ACCURA') {
+                        const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                        const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                        sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+                    }
+
                     userStats[user] = {
                         items: userMetric.total_items || 0,
+                        sides: sidesCount,
                         sessionMinutes: userMetric.session_hours === 'IN_PROGRESS' ? 'IN_PROGRESS' : Math.round((userMetric.session_hours || 0) * 60),
                         itemsPerHour: userMetric.items_per_hour === 'IN_PROGRESS' ? 'IN_PROGRESS' : (userMetric.items_per_hour || 0),
                         status: userMetric.status || 'COMPLETED',
@@ -2339,13 +2397,22 @@ async function updatePerformanceMetrics() {
                     if (user === 'NESTING') {
                         const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
                         const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
-                        
+
                         nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
                         opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
                     }
-                    
+
+                    // For ACCURA users, get sides count
+                    let sidesCount = 0;
+                    if (user === 'ACCURA') {
+                        const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                        const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                        sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+                    }
+
                     userStats[user] = {
                         items: projectItems,
+                        sides: sidesCount,
                         sessionMinutes: Math.round(userSessionMinutes),
                         itemsPerHour: itemsPerHour,
                         nestingCount: nestingCount,
@@ -2414,13 +2481,22 @@ async function updatePerformanceMetrics() {
             if (user === 'NESTING') {
                 const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
                 const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
-                
+
                 nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
                 opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
             }
-            
+
+            // For ACCURA users, get sides count
+            let sidesCount = 0;
+            if (user === 'ACCURA') {
+                const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+            }
+
             userStats[user] = {
                 items: projectItems,
+                sides: sidesCount,
                 sessionMinutes: Math.round(userSessionMinutes),
                 itemsPerHour: itemsPerHour,
                 nestingCount: nestingCount,
@@ -2740,7 +2816,13 @@ async function updatePerformanceMetrics() {
     const itemsBreakdown = Object.entries(userStats)
         .filter(([user, stats]) => stats !== undefined)
         .sort(([,a], [,b]) => (b.items || 0) - (a.items || 0))
-        .map(([user, stats]) => `${user}: ${stats.items || 0}`)
+        .map(([user, stats]) => {
+            // For ACCURA, show sides instead of items
+            if (user === 'ACCURA' && stats.sides > 0) {
+                return `${user}: ${stats.sides}`;
+            }
+            return `${user}: ${stats.items || 0}`;
+        })
         .join(' | ');
     document.getElementById('items-breakdown').textContent = itemsBreakdown || 'Geen bewerkingen voltooid';
     

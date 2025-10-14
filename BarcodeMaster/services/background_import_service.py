@@ -368,23 +368,47 @@ class BackgroundImportService:
         else:
             self._log(f"Geen processing_type geconfigureerd voor gebruiker '{user_type}'.")
 
-    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data, timestamp=None):
-        """Processes the OPEN scan event for other users in a background thread."""
-        thread = threading.Thread(
-            target=self._process_scan_for_open_event_task,
-            args=(
-                project_code_to_log,
-                base_project_code,
-                scanned_code,
-                current_user_scanner,
-                api_url,
-                config_data,
-                timestamp
+    def process_scan_for_open_event_async(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data, timestamp=None, extract_only=False, extraction_callback=None):
+        """
+        Processes the OPEN scan event for other users in a background thread.
+
+        Args:
+            extract_only: If True, only extract data without generating files or writing to database
+            extraction_callback: Function to call with extracted data (used with extract_only=True)
+        """
+        if extract_only and extraction_callback:
+            # New extraction-only mode for confirmation flow
+            thread = threading.Thread(
+                target=self._extract_scan_data_task,
+                args=(
+                    project_code_to_log,
+                    base_project_code,
+                    scanned_code,
+                    current_user_scanner,
+                    config_data,
+                    extraction_callback
+                )
             )
-        )
-        thread.daemon = True # Ensure thread doesn't block program exit
-        thread.start()
-        self._log(f"Background task started for OPEN event: {project_code_to_log}")
+            thread.daemon = True
+            thread.start()
+            self._log(f"Extraction task started for project: {project_code_to_log}")
+        else:
+            # Existing flow for manual entry or direct processing
+            thread = threading.Thread(
+                target=self._process_scan_for_open_event_task,
+                args=(
+                    project_code_to_log,
+                    base_project_code,
+                    scanned_code,
+                    current_user_scanner,
+                    api_url,
+                    config_data,
+                    timestamp
+                )
+            )
+            thread.daemon = True
+            thread.start()
+            self._log(f"Background task started for OPEN event: {project_code_to_log}")
 
     def _process_scan_for_open_event_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, api_url, config_data, timestamp=None):
         """Task run in a separate thread to handle OPEN event logic for other users."""
@@ -610,6 +634,172 @@ class BackgroundImportService:
             self._log(f"[BG_TASK_FATAL_ERR] Unhandled exception in _process_scan_for_open_event_task for {project_code_to_log}: {e_task}\n{traceback.format_exc()}")
             if self.log_callback:
                 self.log_callback(f"BACKGROUND_FATAL_ERROR:{project_code_to_log}:Error - {e_task}")
+
+    def _extract_scan_data_task(self, project_code_to_log, base_project_code, scanned_code, current_user_scanner, config_data, extraction_callback):
+        """
+        Extract data from Excel files WITHOUT generating output files or writing to database.
+        This is phase 1 of the confirmation flow - read-only data extraction.
+        """
+        try:
+            self._log(f"[EXTRACT] Starting data extraction for {project_code_to_log}")
+
+            # Initialize extraction result structure
+            extraction_result = {
+                'project': project_code_to_log,
+                'base_mo_code': base_project_code,
+                'scanned_code': scanned_code,
+                'mo_number': None,
+                'so_number': None,
+                'customer_name': None,
+                'color': None,
+                'users': {},
+                'extraction_complete': False,
+                'errors': []
+            }
+
+            # Get configuration
+            open_users = config_data.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
+            user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
+            user_to_processing_type = config_data.get('scanner_user_to_processing_type_map', {})
+
+            # Group users by directory to avoid duplicate searches
+            path_to_users = {}
+            excel_processing_users = {}
+
+            for user in open_users:
+                # Skip inactive users
+                if not user_logic_active_states.get(user, True):
+                    self._log(f"[EXTRACT] Logic inactive for user '{user}'. Skipping.")
+                    continue
+
+                user_dir = user_paths_map.get(user)
+                if user_dir and os.path.isdir(user_dir):
+                    if user_dir not in path_to_users:
+                        path_to_users[user_dir] = []
+                    path_to_users[user_dir].append(user)
+
+                    # Track Excel-based processing types
+                    processing_type = user_to_processing_type.get(user)
+                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
+                        if user_dir not in excel_processing_users:
+                            excel_processing_users[user_dir] = {}
+                        excel_processing_users[user_dir][user] = processing_type
+
+            # Process Excel directories for data extraction
+            for user_dir, excel_processors in excel_processing_users.items():
+                self._log(f"[EXTRACT] Checking dir '{user_dir}' for Excel processors: {list(excel_processors.keys())}")
+
+                # Find matching Excel file
+                from services.excel_processing import find_excel_file_for_project, process_excel_for_all_types
+                excel_file = find_excel_file_for_project(user_dir, project_code_to_log)
+
+                if not excel_file:
+                    self._log(f"[EXTRACT] No Excel file found for project {project_code_to_log} in {user_dir}")
+                    extraction_result['errors'].append(f"No Excel file found in {user_dir}")
+                    continue
+
+                self._log(f"[EXTRACT] Found Excel file: {excel_file}")
+
+                # Extract data from Excel for all processor types
+                processor_types = [proc_type for user, proc_type in excel_processors.items()]
+                all_results = process_excel_for_all_types(excel_file, processor_types)
+
+                # Map results to users and extract metadata
+                for user, proc_type in excel_processors.items():
+                    if proc_type in all_results:
+                        result = all_results[proc_type]
+
+                        # Extract metadata from first user's results (should be same for all)
+                        if not extraction_result['mo_number'] and 'mo_number' in result:
+                            extraction_result['mo_number'] = result['mo_number']
+                        if not extraction_result['so_number'] and 'so_number' in result:
+                            extraction_result['so_number'] = result['so_number']
+                        if not extraction_result['customer_name'] and 'customer_name' in result:
+                            extraction_result['customer_name'] = result['customer_name']
+                        if not extraction_result['color'] and 'color' in result:
+                            extraction_result['color'] = result['color']
+
+                        # Store user-specific data
+                        if proc_type == 'NESTING_PROCESSING':
+                            extraction_result['users'][user] = {
+                                'processing_type': proc_type,
+                                'nesting_count': result.get('nesting_count', 0),
+                                'opdeelzaag_count': result.get('opdeelzaag_count', 0),
+                                'total_items': result.get('nesting_count', 0) + result.get('opdeelzaag_count', 0),
+                                'source_file': excel_file
+                            }
+                        elif proc_type == 'ACCURA_PROCESSING':
+                            extraction_result['users'][user] = {
+                                'processing_type': proc_type,
+                                'item_count': result.get('item_count', 0),
+                                'aantal_sides': result.get('aantal_sides', 0),
+                                'total_items': result.get('item_count', 0),
+                                'source_file': excel_file
+                            }
+                        elif proc_type in ['BOERE_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
+                            extraction_result['users'][user] = {
+                                'processing_type': proc_type,
+                                'item_count': result.get('item_count', 0),
+                                'total_items': result.get('item_count', 0),
+                                'source_file': excel_file
+                            }
+
+            # Process HOPS (OPUS) and MDB (KL/GR GANNOMAT) separately
+            for user_dir, users_in_dir in path_to_users.items():
+                for user in users_in_dir:
+                    processing_type = user_to_processing_type.get(user)
+
+                    if processing_type == 'HOPS_PROCESSING':
+                        # Extract from HOPS Excel
+                        self._log(f"[EXTRACT] Checking HOPS for user {user} in {user_dir}")
+                        from services.excel_processing import find_hops_files_for_project
+                        hops_files = find_hops_files_for_project(user_dir, project_code_to_log)
+
+                        if hops_files:
+                            # Count total items from HOPS files
+                            total_items = len(hops_files)
+                            extraction_result['users'][user] = {
+                                'processing_type': processing_type,
+                                'item_count': total_items,
+                                'total_items': total_items,
+                                'source_files': hops_files
+                            }
+                            self._log(f"[EXTRACT] Found {total_items} HOPS items for {user}")
+                        else:
+                            self._log(f"[EXTRACT] No HOPS files found for {user}")
+
+                    elif processing_type == 'MDB_PROCESSING':
+                        # Extract from MDB
+                        self._log(f"[EXTRACT] Checking MDB for user {user} in {user_dir}")
+                        from services.mdb_processing import find_mdb_file_for_project, extract_items_from_mdb
+                        mdb_file = find_mdb_file_for_project(user_dir, project_code_to_log)
+
+                        if mdb_file:
+                            items = extract_items_from_mdb(mdb_file, project_code_to_log)
+                            extraction_result['users'][user] = {
+                                'processing_type': processing_type,
+                                'item_count': len(items),
+                                'total_items': len(items),
+                                'source_file': mdb_file,
+                                'items': items  # Store actual items for later use
+                            }
+                            self._log(f"[EXTRACT] Found {len(items)} MDB items for {user}")
+                        else:
+                            self._log(f"[EXTRACT] No MDB file found for {user}")
+
+            # Mark extraction as complete
+            extraction_result['extraction_complete'] = True
+
+            # Call the callback with extracted data
+            self._log(f"[EXTRACT] Extraction complete for {project_code_to_log}, calling callback")
+            extraction_callback(extraction_result)
+
+        except Exception as e:
+            self._log(f"[EXTRACT_ERR] Error in extraction task: {e}\n{traceback.format_exc()}")
+            extraction_result['errors'].append(f"Extraction error: {str(e)}")
+            extraction_result['extraction_complete'] = True
+            extraction_callback(extraction_result)
 
     def _process_directory_with_unified_excel_handling(self, user_dir, project_code_to_log, base_project_code, 
                                                      excel_processors, api_url, timestamp, triggering_user=None):

@@ -399,6 +399,7 @@ def init_db():
                 break_end TEXT DEFAULT '12:30',
                 efficiency_high_threshold REAL DEFAULT 10.0,
                 efficiency_medium_threshold REAL DEFAULT 5.0,
+                target_items_per_hour REAL DEFAULT 30.0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
@@ -415,6 +416,28 @@ def init_db():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        # Create login_history table for tracking login attempts and access
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS login_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                login_time TEXT DEFAULT CURRENT_TIMESTAMP,
+                login_success BOOLEAN DEFAULT 1,
+                login_type TEXT DEFAULT 'manual',
+                session_duration_minutes REAL,
+                logout_time TEXT
+            )
+        ''')
+
+        # Check and add target_items_per_hour to work_hours_config if it doesn't exist
+        c.execute("PRAGMA table_info(work_hours_config)")
+        work_hours_columns = [column[1] for column in c.fetchall()]
+        if 'target_items_per_hour' not in work_hours_columns:
+            c.execute('ALTER TABLE work_hours_config ADD COLUMN target_items_per_hour REAL DEFAULT 30.0')
+            logging.info("Added 'target_items_per_hour' column to work_hours_config table.")
 
         # Check and add columns if they don't exist
         c.execute("PRAGMA table_info(logs)")
@@ -592,6 +615,47 @@ def check_password(username, password):
         return AUTH_USERS[username] == password_hash
     return False
 
+def track_login(username, ip_address, user_agent, success, login_type='manual'):
+    """Track login attempts in the database"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO login_history (username, ip_address, user_agent, login_success, login_type, login_time)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (username, ip_address, user_agent, success, login_type, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        conn.commit()
+
+        # Return the ID of the login record for tracking logout later
+        return c.lastrowid
+    except Exception as e:
+        logging.error(f"Error tracking login: {e}")
+        return None
+
+def update_logout_time(login_id):
+    """Update logout time and session duration for a login record"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get login time
+        c.execute('SELECT login_time FROM login_history WHERE id = ?', (login_id,))
+        result = c.fetchone()
+
+        if result:
+            login_time = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
+            logout_time = datetime.now()
+            duration_minutes = (logout_time - login_time).total_seconds() / 60
+
+            c.execute('''
+                UPDATE login_history
+                SET logout_time = ?, session_duration_minutes = ?
+                WHERE id = ?
+            ''', (logout_time.strftime('%Y-%m-%d %H:%M:%S'), duration_minutes, login_id))
+            conn.commit()
+    except Exception as e:
+        logging.error(f"Error updating logout time: {e}")
+
 def login_required(f):
     """Decorator to require login for routes"""
     @wraps(f)
@@ -612,6 +676,17 @@ def login_required(f):
 def login():
     """Login page and authentication"""
 
+    # Get client IP address (handle proxies)
+    if request.headers.get('X-Forwarded-For'):
+        ip_address = request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    elif request.headers.get('X-Real-Ip'):
+        ip_address = request.headers.get('X-Real-Ip')
+    else:
+        ip_address = request.remote_addr
+
+    # Get user agent
+    user_agent = request.headers.get('User-Agent', '')[:500]  # Limit length
+
     # Check for remember me cookie
     if request.method == 'GET':
         remember_token = request.cookies.get('remember_token')
@@ -623,7 +698,9 @@ def login():
                     expires = datetime.fromisoformat(token_data['expires'])
                     if expires > datetime.now():
                         # Token is valid, auto-login
-                        session['user'] = token_data['username']
+                        username = token_data['username']
+                        session['user'] = username
+                        session['login_id'] = track_login(username, ip_address, user_agent, True, 'cookie')
                         session.permanent = True
                         next_page = request.args.get('next')
                         if next_page and next_page.startswith('/'):
@@ -639,6 +716,7 @@ def login():
 
         if check_password(username, password):
             session['user'] = username
+            session['login_id'] = track_login(username, ip_address, user_agent, True, 'manual')
             session.permanent = True
             app.permanent_session_lifetime = timedelta(hours=8)  # Session lasts 8 hours
 
@@ -665,6 +743,8 @@ def login():
 
             return response
         else:
+            # Track failed login attempt
+            track_login(username, ip_address, user_agent, False, 'manual')
             return render_template('login.html', error='Invalid username or password')
 
     return render_template('login.html')
@@ -672,7 +752,12 @@ def login():
 @app.route('/logout')
 def logout():
     """Logout user"""
+    # Update logout time if we have a login_id
+    if 'login_id' in session:
+        update_logout_time(session['login_id'])
+
     session.pop('user', None)
+    session.pop('login_id', None)
     response = make_response(redirect(url_for('login')))
     # Clear the remember me cookie
     response.set_cookie('remember_token', '', max_age=0)
@@ -1318,10 +1403,10 @@ def get_user_activity_date_range(user, start_date, end_date):
                 items_per_hour = (project_items / total_minutes) * 60
             else:
                 items_per_hour = 0
-            
-            # Get the date of first activity for this project
-            activity_date = project_row['first_activity'].split(' ')[0] if project_row['first_activity'] else start_date
-            
+
+            # Get the date of first activity for this project (use full timestamp for uniqueness per project)
+            activity_date = project_row['first_activity'] if project_row['first_activity'] else start_date
+
             activity_data.append({
                 'date': activity_date,
                 'project': project,
@@ -4673,6 +4758,204 @@ def clear_database_logs():
         logging.error(f"Error clearing logs: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# API endpoint for login history
+@app.route('/api/database/login-history', methods=['GET'])
+@login_required
+def get_login_history():
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get limit from query params (default 100)
+        limit = request.args.get('limit', 100, type=int)
+
+        # Fetch login history, newest first
+        c.execute('''
+            SELECT id, username, ip_address, user_agent, login_time,
+                   login_success, login_type, session_duration_minutes, logout_time
+            FROM login_history
+            ORDER BY login_time DESC
+            LIMIT ?
+        ''', (limit,))
+
+        logins = []
+        for row in c.fetchall():
+            logins.append({
+                'id': row[0],
+                'username': row[1],
+                'ip_address': row[2] or 'Unknown',
+                'user_agent': row[3] or 'Unknown',
+                'login_time': row[4],
+                'login_success': bool(row[5]),
+                'login_type': row[6],
+                'session_duration_minutes': row[7],
+                'logout_time': row[8]
+            })
+
+        return jsonify({
+            'success': True,
+            'logins': logins
+        })
+    except Exception as e:
+        logging.error(f"Error fetching login history: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API endpoint for production time estimates
+@app.route('/api/production-time-estimates', methods=['GET'])
+def get_production_time_estimates():
+    """Calculate production time estimates based on open/bezig projects"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get all users with their current average items/hour from recent performance
+        c.execute("""
+            WITH user_performance AS (
+                SELECT
+                    user,
+                    AVG(CASE
+                        WHEN item_count > 0 AND work_duration_minutes > 0
+                        THEN (item_count * 60.0) / work_duration_minutes
+                        ELSE NULL
+                    END) as avg_items_per_hour
+                FROM sessions
+                WHERE end_time IS NOT NULL
+                    AND work_duration_minutes > 0
+                    AND start_time > date('now', '-30 days')
+                GROUP BY user
+            )
+            SELECT * FROM user_performance
+        """)
+
+        user_performance = {row['user']: row['avg_items_per_hour'] or 0 for row in c.fetchall()}
+
+        # Get efficiency targets from config.json
+        user_targets = {}
+        try:
+            config_path = get_writable_path('config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                    efficiency_targets = config.get('efficiency_targets', {})
+                    # Convert to user: target_value mapping
+                    for user, target_value in efficiency_targets.items():
+                        if isinstance(target_value, (int, float)):
+                            user_targets[user] = float(target_value)
+                    logging.info(f"Loaded efficiency targets from config: {user_targets}")
+        except Exception as e:
+            logging.error(f"Error loading efficiency targets from config: {e}")
+            # Fallback to database if config fails
+            c.execute("""
+                SELECT user, target_items_per_hour
+                FROM work_hours_config
+                WHERE target_items_per_hour IS NOT NULL
+            """)
+            user_targets = {row['user']: row['target_items_per_hour'] for row in c.fetchall()}
+            logging.info(f"Loaded efficiency targets from database: {user_targets}")
+
+        # Get all OPEN and BEZIG projects with their item counts
+        c.execute("""
+            WITH latest_status AS (
+                SELECT
+                    user,
+                    project,
+                    MAX(timestamp) as latest_timestamp
+                FROM logs
+                WHERE status IN ('OPEN', 'BEZIG')
+                GROUP BY user, project
+            ),
+            active_projects AS (
+                SELECT
+                    l.user,
+                    l.project,
+                    l.status,
+                    l.item_count,
+                    l.timestamp
+                FROM logs l
+                INNER JOIN latest_status ls
+                    ON l.user = ls.user
+                    AND l.project = ls.project
+                    AND l.timestamp = ls.latest_timestamp
+                WHERE l.status IN ('OPEN', 'BEZIG')
+                    AND l.event != 'AFGEMELD'
+            )
+            SELECT
+                user,
+                COUNT(DISTINCT project) as project_count,
+                SUM(COALESCE(item_count, 0)) as total_items
+            FROM active_projects
+            GROUP BY user
+        """)
+
+        estimates = []
+        for row in c.fetchall():
+            user = row['user']
+            total_items = row['total_items'] or 0
+            project_count = row['project_count'] or 0
+
+            # Get user's average performance (items per hour)
+            avg_performance = user_performance.get(user, None)
+
+            # Get user's target performance
+            target_performance = user_targets.get(user, None)
+
+            # Format time strings
+            def format_hours(hours):
+                if hours is None:
+                    return "Geen data"
+                if hours == 0:
+                    return "0u"
+                h = int(hours)
+                m = int((hours - h) * 60)
+                if h > 0 and m > 0:
+                    return f"{h}u {m}m"
+                elif h > 0:
+                    return f"{h}u"
+                else:
+                    return f"{m}m"
+
+            # Calculate estimated hours only if we have performance data
+            if avg_performance and avg_performance > 0:
+                estimated_hours = total_items / avg_performance
+            else:
+                estimated_hours = None
+
+            # Calculate goal hours only if we have target data
+            if target_performance and target_performance > 0:
+                goal_hours = total_items / target_performance
+            else:
+                goal_hours = None
+
+            # Calculate efficiency ratio only if both values exist
+            if estimated_hours and goal_hours and estimated_hours > 0:
+                efficiency_ratio = round((goal_hours / estimated_hours * 100), 1)
+            else:
+                efficiency_ratio = None
+
+            estimates.append({
+                'user': user,
+                'project_count': project_count,
+                'total_items': total_items,
+                'avg_items_per_hour': round(avg_performance, 1) if avg_performance else None,
+                'target_items_per_hour': round(target_performance, 1) if target_performance else None,
+                'estimated_hours': round(estimated_hours, 2) if estimated_hours else None,
+                'goal_hours': round(goal_hours, 2) if goal_hours else None,
+                'estimated_time_str': format_hours(estimated_hours),
+                'goal_time_str': format_hours(goal_hours),
+                'efficiency_ratio': efficiency_ratio,
+                'has_performance_data': avg_performance is not None,
+                'has_target_data': target_performance is not None
+            })
+
+        return jsonify({
+            'success': True,
+            'estimates': estimates
+        })
+
+    except Exception as e:
+        logging.error(f"Error calculating production time estimates: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # --- API Endpoint to Manage Dashboard Users ---
 @app.route('/api/dashboard/users', methods=['GET', 'POST'])
 def manage_dashboard_users():
@@ -6420,19 +6703,32 @@ def sales_order_detail(so_number):
         
         so_info = c.fetchone()
         
-        # Calculate totals across all MOs (including REP)
-        all_projects = mo_projects + rep_projects
-        total_work_duration = sum(project['work_duration_minutes'] for project in all_projects)
-        total_project_duration = sum(project['project_duration_minutes'] for project in all_projects)
-        total_items = sum(project['final_items'] for project in all_projects)
-        
-        # Count unique MO numbers from the projects (excluding REP variants since they don't have MO numbers)
+        # Calculate totals for regular MOs
+        mo_work_duration = sum(project['work_duration_minutes'] for project in mo_projects)
+        mo_project_duration = sum(project['project_duration_minutes'] for project in mo_projects)
+        mo_items = sum(project['final_items'] for project in mo_projects)
+
+        # Calculate totals for reparaties
+        rep_work_duration = sum(project['work_duration_minutes'] for project in rep_projects)
+        rep_project_duration = sum(project['project_duration_minutes'] for project in rep_projects)
+        rep_items = sum(project['final_items'] for project in rep_projects)
+
+        # Count unique MO numbers from regular MOs
         unique_mo_numbers = set()
         for project in mo_projects:
             if project.get('mo_number'):
                 unique_mo_numbers.add(project['mo_number'])
         total_unique_mos = len(unique_mo_numbers)
-        
+
+        # Count reparaties
+        total_reparaties = len(rep_projects)
+
+        # Calculate overall totals (for compatibility if needed)
+        all_projects = mo_projects + rep_projects
+        total_work_duration = mo_work_duration + rep_work_duration
+        total_project_duration = mo_project_duration + rep_project_duration
+        total_items = mo_items + rep_items
+
         completion_percentage = (total_completed / len(all_projects) * 100) if all_projects else 0
         
         conn.close()
@@ -6443,12 +6739,21 @@ def sales_order_detail(so_number):
                              mo_projects=mo_projects,
                              rep_projects=rep_projects,
                              total_mos=total_unique_mos,
+                             total_reparaties=total_reparaties,
                              total_users=so_info['total_users'],
                              total_items=total_items,
                              first_activity=so_info['first_activity'],
                              last_activity=so_info['last_activity'],
                              total_work_duration=total_work_duration,
                              total_project_duration=total_project_duration,
+                             # Regular MO metrics
+                             mo_items=mo_items,
+                             mo_work_duration=mo_work_duration,
+                             mo_project_duration=mo_project_duration,
+                             # Reparaties metrics
+                             rep_items=rep_items,
+                             rep_work_duration=rep_work_duration,
+                             rep_project_duration=rep_project_duration,
                              completion_percentage=round(completion_percentage, 1),
                              total_completed=total_completed,
                              active_page='sales_orders')
@@ -6641,6 +6946,7 @@ def projects():
                 'user': current_user or 'Onbekend',
                 'status': project_status,
                 'timestamp': formatted_timestamp,
+                'raw_timestamp': latest_timestamp,  # Add raw timestamp for sorting
                 'event_count': event_count,
                 'is_rep_variant': is_rep_variant,
                 'mo_number': mo_number,
@@ -6700,34 +7006,11 @@ def projects():
             # Default to recent
             projects.sort(key=lambda x: x['timestamp'], reverse=True)
         
-        # Apply pagination
+        # No pagination - return all projects (filtering/sorting handled client-side)
         total_projects = len(projects)
-        total_pages = (total_projects + per_page - 1) // per_page
-        
-        # Ensure page is within bounds
-        page = max(1, min(page, total_pages if total_pages > 0 else 1))
-        
-        # Calculate start and end indices
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        paginated_projects = projects[start_idx:end_idx]
-        
-        # Create pagination info
-        pagination = {
-            'page': page,
-            'per_page': per_page,
-            'total': total_projects,
-            'total_pages': total_pages,
-            'has_prev': page > 1,
-            'has_next': page < total_pages,
-            'prev_num': page - 1 if page > 1 else None,
-            'next_num': page + 1 if page < total_pages else None,
-            'pages': list(range(max(1, page - 2), min(total_pages + 1, page + 3)))
-        }
-        
-        return render_template('projects.html', 
-                             projects=paginated_projects,
-                             pagination=pagination,
+
+        return render_template('projects.html',
+                             projects=projects,
                              configured_users=configured_users,
                              total_projects=total_projects_count,
                              rep_variant_projects=rep_variant_projects,
@@ -6842,6 +7125,9 @@ def user_performance(username):
         
         # Get extended activity data for the specified date range
         user_data['activity_data'] = get_user_activity_date_range(username, start_date, end_date)
+
+        # Calculate the actual database average for consistency
+        user_data['database_avg_items_per_hour'] = user_data['avg_items_per_hour']
         
         # Calculate actual number of active days (unique days with activity)
         user_data['active_days_count'] = count_active_days_in_period(username, start_date, end_date)
@@ -6879,6 +7165,16 @@ def user_performance(username):
     except Exception as e:
         logging.error(f"Failed to render user performance page: {e}", exc_info=True)
         return render_template('error.html', message='Could not load user performance data.'), 500
+
+@app.route('/time-estimation')
+@login_required
+def time_estimation_calculator():
+    """Project time estimation calculator page"""
+    try:
+        return render_template('time_estimation_calculator.html', active_page='time_estimation')
+    except Exception as e:
+        logging.error(f"Failed to render time estimation calculator: {e}", exc_info=True)
+        return render_template('error.html', message='Could not load time estimation calculator.'), 500
 
 @app.route('/statistics')
 @login_required
@@ -7834,6 +8130,479 @@ def get_predictive_analytics():
         
     except Exception as e:
         logging.error(f"Error getting predictive analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/project/estimate-time', methods=['POST'])
+def estimate_project_time():
+    """
+    Estimate project completion time based on historical data and current capacity
+
+    Request JSON:
+    {
+        "project": "P240912-002", (optional - for analyzing similar past projects)
+        "items": 150, (required - number of items to process)
+        "project_type": "NESTING_PROCESSING", (optional - filter historical data by type)
+        "assigned_users": ["NESTING", "OPUS"], (optional - estimate based on specific users)
+        "use_optimal_capacity": true/false (default: false - use current vs optimal capacity)
+        "include_idle_time": true/false (default: true - factor in historical idle time)
+        "what_if": {
+            "improved_handoff_percent": 20,  (reduce idle time by %)
+            "user_improvements": {"NESTING": 30}  (improve user items/h by %)
+        }
+    }
+
+    Response includes:
+    - Estimated hours based on historical averages
+    - Best/worst case scenarios
+    - Per-user estimates
+    - Optimal capacity vs current capacity comparison
+    - Similar historical projects analysis
+    - Idle time analysis and impact
+    - What-if scenario results
+    - Maximum capacity calculations
+    """
+    try:
+        data = request.get_json()
+        items = data.get('items')
+        project_type = data.get('project_type')
+        assigned_users = data.get('assigned_users', [])
+        use_optimal_capacity = data.get('use_optimal_capacity', False)
+        include_idle_time = data.get('include_idle_time', True)
+        what_if = data.get('what_if', {})
+        project_reference = data.get('project')
+
+        if not items or items <= 0:
+            return jsonify({'success': False, 'error': 'Valid items count is required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # 1. Get historical averages from completed projects
+        type_filter = ""
+        if project_type:
+            type_filter = f"AND s.session_type = '{project_type}'"
+
+        # Calculate historical performance from sessions
+        c.execute(f"""
+            WITH SessionPerformance AS (
+                SELECT
+                    s.user,
+                    s.session_type,
+                    s.item_count,
+                    s.work_duration_minutes,
+                    CASE
+                        WHEN s.session_type = 'SCANNER' THEN
+                            -- For SCANNER sessions, allocate time proportionally
+                            s.item_count * 1.0 / NULLIF(
+                                (SELECT SUM(s2.item_count)
+                                 FROM sessions s2
+                                 WHERE s2.user = s.user
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes)
+                                FROM sessions s3
+                                WHERE s3.user = s.user
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE
+                            s.work_duration_minutes
+                    END as allocated_minutes
+                FROM sessions s
+                WHERE s.status = 'completed'
+                AND s.item_count > 0
+                AND s.work_duration_minutes > 0
+                {type_filter}
+                AND s.start_time >= date('now', '-90 days')
+            )
+            SELECT
+                ROUND(AVG(item_count * 60.0 / NULLIF(allocated_minutes, 0)), 2) as avg_items_per_hour,
+                ROUND(AVG(allocated_minutes / NULLIF(item_count, 0)), 2) as avg_minutes_per_item,
+                COUNT(*) as sample_size,
+                SUM(item_count) as total_items_analyzed,
+                MIN(item_count * 60.0 / NULLIF(allocated_minutes, 0)) as min_items_per_hour,
+                MAX(item_count * 60.0 / NULLIF(allocated_minutes, 0)) as max_items_per_hour
+            FROM SessionPerformance
+            WHERE allocated_minutes > 0
+        """)
+
+        historical_result = c.fetchone()
+
+        if not historical_result or not historical_result[0]:
+            # No historical data - use defaults
+            avg_items_per_hour = 20.0
+            avg_minutes_per_item = 3.0
+            sample_size = 0
+            total_items_analyzed = 0
+            min_items_per_hour = 10.0
+            max_items_per_hour = 40.0
+        else:
+            avg_items_per_hour = historical_result[0]
+            avg_minutes_per_item = historical_result[1]
+            sample_size = historical_result[2]
+            total_items_analyzed = historical_result[3]
+            min_items_per_hour = historical_result[4] or avg_items_per_hour * 0.5
+            max_items_per_hour = historical_result[5] or avg_items_per_hour * 1.5
+
+        # 2. Calculate per-user performance and capacity
+        user_estimates = []
+
+        # Get efficiency targets from config
+        efficiency_targets = {}
+        try:
+            config_path = get_writable_path('config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                    efficiency_targets = config.get('efficiency_targets', {})
+        except Exception as e:
+            logging.warning(f"Could not load efficiency targets: {e}")
+
+        # Get actual performance for each user
+        user_filter = ""
+        if assigned_users:
+            placeholders = ','.join(['?' for _ in assigned_users])
+            user_filter = f"AND user IN ({placeholders})"
+
+        query = f"""
+            WITH SessionPerformance AS (
+                SELECT
+                    s.user,
+                    s.item_count,
+                    CASE
+                        WHEN s.session_type = 'SCANNER' THEN
+                            s.item_count * 1.0 / NULLIF(
+                                (SELECT SUM(s2.item_count)
+                                 FROM sessions s2
+                                 WHERE s2.user = s.user
+                                 AND s2.session_type = 'SCANNER'
+                                 AND s2.status = 'completed'
+                                 AND DATE(s2.start_time) = DATE(s.start_time)), 0
+                            ) * (
+                                SELECT SUM(s3.work_duration_minutes)
+                                FROM sessions s3
+                                WHERE s3.user = s.user
+                                AND s3.session_type = 'SCANNER'
+                                AND s3.status = 'completed'
+                                AND DATE(s3.start_time) = DATE(s.start_time)
+                            )
+                        ELSE
+                            s.work_duration_minutes
+                    END as allocated_minutes
+                FROM sessions s
+                WHERE s.status = 'completed'
+                AND s.item_count > 0
+                AND s.work_duration_minutes > 0
+                {type_filter}
+                {user_filter}
+                AND s.start_time >= date('now', '-90 days')
+            )
+            SELECT
+                user,
+                ROUND(AVG(item_count * 60.0 / NULLIF(allocated_minutes, 0)), 2) as actual_items_per_hour,
+                ROUND(AVG(allocated_minutes / NULLIF(item_count, 0)), 2) as minutes_per_item,
+                COUNT(*) as sessions_count
+            FROM SessionPerformance
+            WHERE allocated_minutes > 0
+            GROUP BY user
+            HAVING COUNT(*) >= 3
+        """
+
+        if assigned_users:
+            c.execute(query, assigned_users)
+        else:
+            c.execute(query)
+
+        for row in c.fetchall():
+            user = row[0]
+            actual_items_per_hour = row[1] or avg_items_per_hour
+            minutes_per_item = row[2] or avg_minutes_per_item
+            sessions_count = row[3]
+
+            # Get target/optimal capacity from config
+            optimal_items_per_hour = efficiency_targets.get(user, actual_items_per_hour * 1.2)
+
+            # Calculate estimates
+            if use_optimal_capacity:
+                # Estimate based on optimal capacity
+                estimated_hours = items / optimal_items_per_hour
+                capacity_utilization = (actual_items_per_hour / optimal_items_per_hour) * 100
+            else:
+                # Estimate based on current/actual capacity
+                estimated_hours = items / actual_items_per_hour
+                capacity_utilization = 100  # Using current capacity
+
+            user_estimates.append({
+                'user': user,
+                'actual_items_per_hour': round(actual_items_per_hour, 2),
+                'optimal_items_per_hour': round(optimal_items_per_hour, 2),
+                'estimated_hours': round(estimated_hours, 2),
+                'estimated_minutes': round(estimated_hours * 60, 0),
+                'capacity_utilization_percentage': round(capacity_utilization, 1),
+                'sessions_analyzed': sessions_count,
+                'minutes_per_item': round(minutes_per_item, 2)
+            })
+
+        # Sort by fastest completion time
+        user_estimates.sort(key=lambda x: x['estimated_hours'])
+
+        # 3. Global estimates
+        if use_optimal_capacity:
+            # Calculate average optimal capacity
+            if user_estimates:
+                avg_optimal_capacity = sum(u['optimal_items_per_hour'] for u in user_estimates) / len(user_estimates)
+            else:
+                avg_optimal_capacity = avg_items_per_hour * 1.2
+            global_estimated_hours = items / avg_optimal_capacity
+        else:
+            global_estimated_hours = items / avg_items_per_hour
+
+        # 4. Best/worst case scenarios
+        best_case_hours = items / max_items_per_hour
+        worst_case_hours = items / min_items_per_hour
+
+        # 5. Find similar historical projects
+        similar_projects = []
+        if project_reference:
+            # Try to find similar projects by pattern (e.g., same customer or project prefix)
+            project_prefix = project_reference.split('-')[0] if '-' in project_reference else project_reference[:8]
+
+            c.execute("""
+                SELECT
+                    ps.project,
+                    ps.total_items,
+                    ps.total_duration_minutes,
+                    ps.status,
+                    ROUND(ps.total_items * 60.0 / NULLIF(ps.total_duration_minutes, 0), 2) as items_per_hour,
+                    ps.start_time,
+                    ps.end_time
+                FROM project_sessions ps
+                WHERE ps.project LIKE ? || '%'
+                AND ps.total_items > 0
+                AND ps.status = 'completed'
+                ORDER BY ps.start_time DESC
+                LIMIT 5
+            """, (project_prefix,))
+
+            for row in c.fetchall():
+                similar_projects.append({
+                    'project': row[0],
+                    'items': row[1],
+                    'duration_hours': round(row[2] / 60.0, 2),
+                    'status': row[3],
+                    'items_per_hour': row[4] or 0,
+                    'start_time': row[5],
+                    'end_time': row[6]
+                })
+
+        # 6. Calculate multi-user parallel processing estimate
+        parallel_estimate_hours = None
+        if len(user_estimates) > 1:
+            # If multiple users work in parallel, estimate is based on combined throughput
+            combined_items_per_hour = sum(u['actual_items_per_hour'] if not use_optimal_capacity else u['optimal_items_per_hour']
+                                         for u in user_estimates)
+            parallel_estimate_hours = items / combined_items_per_hour if combined_items_per_hour > 0 else None
+
+        # 7. Calculate idle time impact (project time vs session time)
+        idle_time_analysis = {}
+        if include_idle_time:
+            # Get historical idle time percentage from project_sessions vs sessions
+            c.execute(f"""
+                WITH ProjectTime AS (
+                    SELECT
+                        SUM(ps.total_duration_minutes) as total_project_minutes,
+                        COUNT(*) as project_count
+                    FROM project_sessions ps
+                    WHERE ps.status = 'completed'
+                    AND ps.start_time >= date('now', '-90 days')
+                    {f"AND ps.project LIKE '{project_type}%'" if project_type else ''}
+                ),
+                SessionTime AS (
+                    SELECT
+                        SUM(s.work_duration_minutes) as total_session_minutes
+                    FROM sessions s
+                    WHERE s.status = 'completed'
+                    AND s.start_time >= date('now', '-90 days')
+                    {type_filter.replace('s.session_type', 'session_type') if type_filter else ''}
+                )
+                SELECT
+                    pt.total_project_minutes,
+                    st.total_session_minutes,
+                    CASE
+                        WHEN pt.total_project_minutes > 0 THEN
+                            ROUND(((pt.total_project_minutes - st.total_session_minutes) / pt.total_project_minutes) * 100, 1)
+                        ELSE 0
+                    END as idle_percentage,
+                    pt.total_project_minutes - st.total_session_minutes as idle_minutes,
+                    pt.project_count
+                FROM ProjectTime pt, SessionTime st
+            """)
+
+            idle_result = c.fetchone()
+            if idle_result and idle_result[0]:
+                total_project_minutes = idle_result[0]
+                total_session_minutes = idle_result[1]
+                idle_percentage = idle_result[2] or 0
+                idle_minutes = idle_result[3] or 0
+                project_count = idle_result[4] or 0
+
+                # Apply idle time to estimate
+                if idle_percentage > 0:
+                    idle_multiplier = 1 + (idle_percentage / 100)
+                    estimated_with_idle = global_estimated_hours * idle_multiplier
+
+                    idle_time_analysis = {
+                        'historical_idle_percentage': idle_percentage,
+                        'avg_idle_hours_per_project': round(idle_minutes / project_count / 60, 2) if project_count > 0 else 0,
+                        'estimated_idle_hours': round((estimated_with_idle - global_estimated_hours), 2),
+                        'total_time_with_idle': round(estimated_with_idle, 2),
+                        'projects_analyzed': project_count,
+                        'idle_impact': 'high' if idle_percentage > 30 else 'medium' if idle_percentage > 15 else 'low'
+                    }
+
+                    # Update global estimate to include idle time
+                    if include_idle_time:
+                        global_estimated_hours = estimated_with_idle
+
+        # 8. What-if scenario calculations
+        what_if_results = {}
+        if what_if:
+            improved_handoff_percent = what_if.get('improved_handoff_percent', 0)
+            user_improvements = what_if.get('user_improvements', {})
+
+            # Scenario: Improved handoff/idle time
+            if improved_handoff_percent > 0 and idle_time_analysis:
+                reduced_idle = idle_time_analysis.get('historical_idle_percentage', 0) * (1 - improved_handoff_percent / 100)
+                new_multiplier = 1 + (reduced_idle / 100)
+                improved_hours = (items / avg_items_per_hour) * new_multiplier
+                time_saved = global_estimated_hours - improved_hours
+
+                what_if_results['improved_handoff'] = {
+                    'reduced_idle_percentage': round(reduced_idle, 1),
+                    'estimated_hours': round(improved_hours, 2),
+                    'time_saved_hours': round(time_saved, 2),
+                    'improvement_percent': improved_handoff_percent
+                }
+
+            # Scenario: Improved user performance
+            if user_improvements:
+                improved_estimates = []
+                for user_est in user_estimates:
+                    user = user_est['user']
+                    if user in user_improvements:
+                        improvement_pct = user_improvements[user]
+                        current_rate = user_est['actual_items_per_hour']
+                        improved_rate = current_rate * (1 + improvement_pct / 100)
+                        improved_hours = items / improved_rate
+                        time_saved = user_est['estimated_hours'] - improved_hours
+
+                        improved_estimates.append({
+                            'user': user,
+                            'current_items_per_hour': round(current_rate, 2),
+                            'improved_items_per_hour': round(improved_rate, 2),
+                            'current_estimated_hours': user_est['estimated_hours'],
+                            'improved_estimated_hours': round(improved_hours, 2),
+                            'time_saved_hours': round(time_saved, 2),
+                            'improvement_percent': improvement_pct
+                        })
+
+                if improved_estimates:
+                    what_if_results['user_improvements'] = improved_estimates
+
+        # 9. Maximum production capacity calculations
+        max_capacity_analysis = {}
+        if user_estimates or avg_items_per_hour > 0:
+            # Calculate theoretical maximum based on all users at optimal capacity
+            if user_estimates:
+                max_combined_rate = sum(u['optimal_items_per_hour'] for u in user_estimates)
+            else:
+                # Use historical max if no user estimates
+                max_combined_rate = max_items_per_hour
+
+            # Maximum items per day (8 hour workday)
+            max_items_per_day = max_combined_rate * 8
+
+            # Maximum items per week (5 days)
+            max_items_per_week = max_items_per_day * 5
+
+            # Time to reach target if working at maximum
+            max_capacity_hours = items / max_combined_rate if max_combined_rate > 0 else 0
+
+            max_capacity_analysis = {
+                'max_items_per_hour': round(max_combined_rate, 2),
+                'max_items_per_day': round(max_items_per_day, 0),
+                'max_items_per_week': round(max_items_per_week, 0),
+                'hours_at_max_capacity': round(max_capacity_hours, 2),
+                'potential_improvement': round(((global_estimated_hours - max_capacity_hours) / global_estimated_hours * 100), 1) if global_estimated_hours > 0 else 0,
+                'users_at_optimal': len([u for u in user_estimates if u['capacity_utilization_percentage'] >= 100])
+            }
+
+        # 10. Reverse calculator - items needed to reach target hours
+        reverse_calculations = {}
+        if user_estimates or avg_items_per_hour > 0:
+            target_hours_options = [4, 8, 16, 40]  # 4h, 1 day, 2 days, 1 week
+
+            for target_hours in target_hours_options:
+                if use_optimal_capacity and user_estimates:
+                    avg_rate = sum(u['optimal_items_per_hour'] for u in user_estimates) / len(user_estimates)
+                else:
+                    avg_rate = avg_items_per_hour
+
+                items_for_target = target_hours * avg_rate
+
+                reverse_calculations[f'{target_hours}h'] = {
+                    'target_hours': target_hours,
+                    'items_achievable': round(items_for_target, 0),
+                    'rate_used': round(avg_rate, 2)
+                }
+
+        # 7. Build response
+        response = {
+            'success': True,
+            'input': {
+                'items': items,
+                'project_type': project_type,
+                'assigned_users': assigned_users,
+                'use_optimal_capacity': use_optimal_capacity
+            },
+            'global_estimate': {
+                'estimated_hours': round(global_estimated_hours, 2),
+                'estimated_minutes': round(global_estimated_hours * 60, 0),
+                'best_case_hours': round(best_case_hours, 2),
+                'worst_case_hours': round(worst_case_hours, 2),
+                'avg_items_per_hour': round(avg_items_per_hour, 2),
+                'avg_minutes_per_item': round(avg_minutes_per_item, 2),
+                'confidence_level': 'high' if sample_size >= 20 else 'medium' if sample_size >= 10 else 'low'
+            },
+            'user_estimates': user_estimates,
+            'parallel_processing': {
+                'enabled': len(user_estimates) > 1,
+                'estimated_hours': round(parallel_estimate_hours, 2) if parallel_estimate_hours else None,
+                'users_count': len(user_estimates)
+            },
+            'historical_analysis': {
+                'sample_size': sample_size,
+                'total_items_analyzed': total_items_analyzed,
+                'data_period': 'last 90 days',
+                'similar_projects': similar_projects
+            },
+            'capacity_analysis': {
+                'using_optimal': use_optimal_capacity,
+                'avg_capacity_utilization': round(sum(u['capacity_utilization_percentage'] for u in user_estimates) / len(user_estimates), 1) if user_estimates else 0
+            },
+            'idle_time_analysis': idle_time_analysis if idle_time_analysis else None,
+            'what_if_scenarios': what_if_results if what_if_results else None,
+            'maximum_capacity': max_capacity_analysis if max_capacity_analysis else None,
+            'reverse_calculator': reverse_calculations if reverse_calculations else None
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        logging.error(f"Error estimating project time: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Work Hours Settings API Endpoints
@@ -8856,237 +9625,189 @@ def get_quality_metrics():
 
 @app.route('/api/statistics/project-time-analysis', methods=['GET'])
 def get_project_time_analysis():
-    """Get project-level time analysis: project time vs session time vs idle time"""
+    """
+    Get project-level time analysis using v2 calculation method (work hours only).
+    This uses get_project_time_metrics_v2_internal() for accurate project time calculation
+    that respects work hours, excludes weekends/holidays, and handles batch sessions properly.
+    """
     try:
         # Get date filtering parameters
         period_type = request.args.get('period_type', 'days')
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         period = request.args.get('period', '30')
-        
-        # Build date filter
-        date_filter = ""
+
+        # Build date filter for logs table
+        logs_date_filter = ""
         params = []
-        
+
         if period_type == 'custom' and start_date and end_date:
-            date_filter = " AND ps.start_time BETWEEN ? AND ?"
+            logs_date_filter = " AND timestamp BETWEEN ? AND ?"
             params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
         elif period_type == 'all':
             pass  # No date filter
         else:
             period_int = int(period)
-            date_filter = " AND ps.start_time >= datetime('now', '-{} days')".format(period_int)
-        
+            logs_date_filter = f" AND timestamp >= datetime('now', '-{period_int} days')"
+
         conn = get_db()
         c = conn.cursor()
-        
-        # Overall time metrics
+
+        # Get all projects that have activity in the filtered period
         c.execute(f"""
-            WITH ProjectTimeMetrics AS (
-                SELECT 
-                    ps.project,
-                    ps.total_duration_minutes as project_minutes,
-                    COALESCE(SUM(CASE 
-                        WHEN s.session_type = 'SCANNER' THEN
-                            -- For SCANNER sessions, get allocated time from session_projects
-                            (SELECT SUM(
-                                CASE 
-                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
-                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
-                                    ELSE 
-                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
-                                END
-                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
-                        ELSE
-                            -- For non-SCANNER sessions, use full duration
-                            s.work_duration_minutes
-                    END), 0) as session_minutes,
-                    ps.total_duration_minutes - COALESCE(SUM(CASE 
-                        WHEN s.session_type = 'SCANNER' THEN
-                            (SELECT SUM(
-                                CASE 
-                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
-                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
-                                    ELSE 
-                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
-                                END
-                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
-                        ELSE
-                            s.work_duration_minutes
-                    END), 0) as idle_minutes,
-                    ps.status,
-                    l.is_rep_variant,
-                    ps.total_items
-                FROM project_sessions ps
-                LEFT JOIN sessions s ON (s.project = ps.project OR EXISTS (SELECT 1 FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project))
-                LEFT JOIN logs l ON l.project = ps.project AND l.event = 'OPEN'
-                WHERE 1=1 {date_filter}
-                GROUP BY ps.project, ps.total_duration_minutes, ps.status, l.is_rep_variant, ps.total_items
-            )
-            SELECT 
-                ROUND(SUM(project_minutes) / 60.0, 1) as total_project_hours,
-                ROUND(SUM(session_minutes) / 60.0, 1) as total_session_hours,
-                ROUND(SUM(idle_minutes) / 60.0, 1) as total_idle_hours,
-                ROUND((SUM(session_minutes) * 100.0 / NULLIF(SUM(project_minutes), 0)), 1) as time_efficiency
-            FROM ProjectTimeMetrics
-            WHERE project_minutes > 0
+            SELECT DISTINCT project
+            FROM logs
+            WHERE 1=1 {logs_date_filter}
+            ORDER BY project
         """, params)
-        
-        overall_metrics = c.fetchone()
-        
-        # Project-level breakdown
-        c.execute(f"""
-            WITH ProjectTimeMetrics AS (
-                SELECT 
-                    ps.project,
-                    ps.total_duration_minutes as project_minutes,
-                    COALESCE(SUM(CASE 
-                        WHEN s.session_type = 'SCANNER' THEN
-                            -- For SCANNER sessions, get allocated time from session_projects
-                            (SELECT SUM(
-                                CASE 
-                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
-                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
-                                    ELSE 
-                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
-                                END
-                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
+
+        projects = [row['project'] for row in c.fetchall()]
+
+        logging.info(f"Found {len(projects)} projects for period {period_type}")
+
+        # Calculate metrics for each project using v2 method
+        total_project_minutes = 0
+        total_session_minutes = 0
+        project_breakdown_data = []
+
+        for project in projects:
+            # Get v2 metrics for this project (work hours only)
+            v2_result = get_project_time_metrics_v2_internal(project, conn)
+
+            if not v2_result or not v2_result.get('success'):
+                logging.warning(f"Failed to get v2 metrics for project {project}")
+                continue
+
+            project_minutes = v2_result.get('total_project_minutes', 0)
+            if project_minutes <= 0:
+                continue
+
+            # Get session time for this project (already calculated correctly in sessions table)
+            # Non-SCANNER sessions
+            c.execute("""
+                SELECT COALESCE(SUM(work_duration_minutes), 0) as non_scanner_minutes
+                FROM sessions
+                WHERE project = ?
+                AND session_type != 'SCANNER'
+            """, (project,))
+            non_scanner_minutes = c.fetchone()['non_scanner_minutes'] or 0
+
+            # SCANNER sessions (proportionally allocated)
+            c.execute("""
+                SELECT COALESCE(SUM(
+                    CASE
+                        WHEN (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) > 0 THEN
+                            sp.item_count * 1.0 / (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) * s.work_duration_minutes
                         ELSE
-                            -- For non-SCANNER sessions, use full duration
-                            s.work_duration_minutes
-                    END), 0) as session_minutes,
-                    ps.total_duration_minutes - COALESCE(SUM(CASE 
-                        WHEN s.session_type = 'SCANNER' THEN
-                            (SELECT SUM(
-                                CASE 
-                                    WHEN (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) > 0 THEN
-                                        sp.item_count * 1.0 / (SELECT SUM(sp2.item_count) FROM session_projects sp2 WHERE sp2.session_id = s.session_id) * s.work_duration_minutes
-                                    ELSE 
-                                        s.work_duration_minutes / NULLIF((SELECT COUNT(*) FROM session_projects sp2 WHERE sp2.session_id = s.session_id), 0)
-                                END
-                            ) FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project)
-                        ELSE
-                            s.work_duration_minutes
-                    END), 0) as idle_minutes,
-                    ps.status,
+                            s.work_duration_minutes / (SELECT COUNT(*) FROM session_projects WHERE session_id = s.session_id)
+                    END
+                ), 0) as scanner_minutes
+                FROM session_projects sp
+                JOIN sessions s ON s.session_id = sp.session_id
+                WHERE sp.project = ?
+                AND s.session_type = 'SCANNER'
+            """, (project,))
+            scanner_minutes = c.fetchone()['scanner_minutes'] or 0
+
+            session_minutes = non_scanner_minutes + scanner_minutes
+            idle_minutes = max(project_minutes - session_minutes, 0)
+            efficiency = round((session_minutes * 100.0 / project_minutes), 1) if project_minutes > 0 else 0
+
+            # Get additional project info
+            c.execute("""
+                SELECT
                     COALESCE(l.is_rep_variant, 0) as is_rep_variant,
-                    ps.total_items,
-                    ps.start_time
-                FROM project_sessions ps
-                LEFT JOIN sessions s ON (s.project = ps.project OR EXISTS (SELECT 1 FROM session_projects sp WHERE sp.session_id = s.session_id AND sp.project = ps.project))
-                LEFT JOIN logs l ON l.project = ps.project AND l.event = 'OPEN'
-                WHERE 1=1 {date_filter}
-                GROUP BY ps.project, ps.total_duration_minutes, ps.status, l.is_rep_variant, ps.total_items, ps.start_time
-            )
-            SELECT 
-                project,
-                ROUND(project_minutes / 60.0, 1) as project_hours,
-                ROUND(session_minutes / 60.0, 1) as session_hours,
-                ROUND(idle_minutes / 60.0, 1) as idle_hours,
-                ROUND((session_minutes * 100.0 / NULLIF(project_minutes, 0)), 1) as efficiency_percentage,
-                CASE WHEN is_rep_variant = 1 THEN 'Rep' ELSE 'Normal' END as project_type,
-                status,
-                total_items,
-                DATE(start_time) as start_date
-            FROM ProjectTimeMetrics
-            WHERE project_minutes > 0
-            ORDER BY efficiency_percentage ASC
-        """, params)
-        
-        project_breakdown = c.fetchall()
-        
-        # Time efficiency trend (respects page filter)
-        c.execute(f"""
-            WITH DailyTimeMetrics AS (
-                SELECT 
-                    DATE(ps.start_time) as date,
-                    SUM(ps.total_duration_minutes) as total_project_minutes,
-                    SUM(COALESCE(s.work_duration_minutes, 0)) as total_session_minutes
-                FROM project_sessions ps
-                LEFT JOIN sessions s ON s.project = ps.project
-                WHERE 1=1 {date_filter}
-                GROUP BY DATE(ps.start_time)
-            )
-            SELECT 
-                date,
-                ROUND((total_session_minutes * 100.0 / NULLIF(total_project_minutes, 0)), 1) as efficiency_percentage
-            FROM DailyTimeMetrics
-            WHERE efficiency_percentage IS NOT NULL
-            ORDER BY date ASC
-            LIMIT 30
-        """, params)
-        
-        efficiency_trend = c.fetchall()
-        
+                    DATE(l.timestamp) as start_date,
+                    ps.status,
+                    ps.total_items
+                FROM logs l
+                LEFT JOIN project_sessions ps ON ps.project = l.project
+                WHERE l.project = ?
+                AND l.event = 'OPEN'
+                LIMIT 1
+            """, (project,))
+
+            project_info = c.fetchone()
+
+            # Add to totals
+            total_project_minutes += project_minutes
+            total_session_minutes += session_minutes
+
+            # Add to breakdown
+            project_breakdown_data.append({
+                'project': project,
+                'project_hours': round(project_minutes / 60.0, 1),
+                'session_hours': round(session_minutes / 60.0, 1),
+                'idle_hours': round(idle_minutes / 60.0, 1),
+                'efficiency_percentage': efficiency,
+                'project_type': 'Rep' if project_info and project_info['is_rep_variant'] == 1 else 'Normal',
+                'status': project_info['status'] if project_info else 'unknown',
+                'total_items': project_info['total_items'] if project_info else 0,
+                'start_date': project_info['start_date'] if project_info else None
+            })
+
+        # Calculate overall metrics
+        total_idle_minutes = max(total_project_minutes - total_session_minutes, 0)
+        overall_metrics = {
+            'total_project_hours': round(total_project_minutes / 60.0, 1),
+            'total_session_hours': round(total_session_minutes / 60.0, 1),
+            'total_idle_hours': round(total_idle_minutes / 60.0, 1),
+            'time_efficiency': round((total_session_minutes * 100.0 / total_project_minutes), 1) if total_project_minutes > 0 else 0
+        }
+
+        # Sort project breakdown by efficiency
+        project_breakdown_data.sort(key=lambda x: x['efficiency_percentage'])
+
+        # Efficiency trend - simplified for now (can be enhanced later)
+        # For now, just return empty array as this would require recalculating for each date
+        efficiency_trend = []
+
         conn.close()
-        
+
+        logging.info(f"Statistics calculated: {overall_metrics['total_project_hours']}h project time, {overall_metrics['total_session_hours']}h session time")
+
         return jsonify({
             'success': True,
-            'overall_metrics': {
-                'total_project_hours': overall_metrics['total_project_hours'] if overall_metrics else 0,
-                'total_session_hours': overall_metrics['total_session_hours'] if overall_metrics else 0,
-                'total_idle_hours': overall_metrics['total_idle_hours'] if overall_metrics else 0,
-                'time_efficiency': overall_metrics['time_efficiency'] if overall_metrics else 0
-            },
-            'project_breakdown': [
-                {
-                    'project': row['project'],
-                    'project_hours': row['project_hours'],
-                    'session_hours': row['session_hours'],
-                    'idle_hours': row['idle_hours'],
-                    'efficiency_percentage': row['efficiency_percentage'],
-                    'project_type': row['project_type'],
-                    'status': row['status'],
-                    'total_items': row['total_items'],
-                    'start_date': row['start_date']
-                } for row in project_breakdown
-            ],
-            'efficiency_trend': [
-                {
-                    'date': row['date'],
-                    'efficiency_percentage': row['efficiency_percentage']
-                } for row in efficiency_trend
-            ]
+            'calculation_method': 'v2 (work hours only)',
+            'overall_metrics': overall_metrics,
+            'project_breakdown': project_breakdown_data,
+            'efficiency_trend': efficiency_trend
         })
-        
+
     except Exception as e:
-        logging.error(f"Error getting project time analysis: {e}")
+        logging.error(f"Error getting project time analysis: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/statistics/quality-control', methods=['GET'])
 def get_quality_control():
-    """Get project-level quality control metrics focused on rep_variant analysis"""
+    """
+    Get rep/rework project metrics using v2 calculation (work hours only).
+    Focuses exclusively on rep_variant projects: count, items, work time, and project time.
+    """
     try:
         # Get date filtering parameters
         period_type = request.args.get('period_type', 'days')
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         period = request.args.get('period', '30')
-        
-        # Build date filter - separate params for each query
-        date_filter = ""
-        date_filter_with_alias = ""  # For queries using 'l' alias
-        params1 = []  # For first query (no alias)
-        params2 = []  # For second query (with 'l' alias)
-        params3 = []  # For third query (with 'l' alias)
-        
+
+        # Build date filter for logs table
+        logs_date_filter = ""
+        params = []
+
         if period_type == 'custom' and start_date and end_date:
-            date_filter = " AND timestamp BETWEEN ? AND ?"
-            date_filter_with_alias = " AND l.timestamp BETWEEN ? AND ?"
-            params1.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
-            params2.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
-            params3.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
+            logs_date_filter = " AND timestamp BETWEEN ? AND ?"
+            params.extend([start_date + ' 00:00:00', end_date + ' 23:59:59'])
         elif period_type == 'all':
             pass  # No date filter
         else:
             period_int = int(period)
-            date_filter = " AND timestamp >= datetime('now', '-{} days')".format(period_int)
-            date_filter_with_alias = " AND l.timestamp >= datetime('now', '-{} days')".format(period_int)
-        
+            logs_date_filter = f" AND timestamp >= datetime('now', '-{period_int} days')"
+
         conn = get_db()
         c = conn.cursor()
-        
-        # Check if is_rep_variant column exists, if not initialize the database
+
+        # Check if is_rep_variant column exists
         try:
             c.execute("PRAGMA table_info(logs)")
             columns = [column[1] for column in c.fetchall()]
@@ -9096,140 +9817,242 @@ def get_quality_control():
                 conn.commit()
         except Exception as e:
             logging.error(f"Error checking/adding is_rep_variant column: {e}")
-        
-        # Overall quality metrics
-        # A project is considered REP if ANY of its log entries have is_rep_variant = 1
-        try:
-            logging.info(f"Executing first query with date_filter='{date_filter}' and params1={params1}")
-            c.execute(f"""
-                WITH ProjectClassification AS (
-                    SELECT 
-                        project,
-                        MAX(is_rep_variant) as is_rep  -- MAX returns 1 if any entry is 1, else 0 or NULL
-                    FROM logs
-                    WHERE event IN ('OPEN', 'AFGEMELD') {date_filter}
-                    GROUP BY project
-                )
-                SELECT 
-                    COUNT(*) as total_projects,
-                    COUNT(CASE WHEN is_rep = 1 THEN 1 END) as rep_projects,
-                    COUNT(CASE WHEN is_rep = 0 OR is_rep IS NULL THEN 1 END) as normal_projects,
-                    ROUND((COUNT(CASE WHEN is_rep = 1 THEN 1 END) * 100.0 / 
-                           NULLIF(COUNT(*), 0)), 2) as rep_percentage
-                FROM ProjectClassification
-            """, params1)
-            
-            overall_metrics = c.fetchone()
-            logging.info(f"First query successful, result: {overall_metrics}")
-        except Exception as e:
-            logging.error(f"Error in first query: {e}")
-            raise
-        
-        # Rep projects detailed breakdown
-        try:
-            logging.info(f"Executing second query with date_filter_with_alias='{date_filter_with_alias}' and params2={params2}")
-            c.execute(f"""
-            WITH RepProjectDetails AS (
-                SELECT 
-                    l.project,
-                    MAX(l.is_rep_variant) as is_rep_variant,
-                    MIN(CASE WHEN l.event = 'OPEN' THEN l.timestamp END) as start_time,
-                    MAX(CASE WHEN l.event = 'AFGEMELD' THEN l.timestamp END) as completion_time,
-                    MAX(l.item_count) as items,
-                    l.user as last_user,
-                    ps.status
-                FROM logs l
-                LEFT JOIN project_sessions ps ON ps.project = l.project
-                WHERE l.event IN ('OPEN', 'AFGEMELD') {date_filter_with_alias}
-                GROUP BY l.project, l.user, ps.status
-                HAVING MAX(l.is_rep_variant) = 1
-            )
-            SELECT 
-                project,
-                CASE WHEN is_rep_variant = 1 THEN 'Reparatie' ELSE 'Normaal' END as project_type,
-                DATE(start_time) as start_date,
-                CASE 
-                    WHEN completion_time IS NOT NULL AND start_time IS NOT NULL THEN
-                        ROUND((julianday(completion_time) - julianday(start_time)) * 24, 2)
-                    ELSE NULL
-                END as completion_hours,
-                COALESCE(items, 0) as items,
-                CASE 
-                    WHEN project LIKE '%damaged%' THEN 'Beschadiging'
-                    WHEN project LIKE '%wrong%' THEN 'Verkeerde afmeting'
-                    WHEN project LIKE '%quality%' THEN 'Kwaliteitsissue'
-                    ELSE 'Onbekend'
-                END as repair_cause,
-                COALESCE(status, 'unknown') as status
-            FROM RepProjectDetails
-            ORDER BY start_date DESC
-            """, params2)
-            
-            rep_projects = c.fetchall()
-            logging.info(f"Second query successful, found {len(rep_projects)} rep projects")
-        except Exception as e:
-            logging.error(f"Error in second query: {e}")
-            raise
-        
-        # Quality trend over time (last 30 days)
-        try:
-            logging.info(f"Executing third query with date_filter_with_alias='{date_filter_with_alias}' and params3={params3}")
-            c.execute(f"""
-            SELECT 
-                DATE(l.timestamp) as date,
-                COUNT(DISTINCT l.project) as total_projects,
-                COUNT(DISTINCT CASE WHEN l.is_rep_variant = 1 THEN l.project END) as rep_projects,
-                ROUND((COUNT(DISTINCT CASE WHEN l.is_rep_variant = 1 THEN l.project END) * 100.0 / 
-                       NULLIF(COUNT(DISTINCT l.project), 0)), 2) as rep_percentage
+
+        # Get all rep projects in the filtered period
+        c.execute(f"""
+            SELECT DISTINCT l.project
             FROM logs l
-            WHERE l.event = 'OPEN' {date_filter_with_alias}
-            AND l.timestamp >= datetime('now', '-30 days')
-            GROUP BY DATE(l.timestamp)
-            ORDER BY date DESC
-            LIMIT 30
-            """, params3)
-            
-            quality_trend = c.fetchall()
-            logging.info(f"Third query successful, found {len(quality_trend)} trend points")
-        except Exception as e:
-            logging.error(f"Error in third query: {e}")
-            raise
-        
+            WHERE l.is_rep_variant = 1
+            {logs_date_filter}
+            ORDER BY l.project
+        """, params)
+
+        rep_projects_list = [row['project'] for row in c.fetchall()]
+
+        logging.info(f"Found {len(rep_projects_list)} rep projects for period {period_type}")
+
+        # Calculate metrics for each rep project using v2 method
+        total_rep_project_minutes = 0
+        total_rep_session_minutes = 0
+        total_rep_items = 0
+        rep_project_details = []
+
+        for project in rep_projects_list:
+            # Get v2 metrics for this rep project (work hours only)
+            v2_result = get_project_time_metrics_v2_internal(project, conn)
+
+            if not v2_result or not v2_result.get('success'):
+                logging.warning(f"Failed to get v2 metrics for rep project {project}")
+                continue
+
+            project_minutes = v2_result.get('total_project_minutes', 0)
+            if project_minutes <= 0:
+                continue
+
+            # Get session time for this rep project
+            # Non-SCANNER sessions
+            c.execute("""
+                SELECT COALESCE(SUM(work_duration_minutes), 0) as non_scanner_minutes
+                FROM sessions
+                WHERE project = ?
+                AND session_type != 'SCANNER'
+            """, (project,))
+            non_scanner_minutes = c.fetchone()['non_scanner_minutes'] or 0
+
+            # SCANNER sessions (proportionally allocated)
+            c.execute("""
+                SELECT COALESCE(SUM(
+                    CASE
+                        WHEN (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) > 0 THEN
+                            sp.item_count * 1.0 / (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) * s.work_duration_minutes
+                        ELSE
+                            s.work_duration_minutes / (SELECT COUNT(*) FROM session_projects WHERE session_id = s.session_id)
+                    END
+                ), 0) as scanner_minutes
+                FROM session_projects sp
+                JOIN sessions s ON s.session_id = sp.session_id
+                WHERE sp.project = ?
+                AND s.session_type = 'SCANNER'
+            """, (project,))
+            scanner_minutes = c.fetchone()['scanner_minutes'] or 0
+
+            session_minutes = non_scanner_minutes + scanner_minutes
+
+            # Get item count and status
+            c.execute("""
+                SELECT
+                    ps.status,
+                    ps.total_items
+                FROM project_sessions ps
+                WHERE ps.project = ?
+                LIMIT 1
+            """, (project,))
+
+            project_info = c.fetchone()
+            items = project_info['total_items'] if project_info else 0
+            status = project_info['status'] if project_info else 'unknown'
+
+            # Add to totals
+            total_rep_project_minutes += project_minutes
+            total_rep_session_minutes += session_minutes
+            total_rep_items += items or 0
+
+            # Add to details list
+            rep_project_details.append({
+                'project': project,
+                'project_hours': round(project_minutes / 60.0, 1),
+                'work_hours': round(session_minutes / 60.0, 1),
+                'items': items or 0,
+                'status': status
+            })
+
+        # Sort by project time (most time first)
+        rep_project_details.sort(key=lambda x: x['project_hours'], reverse=True)
+
+        # Overall metrics for rep projects only
+        overall_metrics = {
+            'total_rep_projects': len(rep_projects_list),
+            'total_rep_items': total_rep_items,
+            'total_rep_project_hours': round(total_rep_project_minutes / 60.0, 1),
+            'total_rep_work_hours': round(total_rep_session_minutes / 60.0, 1),
+            'average_hours_per_rep_project': round((total_rep_project_minutes / 60.0) / len(rep_projects_list), 1) if len(rep_projects_list) > 0 else 0,
+            'average_items_per_rep_project': round(total_rep_items / len(rep_projects_list), 1) if len(rep_projects_list) > 0 else 0
+        }
+
         conn.close()
-        
+
+        logging.info(f"Rep projects calculated: {len(rep_projects_list)} projects, {total_rep_items} items, {overall_metrics['total_rep_project_hours']}h project time")
+
         return jsonify({
             'success': True,
-            'overall_metrics': {
-                'total_projects': overall_metrics['total_projects'] if overall_metrics else 0,
-                'rep_projects': overall_metrics['rep_projects'] if overall_metrics else 0,
-                'normal_projects': overall_metrics['normal_projects'] if overall_metrics else 0,
-                'rep_percentage': overall_metrics['rep_percentage'] if overall_metrics else 0,
-                'quality_score': round(100 - ((overall_metrics['rep_percentage'] or 0) if overall_metrics else 0), 2)
-            },
-            'rep_projects': [
-                {
-                    'project': row['project'],
-                    'project_type': row['project_type'],
-                    'start_date': row['start_date'],
-                    'completion_hours': row['completion_hours'],
-                    'items': row['items'],
-                    'repair_cause': row['repair_cause'],
-                    'status': row['status']
-                } for row in rep_projects
-            ],
-            'quality_trend': [
-                {
-                    'date': row['date'],
-                    'total_projects': row['total_projects'],
-                    'rep_projects': row['rep_projects'],
-                    'rep_percentage': row['rep_percentage'],
-                    'quality_score': round(100 - (row['rep_percentage'] or 0), 2)
-                } for row in quality_trend
-            ]
+            'calculation_method': 'v2 (work hours only)',
+            'overall_metrics': overall_metrics,
+            'rep_projects': rep_project_details
         })
-        
+
     except Exception as e:
         logging.error(f"Error getting quality control metrics: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/statistics/project-completion-analysis', methods=['GET'])
+def get_project_completion_analysis():
+    """
+    Get historical project completion data for estimation.
+    Returns items vs time data for both total project time and active work time.
+    Used to create scatter plots and calculate average time per item.
+    """
+    try:
+        # Get period parameters
+        period = request.args.get('period', '90')  # Default 90 days for better sample
+        period_type = request.args.get('period_type', 'days')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Build date filter based on period type
+        date_filter = ""
+        if period_type == 'custom' and start_date and end_date:
+            date_filter = f"AND DATE(ps.start_time) BETWEEN '{start_date}' AND '{end_date}'"
+        elif period_type == 'all':
+            date_filter = ""
+        else:
+            period_days = int(period) if period else 90
+            date_filter = f"AND ps.start_time >= date('now', '-{period_days} days')"
+
+        # Get completed projects with their items, total time, and work time
+        c.execute(f"""
+            WITH ProjectTotalTime AS (
+                SELECT
+                    ps.project,
+                    ps.total_items as items,
+                    ps.total_duration_minutes as total_minutes,
+                    ROUND(ps.total_duration_minutes / 60.0, 2) as total_hours
+                FROM project_sessions ps
+                WHERE ps.status = 'completed'
+                AND ps.total_items > 0
+                AND ps.total_duration_minutes > 0
+                {date_filter}
+            ),
+            ProjectWorkTime AS (
+                SELECT
+                    s.project,
+                    SUM(s.work_duration_minutes) as work_minutes,
+                    ROUND(SUM(s.work_duration_minutes) / 60.0, 2) as work_hours
+                FROM sessions s
+                WHERE s.status = 'completed'
+                AND s.project IS NOT NULL
+                AND s.work_duration_minutes > 0
+                GROUP BY s.project
+            )
+            SELECT
+                pt.project,
+                pt.items,
+                pt.total_minutes,
+                pt.total_hours,
+                COALESCE(pw.work_minutes, 0) as work_minutes,
+                COALESCE(pw.work_hours, 0) as work_hours
+            FROM ProjectTotalTime pt
+            LEFT JOIN ProjectWorkTime pw ON pt.project = pw.project
+            WHERE pt.items > 0
+            ORDER BY pt.items ASC
+        """)
+
+        projects = []
+        total_sum = 0
+        work_sum = 0
+        items_sum = 0
+
+        for row in c.fetchall():
+            project_data = {
+                'project': row[0],
+                'items': row[1],
+                'total_minutes': row[2],
+                'total_hours': row[3],
+                'work_minutes': row[4],
+                'work_hours': row[5]
+            }
+            projects.append(project_data)
+
+            total_sum += row[2]
+            work_sum += row[4]
+            items_sum += row[1]
+
+        # Calculate averages
+        project_count = len(projects)
+
+        if project_count > 0 and items_sum > 0:
+            avg_total_min_per_item = total_sum / items_sum
+            avg_work_min_per_item = work_sum / items_sum
+            idle_percentage = ((total_sum - work_sum) / total_sum * 100) if total_sum > 0 else 0
+
+            # Find best case (minimum time per item from all projects)
+            best_time_per_item = min(p['total_minutes'] / p['items'] for p in projects) if projects else avg_total_min_per_item
+        else:
+            avg_total_min_per_item = 0
+            avg_work_min_per_item = 0
+            idle_percentage = 0
+            best_time_per_item = 0
+
+        averages = {
+            'total_minutes_per_item': round(avg_total_min_per_item, 2),
+            'work_minutes_per_item': round(avg_work_min_per_item, 2),
+            'idle_percentage': round(idle_percentage, 1),
+            'best_minutes_per_item': round(best_time_per_item, 2)
+        }
+
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'projects': projects,
+            'averages': averages,
+            'project_count': project_count
+        })
+
+    except Exception as e:
+        logging.error(f"Error getting project completion analysis: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def create_efficiency_tables():

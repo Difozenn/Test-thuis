@@ -667,9 +667,9 @@ class AdminPanel(tk.Frame):
     # --- End of Backup Tab Methods ---
     
     def _create_excel_output_tab(self, tab):
-        """Create Excel output directories configuration tab"""
-        # Get current config
-        config = get_config()
+        """Create Excel output directories configuration tab - loads from database"""
+        # Load settings from database via API
+        settings = self._load_settings_from_api()
 
         # --- Excel Output Settings Frame ---
         settings_frame = ttk.LabelFrame(tab, text="Excel Output Directory Configuratie")
@@ -679,7 +679,7 @@ class AdminPanel(tk.Frame):
         # Info label
         info_label = ttk.Label(
             settings_frame,
-            text="Configureer de output directories voor alle gebruikers die Excel bestanden genereren.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.",
+            text="Configureer de output directories voor alle gebruikers die Excel bestanden genereren.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.\n\n⚠️ Deze instellingen worden opgeslagen in de database en worden automatisch gebackupt.",
             wraplength=500
         )
         info_label.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 15), sticky='w')
@@ -695,9 +695,10 @@ class AdminPanel(tk.Frame):
         for idx, user in enumerate(excel_users, start=1):
             ttk.Label(settings_frame, text=f"{user} Output Directory:").grid(row=idx, column=0, padx=5, pady=5, sticky='w')
 
-            # Get default path based on user type
+            # Get path from database settings or use default
             default_dir = f'C:/{user}' if os.name == 'nt' else f'/tmp/{user}'
-            self.excel_output_vars[user] = tk.StringVar(value=config.get(f'{user.lower()}_output_dir', default_dir))
+            key = f'{user.lower()}_output_dir'
+            self.excel_output_vars[user] = tk.StringVar(value=settings.get(key, default_dir))
             self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
             self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
 
@@ -723,16 +724,47 @@ class AdminPanel(tk.Frame):
         self._update_excel_output_status()
     
     def _browse_output_dir(self, user_type, path_var):
-        """Browse for output directory for ACCURA/BOERE Excel files"""
+        """Browse for output directory for Excel files - saves to database"""
         directory = filedialog.askdirectory(title=f"Select Output Directory for {user_type}")
         if directory:
             path_var.set(directory)
-            # Save to config
+            # Save to database via API
             config_key = f'{user_type.lower()}_output_dir'
-            save_config({config_key: directory})
-            self.log_to_queue(f"Output directory voor {user_type} ingesteld: {directory}")
+            if self._save_settings_to_api({config_key: directory}):
+                self.log_to_queue(f"Output directory voor {user_type} opgeslagen in database: {directory}")
+            else:
+                # Fallback to config file if API fails
+                save_config({config_key: directory})
+                self.log_to_queue(f"Output directory voor {user_type} opgeslagen in config (API niet beschikbaar): {directory}")
             # Update status
             self._update_excel_output_status()
+
+    def _load_settings_from_api(self):
+        """Load settings from database via API"""
+        try:
+            base_url = self.api_url.split('/log')[0]
+            response = requests.get(f"{base_url}/api/settings", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    return data.get('settings', {})
+        except Exception as e:
+            self.log_to_queue(f"Kon instellingen niet laden van database: {e}")
+
+        # Fallback to config file
+        return get_config()
+
+    def _save_settings_to_api(self, settings_dict):
+        """Save settings to database via API"""
+        try:
+            base_url = self.api_url.split('/log')[0]
+            response = requests.post(f"{base_url}/api/settings", json=settings_dict, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('success', False)
+        except Exception as e:
+            self.log_to_queue(f"Kon instellingen niet opslaan in database: {e}")
+        return False
     
     def _update_excel_output_status(self):
         """Update the status labels for Excel output directories"""
@@ -783,9 +815,9 @@ class AdminPanel(tk.Frame):
     
     # --- User Configuration Tab Methods ---
     def _create_user_config_tab(self, tab):
-        """Create user configuration tab for managing user paths and processing types"""
-        # Get current config
-        config = get_config()
+        """Create user configuration tab for managing user paths and processing types - loads from database"""
+        # Load settings from database via API
+        config = self._load_settings_from_api()
         
         # Main container with scrollbar
         canvas = tk.Canvas(tab, bg="#f0f0f0")
@@ -807,7 +839,7 @@ class AdminPanel(tk.Frame):
         # Info label
         info_label = ttk.Label(
             settings_frame,
-            text="Configureer gebruikers en hun Excel import paden.\nElke gebruiker kan een eigen pad hebben waar Excel bestanden automatisch worden geïmporteerd.",
+            text="Configureer gebruikers en hun Excel import paden.\nElke gebruiker kan een eigen pad hebben waar Excel bestanden automatisch worden geïmporteerd.\n\n⚠️ Deze instellingen worden opgeslagen in de database en worden automatisch gebackupt.",
             wraplength=600
         )
         info_label.pack(padx=5, pady=(5, 15))
@@ -946,55 +978,74 @@ class AdminPanel(tk.Frame):
             remove_btn.pack(side='left', padx=5)
     
     def _browse_user_path(self, username, path_var):
-        """Browse for user import path"""
+        """Browse for user import path - saves to database"""
         directory = filedialog.askdirectory(title=f"Selecteer Import Directory voor {username}")
         if directory:
             path_var.set(directory)
-            config_data = get_config()
+            config_data = self._load_settings_from_api()
             user_paths = config_data.get('scanner_panel_open_event_user_paths', {})
             user_paths[username] = directory
-            save_config({'scanner_panel_open_event_user_paths': user_paths})
-            self.scanner_panel_open_event_user_paths = user_paths
-            self.log_to_queue(f"Import pad ingesteld voor {username}: {directory}")
+
+            if self._save_settings_to_api({'scanner_panel_open_event_user_paths': user_paths}):
+                self.scanner_panel_open_event_user_paths = user_paths
+                self.log_to_queue(f"Import pad voor {username} opgeslagen in database: {directory}")
+            else:
+                # Fallback to config file
+                save_config({'scanner_panel_open_event_user_paths': user_paths})
+                self.scanner_panel_open_event_user_paths = user_paths
+                self.log_to_queue(f"Import pad voor {username} opgeslagen in config (API niet beschikbaar): {directory}")
     
     def _save_user_logic_active(self, username, is_active):
-        """Save user active state"""
-        config_data = get_config()
+        """Save user active state - saves to database"""
+        config_data = self._load_settings_from_api()
         user_logic_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
         user_logic_states[username] = is_active
-        save_config({'scanner_panel_open_event_user_logic_active': user_logic_states})
-        self.scanner_panel_open_event_user_logic_active = user_logic_states
-        status = "geactiveerd" if is_active else "gedeactiveerd"
-        self.log_to_queue(f"Automatische import {status} voor {username}")
+
+        if self._save_settings_to_api({'scanner_panel_open_event_user_logic_active': user_logic_states}):
+            self.scanner_panel_open_event_user_logic_active = user_logic_states
+            status = "geactiveerd" if is_active else "gedeactiveerd"
+            self.log_to_queue(f"Automatische import {status} voor {username} (opgeslagen in database)")
+        else:
+            # Fallback to config file
+            save_config({'scanner_panel_open_event_user_logic_active': user_logic_states})
+            self.scanner_panel_open_event_user_logic_active = user_logic_states
+            status = "geactiveerd" if is_active else "gedeactiveerd"
+            self.log_to_queue(f"Automatische import {status} voor {username} (opgeslagen in config)")
     
     def _move_user_up(self, username):
-        """Move user up in the order"""
-        config = get_config()
+        """Move user up in the order - saves to database"""
+        config = self._load_settings_from_api()
         users = config.get('scanner_panel_open_event_users', [])
-        
+
         if username not in users:
             return
-            
+
         current_index = users.index(username)
         if current_index > 0:
             users[current_index], users[current_index - 1] = users[current_index - 1], users[current_index]
-            save_config({'scanner_panel_open_event_users': users})
-            self.log_to_queue(f"Gebruiker '{username}' omhoog verplaatst")
+            if self._save_settings_to_api({'scanner_panel_open_event_users': users}):
+                self.log_to_queue(f"Gebruiker '{username}' omhoog verplaatst (opgeslagen in database)")
+            else:
+                save_config({'scanner_panel_open_event_users': users})
+                self.log_to_queue(f"Gebruiker '{username}' omhoog verplaatst (opgeslagen in config)")
             self._build_user_list_ui()
     
     def _move_user_down(self, username):
-        """Move user down in the order"""
-        config = get_config()
+        """Move user down in the order - saves to database"""
+        config = self._load_settings_from_api()
         users = config.get('scanner_panel_open_event_users', [])
-        
+
         if username not in users:
             return
-            
+
         current_index = users.index(username)
         if current_index < len(users) - 1:
             users[current_index], users[current_index + 1] = users[current_index + 1], users[current_index]
-            save_config({'scanner_panel_open_event_users': users})
-            self.log_to_queue(f"Gebruiker '{username}' omlaag verplaatst")
+            if self._save_settings_to_api({'scanner_panel_open_event_users': users}):
+                self.log_to_queue(f"Gebruiker '{username}' omlaag verplaatst (opgeslagen in database)")
+            else:
+                save_config({'scanner_panel_open_event_users': users})
+                self.log_to_queue(f"Gebruiker '{username}' omlaag verplaatst (opgeslagen in config)")
             self._build_user_list_ui()
     
     def _add_user_config(self):
@@ -1006,30 +1057,39 @@ class AdminPanel(tk.Frame):
             messagebox.showwarning("Invoer Fout", "Voer een gebruikersnaam in.")
             return
         
-        config = get_config()
+        config = self._load_settings_from_api()
         users = config.get('scanner_panel_open_event_users', [])
-        
+
         if username in users:
             messagebox.showwarning("Dubbele Gebruiker", f"Gebruiker '{username}' bestaat al.")
             return
-        
+
         # Add user to list
         users.append(username)
-        save_config({'scanner_panel_open_event_users': users})
-        
+
         # Save processing type
         type_map = config.get('scanner_user_to_processing_type_map', {})
         type_map[username] = processing_type
-        save_config({'scanner_user_to_processing_type_map': type_map})
         self.scanner_user_to_processing_type_map = type_map
-        
+
         # Set active by default
         logic_states = config.get('scanner_panel_open_event_user_logic_active', {})
         logic_states[username] = True
-        save_config({'scanner_panel_open_event_user_logic_active': logic_states})
         self.scanner_panel_open_event_user_logic_active = logic_states
-        
-        self.log_to_queue(f"Gebruiker '{username}' toegevoegd met type '{processing_type}'")
+
+        # Save all settings to database
+        settings_to_save = {
+            'scanner_panel_open_event_users': users,
+            'scanner_user_to_processing_type_map': type_map,
+            'scanner_panel_open_event_user_logic_active': logic_states
+        }
+
+        if self._save_settings_to_api(settings_to_save):
+            self.log_to_queue(f"Gebruiker '{username}' toegevoegd met type '{processing_type}' (opgeslagen in database)")
+        else:
+            # Fallback to config file
+            save_config(settings_to_save)
+            self.log_to_queue(f"Gebruiker '{username}' toegevoegd met type '{processing_type}' (opgeslagen in config)")
         
         # Clear entry fields
         self.new_username_entry.delete(0, tk.END)
@@ -1045,36 +1105,45 @@ class AdminPanel(tk.Frame):
                                    f"Weet u zeker dat u gebruiker '{username}' en alle configuratie wilt verwijderen?"):
             return
         
-        config = get_config()
-        
+        config = self._load_settings_from_api()
+
         # Remove from users list
         users = config.get('scanner_panel_open_event_users', [])
         if username in users:
             users.remove(username)
-            save_config({'scanner_panel_open_event_users': users})
-        
+
         # Remove from paths
         paths = config.get('scanner_panel_open_event_user_paths', {})
         if username in paths:
             del paths[username]
-            save_config({'scanner_panel_open_event_user_paths': paths})
             self.scanner_panel_open_event_user_paths = paths
-        
+
         # Remove from logic states
         logic_states = config.get('scanner_panel_open_event_user_logic_active', {})
         if username in logic_states:
             del logic_states[username]
-            save_config({'scanner_panel_open_event_user_logic_active': logic_states})
             self.scanner_panel_open_event_user_logic_active = logic_states
-        
+
         # Remove from processing type map
         type_map = config.get('scanner_user_to_processing_type_map', {})
         if username in type_map:
             del type_map[username]
-            save_config({'scanner_user_to_processing_type_map': type_map})
             self.scanner_user_to_processing_type_map = type_map
-        
-        self.log_to_queue(f"Gebruiker '{username}' verwijderd")
+
+        # Save all settings to database
+        settings_to_save = {
+            'scanner_panel_open_event_users': users,
+            'scanner_panel_open_event_user_paths': paths,
+            'scanner_panel_open_event_user_logic_active': logic_states,
+            'scanner_user_to_processing_type_map': type_map
+        }
+
+        if self._save_settings_to_api(settings_to_save):
+            self.log_to_queue(f"Gebruiker '{username}' verwijderd (opgeslagen in database)")
+        else:
+            # Fallback to config file
+            save_config(settings_to_save)
+            self.log_to_queue(f"Gebruiker '{username}' verwijderd (opgeslagen in config)")
         self._build_user_list_ui()
     # --- End of User Configuration Tab Methods ---
 

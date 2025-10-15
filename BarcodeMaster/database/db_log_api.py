@@ -498,7 +498,21 @@ def init_db():
                 UNIQUE(user, project, start_time)
             )
         ''')
-        
+
+        # Create app_settings table for storing application configuration in database
+        # This allows settings to be backed up with the database instead of config files
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                setting_key TEXT NOT NULL UNIQUE,
+                setting_value TEXT,
+                setting_type TEXT DEFAULT 'string',
+                description TEXT,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_by TEXT
+            )
+        ''')
+
         # Check and add session_type column to sessions table if it doesn't exist
         c.execute("PRAGMA table_info(sessions)")
         sessions_columns = [column[1] for column in c.fetchall()]
@@ -593,7 +607,72 @@ def init_db():
         c.execute('CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status)')
         c.execute('CREATE INDEX IF NOT EXISTS idx_project_sessions_project ON project_sessions(project)')
-        
+
+        # Migrate settings from config.json to database (one-time migration)
+        # This runs automatically when updating from older versions
+        try:
+            from config_utils import get_config
+            config = get_config()
+
+            # Check if migration has already been done
+            c.execute("SELECT COUNT(*) FROM app_settings WHERE setting_key = 'migration_completed'")
+            migration_done = c.fetchone()[0] > 0
+
+            if not migration_done and config:
+                logging.info("Migrating settings from config.json to database...")
+
+                # Migrate Excel output directories
+                excel_users = ['accura', 'boere', 'massief', 'handwerk']
+                for user in excel_users:
+                    key = f'{user}_output_dir'
+                    if key in config:
+                        c.execute("""
+                            INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description)
+                            VALUES (?, ?, 'string', ?)
+                        """, (key, config[key], f'Excel output directory for {user.upper()}'))
+                        logging.info(f"Migrated {key} to database")
+
+                # Migrate user configuration settings
+                if 'scanner_panel_open_event_users' in config:
+                    import json
+                    c.execute("""
+                        INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description)
+                        VALUES ('scanner_panel_open_event_users', ?, 'json', 'List of configured users')
+                    """, (json.dumps(config['scanner_panel_open_event_users']),))
+                    logging.info("Migrated scanner_panel_open_event_users to database")
+
+                if 'scanner_panel_open_event_user_paths' in config:
+                    c.execute("""
+                        INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description)
+                        VALUES ('scanner_panel_open_event_user_paths', ?, 'json', 'User-specific import paths')
+                    """, (json.dumps(config['scanner_panel_open_event_user_paths']),))
+                    logging.info("Migrated scanner_panel_open_event_user_paths to database")
+
+                if 'scanner_panel_open_event_user_logic_active' in config:
+                    c.execute("""
+                        INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description)
+                        VALUES ('scanner_panel_open_event_user_logic_active', ?, 'json', 'User active states')
+                    """, (json.dumps(config['scanner_panel_open_event_user_logic_active']),))
+                    logging.info("Migrated scanner_panel_open_event_user_logic_active to database")
+
+                if 'scanner_user_to_processing_type_map' in config:
+                    c.execute("""
+                        INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description)
+                        VALUES ('scanner_user_to_processing_type_map', ?, 'json', 'User to processing type mapping')
+                    """, (json.dumps(config['scanner_user_to_processing_type_map']),))
+                    logging.info("Migrated scanner_user_to_processing_type_map to database")
+
+                # Mark migration as complete
+                c.execute("""
+                    INSERT INTO app_settings (setting_key, setting_value, setting_type, description)
+                    VALUES ('migration_completed', 'true', 'boolean', 'Config to database migration completed')
+                """)
+
+                logging.info("Settings migration to database completed successfully")
+        except Exception as e:
+            logging.warning(f"Settings migration encountered an issue (non-fatal): {e}")
+            # Don't fail initialization if migration has issues
+
         conn.commit()
         logging.info("Database initialization complete.")
     except Exception as e:
@@ -4005,6 +4084,84 @@ def clear_all_logs():
     except sqlite3.Error as e:
         logging.error(f"Database error on /clear_logs: {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Database operation failed to clear logs.'}), 500
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    """Get all application settings from database"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT setting_key, setting_value, setting_type, description
+            FROM app_settings
+            WHERE setting_key != 'migration_completed'
+            ORDER BY setting_key
+        """)
+
+        settings = {}
+        for row in c.fetchall():
+            key = row['setting_key']
+            value = row['setting_value']
+            setting_type = row['setting_type']
+
+            # Parse JSON values back to objects
+            if setting_type == 'json':
+                import json
+                try:
+                    settings[key] = json.loads(value)
+                except:
+                    settings[key] = value
+            elif setting_type == 'boolean':
+                settings[key] = value.lower() in ('true', '1', 'yes')
+            else:
+                settings[key] = value
+
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        logging.error(f"Error getting settings: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/settings', methods=['POST'])
+def update_settings():
+    """Update application settings in database"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        updated_keys = []
+        for key, value in data.items():
+            # Determine value type
+            if isinstance(value, (dict, list)):
+                import json
+                value_str = json.dumps(value)
+                value_type = 'json'
+            elif isinstance(value, bool):
+                value_str = str(value).lower()
+                value_type = 'boolean'
+            else:
+                value_str = str(value)
+                value_type = 'string'
+
+            # Update or insert setting
+            c.execute("""
+                INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (key, value_str, value_type))
+
+            updated_keys.append(key)
+
+        conn.commit()
+        logging.info(f"Updated settings: {', '.join(updated_keys)}")
+
+        return jsonify({'success': True, 'updated_keys': updated_keys})
+    except Exception as e:
+        logging.error(f"Error updating settings: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/favicon.ico')
 def favicon():

@@ -86178,3 +86178,26 @@ sqlite3.OperationalError: no such column: total_items
 2025-10-13 11:30:22,255 INFO [DatabasePanel] Shutdown called.
 2025-10-13 11:30:22,255 INFO Shutdown requested for DB API server
 2025-10-13 11:30:23,355 INFO Shutdown requested for DB API server
+2025-10-14 20:02:57,741 INFO [INIT] Background service log callback initialized
+2025-10-14 20:02:57,749 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-10-14 20:02:59,110 INFO Initializing database at C:\Users\Rob\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-10-14 20:02:59,131 INFO Database initialization complete.
+2025-10-14 20:02:59,184 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-10-14 20:03:00,921 INFO [CALLBACK] Scanner panel callback registered
+2025-10-14 20:28:37,725 INFO [DatabasePanel] Shutdown called.
+2025-10-14 20:28:37,725 INFO Shutdown requested for DB API server
+2025-10-14 20:28:38,929 INFO Shutdown requested for DB API server
+2025-10-14 20:30:41,414 INFO [INIT] Background service log callback initialized
+2025-10-14 20:30:41,414 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 16.0}, 'tuesday': {'start': 7.5, 'end': 16.0}, 'wednesday': {'start': 7.5, 'end': 16.0}, 'thursday': {'start': 7.5, 'end': 16.0}, 'friday': {'start': 7.5, 'end': 15.0}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-10-14 20:30:41,775 INFO Initializing database at C:\Users\Rob\Desktop\Test-thuis\BarcodeMaster\database/central_logging.sqlite
+2025-10-14 20:30:41,785 INFO Migrating settings from config.json to database...
+2025-10-14 20:30:41,785 INFO Migrated accura_output_dir to database
+2025-10-14 20:30:41,785 INFO Migrated boere_output_dir to database
+2025-10-14 20:30:41,793 INFO Migrated scanner_panel_open_event_users to database
+2025-10-14 20:30:41,794 INFO Migrated scanner_panel_open_event_user_paths to database
+2025-10-14 20:30:41,794 INFO Migrated scanner_panel_open_event_user_logic_active to database
+2025-10-14 20:30:41,794 INFO Migrated scanner_user_to_processing_type_map to database
+2025-10-14 20:30:41,794 INFO Settings migration to database completed successfully
+2025-10-14 20:30:41,794 INFO Database initialization complete.
+2025-10-14 20:30:41,868 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-10-14 20:30:43,520 INFO [CALLBACK] Scanner panel callback registered

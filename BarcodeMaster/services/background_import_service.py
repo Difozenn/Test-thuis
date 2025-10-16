@@ -85,10 +85,29 @@ class BackgroundImportService:
         
         self.logger = logging.getLogger(__name__)
         
-    def load_config(self):
-        """Laad configuratie van config file."""
+    def _load_settings_from_api(self):
+        """Load settings from database via API"""
         try:
             config = get_config()
+            api_url = config.get('api_url', 'http://localhost:5001')
+            base_url = api_url.split('/log')[0]
+            response = requests.get(f"{base_url}/api/settings", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    return data.get('settings', {})
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Could not load settings from database: {e}")
+        
+        # Fallback to config file
+        return get_config()
+
+    def load_config(self):
+        """Laad configuratie van database (met fallback naar config file)."""
+        try:
+            # Load from database instead of config file
+            config = self._load_settings_from_api()
             
             # Load ScannerPanel specific configurations for user monitoring
             self.scanner_users = config.get('scanner_panel_open_event_users', []) # Default if not set
@@ -1708,7 +1727,8 @@ class BackgroundImportService:
         try:
             self._log(f"[UNIFIED_SCAN] Processing ALL Excel users for project '{project_code}' (triggered by {scanning_user})")
             
-            config = get_config()
+            # Load from database instead of config file
+            config = self._load_settings_from_api()
             api_url = config.get('api_url', '').rstrip('/')
             open_users = config.get('scanner_panel_open_event_users', [])
             user_paths = config.get('scanner_panel_open_event_user_paths', {})

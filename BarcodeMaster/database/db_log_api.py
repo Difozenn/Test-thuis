@@ -879,24 +879,126 @@ def save_config(updates):
     """Save configuration updates"""
     try:
         config_path = get_writable_path('config.json')
-        
+
         # Load existing config
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
                 config = json.load(f)
         else:
             config = {}
-        
+
         # Update with new values
         config.update(updates)
-        
+
         # Save back
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
-            
+
         return True
     except Exception as e:
         logging.error(f"Error saving config: {e}")
+        return False
+
+def get_setting_from_db(setting_key, fallback_to_config=True, default_value=None):
+    """
+    Get a setting from the database, with optional fallback to config file.
+
+    Args:
+        setting_key: The key to look up
+        fallback_to_config: If True and key not in database, try config file
+        default_value: Default value if not found anywhere
+
+    Returns:
+        The setting value, or default_value if not found
+    """
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT setting_value, setting_type
+            FROM app_settings
+            WHERE setting_key = ?
+        """, (setting_key,))
+
+        row = c.fetchone()
+        if row:
+            value = row['setting_value']
+            setting_type = row['setting_type']
+
+            # Parse based on type
+            if setting_type == 'json':
+                try:
+                    return json.loads(value)
+                except:
+                    return value
+            elif setting_type == 'boolean':
+                return value.lower() in ('true', '1', 'yes')
+            else:
+                return value
+
+        # Not in database, try config file
+        if fallback_to_config:
+            config = get_config()
+            if setting_key in config:
+                return config[setting_key]
+
+        # Return default value
+        return default_value
+
+    except Exception as e:
+        logging.error(f"Error getting setting '{setting_key}' from database: {e}")
+
+        # Fall back to config on error
+        if fallback_to_config:
+            try:
+                config = get_config()
+                if setting_key in config:
+                    return config[setting_key]
+            except:
+                pass
+
+        return default_value
+
+def save_setting_to_db(setting_key, value, description=None):
+    """
+    Save a setting to the database.
+
+    Args:
+        setting_key: The key to save
+        value: The value to save
+        description: Optional description
+
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Determine value type
+        if isinstance(value, (dict, list)):
+            value_str = json.dumps(value)
+            value_type = 'json'
+        elif isinstance(value, bool):
+            value_str = str(value).lower()
+            value_type = 'boolean'
+        else:
+            value_str = str(value)
+            value_type = 'string'
+
+        # Update or insert setting
+        c.execute("""
+            INSERT OR REPLACE INTO app_settings (setting_key, setting_value, setting_type, description, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (setting_key, value_str, value_type, description))
+
+        conn.commit()
+        logging.info(f"Saved setting '{setting_key}' to database")
+        return True
+
+    except Exception as e:
+        logging.error(f"Error saving setting '{setting_key}' to database: {e}")
         return False
 
 # --- Helper Functions ---
@@ -920,8 +1022,7 @@ def format_minutes(minutes):
             last_active_user = session['user']
     
     # Determine overall project status based on involved users only
-    config = get_config()
-    all_configured_users = config.get('scanner_panel_open_event_users', [])
+    all_configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     # Filter to only users involved in this project
     relevant_users = [u for u in all_configured_users if u in involved_users]
@@ -1379,14 +1480,40 @@ def get_user_activity_date_range(user, start_date, end_date):
             project = project_row['project']
             
             # Get item count for this user/project
+            # Item count is typically set once when project opens, so don't filter by date
+            # Check sessions, session_projects, and logs tables for item counts
+            project_id = normalize_project_id(project)
             cursor.execute("""
                 SELECT MAX(COALESCE(item_count, 0)) as project_items
-                FROM logs
-                WHERE user = ? AND project = ?
-                AND item_count > 0
-                AND DATE(timestamp) BETWEEN ? AND ?
-            """, (user, project, start_date, end_date))
-            
+                FROM (
+                    -- Get items from individual sessions
+                    SELECT COALESCE(item_count, 0) as item_count
+                    FROM sessions
+                    WHERE user = ?
+                    AND (project = ? OR project_id = ?)
+                    AND item_count > 0
+
+                    UNION ALL
+
+                    -- Get items from batch sessions via session_projects
+                    SELECT COALESCE(sp.item_count, 0) as item_count
+                    FROM sessions s
+                    INNER JOIN session_projects sp ON s.session_id = sp.session_id
+                    WHERE s.user = ?
+                    AND sp.project = ?
+                    AND sp.item_count > 0
+
+                    UNION ALL
+
+                    -- Get items from logs table (fallback for older data)
+                    SELECT COALESCE(item_count, 0) as item_count
+                    FROM logs
+                    WHERE user = ?
+                    AND project = ?
+                    AND item_count > 0
+                )
+            """, (user, project, project_id, user, project, user, project))
+
             result = cursor.fetchone()
             project_items = result['project_items'] if result and result['project_items'] else 0
             
@@ -1705,9 +1832,8 @@ def determine_project_status(project_code, conn):
     """
     c = conn.cursor()
     
-    # Get configured users from config
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    # Get configured users from database (with config fallback)
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     # Get all events for this project
     # Order by timestamp DESC, then prioritize AFGEMELD events when timestamps are equal
@@ -4185,11 +4311,8 @@ def index():
 @login_required
 def dashboard():
     try:
-        # Get configuration
-        config = get_config()
-        
-        # Get configured users for display
-        dashboard_users = config.get('scanner_panel_open_event_users', [])
+        # Get configured users for display from database (with config fallback)
+        dashboard_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
         
         # If still empty, get unique users from recent logs
         if not dashboard_users:
@@ -4459,11 +4582,8 @@ def dashboard_enterprise():
 def dashboard_production_flow():
     """Production flow dashboard with pipeline visualization and bottleneck detection"""
     try:
-        # Get configuration - EXACTLY like original dashboard
-        config = get_config()
-
-        # Get configured users for display - EXACTLY like original dashboard
-        dashboard_users = config.get('scanner_panel_open_event_users', [])
+        # Get configured users for display from database (with config fallback)
+        dashboard_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
 
         # If still empty, get unique users from recent logs
         if not dashboard_users:
@@ -4676,8 +4796,7 @@ def dashboard_production_flow():
 # --- API Endpoints ---
 @app.route('/api/configured_users')
 def get_configured_users():
-    config = get_config()
-    users = config.get('scanner_panel_open_event_users', [])
+    users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     return jsonify({
         'success': True,
         'users': users
@@ -4686,11 +4805,10 @@ def get_configured_users():
 @app.route('/api/config')
 def get_config_api():
     """Get relevant configuration for frontend use"""
-    config = get_config()
-    # Return only the necessary config fields for security
+    # Get settings from database with config fallback
     return jsonify({
-        'scanner_user_to_processing_type_map': config.get('scanner_user_to_processing_type_map', {}),
-        'scanner_panel_open_event_users': config.get('scanner_panel_open_event_users', [])
+        'scanner_user_to_processing_type_map': get_setting_from_db('scanner_user_to_processing_type_map', fallback_to_config=True, default_value={}),
+        'scanner_panel_open_event_users': get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     })
 
 @app.route('/api/user/<username>/stats')
@@ -4966,18 +5084,21 @@ def get_production_time_estimates():
         c = conn.cursor()
 
         # Get all users with their current average items/hour from recent performance
+        # Fixed: Use weighted average (total items / total time) instead of simple average
+        # This prevents short sessions with high items/hour from skewing the results
         c.execute("""
             WITH user_performance AS (
                 SELECT
                     user,
-                    AVG(CASE
-                        WHEN item_count > 0 AND work_duration_minutes > 0
-                        THEN (item_count * 60.0) / work_duration_minutes
+                    CASE
+                        WHEN SUM(work_duration_minutes) > 0
+                        THEN (SUM(item_count) * 60.0) / SUM(work_duration_minutes)
                         ELSE NULL
-                    END) as avg_items_per_hour
+                    END as avg_items_per_hour
                 FROM sessions
                 WHERE end_time IS NOT NULL
                     AND work_duration_minutes > 0
+                    AND item_count > 0
                     AND start_time > date('now', '-30 days')
                 GROUP BY user
             )
@@ -5011,14 +5132,29 @@ def get_production_time_estimates():
             logging.info(f"Loaded efficiency targets from database: {user_targets}")
 
         # Get all OPEN and BEZIG projects with their item counts
+        # Fixed: Get the true latest status for each project, not just latest OPEN/BEZIG
+        # Also get the MAX item_count for each project, not just from the latest status log
         c.execute("""
-            WITH latest_status AS (
+            WITH latest_status_per_project AS (
                 SELECT
                     user,
                     project,
                     MAX(timestamp) as latest_timestamp
                 FROM logs
-                WHERE status IN ('OPEN', 'BEZIG')
+                WHERE user IS NOT NULL
+                    AND project IS NOT NULL
+                    AND status IS NOT NULL
+                GROUP BY user, project
+            ),
+            max_item_count_per_project AS (
+                SELECT
+                    user,
+                    project,
+                    MAX(COALESCE(item_count, 0)) as max_item_count
+                FROM logs
+                WHERE user IS NOT NULL
+                    AND project IS NOT NULL
+                    AND item_count > 0
                 GROUP BY user, project
             ),
             active_projects AS (
@@ -5026,13 +5162,17 @@ def get_production_time_estimates():
                     l.user,
                     l.project,
                     l.status,
-                    l.item_count,
+                    l.event,
+                    COALESCE(mic.max_item_count, 0) as item_count,
                     l.timestamp
                 FROM logs l
-                INNER JOIN latest_status ls
+                INNER JOIN latest_status_per_project ls
                     ON l.user = ls.user
                     AND l.project = ls.project
                     AND l.timestamp = ls.latest_timestamp
+                LEFT JOIN max_item_count_per_project mic
+                    ON l.user = mic.user
+                    AND l.project = mic.project
                 WHERE l.status IN ('OPEN', 'BEZIG')
                     AND l.event != 'AFGEMELD'
             )
@@ -5061,15 +5201,18 @@ def get_production_time_estimates():
                 if hours is None:
                     return "Geen data"
                 if hours == 0:
-                    return "0u"
+                    return "0m"
+                # Round up to at least 1 minute if there's any time
+                if hours > 0 and hours < 0.0167:  # Less than 1 minute
+                    return "<1m"
                 h = int(hours)
-                m = int((hours - h) * 60)
+                m = int(round((hours - h) * 60))  # Round minutes instead of truncating
                 if h > 0 and m > 0:
                     return f"{h}u {m}m"
                 elif h > 0:
                     return f"{h}u"
                 else:
-                    return f"{m}m"
+                    return f"{m}m" if m > 0 else "<1m"
 
             # Calculate estimated hours only if we have performance data
             if avg_performance and avg_performance > 0:
@@ -5118,31 +5261,34 @@ def get_production_time_estimates():
 def manage_dashboard_users():
     """Manage which users should always be displayed on the dashboard"""
     if request.method == 'GET':
-        config = get_config()
+        users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
         return jsonify({
             'success': True,
-            'users': config.get('scanner_panel_open_event_users', [])
+            'users': users
         })
-    
+
     elif request.method == 'POST':
         try:
             data = request.get_json()
             users = data.get('users', [])
-            
+
             # Validate users list
             if not isinstance(users, list):
                 return jsonify({'success': False, 'error': 'Users must be a list'}), 400
-            
-            # Save to config
-            save_config({'scanner_panel_open_event_users': users})
-            
+
+            # Save to database (with config fallback)
+            success = save_setting_to_db('scanner_panel_open_event_users', users, 'List of configured users')
+            if not success:
+                # Fallback to config file if database save failed
+                save_config({'scanner_panel_open_event_users': users})
+
             logging.info(f"Updated dashboard display users: {users}")
             return jsonify({
                 'success': True,
                 'message': 'Dashboard users updated successfully',
                 'users': users
             })
-            
+
         except Exception as e:
             logging.error(f"Error updating dashboard users: {e}")
             return jsonify({'success': False, 'error': str(e)}), 500
@@ -5152,19 +5298,19 @@ def manage_dashboard_users():
 def sync_dashboard_users():
     """Sync dashboard users with scanner panel users"""
     try:
-        config = get_config()
-        scanner_users = config.get('scanner_panel_open_event_users', [])
-        
+        # Get users from database (with config fallback)
+        scanner_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
+
         # This endpoint is no longer needed since we use one unified array
         return jsonify({'success': True, 'message': 'Using unified scanner_panel_open_event_users array'})
-        
+
         logging.info(f"Synced dashboard users with scanner users: {scanner_users}")
         return jsonify({
             'success': True,
             'message': 'Dashboard users synced with scanner users',
             'users': scanner_users
         })
-        
+
     except Exception as e:
         logging.error(f"Error syncing dashboard users: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -5274,8 +5420,7 @@ def get_project_completion_times():
         """
         
         # Build dynamic ORDER BY cases based on configured users
-        config = get_config()
-        configured_users = config.get('scanner_panel_open_event_users', [])
+        configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
         dynamic_order_cases = ""
         for i, user in enumerate(configured_users, 1):
             dynamic_order_cases += f"WHEN '{user}' THEN {i} "
@@ -6276,8 +6421,8 @@ def get_linked_sessions(project):
 @app.route('/logs_project')
 @login_required
 def logs_project():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    # Get configured users from database (with config fallback)
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     project = request.args.get('project', '')
     if not project:
@@ -6314,8 +6459,6 @@ def logs_project():
         user_status_rows = c.fetchall()
 
         # Build dynamic order based on configured users
-        config = get_config()
-        configured_users = config.get('scanner_panel_open_event_users', [])
         order = {user: i for i, user in enumerate(configured_users)}
         
         def user_sort_key(row):
@@ -6536,9 +6679,8 @@ def sales_orders():
             
             if row['projects']:
                 projects_list = row['projects'].split(',')
-                config = get_config()
-                configured_users = config.get('scanner_panel_open_event_users', 
-                                             ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+                configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True,
+                                             default_value=['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
                 
                 for project in projects_list:
                     project = project.strip()
@@ -6746,9 +6888,8 @@ def sales_order_detail(so_number):
             
             # Get the final item count from the last user in the processing chain
             # Processing chain order (reverse for finding last user with items)
-            config = get_config()
-            configured_users = config.get('scanner_panel_open_event_users', 
-                                         ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+            configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True,
+                                         default_value=['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
             
             final_items = 0
             # Check each user in reverse order (BOERE → KL GANNOMAT → OPUS → ACCURA → NESTING)
@@ -6791,9 +6932,8 @@ def sales_order_detail(so_number):
             
             # Sort users according to processing chain order
             raw_users = row['users'].split(',') if row['users'] else []
-            config = get_config()
-            configured_users = config.get('scanner_panel_open_event_users', 
-                                         ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
+            configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True,
+                                         default_value=['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE'])
             
             # Create a dict for ordering
             user_order = {user: i for i, user in enumerate(configured_users)}
@@ -7002,8 +7142,7 @@ def get_all_projects():
 @app.route('/projects', methods=['GET'])
 @login_required
 def projects():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     # Get pagination parameters
     page = request.args.get('page', 1, type=int)
@@ -7185,8 +7324,8 @@ def projects():
 @app.route('/users', methods=['GET'])
 @login_required
 def users():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    # Get configured users from database (with config fallback)
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     logging.info('users endpoint was called')
     try:
@@ -7230,8 +7369,8 @@ def users():
 @login_required
 def user_performance(username):
     """Individual user performance page with detailed analytics"""
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    # Get configured users from database (with config fallback)
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     if username not in configured_users:
         return render_template('error.html', message='User not found'), 404
@@ -7337,8 +7476,7 @@ def time_estimation_calculator():
 @login_required
 def statistics():
     """Statistics page view with comprehensive analytics"""
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     try:
         return render_template('statistics.html',
@@ -7353,8 +7491,7 @@ def statistics():
 @login_required
 def settings():
     """Settings page for work hours configuration"""
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     try:
         return render_template('settings.html',
@@ -7367,8 +7504,7 @@ def settings():
 @app.route('/database', methods=['GET'])
 @login_required
 def database():
-    config = get_config()
-    configured_users = config.get('scanner_panel_open_event_users', [])
+    configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
     
     logging.info('database management page was called')
     try:
@@ -9258,12 +9394,11 @@ def get_team_utilization():
         c = conn.cursor()
         
         # Get configured users
-        config = get_config()
-        configured_users = config.get('scanner_panel_open_event_users', [])
-        
+        configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
+
         if not configured_users:
             return jsonify({'success': False, 'error': 'No configured users found'}), 400
-        
+
         # Get team session data
         user_placeholders = ','.join(['?' for _ in configured_users])
         c.execute(f"""
@@ -9381,12 +9516,11 @@ def get_utilization_trends():
         c = conn.cursor()
         
         # Get configured users
-        config = get_config()
-        configured_users = config.get('scanner_panel_open_event_users', [])
-        
+        configured_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
+
         if not configured_users:
             return jsonify({'success': False, 'error': 'No configured users found'}), 400
-        
+
         # Get daily utilization data
         user_placeholders = ','.join(['?' for _ in configured_users])
         c.execute(f"""
@@ -9810,17 +9944,39 @@ def get_project_time_analysis():
         conn = get_db()
         c = conn.cursor()
 
-        # Get all projects that have activity in the filtered period
-        c.execute(f"""
-            SELECT DISTINCT project
-            FROM logs
-            WHERE 1=1 {logs_date_filter}
-            ORDER BY project
-        """, params)
+        # Get all projects that STARTED in the filtered period (based on first log entry)
+        # This gives a clear view: "Projects that started in this date range"
+        if period_type == 'custom' and start_date and end_date:
+            c.execute("""
+                SELECT project, MIN(timestamp) as start_time
+                FROM logs
+                WHERE project IS NOT NULL AND project != ''
+                GROUP BY project
+                HAVING DATE(MIN(timestamp)) BETWEEN ? AND ?
+                ORDER BY start_time DESC
+            """, [start_date, end_date])
+        elif period_type == 'all':
+            c.execute("""
+                SELECT project, MIN(timestamp) as start_time
+                FROM logs
+                WHERE project IS NOT NULL AND project != ''
+                GROUP BY project
+                ORDER BY start_time DESC
+            """)
+        else:
+            period_int = int(period)
+            c.execute("""
+                SELECT project, MIN(timestamp) as start_time
+                FROM logs
+                WHERE project IS NOT NULL AND project != ''
+                GROUP BY project
+                HAVING MIN(timestamp) >= datetime('now', '-? days')
+                ORDER BY start_time DESC
+            """, [period_int])
 
         projects = [row['project'] for row in c.fetchall()]
 
-        logging.info(f"Found {len(projects)} projects for period {period_type}")
+        logging.info(f"Found {len(projects)} projects that STARTED in period {period_type}")
 
         # Calculate metrics for each project using v2 method
         total_project_minutes = 0
@@ -9975,18 +10131,42 @@ def get_quality_control():
         except Exception as e:
             logging.error(f"Error checking/adding is_rep_variant column: {e}")
 
-        # Get all rep projects in the filtered period
-        c.execute(f"""
-            SELECT DISTINCT l.project
-            FROM logs l
-            WHERE l.is_rep_variant = 1
-            {logs_date_filter}
-            ORDER BY l.project
-        """, params)
+        # Get all rep projects that STARTED in the filtered period
+        # Filter by project start time, not any activity time
+        if period_type == 'custom' and start_date and end_date:
+            c.execute("""
+                SELECT l.project, MIN(l.timestamp) as start_time
+                FROM logs l
+                WHERE l.is_rep_variant = 1
+                AND l.project IS NOT NULL AND l.project != ''
+                GROUP BY l.project
+                HAVING DATE(MIN(l.timestamp)) BETWEEN ? AND ?
+                ORDER BY start_time DESC
+            """, [start_date, end_date])
+        elif period_type == 'all':
+            c.execute("""
+                SELECT l.project, MIN(l.timestamp) as start_time
+                FROM logs l
+                WHERE l.is_rep_variant = 1
+                AND l.project IS NOT NULL AND l.project != ''
+                GROUP BY l.project
+                ORDER BY start_time DESC
+            """)
+        else:
+            period_int = int(period)
+            c.execute("""
+                SELECT l.project, MIN(l.timestamp) as start_time
+                FROM logs l
+                WHERE l.is_rep_variant = 1
+                AND l.project IS NOT NULL AND l.project != ''
+                GROUP BY l.project
+                HAVING MIN(l.timestamp) >= datetime('now', '-? days')
+                ORDER BY start_time DESC
+            """, [period_int])
 
         rep_projects_list = [row['project'] for row in c.fetchall()]
 
-        logging.info(f"Found {len(rep_projects_list)} rep projects for period {period_type}")
+        logging.info(f"Found {len(rep_projects_list)} rep projects that STARTED in period {period_type}")
 
         # Calculate metrics for each rep project using v2 method
         total_rep_project_minutes = 0
@@ -11330,8 +11510,8 @@ def get_user_config():
                     return jsonify({'success': True, 'users': config['users']})
                 
                 # Convert from existing arrays to new format
-                scanner_users = config.get('scanner_panel_open_event_users', [])
-                dashboard_users = config.get('dashboard_display_users', [])
+                scanner_users = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
+                dashboard_users = get_setting_from_db('dashboard_display_users', fallback_to_config=True, default_value=[])
                 processing_map = config.get('scanner_user_to_processing_type_map', {})
                 
                 # Create user objects from existing config

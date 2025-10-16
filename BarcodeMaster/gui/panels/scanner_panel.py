@@ -2402,6 +2402,23 @@ class ScannerPanel(tk.Frame):
         self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {})
         self.available_processing_types = ["GEEN_PROCESSING", "MDB_PROCESSING", "HOPS_PROCESSING", "NESTING_PROCESSING", "ACCURA_PROCESSING", "BOERE_PROCESSING"]
 
+    def _load_settings_from_api(self):
+        """Load settings from database via API"""
+        try:
+            config = get_config()
+            api_url = config.get('api_url', 'http://localhost:5001')
+            base_url = api_url.split('/log')[0]
+            response = requests.get(f"{base_url}/api/settings", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    return data.get('settings', {})
+        except Exception as e:
+            print(f"Could not load settings from database: {e}")
+        
+        # Fallback to config file
+        return get_config()
+
     def on_scanner_type_change(self):
         """Handles scanner type changes without auto-connecting/disconnecting."""
         self.save_scanner_type()
@@ -2991,8 +3008,8 @@ class ScannerPanel(tk.Frame):
         dialog.transient(self)
         dialog.grab_set()
 
-        # Get configured users
-        config = get_config()
+        # Get configured users from database
+        config = self._load_settings_from_api()
         configured_users = config.get('scanner_panel_open_event_users', [])
         user_processing_types = config.get('scanner_user_to_processing_type_map', {})
 
@@ -3833,9 +3850,8 @@ class ScannerPanel(tk.Frame):
         user_entries = {}
         row_num = 9
 
-        # Get configured users from config
-        from config_utils import get_config
-        config = get_config()
+        # Get configured users from database
+        config = self._load_settings_from_api()
         user_to_processing_type = config.get('scanner_user_to_processing_type_map', {})
 
         # Process each user from extracted data

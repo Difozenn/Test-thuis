@@ -1,0 +1,10 @@
+{
+    "scanner_panel_com_port": "COM1",
+    "scanner_panel_baud_rate": "9600",
+    "user": "NESTING",
+    "api_url": "http://localhost:5001/log",
+    "database_enabled": true,
+    "scanner_panel_com_auto_connect": true,
+    "scanner_panel_type": "COM",
+    "scanner_panel_open_event_users": []
+}

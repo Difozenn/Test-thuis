@@ -907,8 +907,14 @@ class AdminPanel(tk.Frame):
         self.user_specific_paths_vars.clear()
         self.user_logic_active_vars.clear()
         
-        config = get_config()
+        # Load from database instead of config file
+        config = self._load_settings_from_api()
         open_users = config.get('scanner_panel_open_event_users', [])
+        
+        # Update instance variables with database values
+        self.scanner_panel_open_event_user_paths = config.get('scanner_panel_open_event_user_paths', {})
+        self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
+        self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {})
         
         if not open_users:
             tk.Label(self.user_list_frame, text="Geen gebruikers geconfigureerd.", bg="#f0f0f0", fg="gray").pack(pady=5)

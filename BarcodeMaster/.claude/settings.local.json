@@ -19,7 +19,8 @@
       "Bash(timeout:*)",
       "Bash(python3:*)",
       "Bash(xargs ls:*)",
-      "Read(//mnt/c/Users/Rob/Desktop/Test-thuis/**)"
+      "Read(//mnt/c/Users/Rob/Desktop/Test-thuis/**)",
+      "Bash(/mnt/c/Users/Rob/AppData/Local/Programs/Python/Python311/python.exe:*)"
     ],
     "deny": []
   }

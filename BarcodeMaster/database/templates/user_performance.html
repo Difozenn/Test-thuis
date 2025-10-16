@@ -479,7 +479,7 @@
         </div>
         <div>
             <h2 class="section-title">Gedetailleerde Activiteit</h2>
-            <p class="section-subtitle">{{ user.activity_data|length }} dagen activiteitsoverzicht</p>
+            <p class="section-subtitle">{{ user.activity_data|length }} projecten activiteitsoverzicht</p>
         </div>
     </div>
     <div class="table-responsive">
@@ -503,7 +503,7 @@
                             <i class="fas fa-external-link-alt me-1"></i>{{ activity.project }}
                         </a>
                     </td>
-                    <td>{{ activity.items }}</td>
+                    <td>{{ activity['items'] }}</td>
                     <td><span class="activity-hours">{{ activity.hours }}</span></td>
                     <td>{{ activity.items_per_hour }}</td>
                     <td>

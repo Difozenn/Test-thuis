@@ -232,12 +232,14 @@ class ImportPanel(ttk.Frame):
                     self.total_files = 1
                     self.after(0, lambda: self._show_results(results, scan_mode, path))
                     self.after(0, lambda: self._update_progress(1, 1))
-                    self.after(0, lambda: messagebox.showinfo("Scan voltooid", 
+                    self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
+                    self.after(0, lambda: messagebox.showinfo("Scan voltooid",
                                                              f"Scan voltooid. {len(results)} resultaten gevonden."))
                 except Exception as e:
-                    self.after(0, lambda: self.results_text.insert('end', 
+                    self.after(0, lambda: self.results_text.insert('end',
                               f"Fout bij verwerken van {os.path.basename(path)}: {str(e)}\n"))
-                    self.after(0, lambda: messagebox.showerror("Scanfout", 
+                    self.after(0, lambda: self.scan_button.config(state=tk.NORMAL))
+                    self.after(0, lambda: messagebox.showerror("Scanfout",
                                                                f"Fout bij het scannen van het MDB-bestand: {str(e)}"))
             else:
                 # Directory scan for .hop/.hops

@@ -11,6 +11,7 @@ import re
 import requests
 import json
 from datetime import datetime
+from PIL import Image, ImageTk
 from config_utils import get_config_path, load_config as _load_full_config, update_config as _save_full_config
 
 class ScannerPanel(ttk.Frame):
@@ -25,6 +26,7 @@ class ScannerPanel(ttk.Frame):
         self.scanner_type_var = tk.StringVar(value="USB")
         self.com_port_var = tk.StringVar()
         self.baud_rate_var = tk.StringVar(value="9600")
+        self.mo_code_var = tk.StringVar()  # Variable to store the MO code
 
         # --- Threading and Serial ---
         self.ser = None
@@ -45,6 +47,11 @@ class ScannerPanel(ttk.Frame):
         self.session_paused = False
         self.pause_start_time = None
         self.total_pause_duration = 0
+
+        # --- Image Viewer Window ---
+        self.image_viewer_window = None
+        self.image_label = None
+        self.current_image_path = None
 
         # --- Initialization ---
         self.build_tab()
@@ -118,9 +125,21 @@ class ScannerPanel(ttk.Frame):
         self.usb_frame.grid(row=0, column=0, sticky="ew")
         
         # --- Afmelden button (right side of button_frame, 50% width) ---
-        # Empty space on left (50%)
-        empty_label = ttk.Label(button_frame, text="")
-        empty_label.grid(row=0, column=0, sticky="ew", padx=(10, 5))  # Match left padding
+        # MO Code display on left (50%)
+        mo_frame = ttk.Frame(button_frame)
+        mo_frame.grid(row=0, column=0, sticky="ew", padx=(10, 5))
+
+        # Create the MO code label with bold font
+        try:
+            # Create a bold font for MO code display
+            mo_font = tkfont.Font(family="TkDefaultFont", size=14, weight="bold")
+            self.mo_code_label = ttk.Label(mo_frame, textvariable=self.mo_code_var, font=mo_font)
+        except:
+            # Fallback if font creation fails
+            self.mo_code_label = ttk.Label(mo_frame, textvariable=self.mo_code_var)
+
+        # Center the MO code label in the frame
+        self.mo_code_label.pack(expand=True)
         
         # Afmelden button on right (50%)
         self.afmelden_button = ttk.Button(
@@ -179,8 +198,20 @@ class ScannerPanel(ttk.Frame):
 
         # Configure OK tag (bold font removed as it applies to the whole row)
         # Using hex colors for better compatibility with compiled exe
-        self.tree.tag_configure('OK', background='#90EE90')  # light green
-        self.tree.tag_configure('NOT_OK', background='#FFFFFF')  # white
+        self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')  # light green with black text
+        self.tree.tag_configure('NOT_OK', background='#FFFFFF', foreground='#000000')  # white with black text
+
+        # Force style update for better compatibility with compiled executables
+        try:
+            style = ttk.Style()
+            # Configure Treeview colors explicitly
+            style.map('Treeview',
+                     background=[('selected', '#0078D7')],  # Windows selection blue
+                     foreground=[('selected', '#FFFFFF')])  # White text when selected
+            # Force update
+            self.tree.update_idletasks()
+        except Exception as e:
+            print(f"Warning: Could not configure Treeview style: {e}")
         
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree.xview)
@@ -463,15 +494,25 @@ class ScannerPanel(ttk.Frame):
                     f"Project '{project_name}' is succesvol afgemeld.\n"
                     f"Verwerkte items: {item_count}"
                 )
-                
-                # Archive the Excel file
-                self._archive_excel_file(excel_path)
-                
+
+                # Archive the Excel file if enabled in settings
+                archive_enabled = config.get('archive_on_all_ok', True)
+                if archive_enabled:
+                    self._archive_excel_file(excel_path)
+                    self._log("Excel bestand gearchiveerd")
+                else:
+                    self._log("Excel bestand niet gearchiveerd (uitgeschakeld in instellingen)")
+
                 # Clear the UI
                 self.excel_file_path_var.set("")
                 self.tree.delete(*self.tree.get_children())
                 self.barcode_data = {}
-                
+
+                # Switch to Database panel to view updated status
+                if self.main_app and hasattr(self.main_app, 'switch_to_panel'):
+                    self._log("Switching to Database panel...")
+                    self.main_app.switch_to_panel("Database")
+
             else:
                 messagebox.showerror("Fout", f"Kon project niet afmelden: {response.text}")
                 
@@ -597,6 +638,10 @@ class ScannerPanel(ttk.Frame):
 
                 # Treeview: Status, Item.
                 item_id = self.tree.insert('', 'end', values=(display_status_for_treeview, barcode_val), tags=(tree_tag,))
+
+                # Force tag color application for compiled executables
+                if tree_tag == 'OK':
+                    self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')
                 self.barcode_data[barcode_val] = {
                     'description': description_val,
                     'status': internal_status, # Store the determined internal_status
@@ -605,6 +650,29 @@ class ScannerPanel(ttk.Frame):
                 }
 
             self._log(f"{len(self.barcode_data)} items geladen uit {os.path.basename(path_to_load)}.")
+
+            # Extract and display MO code
+            try:
+                base_mo_code, full_project_code = self._extract_project_info_from_excel(path_to_load)
+                if base_mo_code:
+                    self.mo_code_var.set(base_mo_code)
+                    self._log(f"Project code: {base_mo_code}")
+                else:
+                    self.mo_code_var.set("")  # Clear if no MO code found
+            except Exception as e:
+                self._log(f"[WARN] Kon project code niet extraheren: {e}")
+                self.mo_code_var.set("")  # Clear on error
+
+            # Force refresh of all tag colors for compiled executables
+            try:
+                # Re-configure tags to ensure colors work in compiled exe
+                self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')
+                self.tree.tag_configure('NOT_OK', background='#FFFFFF', foreground='#000000')
+                # Force visual update
+                self.tree.update_idletasks()
+            except Exception:
+                pass
+
             # self.excel_file_path_var should store the original path selected by the user
             # or the path that was last loaded from config, to correctly derive _updated path for saving.
             self.excel_file_path_var.set(file_path) 
@@ -619,9 +687,11 @@ class ScannerPanel(ttk.Frame):
         except FileNotFoundError:
             messagebox.showerror("Fout", f"Bestand niet gevonden: {file_path}")
             self._log(f"[FOUT] Bestand niet gevonden: {file_path}", "error")
+            self.mo_code_var.set("")  # Clear MO code on error
         except Exception as e:
             messagebox.showerror("Fout", f"Lezen van Excel-bestand mislukt: {e}")
             self._log(f"[FOUT] Lezen van Excel-bestand mislukt: {e}", "error")
+            self.mo_code_var.set("")  # Clear MO code on error
 
     def _check_for_existing_session(self, api_url, user, project_name):
         """Check if there's an existing paused session for this user/project"""
@@ -656,15 +726,7 @@ class ScannerPanel(ttk.Frame):
     def _start_session_for_excel_work(self, excel_file_path):
         """Start a session when user begins working on Excel file"""
         self._log(f"[DEBUG] _start_session_for_excel_work - existing session: {self.current_session_id}")
-        
-        # If we already have a session, don't create a new one
-        if self.current_session_id:
-            self._log(f"[DEBUG] Session already exists: {self.current_session_id}, not creating new one")
-            # If paused, resume it
-            if self.session_paused:
-                self._resume_session()
-            return
-            
+
         try:
             config_file_path = get_config_path()
             if os.path.exists(config_file_path):
@@ -679,10 +741,39 @@ class ScannerPanel(ttk.Frame):
                 user = self._determine_user_from_path(excel_file_path)
                 if not user:
                     user = config.get('user', 'NESTING')  # Fallback
-                
+
                 # Extract project from filename
                 project_name = self._extract_project_from_filename(excel_file_path)
-                
+
+                # Check if current session matches the project being loaded
+                if self.current_session_id and project_name:
+                    # Extract project from current session ID (format: USER_PROJECT_TIMESTAMP)
+                    session_parts = self.current_session_id.split('_')
+                    if len(session_parts) >= 3:
+                        # Session ID format: USER_PROJECT_TIMESTAMP or USER_PROJECT_NAME_TIMESTAMP
+                        # Need to extract project name which could contain underscores
+                        session_user = session_parts[0]
+                        # Everything between user and last two parts (YYYYMMDD_HHMMSS) is the project
+                        session_project = '_'.join(session_parts[1:-2])
+
+                        self._log(f"[DEBUG] Current session project: '{session_project}', Loading project: '{project_name}'")
+
+                        if session_project == project_name and session_user == user:
+                            # Same project, just resume the existing session
+                            self._log(f"[DEBUG] Session matches current project, resuming: {self.current_session_id}")
+                            if self.session_paused:
+                                self._resume_session()
+                            return
+                        else:
+                            # Different project, need to end old session and start/resume correct one
+                            self._log(f"[DEBUG] Session mismatch! Current: {session_project}, Loading: {project_name}")
+                            self._log(f"[DEBUG] Ending old session and loading correct session")
+                            # Don't pause - just clear the old session from memory
+                            self.current_session_id = None
+                            self.session_start_time = None
+                            self.session_paused = False
+                            self.pause_start_time = None
+
                 # Check if there's an existing paused session for this project/user
                 # This handles the case when switching from database panel with BEZIG project
                 existing_session = self._check_for_existing_session(api_url, user, project_name)
@@ -1378,7 +1469,255 @@ class ScannerPanel(ttk.Frame):
             self._update_treeview(item_id, 'OK')
             self._save_updated_excel() # Save changes
             self.session_item_count += 1  # Increment session item count
+
+            # Open PNG image if setting is enabled and it's an OPUS scan
+            self._try_open_opus_image(log_barcode)
+
             self._all_items_ok_check()
+
+    def _try_open_opus_image(self, scanned_item):
+        """Opens the corresponding PNG image for an OPUS scan if the setting is enabled."""
+        try:
+            # Check if the setting is enabled
+            config = _load_full_config()
+            if not config.get('open_image_on_opus_scan', False):
+                return
+
+            # Check if it's an OPUS file (HOP or HOPS)
+            if not (scanned_item.lower().endswith('.hop') or scanned_item.lower().endswith('.hops')):
+                return
+
+            # Build the PNG path
+            png_path = None
+
+            # Determine the directory and filename
+            if os.path.isabs(scanned_item):
+                # If it's an absolute path, use its directory
+                directory = os.path.dirname(scanned_item)
+                filename = os.path.basename(scanned_item)
+            else:
+                # It's just a filename, use the Excel file's directory
+                excel_path = self.excel_file_path_var.get()
+                if excel_path:
+                    directory = os.path.dirname(excel_path)
+                    filename = scanned_item
+                else:
+                    # No Excel path available
+                    self._log("[INFO] Kan PNG locatie niet bepalen zonder Excel bestand pad")
+                    return
+
+            # Remove the .hop or .hops extension and add .png
+            name_without_ext = os.path.splitext(filename)[0]
+            png_filename = f"{name_without_ext}.png"
+            png_path = os.path.join(directory, png_filename)
+
+            # Check if the PNG file exists
+            if os.path.exists(png_path):
+                # Open the image in our custom viewer
+                self._show_image_in_viewer(png_path, png_filename)
+            else:
+                self._log(f"[INFO] PNG afbeelding niet gevonden: {png_filename}")
+
+        except Exception as e:
+            # Silently handle errors to not interrupt the scanning process
+            self._log(f"[WARN] Fout bij openen afbeelding: {e}")
+
+    def _show_image_in_viewer(self, image_path, image_filename):
+        """Shows an image in the custom image viewer window."""
+        try:
+            # Create or update the image viewer window
+            if self.image_viewer_window is None or not self.image_viewer_window.winfo_exists():
+                self._create_image_viewer_window()
+
+            # Load and display the image
+            self._load_and_display_image(image_path)
+
+            # Update window title
+            self.image_viewer_window.title(f"OPUS Afbeelding - {image_filename}")
+
+            # Bring window to front
+            self.image_viewer_window.lift()
+            self.image_viewer_window.focus_force()
+
+            self._log(f"✓ Afbeelding geopend: {image_filename}")
+
+        except Exception as e:
+            self._log(f"[WARN] Kon afbeelding niet openen in viewer: {e}")
+
+    def _create_image_viewer_window(self):
+        """Creates the image viewer window."""
+        self.image_viewer_window = tk.Toplevel(self.winfo_toplevel())
+        self.image_viewer_window.title("OPUS Afbeelding Viewer")
+
+        # Set window size and position
+        window_width = 1200
+        window_height = 800
+
+        # Get screen dimensions
+        screen_width = self.image_viewer_window.winfo_screenwidth()
+        screen_height = self.image_viewer_window.winfo_screenheight()
+
+        # Calculate position to center the window
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+
+        self.image_viewer_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+        # Create a frame for the image
+        image_frame = ttk.Frame(self.image_viewer_window)
+        image_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Create a canvas with scrollbars for large images
+        canvas = tk.Canvas(image_frame, bg='gray85')
+        v_scrollbar = ttk.Scrollbar(image_frame, orient=tk.VERTICAL, command=canvas.yview)
+        h_scrollbar = ttk.Scrollbar(image_frame, orient=tk.HORIZONTAL, command=canvas.xview)
+
+        canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        # Grid layout for canvas and scrollbars
+        canvas.grid(row=0, column=0, sticky='nsew')
+        v_scrollbar.grid(row=0, column=1, sticky='ns')
+        h_scrollbar.grid(row=1, column=0, sticky='ew')
+
+        # Configure grid weights
+        image_frame.grid_rowconfigure(0, weight=1)
+        image_frame.grid_columnconfigure(0, weight=1)
+
+        # Store references
+        self.image_canvas = canvas
+        self.image_container = None
+
+        # Add control buttons at the bottom
+        button_frame = ttk.Frame(self.image_viewer_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(button_frame, text="Zoom In (+)",
+                  command=lambda: self._zoom_image(1.2)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Zoom Out (-)",
+                  command=lambda: self._zoom_image(0.8)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Passend (F)",
+                  command=self._fit_image_to_window).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Origineel (O)",
+                  command=self._reset_image_size).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Sluiten (Esc)",
+                  command=self.image_viewer_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Bind keyboard shortcuts
+        self.image_viewer_window.bind('<plus>', lambda e: self._zoom_image(1.2))
+        self.image_viewer_window.bind('<minus>', lambda e: self._zoom_image(0.8))
+        self.image_viewer_window.bind('f', lambda e: self._fit_image_to_window())
+        self.image_viewer_window.bind('F', lambda e: self._fit_image_to_window())
+        self.image_viewer_window.bind('o', lambda e: self._reset_image_size())
+        self.image_viewer_window.bind('O', lambda e: self._reset_image_size())
+        self.image_viewer_window.bind('<Escape>', lambda e: self.image_viewer_window.destroy())
+
+        # Handle window close
+        self.image_viewer_window.protocol("WM_DELETE_WINDOW", self._on_image_viewer_close)
+
+    def _load_and_display_image(self, image_path):
+        """Loads and displays an image in the viewer."""
+        try:
+            # Store the current image path
+            self.current_image_path = image_path
+
+            # Open the image with PIL
+            self.original_image = Image.open(image_path)
+
+            # Calculate initial scale to fit window while maintaining aspect ratio
+            canvas_width = self.image_canvas.winfo_width()
+            canvas_height = self.image_canvas.winfo_height()
+
+            # If canvas not yet rendered, use default size
+            if canvas_width <= 1:
+                canvas_width = 1160  # Account for padding
+            if canvas_height <= 1:
+                canvas_height = 700  # Account for padding and buttons
+
+            img_width, img_height = self.original_image.size
+
+            # Calculate scale to fit image in window (with some padding)
+            scale_x = (canvas_width - 20) / img_width
+            scale_y = (canvas_height - 20) / img_height
+
+            # Use initial scale of 1.5 or fit to window, whichever is smaller
+            initial_scale = min(1.5, scale_x, scale_y)
+
+            # But ensure minimum scale of 0.5 for very large images
+            self.current_scale = max(0.5, initial_scale)
+
+            # Display the image
+            self._update_image_display()
+
+        except Exception as e:
+            self._log(f"[WARN] Fout bij laden afbeelding: {e}")
+            messagebox.showerror("Fout", f"Kon afbeelding niet laden: {e}")
+
+    def _update_image_display(self):
+        """Updates the displayed image with current scale."""
+        try:
+            if not hasattr(self, 'original_image'):
+                return
+
+            # Calculate new size
+            img_width, img_height = self.original_image.size
+            new_width = int(img_width * self.current_scale)
+            new_height = int(img_height * self.current_scale)
+
+            # Resize image
+            resized_image = self.original_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+            # Convert to PhotoImage
+            self.photo_image = ImageTk.PhotoImage(resized_image)
+
+            # Clear canvas
+            self.image_canvas.delete("all")
+
+            # Display image on canvas
+            self.image_container = self.image_canvas.create_image(0, 0, anchor='nw', image=self.photo_image)
+
+            # Update scroll region
+            self.image_canvas.configure(scrollregion=self.image_canvas.bbox("all"))
+
+        except Exception as e:
+            self._log(f"[WARN] Fout bij weergeven afbeelding: {e}")
+
+    def _zoom_image(self, factor):
+        """Zooms the image by the given factor."""
+        if hasattr(self, 'current_scale'):
+            new_scale = self.current_scale * factor
+            # Limit scale between 0.1 and 5.0
+            self.current_scale = max(0.1, min(5.0, new_scale))
+            self._update_image_display()
+
+    def _fit_image_to_window(self):
+        """Fits the image to the window size."""
+        if not hasattr(self, 'original_image'):
+            return
+
+        canvas_width = self.image_canvas.winfo_width()
+        canvas_height = self.image_canvas.winfo_height()
+
+        img_width, img_height = self.original_image.size
+
+        # Calculate scale to fit image in window
+        scale_x = (canvas_width - 20) / img_width
+        scale_y = (canvas_height - 20) / img_height
+        self.current_scale = min(scale_x, scale_y)
+
+        self._update_image_display()
+
+    def _reset_image_size(self):
+        """Resets the image to original size."""
+        if hasattr(self, 'original_image'):
+            self.current_scale = 1.0
+            self._update_image_display()
+
+    def _on_image_viewer_close(self):
+        """Handles the image viewer window close event."""
+        self.image_viewer_window.destroy()
+        self.image_viewer_window = None
+        self.image_label = None
+        self.current_image_path = None
 
     def _all_items_ok_check(self):
         """Checks if all items are OK, then triggers completion actions."""
@@ -1555,11 +1894,21 @@ class ScannerPanel(ttk.Frame):
             # For all other statuses (DUPLICAAT, NIET OK, etc.), show blank in treeview
             display_status = ''
             tag = 'NOT_OK'
-        
+
         current_values = self.tree.item(item_id)['values']
         if current_values:
             new_values = (display_status, current_values[1])  # Update only the status column
             self.tree.item(item_id, values=new_values, tags=(tag,))
+
+            # Force visual update for better compatibility with compiled executables
+            try:
+                self.tree.update_idletasks()
+                # Re-apply tag configuration to ensure colors are shown
+                if tag == 'OK':
+                    self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')
+                self.tree.see(item_id)  # Ensure the item is visible
+            except Exception:
+                pass  # Silently ignore any update errors
 
     def _save_updated_excel(self):
         """Modified to send XLSX_UPDATED event for session tracking"""
@@ -1705,6 +2054,10 @@ class ScannerPanel(ttk.Frame):
                 self._save_updated_excel()
                 self._log(f"Item '{barcode}' handmatig gemarkeerd als OK.")
                 self.session_item_count += 1  # Increment session item count
+
+                # Open PNG image if setting is enabled and it's an OPUS item
+                self._try_open_opus_image(barcode)
+
                 self._all_items_ok_check()
 
     def _clear_item_status(self):

@@ -2023,6 +2023,7 @@ def start_session():
             
             active_session = c.fetchone()
             if active_session:
+                active_session = dict(active_session)
                 work_minutes = calculate_work_minutes(active_session['start_time'], data['timestamp'])
                 c.execute("""
                     UPDATE sessions 
@@ -2109,6 +2110,7 @@ def end_session():
         
         session = c.fetchone()
         if session:
+            session = dict(session)
             # If session is currently paused, add final pause duration
             if session['pause_start']:
                 final_pause = calculate_work_minutes(session['pause_start'], data['timestamp'])
@@ -2211,13 +2213,19 @@ def xlsx_updated():
             """, (project_id, data['user']))
             
             prev_session = c.fetchone()
-            sequence_number = (prev_session['sequence_number'] or 0) + 1 if prev_session else 1
-            previous_user = prev_session['user'] if prev_session else None
-            
-            # Calculate handoff delay
-            handoff_delay = None
-            if previous_user and prev_session['end_time']:
-                handoff_delay = calculate_work_minutes(prev_session['end_time'], data['timestamp'])
+            if prev_session:
+                prev_session = dict(prev_session)
+                sequence_number = (prev_session['sequence_number'] or 0) + 1
+                previous_user = prev_session['user']
+
+                # Calculate handoff delay
+                handoff_delay = None
+                if previous_user and prev_session['end_time']:
+                    handoff_delay = calculate_work_minutes(prev_session['end_time'], data['timestamp'])
+            else:
+                sequence_number = 1
+                previous_user = None
+                handoff_delay = None
             
             # Find the session start time for the current user's active session
             c.execute("""
@@ -2426,7 +2434,9 @@ def finish_manual_session():
         session = c.fetchone()
         if not session:
             return jsonify({'success': False, 'error': 'No active manual session found'}), 400
-        
+
+        session = dict(session)
+
         # Calculate work duration excluding weekends and holidays
         work_minutes = calculate_work_minutes(session['start_time'], data['timestamp'])
         
@@ -2665,8 +2675,9 @@ def check_session():
         """, (user, project))
         
         session = c.fetchone()
-        
+
         if session:
+            session = dict(session)
             # Check if it's paused (has pause_start)
             if session['pause_start']:
                 return jsonify({
@@ -2718,10 +2729,13 @@ def pause_session():
         session = c.fetchone()
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
-        
+
+        # Convert Row to dict for easier access
+        session_dict = dict(session)
+
         # Check if session is already paused
-        if session.get('pause_start'):
-            logging.warning(f"Session {data['session_id']} is already paused since {session['pause_start']}. Ignoring duplicate pause request.")
+        if session_dict.get('pause_start'):
+            logging.warning(f"Session {data['session_id']} is already paused since {session_dict['pause_start']}. Ignoring duplicate pause request.")
             return jsonify({'success': True, 'warning': 'Session was already paused', 'already_paused': True})
         
         # Store pause start time in session (add column if not exists)
@@ -2741,8 +2755,8 @@ def pause_session():
         
         # Log the pause event (already handled by scanner panels but kept for compatibility)
         # Get user and project from data if provided, otherwise use session values
-        user = data.get('user', session['user'])
-        project = data.get('project', session['project'])
+        user = data.get('user', session_dict['user'])
+        project = data.get('project', session_dict['project'])
         
         # Don't insert SESSION_PAUSE here - scanner_panel already sends it separately
         # This was causing duplicate events
@@ -2778,30 +2792,33 @@ def resume_session():
         session = c.fetchone()
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already ended'}), 404
-        
+
+        # Convert Row to dict for easier access
+        session_dict = dict(session)
+
         # Calculate pause duration and update session
-        if session['pause_start']:
+        if session_dict['pause_start']:
             # Calculate pause duration in minutes
-            pause_minutes = calculate_work_minutes(session['pause_start'], data['timestamp'])
-            
+            pause_minutes = calculate_work_minutes(session_dict['pause_start'], data['timestamp'])
+
             # Add to total pause duration
-            current_pause_duration = session['pause_duration_minutes'] or 0
+            current_pause_duration = session_dict['pause_duration_minutes'] or 0
             total_pause_duration = current_pause_duration + pause_minutes
-            
+
             # Update session with accumulated pause time and clear pause_start
             c.execute("""
-                UPDATE sessions 
+                UPDATE sessions
                 SET pause_duration_minutes = ?,
                     pause_start = NULL
                 WHERE session_id = ?
             """, (total_pause_duration, data['session_id']))
         else:
             pause_minutes = 0
-            total_pause_duration = session['pause_duration_minutes'] or 0
-        
+            total_pause_duration = session_dict['pause_duration_minutes'] or 0
+
         # Get user and project from data if provided, otherwise use session values
-        user = data.get('user', session['user'])
-        project = data.get('project', session['project'])
+        user = data.get('user', session_dict['user'])
+        project = data.get('project', session_dict['project'])
         
         # Don't insert SESSION_RESUME here - scanner_panel already sends it separately
         # This was causing duplicate events
@@ -2870,8 +2887,21 @@ def log_event():
             status = 'OPEN'
             # Only trigger background import service for initial scanner events, not for auto-generated events
             # This prevents infinite loops where background service creates OPEN events that trigger more processing
-            # Exception: Allow OPUS and KL GANNOMAT to be processed even if auto-generated
-            if not (details and ('Auto-detected' in details or 'XLSX_UPDATED' in details)) or user in ['OPUS', 'KL GANNOMAT']:
+            skip_trigger = False
+            
+            # Skip if auto-generated
+            if details and ('Auto-detected' in details or 'XLSX_UPDATED' in details):
+                skip_trigger = True
+            
+            # Skip if manual entry (already fully processed)
+            if details and 'Manual entry' in details:
+                skip_trigger = True
+            
+            # Skip if Excel unified processing already triggered from scanner panel
+            if details and 'Excel-unified-triggered' in details:
+                skip_trigger = True
+            
+            if not skip_trigger:
                 # Trigger the background import service for processing
                 logging.info(f"Event OPEN received for {user} on {project}. Triggering background import service.")
                 background_service.trigger_import_for_event(
@@ -2881,7 +2911,7 @@ def log_event():
                     timestamp=timestamp
                 )
             else:
-                logging.info(f"Skipping background import trigger for auto-generated OPEN event: {user} on {project} ({details})")
+                logging.info(f"Skipping background import trigger: {user} on {project} ({details})")
         elif event == 'PROJECT_START':
             status = 'BEZIG'
             # Update the corresponding OPEN log to BEZIG status
@@ -4126,7 +4156,9 @@ def end_session_manually():
         session = c.fetchone()
         if not session:
             return jsonify({'success': False, 'error': 'Session not found or already completed'}), 404
-        
+
+        session = dict(session)
+
         # Calculate final work duration
         end_time = datetime.now().isoformat()
         total_minutes = calculate_work_minutes(session['start_time'], end_time)
@@ -4167,15 +4199,30 @@ def end_session_manually():
                     proportion = project['item_count'] / total_items
                     project_work_minutes = work_minutes * proportion
                     
-                    # Update or create project_sessions entry
+                    # Check if project_sessions entry exists
                     c.execute("""
-                        INSERT INTO project_sessions (project, status, duration_minutes, last_updated)
-                        VALUES (?, 'AFGEMELD', ?, ?)
-                        ON CONFLICT(project) DO UPDATE SET
-                            duration_minutes = duration_minutes + ?,
-                            last_updated = ?
-                    """, (project['project'], project_work_minutes, end_time, 
-                          project_work_minutes, end_time))
+                        SELECT id, start_time, total_duration_minutes 
+                        FROM project_sessions 
+                        WHERE project = ?
+                    """, (project['project'],))
+                    
+                    existing_project_session = c.fetchone()
+                    
+                    if existing_project_session:
+                        # Update existing entry
+                        c.execute("""
+                            UPDATE project_sessions 
+                            SET total_duration_minutes = COALESCE(total_duration_minutes, 0) + ?,
+                                end_time = ?,
+                                status = 'AFGEMELD'
+                            WHERE project = ?
+                        """, (project_work_minutes, end_time, project['project']))
+                    else:
+                        # Create new entry with all required fields including start_time
+                        c.execute("""
+                            INSERT INTO project_sessions (project, start_time, end_time, status, total_duration_minutes)
+                            VALUES (?, ?, ?, 'AFGEMELD', ?)
+                        """, (project['project'], session['start_time'], end_time, project_work_minutes))
         
         conn.commit()
         
@@ -11659,4 +11706,53 @@ def update_holiday(holiday_id):
     except Exception as e:
         logging.error(f"Error updating holiday: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/project/<project>/items-by-user', methods=['GET'])
+def get_project_items_by_user(project):
+    """
+    Get total item counts by user for a specific project.
+    Returns the sum of all item_count entries for each user.
+    """
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Normalize project name
+        project_normalized = normalize_project_id(project)
+        
+        # Query to sum item counts per user for this project
+        cursor.execute('''
+            SELECT user, SUM(COALESCE(item_count, 0)) as total_items
+            FROM logs
+            WHERE project = ? OR project = ?
+            GROUP BY user
+            HAVING total_items > 0
+            ORDER BY user
+        ''', (project, project_normalized))
+        
+        rows = cursor.fetchall()
+        
+        # Build user_items dictionary
+        user_items = {}
+        for row in rows:
+            user = row[0]
+            total = row[1]
+            if user and total > 0:
+                user_items[user] = int(total)
+        
+        return jsonify({
+            'success': True,
+            'project': project,
+            'user_items': user_items,
+            'total_users': len(user_items),
+            'total_items': sum(user_items.values())
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting project items by user: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 

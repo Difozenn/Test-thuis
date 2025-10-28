@@ -53,6 +53,13 @@ class SettingsPanel(ttk.Frame):
                 'description': 'Verplaatst het .xlsx-bestand en het _updated.xlsx-bestand naar een "Archief" map wanneer alle barcodes zijn gescand en als OK zijn gemarkeerd.',
                 'default': False
             },
+            {
+                'id': 'open_image_on_opus_scan',
+                'type': 'checkbox',
+                'label': 'Afbeelding openen bij scan OPUS',
+                'description': 'Opent automatisch de bijbehorende PNG afbeelding wanneer een OPUS item succesvol is gescand. De afbeelding moet dezelfde naam hebben als het gescande .HOP/.HOPS bestand maar met een .png extensie.',
+                'default': False
+            },
             # To add more settings in the future, just add a new dictionary here
         ]
 

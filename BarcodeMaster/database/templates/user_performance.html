@@ -454,6 +454,12 @@
             <h2 class="section-title">Performance Trend</h2>
             <p class="section-subtitle">Prestatie-ontwikkeling over tijd</p>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: #6c757d;">
+                <input type="checkbox" id="exclude-rep-varient" style="cursor: pointer; width: 18px; height: 18px;">
+                <span>Verberg rep_varient projecten</span>
+            </label>
+        </div>
     </div>
     <div class="chart-container">
         <canvas id="performanceChart"></canvas>
@@ -563,6 +569,7 @@ function formatHumanTime(decimalHours) {
 }
 
 let userTarget = 30; // Default fallback
+let performanceChartInstance = null; // Global chart instance for recreation
 
 // Period filter variables (matching statistics page)
 let currentPeriod = {{ period|default(30) }};
@@ -801,14 +808,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 
     // Function to create the performance chart
-    function createPerformanceChart() {
+    function createPerformanceChart(excludeRepVarient = false) {
+        // Destroy existing chart if it exists
+        if (performanceChartInstance) {
+            performanceChartInstance.destroy();
+            performanceChartInstance = null;
+        }
+
         // Performance chart
         const ctx = document.getElementById('performanceChart').getContext('2d');
         const rawActivityData = {{ user.activity_data | tojson }};
 
+        // Filter out rep_varient projects if checkbox is checked
+        const filteredActivityData = excludeRepVarient
+            ? rawActivityData.filter(d => !d.project.toLowerCase().includes('rep_varient'))
+            : rawActivityData;
+
         // Aggregate data by date (multiple projects per day -> single day entry)
         const dateMap = {};
-        rawActivityData.forEach(d => {
+        filteredActivityData.forEach(d => {
             if (!dateMap[d.date]) {
                 dateMap[d.date] = { items: 0, hours: 0 };
             }
@@ -1082,8 +1100,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         ]
     };
-    
-    new Chart(ctx, {
+
+    performanceChartInstance = new Chart(ctx, {
         type: 'line',
         data: chartData,
         options: {
@@ -1141,6 +1159,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     setTimeout(() => {
         createPerformanceChart();
     }, 100);
+
+    // Add event listener for rep_varient filter checkbox
+    const excludeRepVarientCheckbox = document.getElementById('exclude-rep-varient');
+    if (excludeRepVarientCheckbox) {
+        excludeRepVarientCheckbox.addEventListener('change', function() {
+            createPerformanceChart(this.checked);
+        });
+    }
 });
 
 // Export Functions for User Performance

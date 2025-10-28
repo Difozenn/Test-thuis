@@ -8,13 +8,6 @@ from config_utils import get_config_path, update_config
 from datetime import datetime, date
 import threading
 
-# Bypass proxy for direct connection to BarcodeMaster
-# This prevents corporate proxy from intercepting API requests
-PROXIES = {
-    'http': None,
-    'https': None
-}
-
 class DatabasePanel(ttk.Frame):
     def __init__(self, parent, main_app):
         super().__init__(parent)
@@ -234,7 +227,7 @@ class DatabasePanel(ttk.Frame):
                     logs_url = api_url.replace('/log', '/logs')
                     
                     # Query the API for OPEN events for this user/project
-                    response = requests.get(logs_url, timeout=2, proxies=PROXIES)
+                    response = requests.get(logs_url, timeout=2)
                     if response.status_code == 200:
                         logs = response.json()
                         # Find the most recent OPEN event for this user/project with a file path
@@ -550,7 +543,7 @@ class DatabasePanel(ttk.Frame):
                 'details': 'Sessie gepauzeerd via database panel'
             }
             
-            response = requests.post(api_url, json=data, timeout=5, proxies=PROXIES)
+            response = requests.post(api_url, json=data, timeout=5)
             if response.ok:
                 messagebox.showinfo("Sessie Gepauzeerd", 
                     f"Werk sessie voor {user} op project '{project}' is gepauzeerd.\n\n"
@@ -602,7 +595,7 @@ class DatabasePanel(ttk.Frame):
                         
                         try:
                             response = requests.post(api_url.replace('/log', '/session/close'),
-                                                   json=close_data, timeout=2, proxies=PROXIES)
+                                                   json=close_data, timeout=2)
                             if response.ok:
                                 result = response.json()
                                 if result.get('sessions_closed', 0) > 0:
@@ -660,13 +653,13 @@ class DatabasePanel(ttk.Frame):
             api_url = self.api_url_var.get()
             base_url = api_url.replace('/log', '')
             
-            response = requests.post(f"{base_url}/session/manual_start",
+            response = requests.post(f"{base_url}/session/manual_start", 
                                    json={
                                        'user': user,
                                        'project': project_name,
                                        'timestamp': datetime.now().isoformat()
-                                   },
-                                   timeout=2, proxies=PROXIES)  # Reduced timeout
+                                   }, 
+                                   timeout=2)  # Reduced timeout
             
             if response.status_code == 200:
                 result = response.json()
@@ -771,14 +764,14 @@ class DatabasePanel(ttk.Frame):
             api_url = self.api_url_var.get()
             base_url = api_url.replace('/log', '')
             
-            response = requests.post(f"{base_url}/session/manual_finish",
+            response = requests.post(f"{base_url}/session/manual_finish", 
                                    json={
                                        'user': user,
                                        'project': project_name,
                                        'item_count': result['item_count'],
                                        'timestamp': datetime.now().isoformat()
-                                   },
-                                   timeout=2, proxies=PROXIES)  # Reduced timeout
+                                   }, 
+                                   timeout=2)  # Reduced timeout
             
             if response.status_code == 200:
                 api_result = response.json()
@@ -862,7 +855,7 @@ class DatabasePanel(ttk.Frame):
             "user": self.user_var.get() if hasattr(self, 'user_var') else 'testuser'
         }
         try:
-            response = requests.post(url, json=payload, timeout=2, proxies=PROXIES)  # Reduced timeout
+            response = requests.post(url, json=payload, timeout=2)  # Reduced timeout
             if response.status_code == 200 and response.json().get('success'):
                 self.connection_status_label.config(text="Verbonden (TEST)", foreground="green")
                 print('[DB PANEL] Manual test connection successful')
@@ -896,7 +889,7 @@ class DatabasePanel(ttk.Frame):
             payload['item_count'] = item_count
 
         try:
-            resp = requests.post(api_url, json=payload, timeout=2, proxies=PROXIES)  # Reduced timeout
+            resp = requests.post(api_url, json=payload, timeout=2)  # Reduced timeout
             if resp.status_code in [200, 201] and resp.json().get('success'):
                 messagebox.showinfo("Succes", f"Event '{event}' voor '{project_name}' succesvol gelogd.")
                 self.refresh_logs()
@@ -938,7 +931,7 @@ class DatabasePanel(ttk.Frame):
             try:
                 url = self.api_url_var.get()
                 logs_url = url.replace('/log', '/logs')
-                response = requests.get(logs_url, timeout=2, proxies=PROXIES)  # Reduced timeout
+                response = requests.get(logs_url, timeout=2)  # Reduced timeout
                 if response.status_code == 200:
                     logs = response.json()
                     # Update connection status on successful logs fetch

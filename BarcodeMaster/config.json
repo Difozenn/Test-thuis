@@ -3,7 +3,7 @@
     "api_url": "http://localhost:5001/log",
     "user": "NESTING",
     "admin_db_init_enabled": true,
-    "scanner_panel_com_port": "",
+    "scanner_panel_com_port": "COM1",
     "scanner_panel_type": "USB",
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
@@ -51,7 +51,7 @@
     "backup_enabled": true,
     "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
-    "last_backup_status": "Succesvol gebackupt naar C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups\\central_logging_backup.sqlite op 2025-06-29 21:47:06",
+    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2025-10-23 14:58:56)",
     "work_hours": {
         "monday": {
             "start": 7.5,
@@ -103,5 +103,6 @@
     "efficiency_targets_updated": "2025-07-19T22:14:03.443231",
     "efficiency_targets_created": "2025-07-06T14:34:24.492524",
     "accura_output_dir": "//WIN-D62BRA7BHMI/Server/ACCURA",
-    "boere_output_dir": "//WIN-D62BRA7BHMI/Server/BOERE"
+    "boere_output_dir": "//WIN-D62BRA7BHMI/Server/BOERE",
+    "scanner_panel_com_auto_connect": true
 }

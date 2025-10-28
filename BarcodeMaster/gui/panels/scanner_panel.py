@@ -28,6 +28,11 @@ class ScannerPanel(tk.Frame):
         self.app_has_focus_var = app_has_focus_var
         self.background_import_service = background_service_instance
         
+        # Register callback with background import service
+        if self.background_import_service:
+            self.background_import_service.log_callback = self.log_message_from_service
+            print("[SCANNER] Registered callback with background_import_service")
+        
         # Register callback with db_log_api for forwarding (only one callback needed)
         try:
             from database.db_log_api import register_scanner_callback
@@ -2557,7 +2562,6 @@ class ScannerPanel(tk.Frame):
 
         # Disable scanning while processing
         self.usb_entry.config(state='disabled')
-        self.com_entry.config(state='disabled')
 
         # Store pending scan data for confirmation
         self.pending_scan_confirmation = {
@@ -2590,7 +2594,7 @@ class ScannerPanel(tk.Frame):
         # Stop here - the rest will be handled after confirmation
         return
 
-        # OLD CODE BELOW (will be moved to commit phase)
+        # OLD CODE BELOW (will be executed after user confirms)
         # Now send OPEN event for the current user
         data_open = {
             'event': 'OPEN',
@@ -2654,7 +2658,7 @@ class ScannerPanel(tk.Frame):
                     link_data = {
                         'session_id': session_to_update,
                         'project': project_code_to_log,
-                        'item_count': initial_item_count,
+                        'item_count': int(initial_item_count),
                         'timestamp': scan_timestamp
                     }
                     # Build the correct URL - api_url is base URL, not the /log endpoint
@@ -2781,8 +2785,8 @@ class ScannerPanel(tk.Frame):
         import os
 
         base_project_code = ""
-        # Look for MOxxxxx pattern (exactly 5 digits to match BarcodeMatch)
-        mo_match = re.search(r'(MO\d{5})', code_input, re.IGNORECASE)
+        # Look for MOxxxx or MOxxxxx pattern (4 or 5 digits)
+        mo_match = re.search(r'(MO\d{4,5})', code_input, re.IGNORECASE)
         if mo_match:
             base_project_code = mo_match.group(0).upper()
         
@@ -3039,10 +3043,27 @@ class ScannerPanel(tk.Frame):
         tk.Entry(info_frame, textvariable=project_code_var, width=50).grid(row=0, column=1, pady=5, padx=5)
         tk.Label(info_frame, text="(bijv. MO12345_Project_(1-1))", fg="gray", bg="#f0f0f0").grid(row=0, column=2, sticky='w')
 
-        # MO Number
+        # MO Number (auto-extracted from project code)
         tk.Label(info_frame, text="MO Nummer:", bg="#f0f0f0").grid(row=1, column=0, sticky='w', pady=5)
         mo_number_var = tk.StringVar()
-        tk.Entry(info_frame, textvariable=mo_number_var, width=50).grid(row=1, column=1, pady=5, padx=5)
+        mo_number_entry = tk.Entry(info_frame, textvariable=mo_number_var, width=50, state='readonly', bg='#f5f5f5')
+        mo_number_entry.grid(row=1, column=1, pady=5, padx=5)
+        tk.Label(info_frame, text="(automatisch ingevuld)", fg="gray", bg="#f0f0f0", font=("Arial", 9, "italic")).grid(row=1, column=2, sticky='w')
+
+        # Auto-extract MO number when project code changes
+        def on_project_code_change(*args):
+            project_code = project_code_var.get().strip()
+            if project_code:
+                # Extract MO number from project code
+                mo_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
+                if mo_match:
+                    mo_number_var.set(mo_match.group(1).upper())
+                else:
+                    mo_number_var.set('')
+            else:
+                mo_number_var.set('')
+
+        project_code_var.trace_add('write', on_project_code_change)
 
         # SO Number
         tk.Label(info_frame, text="SO Nummer:", bg="#f0f0f0").grid(row=2, column=0, sticky='w', pady=5)
@@ -3136,7 +3157,14 @@ class ScannerPanel(tk.Frame):
             base_mo_code = base_mo_code_match.group(1).upper() if base_mo_code_match else project_code
 
             # Get values (use base_mo_code as fallback for mo_number)
-            mo_number = mo_number_var.get().strip() or (base_mo_code if base_mo_code_match else None)
+            mo_number_from_var = mo_number_var.get().strip()
+            print(f"[SUBMIT DEBUG] project_code: '{project_code}'")
+            print(f"[SUBMIT DEBUG] mo_number_var.get().strip(): '{mo_number_from_var}'")
+            print(f"[SUBMIT DEBUG] base_mo_code: '{base_mo_code}'")
+
+            mo_number = mo_number_from_var or (base_mo_code if base_mo_code_match else None)
+            print(f"[SUBMIT DEBUG] Final mo_number: '{mo_number}'")
+
             so_number = so_number_var.get().strip() or None
             customer_name = customer_name_var.get().strip() or None
             color = color_var.get().strip() or None
@@ -3157,38 +3185,46 @@ class ScannerPanel(tk.Frame):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-    def _process_manual_entry(self, project_code, base_mo_code, mo_number, so_number, customer_name, color, user_entries):
+    def _process_manual_entry(self, project_code, base_mo_code, mo_number, so_number, customer_name, color, user_entries, original_timestamp=None, original_session_data=None):
         """Process manual entry and send events via API (mimics NESTING_PROCESSING flow)"""
         config = get_config()
         api_url = config.get('api_url', '').rstrip('/')
         current_user = config.get('user', 'NESTING')
 
         if not api_url:
-            self.log_message("❌ API URL niet geconfigureerd", "error")
+            self.after(0, lambda: self.log_message("❌ API URL niet geconfigureerd", "error"))
             return
 
-        timestamp = datetime.now().isoformat()
+        # Use original scan timestamp if provided, otherwise use current time
+        timestamp = original_timestamp if original_timestamp else datetime.now().isoformat()
 
-        # Determine which session to use
-        session_data = {}
-        if self.active_scan_session == 2 and self.session2_id:
-            session_data['session_id'] = self.session2_id
-        elif self.active_scan_session == 1 and self.session1_id:
-            session_data['session_id'] = self.session1_id
-        elif self.current_session_id:
-            session_data['session_id'] = self.current_session_id
+        # Use original session data if provided, otherwise determine current session
+        if original_session_data:
+            session_data = original_session_data
+        else:
+            session_data = {}
+            if self.active_scan_session == 2 and self.session2_id:
+                session_data['session_id'] = self.session2_id
+            elif self.active_scan_session == 1 and self.session1_id:
+                session_data['session_id'] = self.session1_id
+            elif self.current_session_id:
+                session_data['session_id'] = self.current_session_id
 
         try:
-            # Generate Excel files for users that need them (ACCURA, BOERE, MASSIEF, HANDWERK)
+            # Generate Excel files for users that need them (ACCURA, BOERE, MASSIEF, HANDWERK, HOPS, MDB)
             from services.excel_processing_functions import (
                 generate_excel_for_accura,
                 generate_excel_for_boere,
                 generate_excel_for_massief,
-                generate_excel_for_handwerk
+                generate_excel_for_handwerk,
+                generate_hops_for_manual_entry,
+                generate_mdb_for_manual_entry
             )
 
             # Store generated Excel paths for each user
             excel_paths = {}
+            # Track actual project names created (may differ from input project_code due to timestamp prefixes)
+            actual_project_names = {}
 
             for user, entry_data in user_entries.items():
                 processing_type = entry_data.get('processing_type')
@@ -3215,31 +3251,49 @@ class ScannerPanel(tk.Frame):
                                 items_list, mo_number, so_number, customer_name, project_code
                             )
                             if excel_path:
-                                self.log_message(f"✓ Excel gegenereerd voor ACCURA: {excel_path}", "success")
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ Excel gegenereerd voor ACCURA: {p}", "success"))
                                 excel_paths[user] = excel_path
                         elif processing_type == 'BOERE_PROCESSING':
                             excel_path = generate_excel_for_boere(
                                 items_list, mo_number, so_number, customer_name, project_code
                             )
                             if excel_path:
-                                self.log_message(f"✓ Excel gegenereerd voor BOERE: {excel_path}", "success")
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ Excel gegenereerd voor BOERE: {p}", "success"))
                                 excel_paths[user] = excel_path
                         elif processing_type == 'MASSIEF_PROCESSING':
                             excel_path = generate_excel_for_massief(
                                 items_list, mo_number, so_number, customer_name, project_code
                             )
                             if excel_path:
-                                self.log_message(f"✓ Excel gegenereerd voor MASSIEF: {excel_path}", "success")
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ Excel gegenereerd voor MASSIEF: {p}", "success"))
                                 excel_paths[user] = excel_path
                         elif processing_type == 'HANDWERK_PROCESSING':
                             excel_path = generate_excel_for_handwerk(
                                 items_list, mo_number, so_number, customer_name, project_code
                             )
                             if excel_path:
-                                self.log_message(f"✓ Excel gegenereerd voor HANDWERK: {excel_path}", "success")
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ Excel gegenereerd voor HANDWERK: {p}", "success"))
                                 excel_paths[user] = excel_path
+                        elif processing_type == 'HOPS_PROCESSING':
+                            excel_path = generate_hops_for_manual_entry(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ HOPS directory en Excel gegenereerd: {p}", "success"))
+                                excel_paths[user] = excel_path
+                                # Project name is just project_code (no timestamp manipulation needed)
+                                actual_project_names[user] = project_code
+                        elif processing_type == 'MDB_PROCESSING':
+                            excel_path = generate_mdb_for_manual_entry(
+                                items_list, mo_number, so_number, customer_name, project_code
+                            )
+                            if excel_path:
+                                self.after(0, lambda p=excel_path: self.log_message(f"✓ MDB Excel gegenereerd: {p}", "success"))
+                                excel_paths[user] = excel_path
+                                # Project name is just project_code (no timestamp manipulation needed)
+                                actual_project_names[user] = project_code
                     except Exception as e:
-                        self.log_message(f"⚠️ Excel genereren voor {user} gefaald: {e}", "warning")
+                        self.after(0, lambda u=user, err=e: self.log_message(f"⚠️ Excel genereren voor {u} gefaald: {err}", "warning"))
 
             # First send BACKGROUND_WORK_FOUND for each user with items
             for user, entry_data in user_entries.items():
@@ -3259,18 +3313,22 @@ class ScannerPanel(tk.Frame):
 
                 if total_items > 0:
                     # Send BACKGROUND_WORK_FOUND callback
-                    self.log_message(f"BACKGROUND_WORK_FOUND:{project_code}:{user}:{total_items}", "info")
+                    self.after(0, lambda pc=project_code, u=user, ti=total_items: self.log_message(f"BACKGROUND_WORK_FOUND:{pc}:{u}:{ti}", "info"))
                     time.sleep(0.3)  # Small delay between users
 
             # Now send OPEN events for each user with items
             for user, entry_data in user_entries.items():
                 processing_type = entry_data.get('processing_type')
 
+                # Use actual project name if it was modified during Excel generation (HOPS/MDB add timestamp prefix)
+                # Otherwise use original project_code
+                project_name_for_event = actual_project_names.get(user, project_code)
+
                 # Build OPEN event data
                 data_open = {
                     'event': 'OPEN',
                     'details': 'Manual entry',
-                    'project': project_code,
+                    'project': project_name_for_event,
                     'base_mo_code': base_mo_code,
                     'user': user,
                     'session_type': 'SCANNER',  # Use SCANNER type for batch processing
@@ -3330,19 +3388,22 @@ class ScannerPanel(tk.Frame):
                 try:
                     resp = requests.post(api_url, json=data_open, timeout=3)
                     if resp.ok:
-                        self.log_message(f"✓ OPEN event verstuurd voor {user} op {project_code}", "success")
+                        self.after(0, lambda u=user, pc=project_code: self.log_message(f"✓ OPEN event verstuurd voor {u} op {pc}", "success"))
                     else:
-                        self.log_message(f"⚠️ OPEN event voor {user} gefaald (HTTP {resp.status_code})", "warning")
+                        self.after(0, lambda u=user, sc=resp.status_code: self.log_message(f"⚠️ OPEN event voor {u} gefaald (HTTP {sc})", "warning"))
                 except Exception as e:
-                    self.log_message(f"❌ Fout bij versturen OPEN event voor {user}: {e}", "error")
+                    self.after(0, lambda u=user, err=e: self.log_message(f"❌ Fout bij versturen OPEN event voor {u}: {err}", "error"))
 
             # Send BEZIG event for triggering user (typically NESTING)
             if current_user in user_entries:
                 time.sleep(0.5)
+                # Use actual project name for current_user if available
+                project_name_for_bezig = actual_project_names.get(current_user, project_code)
+
                 data_bezig = {
                     'event': 'BEZIG',
                     'details': 'Started processing manual entry',
-                    'project': project_code,
+                    'project': project_name_for_bezig,
                     'user': current_user,
                     'status': 'BEZIG',
                     'timestamp': timestamp
@@ -3351,9 +3412,9 @@ class ScannerPanel(tk.Frame):
                 try:
                     resp = requests.post(api_url, json=data_bezig, timeout=3)
                     if resp.ok:
-                        self.log_message(f"✓ BEZIG event verstuurd voor {current_user}", "success")
+                        self.after(0, lambda cu=current_user: self.log_message(f"✓ BEZIG event verstuurd voor {cu}", "success"))
                 except Exception as e:
-                    self.log_message(f"⚠️ BEZIG event gefaald: {e}", "warning")
+                    self.after(0, lambda err=e: self.log_message(f"⚠️ BEZIG event gefaald: {err}", "warning"))
 
             # Update session project tracking and display
             session_to_update = None
@@ -3406,15 +3467,15 @@ class ScannerPanel(tk.Frame):
                     link_url = f"{base_url}/session/add_project"
                     response = requests.post(link_url, json=link_data, timeout=1)
                     if response.ok:
-                        self.log_message(f"✓ Project {project_code} gekoppeld aan sessie {session_to_update}", "debug")
+                        self.after(0, lambda pc=project_code, sid=session_to_update: self.log_message(f"✓ Project {pc} gekoppeld aan sessie {sid}", "debug"))
                 except Exception as e:
-                    self.log_message(f"⚠️ Fout bij koppelen project aan sessie: {e}", "warning")
+                    self.after(0, lambda err=e: self.log_message(f"⚠️ Fout bij koppelen project aan sessie: {err}", "warning"))
 
             # Log processing complete message
-            self.log_message(f"✅ Handmatige invoer verwerking voltooid voor {project_code}", "success")
+            self.after(0, lambda pc=project_code: self.log_message(f"✅ Handmatige invoer verwerking voltooid voor {pc}", "success"))
 
         except Exception as e:
-            self.log_message(f"❌ Fout bij verwerken handmatige invoer: {e}", "error")
+            self.after(0, lambda err=e: self.log_message(f"❌ Fout bij verwerken handmatige invoer: {err}", "error"))
 
     def save_com_port(self, *args):
         save_config({'scanner_panel_com_port': self.com_port_var.get()})
@@ -3426,21 +3487,50 @@ class ScannerPanel(tk.Frame):
         """
         Called when background service completes data extraction.
         Shows confirmation popup with 3 options: Correct/Edit/Delete
+        
+        NOTE: This is called from a background thread, so we must use self.after()
+        to schedule GUI updates on the main thread.
+        """
+        # Schedule the actual handling on the main GUI thread
+        self.after(0, lambda: self._handle_extraction_complete_main_thread(extraction_result))
+    
+    def _handle_extraction_complete_main_thread(self, extraction_result):
+        """
+        Main thread handler for extraction completion.
+        This method runs on the GUI thread and can safely update widgets.
         """
         try:
+            # Debug: Print the full extraction result to console
+            print(f"[SCANNER] Extraction result keys: {extraction_result.keys()}")
+            print(f"[SCANNER] Full extraction result: {extraction_result}")
+            
             # Store extracted data
             self.pending_scan_confirmation['extracted_data'] = extraction_result
             self.pending_scan_confirmation['state'] = 'awaiting_confirmation'
 
             # Log extraction results
             if extraction_result.get('extraction_complete'):
-                self.log_message(f"✓ Data geëxtraheerd voor project {extraction_result.get('project')}", "success")
+                project_name = extraction_result.get('project', 'Onbekend')
+                self.log_message(f"✓ Extractie voltooid voor {project_name}", "success")
 
-                # Show user counts
-                for user, data in extraction_result.get('users', {}).items():
-                    total_items = data.get('total_items', 0)
-                    if total_items > 0:
-                        self.log_message(f"  • {user}: {total_items} items gevonden", "info")
+                # Count total items across all users
+                users_data = extraction_result.get('users', {})
+                total_items_found = 0
+                user_summaries = []
+                
+                if users_data:
+                    for user, data in users_data.items():
+                        total_items = data.get('total_items', 0)
+                        total_items_found += total_items
+                        user_summaries.append((user, total_items))
+                
+                # Show summary
+                self.log_message(f"📊 {total_items_found} items gevonden voor {len(user_summaries)} gebruiker(s)", "info")
+                for user, count in user_summaries:
+                    self.log_message(f"  • {user}: {count} items", "info")
+                
+                if total_items_found == 0:
+                    self.log_message(f"⚠️ Geen items gevonden voor verwerking", "warning")
 
                 # Show metadata if found
                 if extraction_result.get('mo_number'):
@@ -3449,6 +3539,8 @@ class ScannerPanel(tk.Frame):
                     self.log_message(f"  • SO: {extraction_result.get('so_number')}", "info")
                 if extraction_result.get('customer_name'):
                     self.log_message(f"  • Klant: {extraction_result.get('customer_name')}", "info")
+                if extraction_result.get('color'):
+                    self.log_message(f"  • Kleur: {extraction_result.get('color')}", "info")
 
                 # Show errors if any
                 for error in extraction_result.get('errors', []):
@@ -3460,13 +3552,13 @@ class ScannerPanel(tk.Frame):
                 self.log_message(f"❌ Extraction failed for project {extraction_result.get('project')}", "error")
                 # Re-enable scanning
                 self.usb_entry.config(state='normal')
-                self.com_entry.config(state='normal')
 
         except Exception as e:
+            import traceback
             self.log_message(f"❌ Error handling extraction: {e}", "error")
+            print(f"[SCANNER] Exception in _handle_extraction_complete_main_thread: {traceback.format_exc()}")
             # Re-enable scanning
             self.usb_entry.config(state='normal')
-            self.com_entry.config(state='normal')
 
     def show_scan_confirmation_dialog(self):
         """Show confirmation popup with Correct/Edit/Delete options"""
@@ -3478,21 +3570,21 @@ class ScannerPanel(tk.Frame):
         # Create confirmation dialog
         dialog = tk.Toplevel(self)
         dialog.title("Bevestig Scan Data")
-        dialog.geometry("500x300")
+        dialog.geometry("650x600")  # Increased size to ensure buttons are visible
         dialog.configure(bg="#f0f0f0")
         dialog.transient(self)
         dialog.grab_set()  # Modal dialog
 
         # Center the dialog
         dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"+{x}+{y}")
+        x = (dialog.winfo_screenwidth() // 2) - (650 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (600 // 2)
+        dialog.geometry(f"650x600+{x}+{y}")
 
         # Question label
         question_label = tk.Label(
             dialog,
-            text="Is deze data correct?",
+            text="Scan verwerken?",
             font=('Arial', 16, 'bold'),
             bg="#f0f0f0",
             fg="#333"
@@ -3501,20 +3593,28 @@ class ScannerPanel(tk.Frame):
 
         # Info label
         info_text = f"Project: {extracted.get('project', 'Onbekend')}\n"
-        if extracted.get('mo_number'):
-            info_text += f"MO: {extracted.get('mo_number')}\n"
-        if extracted.get('so_number'):
-            info_text += f"SO: {extracted.get('so_number')}\n"
+        info_text += f"MO Code: {extracted.get('mo_number', 'Onbekend')}\n"
+        
+        # Show metadata if available
         if extracted.get('customer_name'):
             info_text += f"Klant: {extracted.get('customer_name')}\n"
-
+        if extracted.get('so_number'):
+            info_text += f"SO: {extracted.get('so_number')}\n"
+        
         # Count items per user
         total_items = 0
-        for user, data in extracted.get('users', {}).items():
-            items = data.get('total_items', 0)
-            if items > 0:
-                info_text += f"\n{user}: {items} items"
+        users_data = extracted.get('users', {})
+        if users_data:
+            info_text += f"\nGevonden items:\n"
+            for user, data in users_data.items():
+                items = data.get('total_items', 0)
+                info_text += f"  • {user}: {items} items\n"
                 total_items += items
+        
+        if total_items > 0:
+            info_text += f"\nTotaal: {total_items} items"
+        else:
+            info_text += f"\n⚠️ Geen items gevonden"
 
         info_label = tk.Label(
             dialog,
@@ -3525,6 +3625,17 @@ class ScannerPanel(tk.Frame):
             justify='left'
         )
         info_label.pack(pady=10)
+        
+        # Add note
+        note_label = tk.Label(
+            dialog,
+            text="Klik 'Verwerken' om deze items\ntoe te voegen aan de database.",
+            font=('Arial', 9),
+            bg="#f0f0f0",
+            fg="#666",
+            justify='center'
+        )
+        note_label.pack(pady=5)
 
         # Button frame
         button_frame = tk.Frame(dialog, bg="#f0f0f0")
@@ -3548,12 +3659,12 @@ class ScannerPanel(tk.Frame):
         # Create buttons
         correct_btn = tk.Button(
             button_frame,
-            text="✓ Ja, Correct",
+            text="✓ Verwerken",
             command=on_correct,
             bg="#28a745",
             fg="white",
             font=('Arial', 12, 'bold'),
-            padx=20,
+            padx=30,
             pady=10,
             relief='raised',
             bd=2
@@ -3562,7 +3673,7 @@ class ScannerPanel(tk.Frame):
 
         edit_btn = tk.Button(
             button_frame,
-            text="✏️ Nee, Aanpassen",
+            text="✏️ Aanpassen",
             command=on_edit,
             bg="#ffc107",
             fg="black",
@@ -3576,7 +3687,7 @@ class ScannerPanel(tk.Frame):
 
         delete_btn = tk.Button(
             button_frame,
-            text="🗑️ Verwijderen",
+            text="✗ Annuleren",
             command=on_delete,
             bg="#dc3545",
             fg="white",
@@ -3620,6 +3731,7 @@ class ScannerPanel(tk.Frame):
         extracted_data = self.pending_scan_confirmation.get('extracted_data', {})
 
         all_ok = True
+        session_to_update = None  # Initialize before try block to avoid UnboundLocalError
 
         try:
             # PHASE 1: Send OPEN event for current user
@@ -3650,13 +3762,18 @@ class ScannerPanel(tk.Frame):
             if current_user in extracted_data.get('users', {}):
                 user_data = extracted_data['users'][current_user]
                 if 'nesting_count' in user_data:
-                    data_open['nesting_count'] = user_data['nesting_count']
-                    data_open['opdeelzaag_count'] = user_data.get('opdeelzaag_count', 0)
-                    data_open['item_count'] = user_data['total_items']
+                    data_open['nesting_count'] = int(user_data['nesting_count'])
+                    data_open['opdeelzaag_count'] = int(user_data.get('opdeelzaag_count', 0))
+                    data_open['item_count'] = int(user_data['total_items'])
                 elif 'item_count' in user_data:
-                    data_open['item_count'] = user_data['item_count']
+                    data_open['item_count'] = int(user_data['item_count'])
                 if 'aantal_sides' in user_data:
-                    data_open['aantal_sides'] = user_data['aantal_sides']
+                    data_open['aantal_sides'] = int(user_data['aantal_sides'])
+
+            # Mark Excel processors to prevent duplicate unified processing
+            excel_processors = ['NESTING', 'ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
+            if current_user in excel_processors:
+                data_open['details'] = f"{data_open.get('details', '')} [Excel-unified-triggered]"
 
             # Send OPEN event
             resp_open = requests.post(api_url, json=data_open, timeout=3)
@@ -3668,8 +3785,6 @@ class ScannerPanel(tk.Frame):
             self.current_project = project_code_to_log
 
             # Update project in session display
-            session_to_update = None
-
             if self.active_scan_session == 1 and self.session1_id:
                 session_to_update = self.session1_id
                 self.session1_project = project_code_to_log
@@ -3710,7 +3825,7 @@ class ScannerPanel(tk.Frame):
                 link_data = {
                     'session_id': session_to_update,
                     'project': project_code_to_log,
-                    'item_count': initial_item_count,
+                    'item_count': int(initial_item_count),
                     'timestamp': scan_timestamp
                 }
                 base_url = api_url.replace('/log', '') if '/log' in api_url else api_url
@@ -3719,16 +3834,17 @@ class ScannerPanel(tk.Frame):
                 if response.ok:
                     self.log_message(f"✓ Project {project_code_to_log} gekoppeld aan sessie {session_to_update}", "debug")
                 else:
-                    self.log_message(f"⚠️ Kon project niet koppelen: {response.text}", "warning")
+                    self.log_message(f" Kon project niet koppelen: {response.text}", "warning")
             except Exception as e:
-                self.log_message(f"⚠️ Kon project niet koppelen aan sessie: {e}", "warning")
+                self.log_message(f" Kon project niet koppelen aan sessie: {e}", "warning")
 
         # PHASE 3: Trigger background service for Excel generation and other users
-        excel_processors = ['NESTING', 'ACCURA', 'BOERE']
+        excel_processors = ['NESTING', 'ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
         if current_user in excel_processors:
-            self.after(500, lambda: self.log_message(f"🔄 Excel verwerking wordt gestart voor alle gebruikers...", "info"))
+            self.after(500, lambda: self.log_message(f" Excel verwerking wordt gestart voor alle gebruikers...", "info"))
 
-        # Now trigger the NORMAL background service (not extract_only) with commit data
+        # Now trigger the NORMAL background service (not extract_only)
+        # This will re-read files but that's okay - it's the working code
         self.background_import_service.process_scan_for_open_event_async(
             project_code_to_log=project_code_to_log,
             base_project_code=base_project_code,
@@ -3736,8 +3852,7 @@ class ScannerPanel(tk.Frame):
             current_user_scanner=current_user,
             api_url=api_url,  # Pass API URL for database writes
             config_data=config,
-            timestamp=scan_timestamp,
-            extract_only=False  # Normal processing mode - generates files
+            timestamp=scan_timestamp
         )
 
         if all_ok:
@@ -3752,7 +3867,6 @@ class ScannerPanel(tk.Frame):
         # Clear pending data and re-enable scanning
         self.pending_scan_confirmation = None
         self.usb_entry.config(state='normal')
-        self.com_entry.config(state='normal')
         self.usb_entry.config(bg='light green')
         self.after(2000, lambda: self.usb_entry.config(bg='white'))
 
@@ -3815,11 +3929,29 @@ class ScannerPanel(tk.Frame):
         base_mo_entry = tk.Entry(scrollable_frame, textvariable=base_mo_code_var, width=30, font=('Arial', 10))
         base_mo_entry.grid(row=2, column=1, sticky='ew', pady=5)
 
-        # MO Number (pre-filled from extracted metadata)
+        # MO Number (auto-extracted from project code)
         tk.Label(scrollable_frame, text="MO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=3, column=0, sticky='w', pady=5)
         mo_number_var = tk.StringVar(value=extracted.get('mo_number', '') or '')
-        mo_entry = tk.Entry(scrollable_frame, textvariable=mo_number_var, width=30, font=('Arial', 10))
+        mo_entry = tk.Entry(scrollable_frame, textvariable=mo_number_var, width=30, font=('Arial', 10), state='readonly', bg='#f5f5f5')
         mo_entry.grid(row=3, column=1, sticky='ew', pady=5)
+
+        # Auto-extract MO number when project code changes
+        def on_project_code_change_edit(*args):
+            project_code = project_code_var.get().strip()
+            if project_code:
+                # Extract MO number from project code
+                mo_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
+                if mo_match:
+                    mo_number_var.set(mo_match.group(1).upper())
+                    base_mo_code_var.set(mo_match.group(1).upper())
+                else:
+                    mo_number_var.set('')
+                    base_mo_code_var.set(project_code.split('-')[0])
+            else:
+                mo_number_var.set('')
+                base_mo_code_var.set('')
+
+        project_code_var.trace_add('write', on_project_code_change_edit)
 
         # SO Number (pre-filled)
         tk.Label(scrollable_frame, text="SO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=4, column=0, sticky='w', pady=5)
@@ -3977,16 +4109,23 @@ class ScannerPanel(tk.Frame):
             # Close dialog
             dialog.destroy()
 
-            # Process the manual entry with the edited data
-            self._process_manual_entry(
-                project_code, base_mo_code, mo_number, so_number,
-                customer_name, color, user_entries
+            # Get original scan timestamp and session data from pending confirmation
+            original_timestamp = self.pending_scan_confirmation.get('timestamp') if self.pending_scan_confirmation else None
+            original_session_data = self.pending_scan_confirmation.get('session_data') if self.pending_scan_confirmation else None
+
+            # Process the manual entry in a background thread to prevent GUI freezing
+            import threading
+            processing_thread = threading.Thread(
+                target=self._process_manual_entry,
+                args=(project_code, base_mo_code, mo_number, so_number,
+                      customer_name, color, user_entries, original_timestamp, original_session_data),
+                daemon=True
             )
+            processing_thread.start()
 
             # Clear pending scan data and re-enable scanning
             self.pending_scan_confirmation = None
             self.usb_entry.config(state='normal')
-            self.com_entry.config(state='normal')
 
         submit_btn = tk.Button(
             button_frame,
@@ -4025,4 +4164,3 @@ class ScannerPanel(tk.Frame):
 
         # Re-enable scanning
         self.usb_entry.config(state='normal')
-        self.com_entry.config(state='normal')

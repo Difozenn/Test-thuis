@@ -1,966 +1,152 @@
-2025-10-15 08:55:23,527 INFO [INIT] Background service log callback initialized
-2025-10-15 08:55:23,527 INFO Using default work hours configuration
-2025-10-15 08:55:23,765 INFO Initializing database at C:\Users\Administrator\Desktop\Test-thuis-main\BarcodeMaster\dist\database/central_logging.sqlite
-2025-10-15 08:55:23,779 INFO Added 'nesting_count' column to logs table.
-2025-10-15 08:55:23,780 INFO Added 'opdeelzaag_count' column to logs table.
-2025-10-15 08:55:23,780 INFO Added 'aantal_items' column to logs table.
-2025-10-15 08:55:23,781 INFO Added 'aantal_sides' column to logs table.
-2025-10-15 08:55:23,782 INFO Added 'mo_number' column to logs table.
-2025-10-15 08:55:23,782 INFO Added 'so_number' column to logs table.
-2025-10-15 08:55:23,782 INFO Added 'color' column to logs table.
-2025-10-15 08:55:23,783 INFO Added 'customer_name' column to logs table.
-2025-10-15 08:55:23,783 INFO Added 'nesting_count' column to sessions table.
-2025-10-15 08:55:23,784 INFO Added 'opdeelzaag_count' column to sessions table.
-2025-10-15 08:55:23,784 INFO Added 'pause_duration_minutes' column to sessions table.
-2025-10-15 08:55:23,784 INFO Added 'project_id' column to sessions table.
-2025-10-15 08:55:23,785 INFO Added 'sequence_number' column to sessions table.
-2025-10-15 08:55:23,785 INFO Added 'previous_user' column to sessions table.
-2025-10-15 08:55:23,785 INFO Added 'handoff_delay_minutes' column to sessions table.
-2025-10-15 08:55:23,787 INFO Database initialization complete.
-2025-10-15 08:55:23,861 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-10-15 08:55:27,475 INFO [CALLBACK] Scanner panel callback registered
-2025-10-15 08:55:39,148 INFO [DatabasePanel] Shutdown called.
-2025-10-15 08:55:39,148 INFO Shutdown requested for DB API server
-2025-10-15 08:55:40,213 INFO Shutdown requested for DB API server
-2025-10-15 08:55:59,428 INFO [INIT] Background service log callback initialized
-2025-10-15 08:55:59,429 INFO Using default work hours configuration
-2025-10-15 08:55:59,711 INFO Initializing database at C:\Users\Administrator\Desktop\Test-thuis-main\BarcodeMaster\dist\database/central_logging.sqlite
-2025-10-15 08:55:59,715 INFO Database initialization complete.
-2025-10-15 08:55:59,790 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-10-15 08:56:03,446 INFO [CALLBACK] Scanner panel callback registered
-2025-10-15 08:57:53,005 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:57:59,904 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:05,634 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:07,541 INFO XLSX_UPDATED session started for OPUS on project MO08367_Dressing_Rep_VL_AANV - Status changed to BEZIG
-2025-10-15 08:58:12,012 INFO Session OPUS_MO08367_Dressing_Rep_VL_AANV_20251015_085807: total_work_minutes=0.07, pause_work_minutes=0, actual=0.07
-2025-10-15 08:58:12,027 INFO Session ended: OPUS_MO08367_Dressing_Rep_VL_AANV_20251015_085807
-2025-10-15 08:58:12,050 INFO Daily efficiency updated for 1 users
-2025-10-15 08:58:12,051 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 0.07, 'user': 'OPUS'}]}
-2025-10-15 08:58:12,506 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'user': 'OPUS', 'project': 'MO08367_Dressing_Rep_VL_AANV', 'details': 'MO08367_Dressing_Rep_VL_AANV afgemeld door OPUS met 3 items', 'item_count': 3, 'timestamp': '2025-10-15T08:58:12.494322'}
-2025-10-15 08:58:15,470 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:20,652 INFO XLSX_UPDATED session started for OPUS on project MO08025_Vestiaire_REP_GREEP - Status changed to BEZIG
-2025-10-15 08:58:21,978 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:23,098 INFO Session OPUS_MO08025_Vestiaire_REP_GREEP_20251015_085820: total_work_minutes=0.04, pause_work_minutes=0, actual=0.04
-2025-10-15 08:58:23,104 INFO Session ended: OPUS_MO08025_Vestiaire_REP_GREEP_20251015_085820
-2025-10-15 08:58:23,123 INFO Daily efficiency updated for 1 users
-2025-10-15 08:58:23,124 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 0.11000000000000001, 'user': 'OPUS'}]}
-2025-10-15 08:58:23,608 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'user': 'OPUS', 'project': 'MO08025_Vestiaire_REP_GREEP', 'details': 'MO08025_Vestiaire_REP_GREEP afgemeld door OPUS met 1 items', 'item_count': 1, 'timestamp': '2025-10-15T08:58:23.595795'}
-2025-10-15 08:58:33,530 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:48,721 INFO Updated settings: scanner_panel_open_event_user_paths
-2025-10-15 08:58:55,267 INFO Updated settings: scanner_panel_open_event_users
-2025-10-15 09:04:09,971 INFO [db_log_api] /log called with data: {'event': 'test_connect', 'details': 'Test verbinding', 'project': 'TestProject', 'user': 'HANDWERK'}
-2025-10-15 09:04:09,972 INFO   [INFO] Received test_connect from user 'HANDWERK'. Connection successful.
-2025-10-15 11:49:00,485 INFO XLSX_UPDATED session started for OPUS on project MO08029_Dressingeiland_(5-8) - Status changed to BEZIG
-2025-10-15 12:38:35,624 INFO [PAUSE_SESSION] Received pause request: {'session_id': 'OPUS_MO08029_Dressingeiland_(5-8)_20251015_114900', 'timestamp': '2025-10-15T12:38:35.848250', 'user': 'OPUS', 'project': 'MO08029_Dressingeiland_(5-8)'}
-2025-10-15 12:38:35,625 ERROR Error pausing session: 'sqlite3.Row' object has no attribute 'get'
-2025-10-15 13:51:07,378 INFO Session OPUS_MO08029_Dressingeiland_(5-8)_20251015_114900: total_work_minutes=92.12, pause_work_minutes=0, actual=92.12
-2025-10-15 13:51:07,386 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'details': 'MO08029_Dressingeiland_(5-8) afgemeld aan OPUS', 'project': 'MO08029_Dressingeiland_(5-8)', 'user': 'OPUS', 'base_mo_code': 'MO08029', 'is_rep_variant': False}
-2025-10-15 13:51:07,392 INFO Session ended: OPUS_MO08029_Dressingeiland_(5-8)_20251015_114900
-2025-10-15 13:51:07,422 INFO Daily efficiency updated for 1 users
-2025-10-15 13:51:07,422 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 92.23, 'user': 'OPUS'}]}
-2025-10-15 14:24:15,915 INFO XLSX_UPDATED session started for KL GANNOMAT on project MO08027_Commode_(3-8) - Status changed to BEZIG
-2025-10-15 14:31:22,785 INFO Session started for NESTING: NESTING_S1_20251015_143121
-2025-10-15 14:40:45,118 INFO [db_log_api] /log called with data: {'event': 'BEZIG', 'details': 'Started processing manual entry', 'project': '1013_MO08950_Aanvulling_STKN_REP_M', 'user': 'NESTING', 'status': 'BEZIG', 'timestamp': '2025-10-15T14:40:42.517015'}
-2025-10-15 14:40:46,190 INFO Added project 1013_MO08950_Aanvulling_STKN_REP_M to session NESTING_S1_20251015_143121
-2025-10-15 14:41:58,212 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'user': 'NESTING', 'project': '1013_MO08950_Aanvulling_STKN_REP_M', 'session_id': 'NESTING_S1_20251015_143121', 'timestamp': '2025-10-15T14:41:57.189094'}
-2025-10-15 14:41:59,247 INFO Session NESTING_S1_20251015_143121: total_work_minutes=10.61, pause_work_minutes=0, actual=10.61
-2025-10-15 14:41:59,258 INFO Session ended: NESTING_S1_20251015_143121
-2025-10-15 14:41:59,272 INFO Daily efficiency updated for 1 users
-2025-10-15 14:41:59,272 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 92.23, 'user': 'OPUS'}]}
-2025-10-15 14:52:53,432 INFO Session started for NESTING: NESTING_S1_20251015_145252
-2025-10-15 14:56:06,976 INFO Session KL GANNOMAT_MO08027_Commode_(3-8)_20251015_142415: total_work_minutes=31.79, pause_work_minutes=0, actual=31.79
-2025-10-15 14:56:06,983 INFO Session ended: KL GANNOMAT_MO08027_Commode_(3-8)_20251015_142415
-2025-10-15 14:56:06,996 INFO Daily efficiency updated for 2 users
-2025-10-15 14:56:06,996 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 31.79, 'user': 'KL GANNOMAT'}, {'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 92.23, 'user': 'OPUS'}]}
-2025-10-15 14:56:07,070 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'details': 'MO08027_Commode_(3-8) afgemeld aan KL GANNOMAT', 'project': 'MO08027_Commode_(3-8)', 'user': 'KL GANNOMAT', 'base_mo_code': 'MO08027', 'is_rep_variant': False}
-2025-10-15 15:44:48,644 INFO Added scanner_panel_open_event_users to config
-2025-10-15 15:44:48,650 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 15:44:48,879 INFO Loaded efficiency targets from config: {}
-2025-10-15 15:44:51,072 INFO users endpoint was called
-2025-10-15 15:44:53,112 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:44:53,114 INFO Batch calculation for 0828_S5305_BULO_WPE: 12/12 items = 100.0% = 411.7 min
-2025-10-15 15:44:53,115 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:44:53,116 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:44:53,120 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:53,121 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:44:53,123 INFO Batch calculation for S05174_TFL_A_Japandipoot: 4/157 items = 2.5% = 4.5 min
-2025-10-15 15:44:53,125 INFO Batch calculation for MO08528_NT50_(1-1): 1/1 items = 100.0% = 6.4 min
-2025-10-15 15:44:53,126 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:44:53,128 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:44:53,130 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:44:53,130 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:44:53,131 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:44:53,131 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:44:53,133 INFO Batch calculation for MO08408_BN4_aangepast_Rep_VS: 1/1 items = 100.0% = 6.9 min
-2025-10-15 15:44:53,134 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:53,136 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:44:53,136 INFO Batch calculation for MO08383_TV-wand_Rep_VS2: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:53,137 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:44:53,138 INFO Batch calculation for MO08382_u-dressing_Zitbank_rep_LP: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:53,139 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:44:53,140 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:44:53,141 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:44:53,142 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:44:53,142 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:53,143 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:53,145 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:44:53,146 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:44:53,147 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:44:53,149 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:44:53,149 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:44:53,153 INFO Batch calculation for MO08192_Wandkast_(1-1): 103/191 items = 53.9% = 401.7 min
-2025-10-15 15:44:53,154 INFO Batch calculation for MO08192_Wandkast_REP_VS: 1/1 items = 100.0% = 2.5 min
-2025-10-15 15:44:53,155 INFO Batch calculation for MO08192_Wandkast_Rep_VS1: 1/1 items = 100.0% = 11.2 min
-2025-10-15 15:44:53,156 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:44:53,157 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:44:53,158 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:44:53,159 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:44:53,160 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:44:53,160 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:44:53,161 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:44:53,162 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:44:53,163 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:44:53,163 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:44:53,164 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:44:53,165 INFO Batch calculation for MO08200_Dressing_bureau_B_REP_RZ: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:53,165 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:44:53,166 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:44:53,169 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:53,170 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:44:53,172 INFO Batch calculation for MO08115_Prototyperuimte_(19-19)_Front: 27/27 items = 100.0% = 86.6 min
-2025-10-15 15:44:53,172 INFO No batch sessions found for MO08115_Prototyperuimte_(19-19)_REP_VS
-2025-10-15 15:44:53,174 INFO Batch calculation for MO08365_Dressing_(1-1): 40/40 items = 100.0% = 892.5 min
-2025-10-15 15:44:53,174 INFO Batch calculation for MO08365_Dressing_Rep_LF_02: 40/101 items = 39.6% = 109.2 min
-2025-10-15 15:44:53,175 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:44:53,177 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
-2025-10-15 15:44:53,178 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
-2025-10-15 15:44:53,178 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
-2025-10-15 15:44:53,180 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:44:53,180 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:44:53,181 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:44:53,182 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:44:53,182 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:44:53,183 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:44:53,186 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
-2025-10-15 15:44:53,186 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
-2025-10-15 15:44:53,187 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
-2025-10-15 15:44:53,188 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:44:53,189 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
-2025-10-15 15:44:53,189 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
-2025-10-15 15:44:53,190 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
-2025-10-15 15:44:53,191 INFO Batch calculation for MO08111_Dressing (4-4): 24/73 items = 32.9% = 86.7 min
-2025-10-15 15:44:53,192 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:44:53,193 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:44:53,194 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:44:53,195 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:44:53,196 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:53,197 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:53,198 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:44:53,199 INFO Batch calculation for MO07842_TV-wand_(1-1)_Rep_LF: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:53,200 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:44:53,203 INFO Batch calculation for MO07456_IT-Room_(B)_REP_OC-BC: 2/2 items = 100.0% = 5.4 min
-2025-10-15 15:44:53,204 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
-2025-10-15 15:44:53,205 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
-2025-10-15 15:44:53,205 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
-2025-10-15 15:44:53,205 INFO Batch calculation for MO07452_Purch-Quali_(6-19)_REP_LZ4: 1/1 items = 100.0% = 9.1 min
-2025-10-15 15:44:53,206 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:53,206 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
-2025-10-15 15:44:53,207 INFO Batch calculation for MO07449_Auditorium_REP_VL: 4/4 items = 100.0% = 28.8 min
-2025-10-15 15:44:53,207 INFO Batch calculation for MO07450_Copy-Room_(4-19)_REP_dr4: 1/1 items = 100.0% = 0.6 min
-2025-10-15 15:44:53,208 INFO Batch calculation for MO07464_Roomdivider_M13_REP_TZ-33-34: 6/6 items = 100.0% = 17.2 min
-2025-10-15 15:44:53,209 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:44:53,210 INFO Batch calculation for 0825_Bulo_Rep_tafels: 3/3 items = 100.0% = 54.8 min
-2025-10-15 15:44:53,211 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:44:53,212 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:44:53,213 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:44:53,214 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:44:53,215 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:44:53,216 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:44:53,219 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:44:53,220 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:44:53,221 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:44:53,222 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:53,222 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:53,223 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:44:53,223 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:44:53,225 INFO Batch calculation for MO05418_Bureau_(1-1): 69/157 items = 43.9% = 76.9 min
-2025-10-15 15:44:53,226 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:44:53,226 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:53,227 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:44:53,228 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:44:53,229 INFO Batch calculation for MO04587_Dressing_2_(2-2): 33/191 items = 17.3% = 128.7 min
-2025-10-15 15:44:53,230 INFO Batch calculation for MO04585_Dressing_1_(1-2): 55/191 items = 28.8% = 214.5 min
-2025-10-15 15:44:53,487 INFO users endpoint was called
-2025-10-15 15:44:54,202 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:44:54,205 INFO Batch calculation for 0828_S5305_BULO_WPE: 12/12 items = 100.0% = 411.7 min
-2025-10-15 15:44:54,206 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:44:54,207 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:44:54,208 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:54,208 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:44:54,210 INFO Batch calculation for S05174_TFL_A_Japandipoot: 4/157 items = 2.5% = 4.5 min
-2025-10-15 15:44:54,211 INFO Batch calculation for MO08528_NT50_(1-1): 1/1 items = 100.0% = 6.4 min
-2025-10-15 15:44:54,211 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:44:54,212 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:44:54,213 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:44:54,214 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:44:54,214 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:44:54,215 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:44:54,217 INFO Batch calculation for MO08408_BN4_aangepast_Rep_VS: 1/1 items = 100.0% = 6.9 min
-2025-10-15 15:44:54,218 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:54,222 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:44:54,223 INFO Batch calculation for MO08383_TV-wand_Rep_VS2: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:54,224 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:44:54,224 INFO Batch calculation for MO08382_u-dressing_Zitbank_rep_LP: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:54,225 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:44:54,226 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:44:54,227 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:44:54,227 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:44:54,228 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:54,229 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:54,229 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:44:54,230 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:44:54,232 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:44:54,233 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:44:54,234 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:44:54,237 INFO Batch calculation for MO08192_Wandkast_(1-1): 103/191 items = 53.9% = 401.7 min
-2025-10-15 15:44:54,238 INFO Batch calculation for MO08192_Wandkast_REP_VS: 1/1 items = 100.0% = 2.5 min
-2025-10-15 15:44:54,239 INFO Batch calculation for MO08192_Wandkast_Rep_VS1: 1/1 items = 100.0% = 11.2 min
-2025-10-15 15:44:54,240 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:44:54,240 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:44:54,241 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:44:54,242 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:44:54,243 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:44:54,244 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:44:54,245 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:44:54,245 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:44:54,246 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:44:54,247 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:44:54,248 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:44:54,249 INFO Batch calculation for MO08200_Dressing_bureau_B_REP_RZ: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:54,249 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:44:54,250 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:44:54,250 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:54,252 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:44:54,254 INFO Batch calculation for MO08115_Prototyperuimte_(19-19)_Front: 27/27 items = 100.0% = 86.6 min
-2025-10-15 15:44:54,255 INFO No batch sessions found for MO08115_Prototyperuimte_(19-19)_REP_VS
-2025-10-15 15:44:54,256 INFO Batch calculation for MO08365_Dressing_(1-1): 40/40 items = 100.0% = 892.5 min
-2025-10-15 15:44:54,256 INFO Batch calculation for MO08365_Dressing_Rep_LF_02: 40/101 items = 39.6% = 109.2 min
-2025-10-15 15:44:54,257 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:44:54,258 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
-2025-10-15 15:44:54,259 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
-2025-10-15 15:44:54,259 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
-2025-10-15 15:44:54,260 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:44:54,261 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:44:54,261 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:44:54,262 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:44:54,263 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:44:54,263 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:44:54,265 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
-2025-10-15 15:44:54,265 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
-2025-10-15 15:44:54,266 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
-2025-10-15 15:44:54,267 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:44:54,269 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
-2025-10-15 15:44:54,271 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
-2025-10-15 15:44:54,272 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
-2025-10-15 15:44:54,272 INFO Batch calculation for MO08111_Dressing (4-4): 24/73 items = 32.9% = 86.7 min
-2025-10-15 15:44:54,273 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:44:54,274 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:44:54,274 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:44:54,275 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:44:54,276 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:54,276 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:54,277 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:44:54,278 INFO Batch calculation for MO07842_TV-wand_(1-1)_Rep_LF: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:54,279 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:44:54,280 INFO Batch calculation for MO07456_IT-Room_(B)_REP_OC-BC: 2/2 items = 100.0% = 5.4 min
-2025-10-15 15:44:54,280 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
-2025-10-15 15:44:54,281 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
-2025-10-15 15:44:54,281 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
-2025-10-15 15:44:54,282 INFO Batch calculation for MO07452_Purch-Quali_(6-19)_REP_LZ4: 1/1 items = 100.0% = 9.1 min
-2025-10-15 15:44:54,282 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:54,283 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
-2025-10-15 15:44:54,284 INFO Batch calculation for MO07449_Auditorium_REP_VL: 4/4 items = 100.0% = 28.8 min
-2025-10-15 15:44:54,285 INFO Batch calculation for MO07450_Copy-Room_(4-19)_REP_dr4: 1/1 items = 100.0% = 0.6 min
-2025-10-15 15:44:54,286 INFO Batch calculation for MO07464_Roomdivider_M13_REP_TZ-33-34: 6/6 items = 100.0% = 17.2 min
-2025-10-15 15:44:54,287 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:44:54,288 INFO Batch calculation for 0825_Bulo_Rep_tafels: 3/3 items = 100.0% = 54.8 min
-2025-10-15 15:44:54,289 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:44:54,290 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:44:54,291 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:44:54,292 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:44:54,293 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:44:54,294 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:44:54,295 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:44:54,295 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:44:54,296 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:44:54,297 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:54,297 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:54,298 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:44:54,299 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:44:54,300 INFO Batch calculation for MO05418_Bureau_(1-1): 69/157 items = 43.9% = 76.9 min
-2025-10-15 15:44:54,303 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:44:54,305 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:54,306 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:44:54,307 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:44:54,308 INFO Batch calculation for MO04587_Dressing_2_(2-2): 33/191 items = 17.3% = 128.7 min
-2025-10-15 15:44:54,309 INFO Batch calculation for MO04585_Dressing_1_(1-2): 55/191 items = 28.8% = 214.5 min
-2025-10-15 15:44:55,389 INFO users endpoint was called
-2025-10-15 15:44:56,613 INFO Found 24 rep projects for period days
-2025-10-15 15:44:56,613 INFO No batch sessions found for 1010_MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:56,614 INFO No batch sessions found for MO06784_Lage_kast_Rep_DR_L_01
-2025-10-15 15:44:56,616 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:56,616 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_REP_BC
-2025-10-15 15:44:56,617 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_Rep_BC
-2025-10-15 15:44:56,618 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:56,620 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:44:56,623 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:44:56,626 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:44:56,628 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:44:56,629 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:44:56,630 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:44:56,632 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:44:56,632 INFO Found 109 projects for period days
-2025-10-15 15:44:56,633 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_LZ_02
-2025-10-15 15:44:56,633 INFO No batch sessions found for None
-2025-10-15 15:44:56,633 WARNING Failed to get v2 metrics for project None
-2025-10-15 15:44:56,634 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:44:56,634 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_RZ_04
-2025-10-15 15:44:56,639 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_VL
-2025-10-15 15:44:56,641 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:56,644 INFO No batch sessions found for 0820_MO8427_28_Inrichting_Bureau_(1-1)
-2025-10-15 15:44:56,644 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:44:56,645 INFO Batch calculation for 0827_Rodgers_zitbank_(infinity): 6/157 items = 3.8% = 6.7 min
-2025-10-15 15:44:56,645 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:44:56,647 INFO No batch sessions found for 0929_Test_scharnier
-2025-10-15 15:44:56,647 INFO No batch sessions found for MO08387_TV-wand_Rep_RZ_01
-2025-10-15 15:44:56,648 INFO No batch sessions found for 1002_Hoek_paslat
-2025-10-15 15:44:56,648 INFO No batch sessions found for MO08388_Dressoir-Vitrine_REP_BC
-2025-10-15 15:44:56,649 INFO No batch sessions found for 1010_MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:56,649 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:44:56,650 INFO No batch sessions found for 1013_MO08950_Aanvulling_STKN_REP_M
-2025-10-15 15:44:56,651 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:44:56,651 INFO No batch sessions found for Hoek_paslat
-2025-10-15 15:44:56,651 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:56,653 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:44:56,655 INFO Rep projects calculated: 24 projects, 45 items, 725.3h project time
-2025-10-15 15:44:56,656 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:44:56,658 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:44:56,660 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:56,661 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:44:56,662 INFO No batch sessions found for MO06784_Lage_kast_Rep_DR_L_01
-2025-10-15 15:44:56,663 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:44:56,664 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:44:56,666 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:44:56,667 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:56,670 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:44:56,672 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_REP_BC
-2025-10-15 15:44:56,672 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_Rep_BC
-2025-10-15 15:44:56,673 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:56,674 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:44:56,675 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:44:56,676 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:44:56,677 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:44:56,678 INFO No batch sessions found for MO06797_Bureaukast_REP
-2025-10-15 15:44:56,679 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:44:56,680 INFO No batch sessions found for MO06924_Vestiaire_(1-10)
-2025-10-15 15:44:56,680 INFO No batch sessions found for MO06925_Raamwerk_(2-10)
-2025-10-15 15:44:56,680 INFO No batch sessions found for MO06926_TV-meubel_(3-10)
-2025-10-15 15:44:56,681 INFO No batch sessions found for MO06927_Dressoir_(4-10)
-2025-10-15 15:44:56,681 INFO No batch sessions found for MO06928_Zwevende_legger_(5-10)
-2025-10-15 15:44:56,682 INFO No batch sessions found for MO06929_Zwevende_legger_(6-10)
-2025-10-15 15:44:56,682 INFO No batch sessions found for MO06930_Zwevende_legger_(7-10)
-2025-10-15 15:44:56,682 INFO No batch sessions found for MO06931_Zwevende_legger_(8-10)
-2025-10-15 15:44:56,683 INFO No batch sessions found for MO06932_NK_(9-10)
-2025-10-15 15:44:56,683 INFO No batch sessions found for MO06933_NK_(10-10)
-2025-10-15 15:44:56,684 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:44:56,684 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:44:56,685 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:44:56,688 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:56,689 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:56,689 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:44:56,690 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:44:56,690 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:44:56,691 INFO No batch sessions found for MO08025_Vestiaire_(2-8)
-2025-10-15 15:44:56,691 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:44:56,692 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:44:56,692 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:44:56,693 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:44:56,693 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:44:56,694 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:44:56,695 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:44:56,696 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:44:56,698 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:44:56,699 INFO No batch sessions found for MO08199_Dressing_bureau_A_PLINT
-2025-10-15 15:44:56,700 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_LZ_02
-2025-10-15 15:44:56,701 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_RZ_04
-2025-10-15 15:44:56,701 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_VL
-2025-10-15 15:44:56,701 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:44:56,702 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:44:56,704 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:44:56,704 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:56,705 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:44:56,706 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:44:56,706 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:44:56,707 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:44:56,708 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:44:56,708 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:44:56,709 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:44:56,711 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:44:56,712 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:44:56,713 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:56,715 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:56,717 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:44:56,719 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:44:56,721 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:44:56,722 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:44:56,724 INFO No batch sessions found for MO08387_TV-wand_Rep_RZ_01
-2025-10-15 15:44:56,725 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:44:56,726 INFO No batch sessions found for MO08388_Dressoir-Vitrine_REP_BC
-2025-10-15 15:44:56,727 INFO No batch sessions found for MO08393_Bijzettafel_(3-3)
-2025-10-15 15:44:56,727 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:44:56,728 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:44:56,729 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:44:56,730 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:44:56,730 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:44:56,731 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:44:56,732 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:44:56,732 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:44:56,733 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:44:56,733 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:44:56,734 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:44:56,734 INFO No batch sessions found for MO08553_Hangkast (1-2)
-2025-10-15 15:44:56,734 INFO No batch sessions found for MO08554_Wandplanken (2-2)
-2025-10-15 15:44:56,735 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:44:56,735 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:44:56,736 INFO No batch sessions found for MO08688_Bloomkast_(2-2)
-2025-10-15 15:44:56,737 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:44:56,738 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:44:56,738 INFO No batch sessions found for MO08796_Vestiaire_VL
-2025-10-15 15:44:56,738 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:44:56,739 INFO No batch sessions found for MO08950_Aanvulling_STKN
-2025-10-15 15:44:56,739 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_(1-1)
-2025-10-15 15:44:56,740 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:56,740 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:44:56,740 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:44:56,741 INFO Statistics calculated: 7356.9h project time, 267.5h session time
-2025-10-15 15:44:57,126 INFO users endpoint was called
-2025-10-15 15:44:57,727 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:44:57,729 INFO Batch calculation for 0828_S5305_BULO_WPE: 12/12 items = 100.0% = 411.7 min
-2025-10-15 15:44:57,731 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:44:57,732 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:44:57,734 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:57,735 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:44:57,739 INFO Batch calculation for S05174_TFL_A_Japandipoot: 4/157 items = 2.5% = 4.5 min
-2025-10-15 15:44:57,741 INFO Batch calculation for MO08528_NT50_(1-1): 1/1 items = 100.0% = 6.4 min
-2025-10-15 15:44:57,742 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:44:57,744 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:44:57,745 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:44:57,746 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:44:57,746 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:44:57,747 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:44:57,748 INFO Batch calculation for MO08408_BN4_aangepast_Rep_VS: 1/1 items = 100.0% = 6.9 min
-2025-10-15 15:44:57,749 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:44:57,751 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:44:57,752 INFO Batch calculation for MO08383_TV-wand_Rep_VS2: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:57,755 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:44:57,756 INFO Batch calculation for MO08382_u-dressing_Zitbank_rep_LP: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:57,757 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:44:57,758 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:44:57,759 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:44:57,760 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:44:57,760 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:57,761 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:44:57,762 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:44:57,762 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:44:57,764 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:44:57,765 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:44:57,765 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:44:57,766 INFO Batch calculation for MO08192_Wandkast_(1-1): 103/191 items = 53.9% = 401.7 min
-2025-10-15 15:44:57,769 INFO Batch calculation for MO08192_Wandkast_REP_VS: 1/1 items = 100.0% = 2.5 min
-2025-10-15 15:44:57,772 INFO Batch calculation for MO08192_Wandkast_Rep_VS1: 1/1 items = 100.0% = 11.2 min
-2025-10-15 15:44:57,775 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:44:57,776 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:44:57,777 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:44:57,778 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:44:57,779 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:44:57,780 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:44:57,781 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:44:57,782 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:44:57,783 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:44:57,784 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:44:57,785 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:44:57,785 INFO Batch calculation for MO08200_Dressing_bureau_B_REP_RZ: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:57,786 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:44:57,787 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:44:57,788 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:57,789 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:44:57,790 INFO Batch calculation for MO08115_Prototyperuimte_(19-19)_Front: 27/27 items = 100.0% = 86.6 min
-2025-10-15 15:44:57,791 INFO No batch sessions found for MO08115_Prototyperuimte_(19-19)_REP_VS
-2025-10-15 15:44:57,792 INFO Batch calculation for MO08365_Dressing_(1-1): 40/40 items = 100.0% = 892.5 min
-2025-10-15 15:44:57,792 INFO Batch calculation for MO08365_Dressing_Rep_LF_02: 40/101 items = 39.6% = 109.2 min
-2025-10-15 15:44:57,793 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:44:57,794 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
-2025-10-15 15:44:57,795 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
-2025-10-15 15:44:57,795 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
-2025-10-15 15:44:57,796 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:44:57,797 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:44:57,797 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:44:57,798 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:44:57,798 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:44:57,799 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:44:57,800 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
-2025-10-15 15:44:57,801 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
-2025-10-15 15:44:57,802 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
-2025-10-15 15:44:57,802 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:44:57,804 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
-2025-10-15 15:44:57,805 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
-2025-10-15 15:44:57,806 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
-2025-10-15 15:44:57,806 INFO Batch calculation for MO08111_Dressing (4-4): 24/73 items = 32.9% = 86.7 min
-2025-10-15 15:44:57,807 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:44:57,808 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:44:57,809 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:44:57,809 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:44:57,810 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:57,810 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:44:57,811 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:44:57,812 INFO Batch calculation for MO07842_TV-wand_(1-1)_Rep_LF: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:57,812 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:44:57,813 INFO Batch calculation for MO07456_IT-Room_(B)_REP_OC-BC: 2/2 items = 100.0% = 5.4 min
-2025-10-15 15:44:57,814 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
-2025-10-15 15:44:57,816 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
-2025-10-15 15:44:57,816 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
-2025-10-15 15:44:57,817 INFO Batch calculation for MO07452_Purch-Quali_(6-19)_REP_LZ4: 1/1 items = 100.0% = 9.1 min
-2025-10-15 15:44:57,817 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:44:57,818 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
-2025-10-15 15:44:57,818 INFO Batch calculation for MO07449_Auditorium_REP_VL: 4/4 items = 100.0% = 28.8 min
-2025-10-15 15:44:57,819 INFO Batch calculation for MO07450_Copy-Room_(4-19)_REP_dr4: 1/1 items = 100.0% = 0.6 min
-2025-10-15 15:44:57,819 INFO Batch calculation for MO07464_Roomdivider_M13_REP_TZ-33-34: 6/6 items = 100.0% = 17.2 min
-2025-10-15 15:44:57,820 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:44:57,822 INFO Batch calculation for 0825_Bulo_Rep_tafels: 3/3 items = 100.0% = 54.8 min
-2025-10-15 15:44:57,823 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:44:57,824 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:44:57,825 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:44:57,826 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:44:57,827 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:44:57,827 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:44:57,828 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:44:57,829 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:44:57,830 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:44:57,831 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:44:57,832 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:44:57,832 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:44:57,833 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:44:57,834 INFO Batch calculation for MO05418_Bureau_(1-1): 69/157 items = 43.9% = 76.9 min
-2025-10-15 15:44:57,835 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:44:57,836 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:44:57,838 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:44:57,840 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:44:57,841 INFO Batch calculation for MO04587_Dressing_2_(2-2): 33/191 items = 17.3% = 128.7 min
-2025-10-15 15:44:57,842 INFO Batch calculation for MO04585_Dressing_1_(1-2): 55/191 items = 28.8% = 214.5 min
-2025-10-15 15:44:58,244 INFO projects endpoint called - page: 1, per_page: 20, search: , sort: recent
-2025-10-15 15:44:58,776 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 15:44:58,895 INFO Loaded efficiency targets from config: {}
-2025-10-15 15:44:59,359 INFO projects endpoint called - page: 1, per_page: 20, search: , sort: recent
-2025-10-15 15:45:00,863 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 15:45:00,986 INFO Loaded efficiency targets from config: {}
-2025-10-15 15:45:29,622 INFO users endpoint was called
-2025-10-15 15:45:32,321 INFO Found 109 projects for period days
-2025-10-15 15:45:32,322 INFO Found 24 rep projects for period days
-2025-10-15 15:45:32,322 INFO No batch sessions found for None
-2025-10-15 15:45:32,322 WARNING Failed to get v2 metrics for project None
-2025-10-15 15:45:32,323 INFO No batch sessions found for 1010_MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:45:32,323 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:45:32,325 INFO No batch sessions found for MO06784_Lage_kast_Rep_DR_L_01
-2025-10-15 15:45:32,325 INFO No batch sessions found for 0820_MO8427_28_Inrichting_Bureau_(1-1)
-2025-10-15 15:45:32,330 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:32,331 INFO Batch calculation for 0827_Rodgers_zitbank_(infinity): 6/157 items = 3.8% = 6.7 min
-2025-10-15 15:45:32,331 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_REP_BC
-2025-10-15 15:45:32,333 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_Rep_BC
-2025-10-15 15:45:32,334 INFO No batch sessions found for 0929_Test_scharnier
-2025-10-15 15:45:32,334 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:45:32,336 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:45:32,336 INFO No batch sessions found for 1002_Hoek_paslat
-2025-10-15 15:45:32,337 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:45:32,337 INFO No batch sessions found for 1010_MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:45:32,338 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:45:32,338 INFO No batch sessions found for 1013_MO08950_Aanvulling_STKN_REP_M
-2025-10-15 15:45:32,339 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:45:32,340 INFO No batch sessions found for Hoek_paslat
-2025-10-15 15:45:32,340 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:45:32,340 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:45:32,342 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:45:32,342 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:45:32,343 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:45:32,343 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:45:32,343 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_LZ_02
-2025-10-15 15:45:32,344 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:45:32,345 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_RZ_04
-2025-10-15 15:45:32,346 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:45:32,347 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_VL
-2025-10-15 15:45:32,347 INFO No batch sessions found for MO06784_Lage_kast_Rep_DR_L_01
-2025-10-15 15:45:32,347 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:32,347 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:45:32,349 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:45:32,349 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:45:32,350 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:45:32,351 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:45:32,351 INFO No batch sessions found for MO08387_TV-wand_Rep_RZ_01
-2025-10-15 15:45:32,353 INFO No batch sessions found for MO08388_Dressoir-Vitrine_REP_BC
-2025-10-15 15:45:32,353 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:32,354 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:45:32,355 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:45:32,357 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_REP_BC
-2025-10-15 15:45:32,358 INFO No batch sessions found for MO06794_Bergkast_Wasplaats_Rep_BC
-2025-10-15 15:45:32,358 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:45:32,359 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:45:32,360 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:45:32,360 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:45:32,363 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:45:32,365 INFO Rep projects calculated: 24 projects, 45 items, 725.3h project time
-2025-10-15 15:45:32,365 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:45:32,367 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:45:32,369 INFO No batch sessions found for MO06797_Bureaukast_REP
-2025-10-15 15:45:32,371 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:45:32,372 INFO No batch sessions found for MO06924_Vestiaire_(1-10)
-2025-10-15 15:45:32,372 INFO No batch sessions found for MO06925_Raamwerk_(2-10)
-2025-10-15 15:45:32,373 INFO No batch sessions found for MO06926_TV-meubel_(3-10)
-2025-10-15 15:45:32,373 INFO No batch sessions found for MO06927_Dressoir_(4-10)
-2025-10-15 15:45:32,373 INFO No batch sessions found for MO06928_Zwevende_legger_(5-10)
-2025-10-15 15:45:32,374 INFO No batch sessions found for MO06929_Zwevende_legger_(6-10)
-2025-10-15 15:45:32,374 INFO No batch sessions found for MO06930_Zwevende_legger_(7-10)
-2025-10-15 15:45:32,374 INFO No batch sessions found for MO06931_Zwevende_legger_(8-10)
-2025-10-15 15:45:32,374 INFO No batch sessions found for MO06932_NK_(9-10)
-2025-10-15 15:45:32,375 INFO No batch sessions found for MO06933_NK_(10-10)
-2025-10-15 15:45:32,375 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:45:32,375 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:45:32,376 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:45:32,376 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:45:32,377 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:45:32,380 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:45:32,381 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:45:32,382 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:45:32,382 INFO No batch sessions found for MO08025_Vestiaire_(2-8)
-2025-10-15 15:45:32,382 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:45:32,383 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:45:32,383 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:45:32,383 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:45:32,384 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:45:32,384 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:45:32,385 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:45:32,386 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:45:32,387 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:45:32,387 INFO No batch sessions found for MO08199_Dressing_bureau_A_PLINT
-2025-10-15 15:45:32,388 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_LZ_02
-2025-10-15 15:45:32,388 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_RZ_04
-2025-10-15 15:45:32,388 INFO No batch sessions found for MO08199_Dressing_bureau_A_REP_VL
-2025-10-15 15:45:32,389 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:45:32,389 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:45:32,390 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:45:32,391 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:32,391 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:45:32,392 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:45:32,392 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:45:32,393 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:45:32,393 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:45:32,394 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:45:32,397 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:45:32,398 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:45:32,398 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:45:32,399 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:45:32,399 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:45:32,400 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:45:32,400 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:45:32,401 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:45:32,402 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:45:32,402 INFO No batch sessions found for MO08387_TV-wand_Rep_RZ_01
-2025-10-15 15:45:32,402 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:45:32,403 INFO No batch sessions found for MO08388_Dressoir-Vitrine_REP_BC
-2025-10-15 15:45:32,403 INFO No batch sessions found for MO08393_Bijzettafel_(3-3)
-2025-10-15 15:45:32,404 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:45:32,404 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:45:32,405 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:45:32,406 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:45:32,407 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:45:32,407 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:45:32,408 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:45:32,409 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:45:32,409 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:45:32,410 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:45:32,410 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:45:32,410 INFO No batch sessions found for MO08553_Hangkast (1-2)
-2025-10-15 15:45:32,411 INFO No batch sessions found for MO08554_Wandplanken (2-2)
-2025-10-15 15:45:32,414 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:45:32,415 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:45:32,416 INFO No batch sessions found for MO08688_Bloomkast_(2-2)
-2025-10-15 15:45:32,417 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:45:32,418 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:45:32,418 INFO No batch sessions found for MO08796_Vestiaire_VL
-2025-10-15 15:45:32,419 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:45:32,419 INFO No batch sessions found for MO08950_Aanvulling_STKN
-2025-10-15 15:45:32,419 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_(1-1)
-2025-10-15 15:45:32,420 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:45:32,420 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:45:32,421 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:45:32,422 INFO Statistics calculated: 7356.9h project time, 267.5h session time
-2025-10-15 15:45:32,704 INFO users endpoint was called
-2025-10-15 15:45:33,158 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 15:45:33,159 INFO Batch calculation for 0828_S5305_BULO_WPE: 12/12 items = 100.0% = 411.7 min
-2025-10-15 15:45:33,160 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 15:45:33,161 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 15:45:33,164 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:45:33,166 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 15:45:33,167 INFO Batch calculation for S05174_TFL_A_Japandipoot: 4/157 items = 2.5% = 4.5 min
-2025-10-15 15:45:33,169 INFO Batch calculation for MO08528_NT50_(1-1): 1/1 items = 100.0% = 6.4 min
-2025-10-15 15:45:33,170 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 15:45:33,171 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 15:45:33,172 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 15:45:33,173 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 15:45:33,173 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 15:45:33,174 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 15:45:33,175 INFO Batch calculation for MO08408_BN4_aangepast_Rep_VS: 1/1 items = 100.0% = 6.9 min
-2025-10-15 15:45:33,175 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 15:45:33,176 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 15:45:33,177 INFO Batch calculation for MO08383_TV-wand_Rep_VS2: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:45:33,178 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 15:45:33,181 INFO Batch calculation for MO08382_u-dressing_Zitbank_rep_LP: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:45:33,182 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 15:45:33,183 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 15:45:33,184 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 15:45:33,185 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 15:45:33,185 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:45:33,186 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 15:45:33,187 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 15:45:33,187 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 15:45:33,189 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 15:45:33,190 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 15:45:33,190 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 15:45:33,192 INFO Batch calculation for MO08192_Wandkast_(1-1): 103/191 items = 53.9% = 401.7 min
-2025-10-15 15:45:33,192 INFO Batch calculation for MO08192_Wandkast_REP_VS: 1/1 items = 100.0% = 2.5 min
-2025-10-15 15:45:33,193 INFO Batch calculation for MO08192_Wandkast_Rep_VS1: 1/1 items = 100.0% = 11.2 min
-2025-10-15 15:45:33,194 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 15:45:33,196 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 15:45:33,199 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 15:45:33,199 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 15:45:33,201 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 15:45:33,201 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 15:45:33,202 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 15:45:33,203 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 15:45:33,204 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 15:45:33,205 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 15:45:33,205 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 15:45:33,206 INFO Batch calculation for MO08200_Dressing_bureau_B_REP_RZ: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:45:33,207 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 15:45:33,207 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 15:45:33,208 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:33,209 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 15:45:33,210 INFO Batch calculation for MO08115_Prototyperuimte_(19-19)_Front: 27/27 items = 100.0% = 86.6 min
-2025-10-15 15:45:33,211 INFO No batch sessions found for MO08115_Prototyperuimte_(19-19)_REP_VS
-2025-10-15 15:45:33,214 INFO Batch calculation for MO08365_Dressing_(1-1): 40/40 items = 100.0% = 892.5 min
-2025-10-15 15:45:33,215 INFO Batch calculation for MO08365_Dressing_Rep_LF_02: 40/101 items = 39.6% = 109.2 min
-2025-10-15 15:45:33,216 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 15:45:33,218 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
-2025-10-15 15:45:33,218 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
-2025-10-15 15:45:33,219 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
-2025-10-15 15:45:33,221 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 15:45:33,221 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 15:45:33,222 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 15:45:33,223 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 15:45:33,223 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 15:45:33,224 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 15:45:33,225 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
-2025-10-15 15:45:33,226 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
-2025-10-15 15:45:33,226 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
-2025-10-15 15:45:33,227 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 15:45:33,228 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
-2025-10-15 15:45:33,231 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
-2025-10-15 15:45:33,232 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
-2025-10-15 15:45:33,232 INFO Batch calculation for MO08111_Dressing (4-4): 24/73 items = 32.9% = 86.7 min
-2025-10-15 15:45:33,234 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 15:45:33,234 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 15:45:33,235 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 15:45:33,236 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 15:45:33,237 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:45:33,238 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 15:45:33,238 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 15:45:33,240 INFO Batch calculation for MO07842_TV-wand_(1-1)_Rep_LF: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:45:33,240 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 15:45:33,241 INFO Batch calculation for MO07456_IT-Room_(B)_REP_OC-BC: 2/2 items = 100.0% = 5.4 min
-2025-10-15 15:45:33,242 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
-2025-10-15 15:45:33,242 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
-2025-10-15 15:45:33,243 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
-2025-10-15 15:45:33,243 INFO Batch calculation for MO07452_Purch-Quali_(6-19)_REP_LZ4: 1/1 items = 100.0% = 9.1 min
-2025-10-15 15:45:33,244 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
-2025-10-15 15:45:33,244 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
-2025-10-15 15:45:33,246 INFO Batch calculation for MO07449_Auditorium_REP_VL: 4/4 items = 100.0% = 28.8 min
-2025-10-15 15:45:33,247 INFO Batch calculation for MO07450_Copy-Room_(4-19)_REP_dr4: 1/1 items = 100.0% = 0.6 min
-2025-10-15 15:45:33,248 INFO Batch calculation for MO07464_Roomdivider_M13_REP_TZ-33-34: 6/6 items = 100.0% = 17.2 min
-2025-10-15 15:45:33,248 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 15:45:33,250 INFO Batch calculation for 0825_Bulo_Rep_tafels: 3/3 items = 100.0% = 54.8 min
-2025-10-15 15:45:33,251 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 15:45:33,252 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 15:45:33,252 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 15:45:33,253 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 15:45:33,254 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 15:45:33,255 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 15:45:33,256 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 15:45:33,256 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 15:45:33,257 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 15:45:33,258 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 15:45:33,259 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 15:45:33,259 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 15:45:33,260 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 15:45:33,261 INFO Batch calculation for MO05418_Bureau_(1-1): 69/157 items = 43.9% = 76.9 min
-2025-10-15 15:45:33,262 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 15:45:33,264 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 15:45:33,265 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 15:45:33,266 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 15:45:33,268 INFO Batch calculation for MO04587_Dressing_2_(2-2): 33/191 items = 17.3% = 128.7 min
-2025-10-15 15:45:33,268 INFO Batch calculation for MO04585_Dressing_1_(1-2): 55/191 items = 28.8% = 214.5 min
-2025-10-15 15:45:33,715 INFO projects endpoint called - page: 1, per_page: 20, search: , sort: recent
-2025-10-15 15:45:34,429 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 15:45:34,547 INFO Loaded efficiency targets from config: {}
-2025-10-15 15:46:15,438 INFO logs_project endpoint called for project: 'MO08103_Hoekkast_REP_VL'
-2025-10-15 15:46:15,594 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 16:51:16,835 INFO [INIT] Background service log callback initialized
-2025-10-15 16:51:16,836 INFO Using default work hours configuration
-2025-10-15 16:51:16,967 INFO Initializing database at C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster\dist\database/central_logging.sqlite
-2025-10-15 16:51:16,968 INFO Database initialization complete.
-2025-10-15 16:51:17,004 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-10-15 16:51:20,557 INFO [CALLBACK] Scanner panel callback registered
-2025-10-15 16:51:26,155 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 16:51:26,546 INFO Loaded efficiency targets from config: {}
-2025-10-15 16:51:38,281 INFO users endpoint was called
-2025-10-15 16:51:40,093 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 16:51:40,140 INFO Loaded efficiency targets from config: {}
-2025-10-15 16:51:41,888 INFO logs_project endpoint called for project: 'MO08025_Vestiaire_REP_GREEP'
-2025-10-15 16:51:42,196 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 16:51:51,131 INFO Batch calculation for MO08880_Bureaukast_L200: 10/37 items = 27.0% = 41.2 min
-2025-10-15 16:51:51,131 INFO Batch calculation for 0828_S5305_BULO_WPE: 12/12 items = 100.0% = 411.7 min
-2025-10-15 16:51:51,132 INFO Batch calculation for MO08796_Vestiaire_(1-1): 60/65 items = 92.3% = 97.7 min
-2025-10-15 16:51:51,132 INFO Batch calculation for MO08796_Vestiaire_REP_RP: 1/1 items = 100.0% = 5.0 min
-2025-10-15 16:51:51,133 INFO Batch calculation for MO08747_kader_(2-6): 1/1 items = 100.0% = 4.1 min
-2025-10-15 16:51:51,133 INFO Batch calculation for MO08621_Bureaukast (1-1): 76/106 items = 71.7% = 110.7 min
-2025-10-15 16:51:51,133 INFO Batch calculation for S05174_TFL_A_Japandipoot: 4/157 items = 2.5% = 4.5 min
-2025-10-15 16:51:51,134 INFO Batch calculation for MO08528_NT50_(1-1): 1/1 items = 100.0% = 6.4 min
-2025-10-15 16:51:51,134 INFO Batch calculation for MO08623_Kastje_wasruimte_(8-8): 11/83 items = 13.3% = 52.4 min
-2025-10-15 16:51:51,135 INFO No batch sessions found for MO08481_Stugabed_180x210_(1-1)
-2025-10-15 16:51:51,135 INFO Batch calculation for MO08490_Bureau-Japandi_(4-4): 59/116 items = 50.9% = 146.3 min
-2025-10-15 16:51:51,135 INFO Batch calculation for MO08487_Bureau-Zwevende_leggers_(1-4): 16/116 items = 13.8% = 39.7 min
-2025-10-15 16:51:51,136 INFO Batch calculation for MO08488_Commode_(2-4): 20/116 items = 17.2% = 49.6 min
-2025-10-15 16:51:51,136 INFO Batch calculation for MO08489_Dressing_(3-4): 21/116 items = 18.1% = 52.1 min
-2025-10-15 16:51:51,136 INFO Batch calculation for MO08408_BN4_aangepast_Rep_VS: 1/1 items = 100.0% = 6.9 min
-2025-10-15 16:51:51,137 INFO No batch sessions found for MO8427_28_Inrichting_Bureau_Rep_VL3
-2025-10-15 16:51:51,137 INFO No batch sessions found for MO08383_TV-wand_(1-1)
-2025-10-15 16:51:51,137 INFO Batch calculation for MO08383_TV-wand_Rep_VS2: 1/6 items = 16.7% = 10.0 min
-2025-10-15 16:51:51,137 INFO Batch calculation for MO08382_U-dressing_Zitbank_(1-1): 103/103 items = 100.0% = 242.8 min
-2025-10-15 16:51:51,138 INFO Batch calculation for MO08382_u-dressing_Zitbank_rep_LP: 1/6 items = 16.7% = 10.0 min
-2025-10-15 16:51:51,138 INFO Batch calculation for MO08349_Open_dressing_(1-1): 73/148 items = 49.3% = 116.5 min
-2025-10-15 16:51:51,138 INFO No batch sessions found for MO08349_Open_dressing_REP_RG
-2025-10-15 16:51:51,139 INFO Batch calculation for MO08370_Vestiaire_(4-4): 30/105 items = 28.6% = 132.6 min
-2025-10-15 16:51:51,139 INFO Batch calculation for MO08367_Dressing_(1-4): 45/105 items = 42.9% = 198.9 min
-2025-10-15 16:51:51,139 INFO Batch calculation for MO08368_Stuga_NK_aangepast_(2-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 16:51:51,140 INFO Batch calculation for MO08369_Stuga_NK_aangepast_(3-4): 15/105 items = 14.3% = 66.3 min
-2025-10-15 16:51:51,140 INFO Batch calculation for MO08367_Dressing_Rep_VL_AANV: 3/4 items = 75.0% = 2.2 min
-2025-10-15 16:51:51,140 INFO Batch calculation for MO08350_Dressing_(1-1): 30/106 items = 28.3% = 43.7 min
-2025-10-15 16:51:51,141 INFO Batch calculation for MO08194_TV-meubel_(1-2): 75/148 items = 50.7% = 119.7 min
-2025-10-15 16:51:51,141 INFO Batch calculation for MO08387_TV-wand_(1-3): 64/154 items = 41.6% = 240.6 min
-2025-10-15 16:51:51,142 INFO Batch calculation for MO08388_Dressoir-Vitrine_(2-3): 58/154 items = 37.7% = 218.1 min
-2025-10-15 16:51:51,142 INFO Batch calculation for MO08192_Wandkast_(1-1): 103/191 items = 53.9% = 401.7 min
-2025-10-15 16:51:51,142 INFO Batch calculation for MO08192_Wandkast_REP_VS: 1/1 items = 100.0% = 2.5 min
-2025-10-15 16:51:51,143 INFO Batch calculation for MO08192_Wandkast_Rep_VS1: 1/1 items = 100.0% = 11.2 min
-2025-10-15 16:51:51,143 INFO No batch sessions found for MO08405_TV-wand_(1-1)
-2025-10-15 16:51:51,143 INFO Batch calculation for MO08405_TV-wand_REP_OC: 1/154 items = 0.6% = 3.8 min
-2025-10-15 16:51:51,144 INFO Batch calculation for MO08102_Bureau_REP_OC_PLINT: 1/1 items = 100.0% = 3.8 min
-2025-10-15 16:51:51,144 INFO Batch calculation for MO08103_Hoekkast_REP_VL: 2/2 items = 100.0% = 11.1 min
-2025-10-15 16:51:51,145 INFO Batch calculation for MO08207_Nis_berging (6-7): 18/101 items = 17.8% = 49.1 min
-2025-10-15 16:51:51,145 INFO Batch calculation for MO08203_Wandplanken (4-7): 8/101 items = 7.9% = 21.8 min
-2025-10-15 16:51:51,145 INFO Batch calculation for MO08200_Dressing_bureau_B (3-7): 34/101 items = 33.7% = 92.8 min
-2025-10-15 16:51:51,145 INFO Batch calculation for MO08199_Dressing_bureau_A (2-7): 18/112 items = 16.1% = 83.9 min
-2025-10-15 16:51:51,146 INFO Batch calculation for MO08198_Dressing (1-7): 58/112 items = 51.8% = 270.5 min
-2025-10-15 16:51:51,146 INFO Batch calculation for MO08212_Dressing (7-7): 3/112 items = 2.7% = 14.0 min
-2025-10-15 16:51:51,146 INFO Batch calculation for MO08206_TV-meubel (5-7): 33/112 items = 29.5% = 153.9 min
-2025-10-15 16:51:51,147 INFO Batch calculation for MO08200_Dressing_bureau_B_REP_RZ: 1/6 items = 16.7% = 10.0 min
-2025-10-15 16:51:51,147 INFO Batch calculation for MO08198_Dressing (1-7)_RUGGEN: 58/177 items = 32.8% = 121.0 min
-2025-10-15 16:51:51,147 INFO No batch sessions found for 000000277360;0000000MO08206330
-2025-10-15 16:51:51,147 INFO Batch calculation for MO08206_TV-meubel_REP_TZ: 1/65 items = 1.5% = 1.6 min
-2025-10-15 16:51:51,147 INFO Batch calculation for MO08212_Dressing_PLINT: 3/65 items = 4.6% = 4.9 min
-2025-10-15 16:51:51,148 INFO Batch calculation for MO08115_Prototyperuimte_(19-19)_Front: 27/27 items = 100.0% = 86.6 min
-2025-10-15 16:51:51,149 INFO No batch sessions found for MO08115_Prototyperuimte_(19-19)_REP_VS
-2025-10-15 16:51:51,149 INFO Batch calculation for MO08365_Dressing_(1-1): 40/40 items = 100.0% = 892.5 min
-2025-10-15 16:51:51,149 INFO Batch calculation for MO08365_Dressing_Rep_LF_02: 40/101 items = 39.6% = 109.2 min
-2025-10-15 16:51:51,150 INFO Batch calculation for MO08365_Dressing_Rep_LZ_03: 1/1 items = 100.0% = 13.3 min
-2025-10-15 16:51:51,150 INFO Batch calculation for MO08173_Schoenenkast (2-2): 17/73 items = 23.3% = 61.4 min
-2025-10-15 16:51:51,150 INFO Batch calculation for MO08171_Muurtafel (1-2): 9/73 items = 12.3% = 32.5 min
-2025-10-15 16:51:51,151 INFO Batch calculation for MO08173_Schoenenkast_REP_RZ: 1/1 items = 100.0% = 6.2 min
-2025-10-15 16:51:51,151 INFO No batch sessions found for MO08022_TV-wand_(1-8)
-2025-10-15 16:51:51,151 INFO Batch calculation for MO08027_Commode_(3-8): 34/83 items = 41.0% = 162.0 min
-2025-10-15 16:51:51,151 INFO Batch calculation for MO08029_Dressingeiland_(5-8): 38/83 items = 45.8% = 181.0 min
-2025-10-15 16:51:51,152 INFO No batch sessions found for S04782_MO08023_Hangkastje_30diep_(1-8)
-2025-10-15 16:51:51,152 INFO No batch sessions found for S04782_MO08024_Hangkastje_45diep_(1-8)
-2025-10-15 16:51:51,152 INFO Batch calculation for MO08025_Vestiaire_REP_GREEP: 1/4 items = 25.0% = 0.7 min
-2025-10-15 16:51:51,152 INFO Batch calculation for MO07929_Vestiaire (1-4): 30/48 items = 62.5% = 83.9 min
-2025-10-15 16:51:51,153 INFO Batch calculation for MO07932_Berging (4-4): 18/48 items = 37.5% = 50.3 min
-2025-10-15 16:51:51,153 INFO Batch calculation for MO07931_Hangkast (3-4): 23/73 items = 31.5% = 83.1 min
-2025-10-15 16:51:51,153 INFO Batch calculation for MO07930_Bergkast - Bureau_Rep_Steunzijde: 1/1 items = 100.0% = 5.5 min
-2025-10-15 16:51:51,154 INFO Batch calculation for MO08109_Dressing (2-4): 24/89 items = 27.0% = 70.7 min
-2025-10-15 16:51:51,154 INFO Batch calculation for MO08110_Dressing (3-4): 43/89 items = 48.3% = 126.7 min
-2025-10-15 16:51:51,154 INFO Batch calculation for MO08108_Vestiaire (1-4): 22/89 items = 24.7% = 64.8 min
-2025-10-15 16:51:51,154 INFO Batch calculation for MO08111_Dressing (4-4): 24/73 items = 32.9% = 86.7 min
-2025-10-15 16:51:51,155 INFO Batch calculation for MO08421_Dressingkastje (2-5): 13/177 items = 7.3% = 27.1 min
-2025-10-15 16:51:51,155 INFO No batch sessions found for MO08417_Tablet_gastentoilet (1-5)
-2025-10-15 16:51:51,155 INFO Batch calculation for MO08419_Bureau (3-5): 24/154 items = 15.6% = 90.2 min
-2025-10-15 16:51:51,156 INFO Batch calculation for MO08422_Japandiwand (4-5): 27/37 items = 73.0% = 111.3 min
-2025-10-15 16:51:51,156 INFO Batch calculation for MO07571_Rechtse_kleine_Ommanteling_(3-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 16:51:51,156 INFO Batch calculation for MO07570_Linkse_Ommanteling_(2-3): 16/80 items = 20.0% = 80.3 min
-2025-10-15 16:51:51,156 INFO Batch calculation for MO07569_Rechtse_Ommanteling_(1-3): 48/80 items = 60.0% = 240.9 min
-2025-10-15 16:51:51,157 INFO Batch calculation for MO07842_TV-wand_(1-1)_Rep_LF: 1/1 items = 100.0% = 5.2 min
-2025-10-15 16:51:51,157 INFO Batch calculation for MO07842_TV-wand_REP_JAPANDI: 3/3 items = 100.0% = 9.3 min
-2025-10-15 16:51:51,157 INFO Batch calculation for MO07456_IT-Room_(B)_REP_OC-BC: 2/2 items = 100.0% = 5.4 min
-2025-10-15 16:51:51,157 INFO Batch calculation for MO07454_Storeroom_1_REP_dr10-11: 2/2 items = 100.0% = 15.0 min
-2025-10-15 16:51:51,157 INFO Batch calculation for MO07454_Storeroom_1_REP_DR: 2/2 items = 100.0% = 8.4 min
-2025-10-15 16:51:51,158 INFO Batch calculation for MO07454_Storeroom_1_Rep: 1/1 items = 100.0% = 12.9 min
-2025-10-15 16:51:51,158 INFO Batch calculation for MO07452_Purch-Quali_(6-19)_REP_LZ4: 1/1 items = 100.0% = 9.1 min
-2025-10-15 16:51:51,158 INFO Batch calculation for MO07454_Storeroom_1_REP_LL: 1/1 items = 100.0% = 4.1 min
-2025-10-15 16:51:51,158 INFO Batch calculation for 0821MO07418_Sales-support_REP_blad: 2/2 items = 100.0% = 16.0 min
-2025-10-15 16:51:51,158 INFO Batch calculation for MO07449_Auditorium_REP_VL: 4/4 items = 100.0% = 28.8 min
-2025-10-15 16:51:51,158 INFO Batch calculation for MO07450_Copy-Room_(4-19)_REP_dr4: 1/1 items = 100.0% = 0.6 min
-2025-10-15 16:51:51,159 INFO Batch calculation for MO07464_Roomdivider_M13_REP_TZ-33-34: 6/6 items = 100.0% = 17.2 min
-2025-10-15 16:51:51,159 INFO Batch calculation for MO07454_Storeroom_1_REP_BK02: 7/154 items = 4.5% = 26.3 min
-2025-10-15 16:51:51,159 INFO Batch calculation for 0825_Bulo_Rep_tafels: 3/3 items = 100.0% = 54.8 min
-2025-10-15 16:51:51,160 INFO Batch calculation for MO06933_NK_Rep_AS: 1/1 items = 100.0% = 5.8 min
-2025-10-15 16:51:51,160 INFO Batch calculation for MO06793_Ladenkast_Bureau_(11-16): 42/177 items = 23.7% = 87.6 min
-2025-10-15 16:51:51,160 INFO No batch sessions found for MO06792_Commode_(10-16)
-2025-10-15 16:51:51,161 INFO No batch sessions found for MO06787_Spiegel_(5-16)
-2025-10-15 16:51:51,161 INFO Batch calculation for MO06784_Lage_kast_Hoofdeinde_(2-16): 64/177 items = 36.2% = 133.6 min
-2025-10-15 16:51:51,161 INFO Batch calculation for MO06794_Bergkast_Wasplaats_(12-16): 85/206 items = 41.3% = 158.8 min
-2025-10-15 16:51:51,162 INFO Batch calculation for MO06795_Hangdressoir_(13-16): 25/206 items = 12.1% = 46.7 min
-2025-10-15 16:51:51,162 INFO Batch calculation for MO06796_TV-wand_(14-16): 42/206 items = 20.4% = 78.5 min
-2025-10-15 16:51:51,162 INFO Batch calculation for MO06797_Bureaukast_(15-16): 54/206 items = 26.2% = 100.9 min
-2025-10-15 16:51:51,163 INFO Batch calculation for MO06793_Ladenkast_Bureau_REP_AV_R: 1/65 items = 1.5% = 1.6 min
-2025-10-15 16:51:51,163 INFO Batch calculation for MO06794_Bergkast_Wasplaats_Rep_LZ: 1/1 items = 100.0% = 5.2 min
-2025-10-15 16:51:51,163 INFO Batch calculation for MO06797_Bureaukast_REP_AFWZ: 2/2 items = 100.0% = 18.0 min
-2025-10-15 16:51:51,163 INFO Batch calculation for MO06796_TV-wand_Rep_Piklatten: 5/5 items = 100.0% = 7.4 min
-2025-10-15 16:51:51,164 INFO Batch calculation for MO05418_Bureau_(1-1): 69/157 items = 43.9% = 76.9 min
-2025-10-15 16:51:51,164 INFO Batch calculation for MO05418_Bureau_(1-1)_REP_BCOC2: 2/2 items = 100.0% = 1.8 min
-2025-10-15 16:51:51,164 INFO Batch calculation for MO05418_Bureau_REP_OC_02: 1/6 items = 16.7% = 10.0 min
-2025-10-15 16:51:51,165 INFO Batch calculation for MO04584_Halkast_(1-1): 78/157 items = 49.7% = 87.0 min
-2025-10-15 16:51:51,165 INFO Batch calculation for MO04584_Halkast_PLINT_PASLAT: 2/6 items = 33.3% = 20.1 min
-2025-10-15 16:51:51,165 INFO Batch calculation for MO04587_Dressing_2_(2-2): 33/191 items = 17.3% = 128.7 min
-2025-10-15 16:51:51,166 INFO Batch calculation for MO04585_Dressing_1_(1-2): 55/191 items = 28.8% = 214.5 min
-2025-10-15 16:51:52,181 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 16:51:52,235 INFO Loaded efficiency targets from config: {}
-2025-10-15 16:51:57,693 INFO logs_project endpoint called for project: '1013_MO08950_Aanvulling_STKN_REP_M'
-2025-10-15 16:52:06,968 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 16:52:07,016 INFO Loaded efficiency targets from config: {}
-2025-10-15 17:26:01,420 INFO [INIT] Background service log callback initialized
-2025-10-15 17:26:01,437 INFO Using default work hours configuration
-2025-10-15 17:26:02,029 INFO Initializing database at \\DESKTOP-9PNEF5Q\Test-thuis\BarcodeMaster\dist\database/central_logging.sqlite
-2025-10-15 17:26:02,126 INFO Database initialization complete.
-2025-10-15 17:26:02,384 INFO Starting database API server with Waitress on http://0.0.0.0:5001
-2025-10-15 17:26:06,328 INFO [CALLBACK] Scanner panel callback registered
-2025-10-15 17:26:28,580 INFO Production flow dashboard users: ['ACCURA', 'BOERE', 'GR GANNOMAT', 'HANDWERK', 'KL GANNOMAT', 'NESTING', 'OPUS']
-2025-10-15 17:26:29,259 INFO Loaded efficiency targets from config: {}
-2025-10-15 17:27:29,989 INFO Loaded efficiency targets from config: {}
-2025-10-15 17:27:35,146 INFO [DatabasePanel] Shutdown called.
-2025-10-15 17:27:35,148 INFO Shutdown requested for DB API server
-2025-10-15 17:27:36,267 INFO Shutdown requested for DB API server
+2025-10-16 07:34:13,522 INFO [INIT] Background service log callback initialized
+2025-10-16 07:34:13,523 INFO Using default work hours configuration
+2025-10-16 07:34:13,758 INFO Initializing database at C:\Users\Administrator\Desktop\Test-thuis-main\BarcodeMaster\dist\database/central_logging.sqlite
+2025-10-16 07:34:13,773 INFO Added 'nesting_count' column to logs table.
+2025-10-16 07:34:13,774 INFO Added 'opdeelzaag_count' column to logs table.
+2025-10-16 07:34:13,774 INFO Added 'aantal_items' column to logs table.
+2025-10-16 07:34:13,775 INFO Added 'aantal_sides' column to logs table.
+2025-10-16 07:34:13,776 INFO Added 'mo_number' column to logs table.
+2025-10-16 07:34:13,776 INFO Added 'so_number' column to logs table.
+2025-10-16 07:34:13,777 INFO Added 'color' column to logs table.
+2025-10-16 07:34:13,777 INFO Added 'customer_name' column to logs table.
+2025-10-16 07:34:13,778 INFO Added 'nesting_count' column to sessions table.
+2025-10-16 07:34:13,779 INFO Added 'opdeelzaag_count' column to sessions table.
+2025-10-16 07:34:13,780 INFO Added 'pause_duration_minutes' column to sessions table.
+2025-10-16 07:34:13,780 INFO Added 'project_id' column to sessions table.
+2025-10-16 07:34:13,782 INFO Added 'sequence_number' column to sessions table.
+2025-10-16 07:34:13,783 INFO Added 'previous_user' column to sessions table.
+2025-10-16 07:34:13,784 INFO Added 'handoff_delay_minutes' column to sessions table.
+2025-10-16 07:34:13,786 INFO Database initialization complete.
+2025-10-16 07:34:13,859 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-10-16 07:34:17,471 INFO [CALLBACK] Scanner panel callback registered
+2025-10-16 07:34:27,663 INFO [DatabasePanel] Shutdown called.
+2025-10-16 07:34:27,664 INFO Shutdown requested for DB API server
+2025-10-16 07:34:28,729 INFO Shutdown requested for DB API server
+2025-10-16 07:34:51,244 INFO [INIT] Background service log callback initialized
+2025-10-16 07:34:51,245 INFO Using default work hours configuration
+2025-10-16 07:34:51,503 INFO Initializing database at C:\Users\Administrator\Desktop\Test-thuis-main\BarcodeMaster\dist\database/central_logging.sqlite
+2025-10-16 07:34:51,515 INFO Database initialization complete.
+2025-10-16 07:34:51,576 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-10-16 07:34:55,257 INFO [CALLBACK] Scanner panel callback registered
+2025-10-16 07:34:59,983 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-10-16 07:35:00,315 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:35:04,770 INFO projects endpoint called - page: 1, per_page: 20, search: , sort: recent
+2025-10-16 07:35:18,207 INFO logs_project endpoint called for project: '1013_MO08950_Aanvulling_STKN_REP_M'
+2025-10-16 07:38:24,590 INFO logs_project endpoint called for project: '1013_MO08950_Aanvulling_STKN_REP_M'
+2025-10-16 07:40:11,468 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-10-16 07:40:11,593 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:40:29,219 INFO users endpoint was called
+2025-10-16 07:40:32,600 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-10-16 07:40:32,717 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:41:32,835 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:41:53,155 ERROR Error getting active sessions for user OPUS: no such column: total_pause_duration
+2025-10-16 07:42:32,846 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:43:32,842 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:44:32,848 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:45:32,834 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:46:32,844 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:47:32,845 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:48:33,847 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:49:34,851 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:50:35,847 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:51:36,854 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:52:37,848 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:53:38,849 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:54:39,842 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:55:40,849 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:56:41,843 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:57:42,837 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:58:43,843 INFO Loaded efficiency targets from config: {}
+2025-10-16 07:59:44,841 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:00:45,858 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:01:46,852 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:02:46,851 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:03:46,862 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:04:46,857 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:05:46,850 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:06:41,276 INFO XLSX_UPDATED session started for OPUS on project MO08623_Kastje_wasruimte_(8-8) - Status changed to BEZIG
+2025-10-16 08:06:46,852 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:07:46,863 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:08:46,854 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:09:46,870 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:10:46,851 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:11:46,856 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:12:46,861 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:13:10,743 INFO Session started for NESTING: NESTING_S1_20251016_081309
+2025-10-16 08:13:46,867 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:14:46,862 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:15:46,863 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:16:46,868 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:17:46,861 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:18:46,855 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:19:46,864 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:20:46,865 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:21:46,858 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:22:46,864 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:23:46,869 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:24:46,855 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:25:46,874 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:26:46,862 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:27:46,870 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:28:46,870 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:29:46,870 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:30:46,858 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:31:46,864 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:32:46,862 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:33:46,874 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:34:46,869 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:35:46,867 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:36:46,877 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:37:46,869 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:38:36,541 INFO Session OPUS_MO08623_Kastje_wasruimte_(8-8)_20251016_080641: total_work_minutes=31.92, pause_work_minutes=0, actual=31.92
+2025-10-16 08:38:36,550 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'details': 'MO08623_Kastje_wasruimte_(8-8) afgemeld aan OPUS', 'project': 'MO08623_Kastje_wasruimte_(8-8)', 'user': 'OPUS', 'base_mo_code': 'MO08623', 'is_rep_variant': False}
+2025-10-16 08:38:36,552 INFO Session ended: OPUS_MO08623_Kastje_wasruimte_(8-8)_20251016_080641
+2025-10-16 08:38:36,570 INFO Daily efficiency updated for 1 users
+2025-10-16 08:38:36,571 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 31.92, 'user': 'OPUS'}]}
+2025-10-16 08:38:46,873 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:39:46,881 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:40:46,871 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:41:46,874 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:42:46,875 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:43:46,880 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:44:46,880 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:45:46,882 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:46:46,873 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:47:46,884 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:48:46,888 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:49:46,870 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:50:46,881 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:51:46,878 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:52:46,874 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:53:46,882 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:54:46,884 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:55:46,891 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:56:46,888 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:57:46,881 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:58:46,892 INFO Loaded efficiency targets from config: {}
+2025-10-16 08:59:46,903 INFO Loaded efficiency targets from config: {}
+2025-10-16 09:00:46,901 INFO Loaded efficiency targets from config: {}
+2025-10-16 09:00:49,346 INFO XLSX_UPDATED session started for OPUS on project MO08487_Bureau-Zwevende_leggers_(1-4) - Status changed to BEZIG
+2025-10-16 09:01:46,905 INFO Loaded efficiency targets from config: {}
+2025-10-16 09:02:46,904 INFO Loaded efficiency targets from config: {}
+2025-10-16 09:03:46,922 INFO Loaded efficiency targets from config: {}
+2025-10-16 09:28:31,774 INFO XLSX_UPDATED session started for KL GANNOMAT on project MO08623_Kastje_wasruimte_(8-8) - Status changed to BEZIG
+2025-10-16 09:39:42,534 INFO Session KL GANNOMAT_MO08623_Kastje_wasruimte_(8-8)_20251016_092831: total_work_minutes=11.13, pause_work_minutes=0, actual=11.13
+2025-10-16 09:39:42,538 INFO Session ended: KL GANNOMAT_MO08623_Kastje_wasruimte_(8-8)_20251016_092831
+2025-10-16 09:39:42,548 INFO Daily efficiency updated for 2 users
+2025-10-16 09:39:42,548 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 11.13, 'user': 'KL GANNOMAT'}, {'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 31.92, 'user': 'OPUS'}]}
+2025-10-16 09:39:42,624 INFO [db_log_api] /log called with data: {'event': 'AFGEMELD', 'details': 'MO08623_Kastje_wasruimte_(8-8) afgemeld aan KL GANNOMAT', 'project': 'MO08623_Kastje_wasruimte_(8-8)', 'user': 'KL GANNOMAT', 'base_mo_code': 'MO08623', 'is_rep_variant': False}
+2025-10-16 10:03:01,002 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-10-16 10:03:01,274 INFO Loaded efficiency targets from config: {}
+2025-10-16 10:03:04,887 INFO Production flow dashboard users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'HANDWERK', 'GR GANNOMAT', 'BOERE']
+2025-10-16 10:03:05,028 INFO Loaded efficiency targets from config: {}
+2025-10-16 10:04:05,141 INFO Loaded efficiency targets from config: {}
+2025-10-16 10:05:05,151 INFO Loaded efficiency targets from config: {}
+2025-10-16 10:05:59,791 INFO Session NESTING_S1_20251016_081309: total_work_minutes=112.82, pause_work_minutes=0, actual=112.82
+2025-10-16 10:05:59,796 INFO Session ended: NESTING_S1_20251016_081309
+2025-10-16 10:05:59,806 INFO Daily efficiency updated for 2 users
+2025-10-16 10:05:59,807 INFO Efficiency update triggered: {'success': True, 'updated_users': [{'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 11.13, 'user': 'KL GANNOMAT'}, {'items_per_hour': 0.0, 'total_items': 0, 'total_minutes': 31.92, 'user': 'OPUS'}]}
+2025-10-16 10:06:03,955 INFO [DatabasePanel] Shutdown called.
+2025-10-16 10:06:03,956 INFO Shutdown requested for DB API server
+2025-10-16 10:06:05,017 INFO Shutdown requested for DB API server
+2025-10-16 10:06:05,154 INFO Loaded efficiency targets from config: {}

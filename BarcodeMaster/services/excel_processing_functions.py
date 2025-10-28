@@ -169,9 +169,18 @@ def find_excel_file_for_project(directory, project_code):
     try:
         print(f"[EXCEL_MATCH] Looking for project '{project_code}' in directory '{directory}'")
         
+        # Debug: show what we're searching in
+        print(f"[EXCEL_MATCH] Debug - searching for MO pattern in: {repr(project_code)}")
+        print(f"[EXCEL_MATCH] Debug - uppercase version: {project_code.upper()}")
+        
         # Extract just the MO code if present
-        mo_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
-        mo_code = mo_match.group(1).upper() if mo_match else project_code.upper()
+        mo_match = re.search(r'(MO\d{4,5})', project_code, re.IGNORECASE)
+        if mo_match:
+            mo_code = mo_match.group(1).upper()
+            print(f"[EXCEL_MATCH] Regex matched: '{mo_code}'")
+        else:
+            mo_code = project_code.upper()
+            print(f"[EXCEL_MATCH] No regex match, using full string")
         
         print(f"[EXCEL_MATCH] Extracted MO code: '{mo_code}'")
         
@@ -279,7 +288,7 @@ def parse_excel_for_nesting(excel_path):
         
         # Extract MO/SO numbers and customer from filename or sheet
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
         
@@ -375,7 +384,7 @@ def parse_excel_for_accura(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
         
@@ -480,7 +489,7 @@ def parse_excel_for_boere(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
         
@@ -557,7 +566,7 @@ def process_excel_for_all_types(excel_path, processor_types):
         customer_name = None
         color = None
         
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             mo_number = mo_match.group(1).upper()
         
@@ -740,14 +749,29 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
         Path to generated Excel file or None if failed
     """
     try:
-        # Get output directory from config or use default
+        # Get output directory from DATABASE
+        import requests
+        import json
+        
+        # Load from database API - use config to get correct API URL
         from config_utils import get_config
         config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        # Remove /log suffix if present to get base URL
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
         
-        if os.name == 'nt':  # Windows
-            output_dir = config.get('accura_output_dir', "C:/ACCURA")
-        else:  # Linux/Unix
-            output_dir = config.get('accura_output_dir', "/tmp/ACCURA")
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+        output_dir = settings.get('accura_output_dir')
+        if not output_dir:
+            raise Exception("accura_output_dir not configured in database settings")
         
         # Normalize path
         output_dir = os.path.normpath(output_dir)
@@ -814,14 +838,29 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         Path to generated Excel file or None if failed
     """
     try:
-        # Get output directory from config or use default
+        # Get output directory from DATABASE
+        import requests
+        import json
+        
+        # Load from database API - use config to get correct API URL
         from config_utils import get_config
         config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        # Remove /log suffix if present to get base URL
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
         
-        if os.name == 'nt':  # Windows
-            output_dir = config.get('boere_output_dir', "C:/BOERE")
-        else:  # Linux/Unix
-            output_dir = config.get('boere_output_dir', "/tmp/BOERE")
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+        output_dir = settings.get('boere_output_dir')
+        if not output_dir:
+            raise Exception("boere_output_dir not configured in database settings")
         
         # Normalize path
         output_dir = os.path.normpath(output_dir)
@@ -914,7 +953,7 @@ def parse_excel_for_massief(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
         
@@ -977,14 +1016,29 @@ def generate_excel_for_massief(items_list, mo_number, so_number, customer_name, 
         Path to generated Excel file or None if failed
     """
     try:
-        # Get output directory from config or use default
+        # Get output directory from DATABASE
+        import requests
+        import json
+        
+        # Load from database API - use config to get correct API URL
         from config_utils import get_config
         config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        # Remove /log suffix if present to get base URL
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
         
-        if os.name == 'nt':  # Windows
-            output_dir = config.get('massief_output_dir', "C:/MASSIEF")
-        else:  # Linux/Unix
-            output_dir = config.get('massief_output_dir', "/tmp/MASSIEF")
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+        output_dir = settings.get('massief_output_dir')
+        if not output_dir:
+            raise Exception("massief_output_dir not configured in database settings")
         
         # Normalize path
         output_dir = os.path.normpath(output_dir)
@@ -1077,7 +1131,7 @@ def parse_excel_for_handwerk(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{5})', filename, re.IGNORECASE)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
         
@@ -1140,14 +1194,29 @@ def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name,
         Path to generated Excel file or None if failed
     """
     try:
-        # Get output directory from config or use default
+        # Get output directory from DATABASE
+        import requests
+        import json
+        
+        # Load from database API - use config to get correct API URL
         from config_utils import get_config
         config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        # Remove /log suffix if present to get base URL
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
         
-        if os.name == 'nt':  # Windows
-            output_dir = config.get('handwerk_output_dir', "C:/HANDWERK")
-        else:  # Linux/Unix
-            output_dir = config.get('handwerk_output_dir', "/tmp/HANDWERK")
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+        output_dir = settings.get('handwerk_output_dir')
+        if not output_dir:
+            raise Exception("handwerk_output_dir not configured in database settings")
         
         # Normalize path
         output_dir = os.path.normpath(output_dir)
@@ -1195,5 +1264,199 @@ def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name,
         
     except Exception as e:
         print(f"Error generating Excel for HANDWERK: {e}")
+        traceback.print_exc()
+        return None
+
+
+def generate_hops_for_manual_entry(items_list, mo_number, so_number, customer_name, project_name=None):
+    """
+    Generate HOPS directory structure and Excel file for manual entry.
+    Creates a directory in the OPUS/KORPUS path and generates an Excel file with generic items.
+
+    Args:
+        items_list: List of item names/descriptions
+        mo_number: MO number (e.g., 'MO6798')
+        so_number: SO number (e.g., 'S03673')
+        customer_name: Customer name
+        project_name: Full project name (e.g., 'MO6798_Vestiaire_(16-16)')
+
+    Returns:
+        Path to the generated Excel file, or None if failed
+    """
+    try:
+        print(f"[HOPS_GEN DEBUG] Received parameters:")
+        print(f"[HOPS_GEN DEBUG]   project_name: '{project_name}'")
+        print(f"[HOPS_GEN DEBUG]   mo_number: '{mo_number}' (type: {type(mo_number)})")
+        print(f"[HOPS_GEN DEBUG]   so_number: '{so_number}'")
+        print(f"[HOPS_GEN DEBUG]   customer_name: '{customer_name}'")
+        import pandas as pd
+        from datetime import datetime
+        import requests
+        
+        # Load OPUS path from database API
+        from config_utils import get_config
+        config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
+        
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+
+        # Get OPUS path from user paths (correct database key)
+        user_paths = settings.get('scanner_panel_open_event_user_paths', {})
+        opus_path = user_paths.get('OPUS')
+
+        if not opus_path:
+            raise Exception("OPUS path not configured in database settings (User Configuration tab)")
+        
+        # Normalize path
+        opus_path = os.path.normpath(opus_path)
+        
+        # Create project directory name
+        # Format: Just the project_code from manual entry (no timestamp)
+        if project_name:
+            # Use project name as-is
+            dir_name = project_name
+        else:
+            # Fallback: create name from MO number
+            dir_name = f"{mo_number}_Manual"
+        
+        # Create full directory path
+        project_dir = os.path.join(opus_path, dir_name)
+        os.makedirs(project_dir, exist_ok=True)
+        
+        # Create Excel file in the project directory
+        excel_filename = f"{dir_name}.xlsx"
+        excel_path = os.path.join(project_dir, excel_filename)
+        
+        # Create DataFrame with Item and Status columns
+        df = pd.DataFrame({
+            'Item': items_list,
+            'Status': [''] * len(items_list)
+        })
+        
+        # Save to Excel with metadata
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            # Main data sheet
+            df.to_excel(writer, sheet_name='Items', index=False)
+            
+            # Add metadata sheet
+            print(f"[HOPS_GEN DEBUG] Writing metadata with mo_number: '{mo_number}' (type: {type(mo_number)})")
+            metadata_df = pd.DataFrame({
+                'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by', 'directory'],
+                'Value': [project_name or dir_name, mo_number, so_number, customer_name, 'BarcodeMaster', project_dir]
+            })
+            print(f"[HOPS_GEN DEBUG] Metadata DataFrame created:")
+            print(metadata_df)
+            metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+            
+            # Hide the metadata sheet
+            workbook = writer.book
+            worksheet = workbook['_ProjectInfo']
+            worksheet.sheet_state = 'hidden'
+        
+        print(f"[HOPS] Excel file and directory created: {excel_path}")
+        return excel_path
+        
+    except Exception as e:
+        print(f"Error generating HOPS for manual entry: {e}")
+        traceback.print_exc()
+        return None
+
+
+def generate_mdb_for_manual_entry(items_list, mo_number, so_number, customer_name, project_name=None):
+    """
+    Generate MDB Excel file for manual entry.
+    Creates an Excel file in the KL GANNOMAT path with generic items.
+    Note: Actual MDB file creation requires Access/ODBC, so we create Excel as placeholder.
+    
+    Args:
+        items_list: List of item names/descriptions (ProgramNumbers)
+        mo_number: MO number (e.g., 'MO6798')
+        so_number: SO number (e.g., 'S03673')
+        customer_name: Customer name
+        project_name: Full project name (e.g., 'MO6798_Vestiaire_(16-16)')
+    
+    Returns:
+        Path to the generated Excel file, or None if failed
+    """
+    try:
+        import pandas as pd
+        from datetime import datetime
+        import requests
+        
+        # Load KL GANNOMAT path from database API
+        from config_utils import get_config
+        config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
+        
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+        
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+        
+        settings = data.get('settings', {})
+
+        # Get KL GANNOMAT path from user paths (correct database key)
+        user_paths = settings.get('scanner_panel_open_event_user_paths', {})
+        mdb_path = user_paths.get('KL GANNOMAT')
+
+        if not mdb_path:
+            raise Exception("KL GANNOMAT path not configured in database settings (User Configuration tab)")
+        
+        # Normalize path
+        mdb_path = os.path.normpath(mdb_path)
+        os.makedirs(mdb_path, exist_ok=True)
+        
+        # Create filename
+        # Format: Just the project_code from manual entry (no timestamp)
+        if project_name:
+            # Use project name as-is
+            filename = f"{project_name}.xlsx"
+        else:
+            # Fallback: create name from MO number
+            filename = f"{mo_number}_Manual.xlsx"
+        
+        excel_path = os.path.join(mdb_path, filename)
+        
+        # Create DataFrame with Item and Status columns (matching MDB format)
+        df = pd.DataFrame({
+            'Item': items_list,
+            'Status': [''] * len(items_list)
+        })
+        
+        # Save to Excel with metadata
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            # Main data sheet
+            df.to_excel(writer, sheet_name='Items', index=False)
+            
+            # Add metadata sheet
+            metadata_df = pd.DataFrame({
+                'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by', 'type'],
+                'Value': [project_name or filename.replace('.xlsx', ''), mo_number, so_number, customer_name, 'BarcodeMaster', 'MDB_MANUAL']
+            })
+            metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+            
+            # Hide the metadata sheet
+            workbook = writer.book
+            worksheet = workbook['_ProjectInfo']
+            worksheet.sheet_state = 'hidden'
+        
+        print(f"[MDB] Excel file created: {excel_path}")
+        return excel_path
+        
+    except Exception as e:
+        print(f"Error generating MDB Excel for manual entry: {e}")
         traceback.print_exc()
         return None

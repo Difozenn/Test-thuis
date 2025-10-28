@@ -245,6 +245,11 @@ class BackgroundImportService:
 
         self._log(f"Event ontvangen: User={user_type}, Project={project_code}. Controleren voor import...")
         
+        # Skip processing for manual entry events (they're already fully processed)
+        if event_details and 'Manual entry' in event_details:
+            self._log(f"Skipping import for manual entry event from '{user_type}'")
+            return
+        
         processing_type = self.scanner_user_to_processing_type_map.get(user_type)
 
         if not self.scanner_user_logic_active.get(user_type, False):
@@ -433,10 +438,15 @@ class BackgroundImportService:
         """Task run in a separate thread to handle OPEN event logic for other users."""
         try:
             self._log(f"[BG_TASK] Processing OPEN for {project_code_to_log}, scanned by {current_user_scanner}.")
-            open_users = config_data.get('scanner_panel_open_event_users', [])
-            user_logic_active_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
-            user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
-            user_to_processing_type = config_data.get('scanner_user_to_processing_type_map', {})
+            
+            # Get configuration from DATABASE, not from passed config
+            db_config = self._load_settings_from_api()
+            open_users = db_config.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = db_config.get('scanner_panel_open_event_user_logic_active', {})
+            user_paths_map = db_config.get('scanner_panel_open_event_user_paths', {})
+            user_to_processing_type = db_config.get('scanner_user_to_processing_type_map', {})
+            
+            self._log(f"[BG_TASK] Loaded paths from database: {user_paths_map}")
             
             # Track processing threads to wait for completion
             processing_threads = []
@@ -473,11 +483,19 @@ class BackgroundImportService:
                 excel_processors = excel_processing_users.get(user_dir, {})
                 
                 if excel_processors:
-                    # Skip Excel processing in background task - it's handled by trigger_import_for_event
-                    # This prevents duplicate processing of Excel users
-                    self._log(f"[BG_TASK] Skipping Excel processing for {list(excel_processors.keys())} - handled by direct API path")
+                    # Process Excel users using unified Excel handler
+                    self._log(f"[BG_TASK] Processing Excel users: {list(excel_processors.keys())}")
                     
-                # Remove ALL Excel processors from regular processing (they're handled above or in trigger_import_for_event)
+                    # Call unified Excel processing with the actual scanning user
+                    thread = threading.Thread(
+                        target=self._process_all_excel_users_unified,
+                        args=(current_user_scanner, project_code_to_log, scanned_code, timestamp, user_dir)
+                    )
+                    thread.daemon = True
+                    thread.start()
+                    processing_threads.append(thread)
+                    
+                # Remove ALL Excel processors from regular processing (they're handled above)
                 users_in_dir = [u for u in users_in_dir if u not in excel_processors]
                 
                 # Process remaining non-Excel users normally
@@ -658,6 +676,8 @@ class BackgroundImportService:
         """
         Extract data from Excel files WITHOUT generating output files or writing to database.
         This is phase 1 of the confirmation flow - read-only data extraction.
+        
+        This uses the SAME logic as _process_scan_for_open_event_task but in dry-run mode.
         """
         try:
             self._log(f"[EXTRACT] Starting data extraction for {project_code_to_log}")
@@ -675,12 +695,15 @@ class BackgroundImportService:
                 'extraction_complete': False,
                 'errors': []
             }
-
-            # Get configuration
-            open_users = config_data.get('scanner_panel_open_event_users', [])
-            user_logic_active_states = config_data.get('scanner_panel_open_event_user_logic_active', {})
-            user_paths_map = config_data.get('scanner_panel_open_event_user_paths', {})
-            user_to_processing_type = config_data.get('scanner_user_to_processing_type_map', {})
+            
+            # Get configuration from DATABASE, not from passed config
+            db_config = self._load_settings_from_api()
+            open_users = db_config.get('scanner_panel_open_event_users', [])
+            user_logic_active_states = db_config.get('scanner_panel_open_event_user_logic_active', {})
+            user_paths_map = db_config.get('scanner_panel_open_event_user_paths', {})
+            user_to_processing_type = db_config.get('scanner_user_to_processing_type_map', {})
+            
+            self._log(f"[EXTRACT] Loaded paths from database: {user_paths_map}")
 
             # Group users by directory to avoid duplicate searches
             path_to_users = {}
@@ -693,24 +716,33 @@ class BackgroundImportService:
                     continue
 
                 user_dir = user_paths_map.get(user)
-                if user_dir and os.path.isdir(user_dir):
-                    if user_dir not in path_to_users:
-                        path_to_users[user_dir] = []
-                    path_to_users[user_dir].append(user)
+                
+                if not user_dir:
+                    self._log(f"[EXTRACT] User '{user}' has no path configured. Skipping.")
+                    continue
+                
+                # Normalize path for Windows (convert forward slashes to backslashes for UNC paths)
+                if user_dir.startswith('//'):
+                    user_dir = user_dir.replace('/', '\\')
+                    self._log(f"[EXTRACT] Normalized path for {user}: {user_dir}")
+                
+                # Add user to path mapping (don't check if dir exists - let file functions handle it)
+                if user_dir not in path_to_users:
+                    path_to_users[user_dir] = []
+                path_to_users[user_dir].append(user)
 
-                    # Track Excel-based processing types
-                    processing_type = user_to_processing_type.get(user)
-                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
-                        if user_dir not in excel_processing_users:
-                            excel_processing_users[user_dir] = {}
-                        excel_processing_users[user_dir][user] = processing_type
+                # Track Excel-based processing types
+                processing_type = user_to_processing_type.get(user)
+                if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
+                    if user_dir not in excel_processing_users:
+                        excel_processing_users[user_dir] = {}
+                    excel_processing_users[user_dir][user] = processing_type
 
             # Process Excel directories for data extraction
             for user_dir, excel_processors in excel_processing_users.items():
                 self._log(f"[EXTRACT] Checking dir '{user_dir}' for Excel processors: {list(excel_processors.keys())}")
 
-                # Find matching Excel file
-                from services.excel_processing import find_excel_file_for_project, process_excel_for_all_types
+                # Find matching Excel file (already imported at top of file)
                 excel_file = find_excel_file_for_project(user_dir, project_code_to_log)
 
                 if not excel_file:
@@ -723,9 +755,14 @@ class BackgroundImportService:
                 # Extract data from Excel for all processor types
                 processor_types = [proc_type for user, proc_type in excel_processors.items()]
                 all_results = process_excel_for_all_types(excel_file, processor_types)
+                
+                self._log(f"[EXTRACT] Excel processing results: {list(all_results.keys())}")
+                for pt, res in all_results.items():
+                    self._log(f"[EXTRACT] {pt}: item_count={res.get('item_count', 0)}")
 
                 # Map results to users and extract metadata
                 for user, proc_type in excel_processors.items():
+                    self._log(f"[EXTRACT] Checking user {user} with proc_type {proc_type}")
                     if proc_type in all_results:
                         result = all_results[proc_type]
 
@@ -741,13 +778,18 @@ class BackgroundImportService:
 
                         # Store user-specific data
                         if proc_type == 'NESTING_PROCESSING':
+                            nesting_count = result.get('nesting_count', 0)
+                            opdeelzaag_count = result.get('opdeelzaag_count', 0)
+                            total = nesting_count + opdeelzaag_count
+                            self._log(f"[EXTRACT] NESTING user {user}: nesting={nesting_count}, opdeelzaag={opdeelzaag_count}, total={total}")
                             extraction_result['users'][user] = {
                                 'processing_type': proc_type,
-                                'nesting_count': result.get('nesting_count', 0),
-                                'opdeelzaag_count': result.get('opdeelzaag_count', 0),
-                                'total_items': result.get('nesting_count', 0) + result.get('opdeelzaag_count', 0),
+                                'nesting_count': nesting_count,
+                                'opdeelzaag_count': opdeelzaag_count,
+                                'total_items': total,
                                 'source_file': excel_file
                             }
+                            self._log(f"[EXTRACT] Added NESTING to extraction_result['users']: {extraction_result['users'][user]}")
                         elif proc_type == 'ACCURA_PROCESSING':
                             extraction_result['users'][user] = {
                                 'processing_type': proc_type,
@@ -763,52 +805,170 @@ class BackgroundImportService:
                                 'total_items': result.get('item_count', 0),
                                 'source_file': excel_file
                             }
+                    else:
+                        # User not in results - add with 0 items
+                        self._log(f"[EXTRACT] User {user} with proc_type {proc_type} not in results, adding with 0 items")
+                        extraction_result['users'][user] = {
+                            'processing_type': proc_type,
+                            'item_count': 0,
+                            'total_items': 0,
+                            'source_file': excel_file,
+                            'no_data': True
+                        }
 
             # Process HOPS (OPUS) and MDB (KL/GR GANNOMAT) separately
+            self._log(f"[EXTRACT] Processing HOPS/MDB users from path_to_users: {path_to_users}")
             for user_dir, users_in_dir in path_to_users.items():
+                self._log(f"[EXTRACT] Checking directory '{user_dir}' for users: {users_in_dir}")
                 for user in users_in_dir:
                     processing_type = user_to_processing_type.get(user)
+                    self._log(f"[EXTRACT] User '{user}' has processing_type: {processing_type}")
 
                     if processing_type == 'HOPS_PROCESSING':
-                        # Extract from HOPS Excel
+                        # Extract from HOPS - find matching directories
                         self._log(f"[EXTRACT] Checking HOPS for user {user} in {user_dir}")
-                        from services.excel_processing import find_hops_files_for_project
-                        hops_files = find_hops_files_for_project(user_dir, project_code_to_log)
-
-                        if hops_files:
-                            # Count total items from HOPS files
-                            total_items = len(hops_files)
+                        hops_dirs_found = []
+                        
+                        try:
+                            for item_name in os.listdir(user_dir):
+                                item_path = os.path.join(user_dir, item_name)
+                                if os.path.isdir(item_path):
+                                    # Check if directory name matches project
+                                    if self._strict_project_match(item_name, project_code_to_log):
+                                        hops_dirs_found.append(item_name)
+                                        self._log(f"[EXTRACT] Found matching HOPS directory: {item_name}")
+                        except Exception as e:
+                            self._log(f"[EXTRACT] Error listing HOPS directory: {e}")
+                        
+                        if hops_dirs_found:
+                            # For HOPS, count the .HOP files within the directories
+                            total_hop_files = 0
+                            hop_files_list = []
+                            for hops_dir in hops_dirs_found:
+                                hops_dir_path = os.path.join(user_dir, hops_dir)
+                                try:
+                                    # Count .HOP files in this directory
+                                    for file in os.listdir(hops_dir_path):
+                                        if file.upper().endswith('.HOP'):
+                                            total_hop_files += 1
+                                            hop_files_list.append(file)
+                                except Exception as e:
+                                    self._log(f"[EXTRACT] Error counting HOP files in {hops_dir}: {e}")
+                            
                             extraction_result['users'][user] = {
                                 'processing_type': processing_type,
-                                'item_count': total_items,
-                                'total_items': total_items,
-                                'source_files': hops_files
+                                'item_count': total_hop_files,
+                                'total_items': total_hop_files,
+                                'source_dirs': hops_dirs_found,
+                                'hop_files': hop_files_list[:10]  # Store first 10 for display
                             }
-                            self._log(f"[EXTRACT] Found {total_items} HOPS items for {user}")
+                            self._log(f"[EXTRACT] Found {total_hop_files} HOP files in {len(hops_dirs_found)} directories for {user}")
                         else:
-                            self._log(f"[EXTRACT] No HOPS files found for {user}")
+                            self._log(f"[EXTRACT] No HOPS directories found for {user}")
 
                     elif processing_type == 'MDB_PROCESSING':
-                        # Extract from MDB
+                        # Extract from MDB - find matching .mdb/.accdb files
                         self._log(f"[EXTRACT] Checking MDB for user {user} in {user_dir}")
-                        from services.mdb_processing import find_mdb_file_for_project, extract_items_from_mdb
-                        mdb_file = find_mdb_file_for_project(user_dir, project_code_to_log)
-
-                        if mdb_file:
-                            items = extract_items_from_mdb(mdb_file, project_code_to_log)
+                        mdb_file_found = None
+                        
+                        try:
+                            for item_name in os.listdir(user_dir):
+                                file_base_name, file_ext = os.path.splitext(item_name)
+                                if file_ext.lower() in ('.mdb', '.accdb'):
+                                    # Check if file name matches project
+                                    if self._strict_project_match(file_base_name, project_code_to_log):
+                                        mdb_file_found = item_name
+                                        self._log(f"[EXTRACT] Found matching MDB file: {item_name}")
+                                        break
+                        except Exception as e:
+                            self._log(f"[EXTRACT] Error listing MDB directory: {e}")
+                        
+                        if mdb_file_found:
+                            # For MDB, try to count records if possible
+                            mdb_path = os.path.join(user_dir, mdb_file_found)
+                            item_count = 0
+                            
+                            # Try to count items in the MDB file
+                            try:
+                                import pyodbc
+                                # Build connection string for Access database
+                                conn_str = (
+                                    r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
+                                    r'DBQ=' + mdb_path + ';'
+                                )
+                                conn = pyodbc.connect(conn_str)
+                                cursor = conn.cursor()
+                                
+                                # Try common table names for item counts
+                                for table_name in ['Items', 'Parts', 'Components', 'Orders']:
+                                    try:
+                                        cursor.execute(f"SELECT COUNT(*) FROM [{table_name}]")
+                                        count = cursor.fetchone()[0]
+                                        if count > 0:
+                                            item_count = count
+                                            self._log(f"[EXTRACT] Found {count} items in MDB table {table_name}")
+                                            break
+                                    except:
+                                        continue
+                                
+                                conn.close()
+                            except Exception as e:
+                                self._log(f"[EXTRACT] Could not query MDB file (pyodbc not available or access denied): {e}")
+                                # Fallback: if we can't query, assume there are items since file exists
+                                item_count = 1  # Conservative estimate
+                            
                             extraction_result['users'][user] = {
                                 'processing_type': processing_type,
-                                'item_count': len(items),
-                                'total_items': len(items),
-                                'source_file': mdb_file,
-                                'items': items  # Store actual items for later use
+                                'item_count': item_count if item_count > 0 else 1,  # At least 1 if file exists
+                                'total_items': item_count if item_count > 0 else 1,
+                                'source_file': mdb_file_found
                             }
-                            self._log(f"[EXTRACT] Found {len(items)} MDB items for {user}")
+                            self._log(f"[EXTRACT] Found MDB file for {user}: {mdb_file_found} with {item_count} items")
                         else:
                             self._log(f"[EXTRACT] No MDB file found for {user}")
 
+            # Query database for already logged items for this project
+            self._log(f"[EXTRACT] Querying database for logged items for project {project_code_to_log}")
+            try:
+                import requests
+                api_url = config_data.get('api_url', '').rstrip('/')
+                if api_url:
+                    # Query database for items logged for this project
+                    response = requests.get(
+                        f"{api_url}/api/project/{project_code_to_log}/items-by-user",
+                        timeout=5
+                    )
+                    if response.ok:
+                        db_data = response.json()
+                        if db_data.get('success'):
+                            user_items = db_data.get('user_items', {})
+                            for user, count in user_items.items():
+                                if count > 0:
+                                    # Add or update user data with database info
+                                    if user not in extraction_result['users']:
+                                        extraction_result['users'][user] = {
+                                            'processing_type': 'DATABASE',
+                                            'item_count': count,
+                                            'total_items': count,
+                                            'source': 'database'
+                                        }
+                                    else:
+                                        # User already has file-based data, add database count
+                                        extraction_result['users'][user]['db_item_count'] = count
+                            self._log(f"[EXTRACT] Found database items: {user_items}")
+                    else:
+                        self._log(f"[EXTRACT] Database query failed: {response.status_code}")
+            except Exception as db_err:
+                self._log(f"[EXTRACT] Error querying database: {db_err}")
+                # Don't fail extraction if database query fails
+
             # Mark extraction as complete
             extraction_result['extraction_complete'] = True
+
+            # Log final extraction result
+            self._log(f"[EXTRACT] Final extraction result users: {list(extraction_result['users'].keys())}")
+            for user, data in extraction_result['users'].items():
+                self._log(f"[EXTRACT]   {user}: total_items={data.get('total_items', 0)}, processing_type={data.get('processing_type')}")
 
             # Call the callback with extracted data
             self._log(f"[EXTRACT] Extraction complete for {project_code_to_log}, calling callback")
@@ -1727,9 +1887,14 @@ class BackgroundImportService:
         try:
             self._log(f"[UNIFIED_SCAN] Processing ALL Excel users for project '{project_code}' (triggered by {scanning_user})")
             
-            # Load from database instead of config file
+            # Load settings from database
             config = self._load_settings_from_api()
-            api_url = config.get('api_url', '').rstrip('/')
+            
+            # Get api_url from config file (not in database settings)
+            from config_utils import get_config
+            file_config = get_config()
+            api_url = file_config.get('api_url', 'http://localhost:5001/log').rstrip('/')
+            
             open_users = config.get('scanner_panel_open_event_users', [])
             user_paths = config.get('scanner_panel_open_event_user_paths', {})
             user_processing_types = config.get('scanner_user_to_processing_type_map', {})

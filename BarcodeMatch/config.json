@@ -24,5 +24,6 @@
     },
     "archive_on_all_ok": false,
     "accura_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\ACCURA",
-    "boere_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\BOERE"
+    "boere_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\BOERE",
+    "open_image_on_opus_scan": true
 }

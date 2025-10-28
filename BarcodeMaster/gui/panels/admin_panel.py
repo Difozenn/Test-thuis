@@ -668,49 +668,120 @@ class AdminPanel(tk.Frame):
     
     def _create_excel_output_tab(self, tab):
         """Create Excel output directories configuration tab - loads from database"""
+        # Store reference to tab for rebuilding
+        self.excel_output_tab = tab
+
+        # Build the tab UI
+        self._build_excel_output_ui()
+
+    def _get_excel_users_from_config(self):
+        """Dynamically get list of users that generate Excel files based on processing types"""
+        settings = self._load_settings_from_api()
+
+        # Get all configured users and their processing types
+        configured_users = settings.get('scanner_panel_open_event_users', [])
+        processing_types = settings.get('scanner_user_to_processing_type_map', {})
+
+        # Excel-generating processing types
+        excel_processing_types = [
+            'ACCURA_PROCESSING',
+            'BOERE_PROCESSING',
+            'MASSIEF_PROCESSING',
+            'HANDWERK_PROCESSING',
+            'HOPS_PROCESSING',  # OPUS, KL GANNOMAT typically use this
+            'MDB_PROCESSING'    # Alternative for OPUS, KL GANNOMAT
+        ]
+
+        # Filter users that have Excel-generating processing types
+        excel_users = []
+        for user in configured_users:
+            proc_type = processing_types.get(user)
+            if proc_type in excel_processing_types:
+                excel_users.append(user)
+
+        # If no users configured, return default list for backward compatibility
+        if not excel_users:
+            excel_users = ['ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK', 'OPUS', 'KL GANNOMAT']
+
+        return excel_users
+
+    def _build_excel_output_ui(self):
+        """Build/rebuild the Excel Output tab UI"""
+        # Clear existing widgets in the tab
+        for widget in self.excel_output_tab.winfo_children():
+            widget.destroy()
+
         # Load settings from database via API
         settings = self._load_settings_from_api()
 
         # --- Excel Output Settings Frame ---
-        settings_frame = ttk.LabelFrame(tab, text="Excel Output Directory Configuratie")
+        settings_frame = ttk.LabelFrame(self.excel_output_tab, text="Excel Output Directory Configuratie")
         settings_frame.pack(fill='x', padx=5, pady=5)
         settings_frame.columnconfigure(1, weight=1)
 
         # Info label
         info_label = ttk.Label(
             settings_frame,
-            text="Configureer de output directories voor alle gebruikers die Excel bestanden genereren.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.\n\n⚠️ Deze instellingen worden opgeslagen in de database en worden automatisch gebackupt.",
-            wraplength=500
+            text="Configureer de output directories voor alle gebruikers die Excel bestanden genereren.\nDeze directories worden gebruikt wanneer Excel bestanden worden gegenereerd uit de import processing.\n\n" +
+                 "📂 Standaard processing types: Configureer hier direct met 'Browse'\n" +
+                 "👤 HOPS/MDB processing types: Klik op '➜ Configureer in User Tab' om naar User Configuration te gaan\n\n" +
+                 "💡 Nieuwe gebruikers verschijnen hier automatisch na toevoegen in User Configuration tab.\n" +
+                 "⚠️ Deze instellingen worden opgeslagen in de database en worden automatisch gebackupt.",
+            wraplength=600,
+            justify='left'
         )
         info_label.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 15), sticky='w')
 
-        # Define all users that need Excel output directories
-        # Note: NESTING only reads Excel files, doesn't generate output
-        excel_users = ['ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
+        # Get dynamic list of Excel users based on processing types
+        excel_users = self._get_excel_users_from_config()
         self.excel_output_vars = {}
         self.excel_entries = {}
         self.excel_browse_btns = {}
+
+        # Get processing types to determine which users use user_paths vs output_dir
+        processing_types = settings.get('scanner_user_to_processing_type_map', {})
 
         # Create entry for each user
         for idx, user in enumerate(excel_users, start=1):
             ttk.Label(settings_frame, text=f"{user} Output Directory:").grid(row=idx, column=0, padx=5, pady=5, sticky='w')
 
-            # Get path from database settings or use default
-            default_dir = f'C:/{user}' if os.name == 'nt' else f'/tmp/{user}'
-            key = f'{user.lower()}_output_dir'
-            self.excel_output_vars[user] = tk.StringVar(value=settings.get(key, default_dir))
-            self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
-            self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
+            # Users with HOPS/MDB processing use user_paths, not separate output directories
+            user_proc_type = processing_types.get(user, '')
+            uses_user_path = user_proc_type in ['HOPS_PROCESSING', 'MDB_PROCESSING']
 
-            self.excel_browse_btns[user] = ttk.Button(
-                settings_frame,
-                text="Browse",
-                command=lambda u=user: self._browse_output_dir(u, self.excel_output_vars[u])
-            )
-            self.excel_browse_btns[user].grid(row=idx, column=2, padx=5, pady=5)
+            if uses_user_path:
+                # Get path from scanner_panel_open_event_user_paths (the actual user paths config)
+                user_paths = settings.get('scanner_panel_open_event_user_paths', {})
+                path_value = user_paths.get(user, '⚠️ Niet geconfigureerd - klik op knop →')
+                self.excel_output_vars[user] = tk.StringVar(value=path_value)
+                self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
+                self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
+
+                # Show button to navigate to User Configuration tab
+                config_btn = ttk.Button(
+                    settings_frame,
+                    text="➜ Configureer in User Tab",
+                    command=lambda u=user: self._navigate_to_user_config(u)
+                )
+                config_btn.grid(row=idx, column=2, padx=5, pady=5)
+                self.excel_browse_btns[user] = config_btn
+            else:
+                # Regular output directory configuration for other users
+                default_dir = f'C:/{user}' if os.name == 'nt' else f'/tmp/{user}'
+                key = f'{user.lower()}_output_dir'
+                self.excel_output_vars[user] = tk.StringVar(value=settings.get(key, default_dir))
+                self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
+                self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
+
+                self.excel_browse_btns[user] = ttk.Button(
+                    settings_frame,
+                    text="Browse",
+                    command=lambda u=user: self._browse_output_dir(u, self.excel_output_vars[u])
+                )
+                self.excel_browse_btns[user].grid(row=idx, column=2, padx=5, pady=5)
 
         # Status Frame
-        status_frame = ttk.LabelFrame(tab, text="Directory Status")
+        status_frame = ttk.LabelFrame(self.excel_output_tab, text="Directory Status")
         status_frame.pack(fill='x', padx=5, pady=(10, 5))
         status_frame.columnconfigure(1, weight=1)
 
@@ -719,6 +790,15 @@ class AdminPanel(tk.Frame):
         for idx, user in enumerate(excel_users):
             self.excel_status_labels[user] = ttk.Label(status_frame, text="")
             self.excel_status_labels[user].grid(row=idx, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+
+        # Refresh button
+        refresh_frame = ttk.Frame(self.excel_output_tab)
+        refresh_frame.pack(fill='x', padx=5, pady=5)
+        ttk.Button(
+            refresh_frame,
+            text="🔄 Ververs & Rebuild",
+            command=self._rebuild_excel_output_tab
+        ).pack(side='right', padx=5)
 
         # Update status on creation
         self._update_excel_output_status()
@@ -766,24 +846,83 @@ class AdminPanel(tk.Frame):
             self.log_to_queue(f"Kon instellingen niet opslaan in database: {e}")
         return False
     
+    def _rebuild_excel_output_tab(self):
+        """Rebuild the entire Excel Output tab UI with current database settings"""
+        self.log_to_queue("Excel Output tab wordt opnieuw opgebouwd...")
+
+        # Rebuild the UI from scratch
+        self._build_excel_output_ui()
+
+        self.log_to_queue("Excel Output tab succesvol opgebouwd met actuele gebruikers en instellingen")
+
+    def _refresh_excel_output_display(self):
+        """Refresh the Excel Output tab display with current settings from database (legacy method - now calls rebuild)"""
+        self._rebuild_excel_output_tab()
+
+    def _navigate_to_user_config(self, username):
+        """Navigate to User Configuration tab and highlight the user"""
+        # Find the index of the User Configuration tab
+        # Tabs: 0=Database, 1=COM Splitter, 2=Backup, 3=Excel Output, 4=User Configuration
+        user_config_tab_index = 4
+
+        # Switch to the User Configuration tab
+        self.notebook.select(user_config_tab_index)
+
+        # Show message to help user
+        messagebox.showinfo(
+            "User Path Configuratie",
+            f"Om de output directory voor {username} in te stellen:\n\n"
+            f"1. Zoek '{username}' in de gebruikerslijst hieronder\n"
+            f"2. Klik op 'Bladeren' om een pad te selecteren\n"
+            f"3. Het geselecteerde pad wordt automatisch gebruikt als Excel output directory\n\n"
+            f"Als {username} nog niet bestaat, voeg deze dan toe met 'Nieuwe Gebruiker Toevoegen'.\n\n"
+            f"💡 Tip: Klik op '🔄 Ververs Status' in de Excel Output tab om de wijzigingen te zien."
+        )
+
     def _update_excel_output_status(self):
         """Update the status labels for Excel output directories"""
-        # Note: NESTING only reads Excel files, doesn't generate output
-        excel_users = ['ACCURA', 'BOERE', 'MASSIEF', 'HANDWERK']
+        # Get current settings to check processing types
+        settings = self._load_settings_from_api()
+        processing_types = settings.get('scanner_user_to_processing_type_map', {})
 
-        for user in excel_users:
-            if user in self.excel_output_vars and user in self.excel_status_labels:
+        # Iterate over all users currently displayed
+        for user in list(self.excel_output_vars.keys()):
+            if user in self.excel_status_labels:
                 directory = self.excel_output_vars[user].get()
-                if os.path.exists(directory) and os.path.isdir(directory):
-                    self.excel_status_labels[user].config(
-                        text=f"✓ {user} directory bestaat: {directory}",
-                        foreground="green"
-                    )
+
+                # Check if user uses user_path (HOPS/MDB processing)
+                user_proc_type = processing_types.get(user, '')
+                uses_user_path = user_proc_type in ['HOPS_PROCESSING', 'MDB_PROCESSING']
+
+                if uses_user_path:
+                    # User with HOPS/MDB processing - uses user path
+                    if directory.startswith('⚠️'):
+                        self.excel_status_labels[user].config(
+                            text=f"⚠️ {user} pad moet worden geconfigureerd in User Configuration tab",
+                            foreground="orange"
+                        )
+                    elif os.path.exists(directory) and os.path.isdir(directory):
+                        self.excel_status_labels[user].config(
+                            text=f"✓ {user} gebruikt User Path: {directory}",
+                            foreground="green"
+                        )
+                    else:
+                        self.excel_status_labels[user].config(
+                            text=f"✗ {user} User Path bestaat niet: {directory}",
+                            foreground="red"
+                        )
                 else:
-                    self.excel_status_labels[user].config(
-                        text=f"✗ {user} directory bestaat niet: {directory}",
-                        foreground="red"
-                    )
+                    # Regular Excel output directory
+                    if os.path.exists(directory) and os.path.isdir(directory):
+                        self.excel_status_labels[user].config(
+                            text=f"✓ {user} directory bestaat: {directory}",
+                            foreground="green"
+                        )
+                    else:
+                        self.excel_status_labels[user].config(
+                            text=f"✗ {user} directory bestaat niet: {directory}",
+                            foreground="red"
+                        )
 
     def process_log_queue(self):
         """Periodically called method to process messages from the log queue."""
@@ -1101,9 +1240,16 @@ class AdminPanel(tk.Frame):
         self.new_username_entry.delete(0, tk.END)
         if self.available_processing_types:
             self.new_user_processing_type_combo.current(0)
-        
+
         # Rebuild UI
         self._build_user_list_ui()
+
+        # Auto-refresh Excel Output tab if user has Excel-generating processing type
+        excel_processing_types = ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'MASSIEF_PROCESSING',
+                                  'HANDWERK_PROCESSING', 'HOPS_PROCESSING', 'MDB_PROCESSING']
+        if processing_type in excel_processing_types:
+            self.log_to_queue(f"Excel Output tab wordt bijgewerkt voor nieuwe gebruiker '{username}'...")
+            self._rebuild_excel_output_tab()
     
     def _remove_user_config(self, username):
         """Remove user configuration"""
@@ -1150,7 +1296,12 @@ class AdminPanel(tk.Frame):
             # Fallback to config file
             save_config(settings_to_save)
             self.log_to_queue(f"Gebruiker '{username}' verwijderd (opgeslagen in config)")
+
         self._build_user_list_ui()
+
+        # Auto-refresh Excel Output tab since user list changed
+        self.log_to_queue("Excel Output tab wordt bijgewerkt na verwijdering gebruiker...")
+        self._rebuild_excel_output_tab()
     # --- End of User Configuration Tab Methods ---
 
     def shutdown(self):

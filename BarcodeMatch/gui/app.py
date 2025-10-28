@@ -226,9 +226,75 @@ class BarcodeMatchApp:
             print(f"[ERROR] Could not load app config: {e}")
             return {}
 
+    def switch_to_panel(self, panel_name):
+        """Switches to the specified panel.
+
+        Args:
+            panel_name: Name of the panel to switch to (e.g., "Database", "Scanner")
+        """
+        try:
+            if DEBUG:
+                print(f"[SWITCH] Attempting to switch to panel: {panel_name}")
+
+            # Find the panel index
+            from gui.menu import MENU_OPTIONS
+            panel_index = None
+            for idx, opt in enumerate(MENU_OPTIONS):
+                if opt["name"] == panel_name:
+                    panel_index = idx
+                    break
+
+            if panel_index is None:
+                print(f"[WARN] Panel '{panel_name}' not found in menu options.")
+                return
+
+            # Get the panel instance
+            panel = self.get_panel_by_name(panel_name)
+            if not panel:
+                print(f"[WARN] Could not load panel: {panel_name}")
+                return
+
+            # Hide current panel if exists
+            if hasattr(self.root, '_active_panel') and self.root._active_panel is not None:
+                if DEBUG:
+                    print(f"[SWITCH] Hiding current panel: {type(self.root._active_panel).__name__}")
+                self.root._active_panel.pack_forget()
+
+            # Show the target panel
+            self.root._active_panel = panel
+            if DEBUG:
+                print(f"[SWITCH] Showing panel: {panel_name}")
+            panel.pack(fill=tk.BOTH, expand=True)
+
+            # Update tab state if the menu system is initialized
+            if hasattr(self.root, 'active_tab'):
+                self.root.active_tab.set(panel_index)
+
+            # Update button appearances if they exist
+            if hasattr(self.root, '_tab_buttons') and hasattr(self.root, '_tab_frames'):
+                MENU_BG = "#f0f0f0"
+                for idx, (btn, frame) in enumerate(zip(self.root._tab_buttons, self.root._tab_frames)):
+                    if idx == panel_index:
+                        frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
+                        btn.config(bg="#d0e0ff", relief=tk.FLAT)
+                    else:
+                        frame.config(bg=MENU_BG, highlightbackground=MENU_BG, highlightcolor=MENU_BG, highlightthickness=0)
+                        btn.config(bg=MENU_BG, relief=tk.FLAT)
+
+            # If this is the DatabasePanel, start auto-refresh after packing
+            from gui.panels.database_panel import DatabasePanel
+            if isinstance(panel, DatabasePanel):
+                panel.start_auto_refresh()
+
+            if DEBUG:
+                print(f"[SWITCH] Successfully switched to {panel_name}")
+
+        except Exception as e:
+            print(f"[SWITCH ERROR] Failed to switch to panel {panel_name}: {e}")
+
     def switch_to_scanner_and_load(self, excel_file_path, user=None):
         """Switches to the Scanner panel and loads the specified Excel file.
-        
+
         Args:
             excel_file_path: Path to the Excel file to load
             user: The user working on this project (passed from database panel)

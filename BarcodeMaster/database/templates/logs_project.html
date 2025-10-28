@@ -2041,10 +2041,15 @@ function updateWorkflowStatus() {
             if (isCompleted) {
                 // User completed - show dynamic completion info
                 stepElement.classList.add('completed');
-                
+
                 // Get total items processed by this user for this project (using consolidated count)
+                // Only count from work assignment events (OPEN, PROJECT_START) to avoid double-counting
                 const userItems = logData
-                    .filter(log => log.user === user && log.project === project)
+                    .filter(log =>
+                        log.user === user &&
+                        log.project === project &&
+                        (log.event === 'OPEN' || log.event === 'PROJECT_START' || log.event === 'WORK_ASSIGNED')
+                    )
                     .reduce((total, log) => total + getItemCountForLog(log), 0);
                 
                 const processingType = userProcessingTypes[user] || 'DEFAULT';

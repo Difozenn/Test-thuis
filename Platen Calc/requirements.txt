@@ -1,0 +1,4 @@
+# Material Calculator Requirements
+# Install with: pip install -r requirements.txt
+
+xlrd>=2.0.1

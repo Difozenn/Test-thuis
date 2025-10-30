@@ -148,7 +148,7 @@ class BarcodeMatchApp:
                 print(f'[DB CHECK] Checking database connection at: {url}')
             try:
                 import requests
-                resp = requests.get(url, timeout=5)
+                resp = requests.get(url, timeout=5, proxies={"http": None, "https": None})
                 if resp.status_code == 200:
                     try:
                         # Optionally check if response is valid JSON (list of logs)

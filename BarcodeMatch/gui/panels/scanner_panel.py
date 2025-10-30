@@ -486,7 +486,7 @@ class ScannerPanel(ttk.Frame):
                 'timestamp': datetime.now().isoformat()
             }
             
-            response = requests.post(api_url, json=afgemeld_data, timeout=3)
+            response = requests.post(api_url, json=afgemeld_data, timeout=3, proxies={"http": None, "https": None})
             if response.ok:
                 self._log(f"Project {project_name} succesvol afgemeld met {item_count} items")
                 messagebox.showinfo(
@@ -511,7 +511,16 @@ class ScannerPanel(ttk.Frame):
                 # Switch to Database panel to view updated status
                 if self.main_app and hasattr(self.main_app, 'switch_to_panel'):
                     self._log("Switching to Database panel...")
-                    self.main_app.switch_to_panel("Database")
+                    print("[AFGEMELD] Attempting to switch to Database panel")
+                    try:
+                        self.main_app.switch_to_panel("Database")
+                        print("[AFGEMELD] Switch call completed")
+                    except Exception as switch_error:
+                        print(f"[AFGEMELD ERROR] Failed to switch panels: {switch_error}")
+                        self._log(f"Panel switch error: {switch_error}")
+                else:
+                    print(f"[AFGEMELD] Cannot switch - main_app: {self.main_app}, has method: {hasattr(self.main_app, 'switch_to_panel') if self.main_app else False}")
+                    self._log("Cannot switch to Database panel - main_app not available")
 
             else:
                 messagebox.showerror("Fout", f"Kon project niet afmelden: {response.text}")
@@ -705,7 +714,7 @@ class ScannerPanel(ttk.Frame):
                 'project': project_name
             }
             
-            response = requests.get(check_url, params=params, timeout=2)
+            response = requests.get(check_url, params=params, timeout=2, proxies={"http": None, "https": None})
             
             if response.status_code == 200:
                 result = response.json()
@@ -821,8 +830,8 @@ class ScannerPanel(ttk.Frame):
                 # Make API call in background thread
                 def start_session_api():
                     try:
-                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'), 
-                                               json=data, timeout=3)
+                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
+                                               json=data, timeout=3, proxies={"http": None, "https": None})
                         if response.ok:
                             result = response.json()
                             if result.get('session_id'):
@@ -875,7 +884,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to find project by file path
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -908,7 +917,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract project information
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -966,7 +975,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract user information
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -1017,7 +1026,7 @@ class ScannerPanel(ttk.Frame):
                         config = json.load(f)
                         api_url = self._ensure_url_protocol(config.get('api_url', ''))
                         if api_url:
-                            logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5)
+                            logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
                             if logs_response.ok:
                                 logs_data = logs_response.json()
                                 if isinstance(logs_data, list):
@@ -1037,11 +1046,16 @@ class ScannerPanel(ttk.Frame):
         
         return valid_users
 
-    def _pause_session(self):
-        """Pause the current session when panel is hidden"""
-        print(f"[PAUSE_DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
-        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}")
-        
+    def _pause_session(self, blocking=False):
+        """Pause the current session when panel is hidden
+
+        Args:
+            blocking: If True, waits for API call to complete before returning.
+                     Use True during shutdown to ensure pause is registered.
+        """
+        print(f"[PAUSE_DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, blocking: {blocking}")
+        self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, blocking: {blocking}")
+
         # Only pause if we have an active session that's not already paused
         if self.current_session_id and not self.session_paused:
             # Mark as paused immediately to prevent duplicate pause attempts
@@ -1076,7 +1090,7 @@ class ScannerPanel(ttk.Frame):
                                 print(f"[PAUSE_API] Pause data: {data}")
                                 
                                 # Send pause event to session endpoint
-                                response = requests.post(pause_url, json=data, timeout=3)
+                                response = requests.post(pause_url, json=data, timeout=3, proxies={"http": None, "https": None})
                                 print(f"[PAUSE_API] Session pause response status: {response.status_code}")
                                 print(f"[PAUSE_API] Session pause response body: {response.text}")
                                 
@@ -1102,7 +1116,8 @@ class ScannerPanel(ttk.Frame):
                                         check_response = requests.get(
                                             api_url.replace('/log', '/project/status'),
                                             params=check_data,
-                                            timeout=1
+                                            timeout=1,
+                                            proxies={"http": None, "https": None}
                                         )
                                         if check_response.ok:
                                             status_data = check_response.json()
@@ -1130,7 +1145,7 @@ class ScannerPanel(ttk.Frame):
                                         print(f"[PAUSE_API] Event data: {log_data}")
                                         
                                         try:
-                                            pause_log_response = requests.post(api_url, json=log_data, timeout=3)
+                                            pause_log_response = requests.post(api_url, json=log_data, timeout=3, proxies={"http": None, "https": None})
                                             print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
                                             print(f"[PAUSE_API] SESSION_PAUSE event body: {pause_log_response.text}")
                                         except Exception as log_error:
@@ -1152,8 +1167,17 @@ class ScannerPanel(ttk.Frame):
                                 # Reset flag if pause failed
                                 self.session_paused = False
                         
-                        threading.Thread(target=pause_session_api, daemon=True).start()
-                        
+                        # Start thread - if blocking mode, wait for completion
+                        pause_thread = threading.Thread(target=pause_session_api, daemon=not blocking)
+                        pause_thread.start()
+
+                        if blocking:
+                            # Wait up to 5 seconds for pause to complete during shutdown
+                            pause_thread.join(timeout=5)
+                            if pause_thread.is_alive():
+                                self._log("Warning: Pause API call timed out during shutdown")
+                                print("[PAUSE_WARNING] Pause API call exceeded 5 second timeout during shutdown")
+
             except Exception as e:
                 self._log(f"Error pausing session: {e}")
                 self.session_paused = False
@@ -1195,8 +1219,8 @@ class ScannerPanel(ttk.Frame):
                         def resume_session_api():
                             try:
                                 # Send resume event to session endpoint
-                                response = requests.post(api_url.replace('/log', '/session/resume'), 
-                                                       json=data, timeout=1)
+                                response = requests.post(api_url.replace('/log', '/session/resume'),
+                                                       json=data, timeout=1, proxies={"http": None, "https": None})
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
                                     
@@ -1212,7 +1236,8 @@ class ScannerPanel(ttk.Frame):
                                         check_response = requests.get(
                                             api_url.replace('/log', '/project/status'),
                                             params=check_data,
-                                            timeout=1
+                                            timeout=1,
+                                            proxies={"http": None, "https": None}
                                         )
                                         if check_response.ok:
                                             status_data = check_response.json()
@@ -1232,7 +1257,7 @@ class ScannerPanel(ttk.Frame):
                                         'timestamp': datetime.now().isoformat()
                                     }
                                     print(f"[RESUME_API] Sending SESSION_RESUME event with data: {log_data}")
-                                    resume_response = requests.post(api_url, json=log_data, timeout=1)
+                                    resume_response = requests.post(api_url, json=log_data, timeout=1, proxies={"http": None, "https": None})
                                     print(f"[RESUME_API] SESSION_RESUME response: {resume_response.status_code}, body: {resume_response.text}")
                                 else:
                                     self._log(f"Failed to resume session: HTTP {response.status_code}")
@@ -1304,7 +1329,7 @@ class ScannerPanel(ttk.Frame):
             user = config.get('user', 'UNKNOWN')
             
             # Query database for active sessions from this user
-            response = requests.get(f"{api_url.replace('/log', '')}/api/user/{user}/active-sessions", timeout=5)
+            response = requests.get(f"{api_url.replace('/log', '')}/api/user/{user}/active-sessions", timeout=5, proxies={"http": None, "https": None})
             if response.ok and response.json().get('success'):
                 active_sessions = response.json().get('sessions', [])
                 for session in active_sessions:
@@ -1321,7 +1346,7 @@ class ScannerPanel(ttk.Frame):
                             'user': user,
                             'project': session.get('project', '')
                         }
-                        resume_response = requests.post(api_url.replace('/log', '/session/resume'), json=resume_data, timeout=1)
+                        resume_response = requests.post(api_url.replace('/log', '/session/resume'), json=resume_data, timeout=1, proxies={"http": None, "https": None})
                         if resume_response.ok:
                             print(f"[ScannerPanel] Resumed paused session before cleanup: {session_id}")
                             # Also log SESSION_RESUME event
@@ -1334,7 +1359,7 @@ class ScannerPanel(ttk.Frame):
                                 'timestamp': datetime.now().isoformat()
                             }
                             try:
-                                requests.post(api_url, json=log_data, timeout=1)
+                                requests.post(api_url, json=log_data, timeout=1, proxies={"http": None, "https": None})
                             except:
                                 pass  # Don't fail if event logging fails
                     
@@ -1343,7 +1368,7 @@ class ScannerPanel(ttk.Frame):
                         'session_id': session_id,
                         'timestamp': datetime.now().isoformat()
                     }
-                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1)
+                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1, proxies={"http": None, "https": None})
                     if close_response.ok:
                         print(f"[ScannerPanel] Cleaned up orphaned session: {session_id}")
                     else:
@@ -1394,8 +1419,8 @@ class ScannerPanel(ttk.Frame):
                     # Make API call in background thread to avoid blocking UI
                     def end_session_api():
                         try:
-                            response = requests.post(api_url.replace('/log', '/session/end'), 
-                                                   json=data, timeout=1)  # Reduced timeout
+                            response = requests.post(api_url.replace('/log', '/session/end'),
+                                                   json=data, timeout=1, proxies={"http": None, "https": None})  # Reduced timeout
                             if response.ok:
                                 self._log(f"Session ended: {self.current_session_id}")
                         except Exception as e:
@@ -1983,8 +2008,8 @@ class ScannerPanel(ttk.Frame):
                             # Make API call in background thread to avoid blocking UI
                             def send_api_call():
                                 try:
-                                    response = requests.post(api_url.replace('/log', '/session/xlsx_updated'), 
-                                                           json=data, timeout=1)  # Reduced timeout
+                                    response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
+                                                           json=data, timeout=1, proxies={"http": None, "https": None})  # Reduced timeout
                                     if response.ok:
                                         self._log(f"Session started for {user} via XLSX update")
                                     else:
@@ -2259,8 +2284,14 @@ class ScannerPanel(ttk.Frame):
     
     def shutdown(self):
         """Ruimt resources op bij het afsluiten van de applicatie."""
+        # Pause active session before shutting down to ensure accurate session tracking
+        if self.current_session_id and not self.session_paused:
+            self._log(f"Pausing active session {self.current_session_id} before shutdown")
+            print(f"[SHUTDOWN] Pausing active session: {self.current_session_id}")
+            self._pause_session(blocking=True)  # Wait for pause to complete
+
         self._stop_usb_listener()
         self._disconnect_com_port()
         # Do NOT end session - sessions should persist across application restarts
-        # self._end_session()  # Removed - sessions continue next day
+        # Session will be resumed on next startup if needed
         self._log("Scannerpaneel afgesloten.")

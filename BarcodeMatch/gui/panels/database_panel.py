@@ -931,7 +931,12 @@ class DatabasePanel(ttk.Frame):
             try:
                 url = self.api_url_var.get()
                 logs_url = url.replace('/log', '/logs')
-                response = requests.get(logs_url, timeout=2)  # Reduced timeout
+
+                # Add user filter to get all logs for this user (avoids 500-entry limit competition with other users)
+                user = self.user_var.get() if hasattr(self, 'user_var') else ''
+                params = {'user': user} if user else {}
+
+                response = requests.get(logs_url, params=params, timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
                 if response.status_code == 200:
                     logs = response.json()
                     # Update connection status on successful logs fetch

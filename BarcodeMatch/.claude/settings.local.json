@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/**)"
     ],
     "deny": []
   }

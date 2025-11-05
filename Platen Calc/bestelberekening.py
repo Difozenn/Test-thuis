@@ -764,29 +764,10 @@ class BestelberekeningApp:
                     for material, amount in materials.items():
                         all_materials_dict[material] += amount
 
-            # Filter materials: only keep those that exist in magazijn (stock_details)
-            if self.stock_details:
-                magazijn_materials = set(detail['material'] for detail in self.stock_details)
-                filtered_materials_dict = {
-                    material: amount
-                    for material, amount in all_materials_dict.items()
-                    if material in magazijn_materials
-                }
-
-                # Also filter materials in file_data
-                for file_data in self.file_data:
-                    file_data['materials'] = {
-                        material: amount
-                        for material, amount in file_data['materials'].items()
-                        if material in magazijn_materials
-                    }
-            else:
-                filtered_materials_dict = all_materials_dict
-
             # Sort materials by total amount
             self.all_materials = sorted(
-                filtered_materials_dict.keys(),
-                key=lambda m: filtered_materials_dict[m],
+                all_materials_dict.keys(),
+                key=lambda m: all_materials_dict[m],
                 reverse=True
             )
 
@@ -1295,6 +1276,11 @@ class BestelberekeningApp:
             self.notebook.select(0)
             return
 
+        if not self.stock_details:
+            messagebox.showwarning("Waarschuwing", "Laad eerst de magazijn voorraad (Tab 2)!")
+            self.notebook.select(1)
+            return
+
         self.status_var.set("Berekening uitvoeren...")
         self.root.update()
 
@@ -1305,14 +1291,40 @@ class BestelberekeningApp:
 
             self.calculation_results = []
 
+            # Get materials that exist in magazijn
+            magazijn_materials = set(detail['material'] for detail in self.stock_details)
+
+            # Build complete materials list:
+            # 1. Materials from orders that exist in magazijn
+            # 2. Materials with veiligheidsvoorraad set (even if no orders)
+            materials_to_calculate = set()
+
+            # Add materials from orders that are in magazijn
+            for material in self.orders_data.keys():
+                if material in magazijn_materials:
+                    materials_to_calculate.add(material)
+
+            # Add materials that have veiligheidsvoorraad set in config
+            for material_id, safety_value in self.safety_margins.items():
+                if safety_value > 0:  # Has veiligheidsvoorraad set
+                    # Find material name by ID
+                    for detail in self.stock_details:
+                        if detail['id'] == material_id:
+                            materials_to_calculate.add(detail['material'])
+                            break
+
+            # Sort by netto m2 (orders first, then alphabetically for non-order materials)
             all_materials = sorted(
-                self.orders_data.keys(),
-                key=lambda m: self.orders_data[m],
+                materials_to_calculate,
+                key=lambda m: (self.orders_data.get(m, 0), m),
                 reverse=True
             )
 
+            # Track excluded materials from orders
+            excluded_materials = [m for m in self.orders_data.keys() if m not in magazijn_materials]
+
             for material in all_materials:
-                netto_m2 = self.orders_data[material]
+                netto_m2 = self.orders_data.get(material, 0.0)  # 0 if no orders
                 rendement_pct = self.settings['rendement_pct']
                 stock_m2 = self.stock_data.get(material, 0.0)
 
@@ -1361,7 +1373,17 @@ class BestelberekeningApp:
                     f"{bestellen_m2:.2f}"
                 ), tags=(tag,))
 
-            self.status_var.set(f"✓ Berekening voltooid: {len(all_materials)} materialen")
+            # Show warning if some materials were excluded
+            if excluded_materials:
+                excluded_list = "\n".join(f"  • {m}" for m in excluded_materials)
+                messagebox.showwarning(
+                    "Materialen uitgesloten",
+                    f"De volgende materialen zijn niet in magazijn en worden uitgesloten:\n\n{excluded_list}\n\n"
+                    f"Berekend: {len(all_materials)} materialen\n"
+                    f"Uitgesloten: {len(excluded_materials)} materialen"
+                )
+
+            self.status_var.set(f"✓ Berekening voltooid: {len(all_materials)} materialen ({len(excluded_materials)} uitgesloten)")
 
         except Exception as e:
             messagebox.showerror("Fout", f"Fout bij berekenen:\n{e}")

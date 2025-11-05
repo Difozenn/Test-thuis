@@ -62,6 +62,7 @@ class BestelberekeningApp:
             'rendement_pct': 75.0
         }
         self.safety_margins = {}  # {material_id: safety_m2}
+        self.material_rendement = {}  # {material_id: rendement_pct} - defaults to global if not set
         self.calculation_results = []
 
         # Load settings from config
@@ -444,7 +445,7 @@ class BestelberekeningApp:
 
         self.magazijn_tree = ttk.Treeview(
             table_frame,
-            columns=["ID", "Materiaal", "Lengte", "Breedte", "Dikte", "Aantal", "m²"],
+            columns=["ID", "Mat.ID", "Materiaal", "Lengte", "Breedte", "Dikte", "Aantal", "m²"],
             show="headings",
             yscrollcommand=vsb.set,
             xscrollcommand=hsb.set,
@@ -455,6 +456,7 @@ class BestelberekeningApp:
         hsb.config(command=self.magazijn_tree.xview)
 
         self.magazijn_tree.heading("ID", text="ID")
+        self.magazijn_tree.heading("Mat.ID", text="Mat.ID")
         self.magazijn_tree.heading("Materiaal", text="Materiaal")
         self.magazijn_tree.heading("Lengte", text="Lengte (mm)")
         self.magazijn_tree.heading("Breedte", text="Breedte (mm)")
@@ -463,7 +465,8 @@ class BestelberekeningApp:
         self.magazijn_tree.heading("m²", text="m²")
 
         self.magazijn_tree.column("ID", width=60, anchor=tk.CENTER)
-        self.magazijn_tree.column("Materiaal", width=350, anchor=tk.W)
+        self.magazijn_tree.column("Mat.ID", width=70, anchor=tk.CENTER)
+        self.magazijn_tree.column("Materiaal", width=300, anchor=tk.W)
         self.magazijn_tree.column("Lengte", width=100, anchor=tk.E)
         self.magazijn_tree.column("Breedte", width=100, anchor=tk.E)
         self.magazijn_tree.column("Dikte", width=80, anchor=tk.E)
@@ -592,7 +595,7 @@ class BestelberekeningApp:
 
         self.safety_tree = ttk.Treeview(
             table_frame,
-            columns=["ID", "Materiaal", "Veiligheidsvoorraad (m²)"],
+            columns=["Mat.ID", "IDs", "Materiaal", "Veiligheidsvoorraad (m²)", "Rendement %"],
             show="headings",
             yscrollcommand=vsb.set,
             xscrollcommand=hsb.set,
@@ -602,13 +605,17 @@ class BestelberekeningApp:
         vsb.config(command=self.safety_tree.yview)
         hsb.config(command=self.safety_tree.xview)
 
-        self.safety_tree.heading("ID", text="ID")
+        self.safety_tree.heading("Mat.ID", text="Mat.ID")
+        self.safety_tree.heading("IDs", text="IDs")
         self.safety_tree.heading("Materiaal", text="Materiaal")
         self.safety_tree.heading("Veiligheidsvoorraad (m²)", text="Veiligheidsvoorraad (m²)")
+        self.safety_tree.heading("Rendement %", text="Rendement %")
 
-        self.safety_tree.column("ID", width=80, anchor=tk.CENTER)
-        self.safety_tree.column("Materiaal", width=400, anchor=tk.W)
-        self.safety_tree.column("Veiligheidsvoorraad (m²)", width=200, anchor=tk.E)
+        self.safety_tree.column("Mat.ID", width=80, anchor=tk.CENTER)
+        self.safety_tree.column("IDs", width=120, anchor=tk.W)
+        self.safety_tree.column("Materiaal", width=280, anchor=tk.W)
+        self.safety_tree.column("Veiligheidsvoorraad (m²)", width=180, anchor=tk.E)
+        self.safety_tree.column("Rendement %", width=120, anchor=tk.E)
 
         self.safety_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -996,6 +1003,7 @@ class BestelberekeningApp:
                             lengte = float(row[2].strip()) if row[2].strip() else 0
                             breedte = float(row[3].strip()) if row[3].strip() else 0
                             dikte = float(row[4].strip()) if row[4].strip() else 0
+                            materiaal_id = row[5].strip()  # Column 5: Materiaal ID (Nummer)
                             aantal = float(row[6].strip()) if row[6].strip() else 0
                             hoofd_nr = row[16].strip() if len(row) > 16 else ""
 
@@ -1005,6 +1013,7 @@ class BestelberekeningApp:
                                 # Store detailed info
                                 details_list.append({
                                     'id': row_id,
+                                    'materiaal_id': materiaal_id,  # New: Materiaal ID
                                     'material': material_name,
                                     'lengte': lengte,
                                     'breedte': breedte,
@@ -1013,8 +1022,8 @@ class BestelberekeningApp:
                                     'm2': m2
                                 })
 
-                                # Aggregate for calculation
-                                materials_data[material_name] = materials_data.get(material_name, 0) + m2
+                                # Aggregate by Materiaal ID instead of material name
+                                materials_data[materiaal_id] = materials_data.get(materiaal_id, 0) + m2
 
                         except (ValueError, IndexError):
                             continue
@@ -1032,6 +1041,7 @@ class BestelberekeningApp:
             for detail in sorted_details:
                 self.magazijn_tree.insert("", "end", values=(
                     detail['id'],
+                    detail['materiaal_id'],
                     detail['material'],
                     f"{detail['lengte']:.0f}",
                     f"{detail['breedte']:.0f}",
@@ -1061,6 +1071,7 @@ class BestelberekeningApp:
                     config = json.load(f)
                     self.settings['rendement_pct'] = config.get('rendement_pct', 75.0)
                     self.safety_margins = config.get('safety_margins', {})
+                    self.material_rendement = config.get('material_rendement', {})
             except Exception as e:
                 print(f"Fout bij laden config: {e}")
 
@@ -1071,7 +1082,8 @@ class BestelberekeningApp:
         try:
             config = {
                 'rendement_pct': self.settings['rendement_pct'],
-                'safety_margins': self.safety_margins
+                'safety_margins': self.safety_margins,
+                'material_rendement': self.material_rendement
             }
 
             with open("bestelberekening_config.json", 'w', encoding='utf-8') as f:
@@ -1113,41 +1125,58 @@ class BestelberekeningApp:
         for item in self.safety_tree.get_children():
             self.safety_tree.delete(item)
 
-        # Group by unique material ID and name
+        # Group by Materiaal ID (not unique ID)
         unique_materials = {}
         for detail in self.stock_details:
-            material_id = detail['id']
+            materiaal_id = detail['materiaal_id']
             material_name = detail['material']
-            key = f"{material_id}_{material_name}"
+            unique_id = detail['id']
 
-            if key not in unique_materials:
-                unique_materials[key] = {
-                    'id': material_id,
-                    'name': material_name
+            if materiaal_id not in unique_materials:
+                unique_materials[materiaal_id] = {
+                    'materiaal_id': materiaal_id,
+                    'name': material_name,
+                    'count': 0,
+                    'ids': []
                 }
+            unique_materials[materiaal_id]['count'] += 1
+            unique_materials[materiaal_id]['ids'].append(unique_id)
 
-        # Sort by ID
+        # Sort by Materiaal ID
         sorted_materials = sorted(
             unique_materials.values(),
-            key=lambda x: (int(x['id']) if x['id'].isdigit() else 999999, x['id'])
+            key=lambda x: (int(x['materiaal_id']) if x['materiaal_id'].isdigit() else 999999, x['materiaal_id'])
         )
 
-        # Populate table
+        # Populate table with Materiaal ID grouping
         for mat in sorted_materials:
-            material_id = mat['id']
+            materiaal_id = mat['materiaal_id']
             material_name = mat['name']
-            safety_m2 = self.safety_margins.get(material_id, 0.0)
+            item_count = mat['count']
+            unique_ids = mat['ids']
+            safety_m2 = self.safety_margins.get(materiaal_id, 0.0)
+
+            # Get rendement % - use material-specific if set, otherwise use global
+            rendement_pct = self.material_rendement.get(materiaal_id, self.settings['rendement_pct'])
+
+            # Show material name with count if multiple items
+            display_name = f"{material_name} ({item_count} items)" if item_count > 1 else material_name
+
+            # Format IDs as comma-separated list
+            ids_display = ", ".join(unique_ids)
 
             self.safety_tree.insert("", "end", values=(
-                material_id,
-                material_name,
-                f"{safety_m2:.2f}"
+                materiaal_id,
+                ids_display,
+                display_name,
+                f"{safety_m2:.2f}",
+                f"{rendement_pct:.1f}"
             ))
 
         self.status_var.set(f"✓ {len(sorted_materials)} materialen geladen voor veiligheidsvoorraad configuratie")
 
     def edit_safety_margin(self, event):
-        """Edit safety margin for selected material"""
+        """Edit safety margin and rendement % for selected material"""
         selection = self.safety_tree.selection()
         if not selection:
             return
@@ -1155,13 +1184,15 @@ class BestelberekeningApp:
         item = selection[0]
         values = self.safety_tree.item(item, 'values')
         material_id = values[0]
-        material_name = values[1]
-        current_safety = values[2]
+        ids_display = values[1]
+        material_name = values[2]
+        current_safety = values[3]
+        current_rendement = values[4]
 
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title(f"Veiligheidsvoorraad - {material_name}")
-        dialog.geometry("500x200")
+        dialog.title(f"Instellingen - {material_name}")
+        dialog.geometry("500x280")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -1190,11 +1221,12 @@ class BestelberekeningApp:
             font=ModernTheme.FONT_HEADER
         ).pack(anchor=tk.W, pady=(0, 20))
 
-        input_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
-        input_frame.pack(fill=tk.X, pady=(0, 20))
+        # Safety margin input
+        safety_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
+        safety_frame.pack(fill=tk.X, pady=(0, 15))
 
         tk.Label(
-            input_frame,
+            safety_frame,
             text="Veiligheidsvoorraad (m²):",
             bg=ModernTheme.BG_MAIN,
             fg=ModernTheme.TEXT_PRIMARY,
@@ -1202,37 +1234,77 @@ class BestelberekeningApp:
         ).pack(side=tk.LEFT, padx=(0, 10))
 
         safety_var = tk.StringVar(value=current_safety)
-        entry = tk.Entry(
-            input_frame,
+        safety_entry = tk.Entry(
+            safety_frame,
             textvariable=safety_var,
             font=ModernTheme.FONT_NORMAL,
             width=15,
             relief="solid",
             bd=1
         )
-        entry.pack(side=tk.LEFT)
-        entry.focus()
-        entry.select_range(0, tk.END)
+        safety_entry.pack(side=tk.LEFT)
+        safety_entry.focus()
+        safety_entry.select_range(0, tk.END)
+
+        # Rendement % input
+        rendement_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
+        rendement_frame.pack(fill=tk.X, pady=(0, 20))
+
+        tk.Label(
+            rendement_frame,
+            text="Rendement %:",
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        rendement_var = tk.StringVar(value=current_rendement)
+        rendement_entry = tk.Entry(
+            rendement_frame,
+            textvariable=rendement_var,
+            font=ModernTheme.FONT_NORMAL,
+            width=15,
+            relief="solid",
+            bd=1
+        )
+        rendement_entry.pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Label(
+            rendement_frame,
+            text=f"(Global: {self.settings['rendement_pct']:.1f}%)",
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_SECONDARY,
+            font=ModernTheme.FONT_SMALL
+        ).pack(side=tk.LEFT)
 
         def save():
             try:
                 new_safety = float(safety_var.get())
+                new_rendement = float(rendement_var.get())
+
                 if new_safety < 0:
                     messagebox.showerror("Fout", "Veiligheidsvoorraad kan niet negatief zijn!")
                     return
 
-                # Update safety margins dict
+                if new_rendement <= 0 or new_rendement > 100:
+                    messagebox.showerror("Fout", "Rendement moet tussen 0 en 100% zijn!")
+                    return
+
+                # Update dicts
                 self.safety_margins[material_id] = new_safety
+                self.material_rendement[material_id] = new_rendement
 
                 # Update table
                 self.safety_tree.item(item, values=(
                     material_id,
+                    ids_display,
                     material_name,
-                    f"{new_safety:.2f}"
+                    f"{new_safety:.2f}",
+                    f"{new_rendement:.1f}"
                 ))
 
                 dialog.destroy()
-                self.status_var.set(f"✓ Veiligheidsvoorraad voor {material_name} bijgewerkt")
+                self.status_var.set(f"✓ Instellingen voor {material_name} bijgewerkt")
 
             except ValueError:
                 messagebox.showerror("Fout", "Ongeldige waarde! Gebruik alleen getallen.")
@@ -1305,11 +1377,11 @@ class BestelberekeningApp:
                     materials_to_calculate.add(material)
 
             # Add materials that have veiligheidsvoorraad set in config
-            for material_id, safety_value in self.safety_margins.items():
+            for materiaal_id, safety_value in self.safety_margins.items():
                 if safety_value > 0:  # Has veiligheidsvoorraad set
-                    # Find material name by ID
+                    # Find material name by Materiaal ID
                     for detail in self.stock_details:
-                        if detail['id'] == material_id:
+                        if detail['materiaal_id'] == materiaal_id:
                             materials_to_calculate.add(detail['material'])
                             break
 
@@ -1325,17 +1397,20 @@ class BestelberekeningApp:
 
             for material in all_materials:
                 netto_m2 = self.orders_data.get(material, 0.0)  # 0 if no orders
-                rendement_pct = self.settings['rendement_pct']
-                stock_m2 = self.stock_data.get(material, 0.0)
 
-                # Find material ID for safety margin lookup
-                material_id = None
+                # Find Materiaal ID for this material name
+                materiaal_id = None
                 for detail in self.stock_details:
                     if detail['material'] == material:
-                        material_id = detail['id']
+                        materiaal_id = detail['materiaal_id']
                         break
 
-                safety_m2 = self.safety_margins.get(material_id, 0.0) if material_id else 0.0
+                # Get stock and safety by Materiaal ID
+                stock_m2 = self.stock_data.get(materiaal_id, 0.0) if materiaal_id else 0.0
+                safety_m2 = self.safety_margins.get(materiaal_id, 0.0) if materiaal_id else 0.0
+
+                # Get rendement % - use material-specific if set, otherwise use global
+                rendement_pct = self.material_rendement.get(materiaal_id, self.settings['rendement_pct']) if materiaal_id else self.settings['rendement_pct']
 
                 # Calculate
                 # Formula: Gross need + safety − current stock = te bestellen m²

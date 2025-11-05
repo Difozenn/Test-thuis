@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Material Calculator - Extract and aggregate material data from Excel files
-Scans Excel files in a folder, extracts material usage from the 6_Rendement tab,
-and aggregates totals by material type.
+Scans Excel files in a folder, extracts material usage from the '1 PLATEN' sheet,
+calculates m² from Lengte × Breedte columns, and aggregates totals by material type.
 """
 
 import os
@@ -24,7 +24,7 @@ except ImportError:
 class MaterialCalculator:
     """Main calculator for processing Excel files and extracting material data"""
 
-    def __init__(self, folder_path: str, target_sheet: str = "6_Rendement"):
+    def __init__(self, folder_path: str, target_sheet: str = "1 PLATEN"):
         self.folder_path = Path(folder_path)
         self.target_sheet = target_sheet
         self.material_totals: Dict[str, float] = defaultdict(float)
@@ -83,7 +83,7 @@ class MaterialCalculator:
         return filtered
 
     def extract_material_data(self, file_path: Path) -> Dict[str, float]:
-        """Extract material data from a single Excel file"""
+        """Extract material data from a single Excel file from '1 PLATEN' sheet"""
         materials = defaultdict(float)
 
         try:
@@ -95,46 +95,64 @@ class MaterialCalculator:
 
             sheet = workbook.sheet_by_name(self.target_sheet)
 
-            # Find the header row (look for "Materiaal" and "Netto")
+            # Find the header row (look for "Materiaal" in column A, "lengte" in column C, "Breedte" in column D)
+            # Expected at row 6 (index 6)
             header_row = None
             for row_idx in range(min(10, sheet.nrows)):  # Check first 10 rows
-                cell_a = str(sheet.cell(row_idx, 0).value).strip()
-                cell_b = str(sheet.cell(row_idx, 1).value).strip()
-                if 'materiaal' in cell_a.lower() and 'netto' in cell_b.lower():
-                    header_row = row_idx
-                    break
+                try:
+                    cell_a = str(sheet.cell(row_idx, 0).value).strip().lower()
+                    cell_c = str(sheet.cell(row_idx, 2).value).strip().lower() if sheet.ncols > 2 else ""
+                    cell_d = str(sheet.cell(row_idx, 3).value).strip().lower() if sheet.ncols > 3 else ""
+
+                    if 'materiaal' in cell_a and 'lengte' in cell_c and 'breedte' in cell_d:
+                        header_row = row_idx
+                        break
+                except:
+                    continue
 
             if header_row is None:
-                self.skipped_files.append((file_path.name, "Could not find header row"))
+                self.skipped_files.append((file_path.name, "Could not find header row with 'Materiaal', 'lengte', 'Breedte'"))
                 return materials
 
             # Extract data starting from the row after header
             for row_idx in range(header_row + 1, sheet.nrows):
-                material = sheet.cell(row_idx, 0).value  # Column A
-                netto_value = sheet.cell(row_idx, 1).value  # Column B
-
-                # Skip empty rows
-                if not material or material == '':
-                    continue
-
-                material = str(material).strip()
-
-                # Try to convert netto_value to float
                 try:
-                    if isinstance(netto_value, (int, float)):
-                        netto = float(netto_value)
-                    elif isinstance(netto_value, str):
-                        # Remove any non-numeric characters except decimal point
-                        netto_clean = netto_value.replace(',', '.')
-                        netto = float(netto_clean)
+                    # Column A: Materiaal
+                    material = sheet.cell(row_idx, 0).value
+
+                    # Skip empty rows
+                    if not material or str(material).strip() == '':
+                        continue
+
+                    material = str(material).strip()
+
+                    # Column C: Lengte (index 2)
+                    lengte_value = sheet.cell(row_idx, 2).value if sheet.ncols > 2 else 0
+                    # Column D: Breedte (index 3)
+                    breedte_value = sheet.cell(row_idx, 3).value if sheet.ncols > 3 else 0
+
+                    # Convert to float
+                    if isinstance(lengte_value, (int, float)):
+                        lengte = float(lengte_value)
+                    elif isinstance(lengte_value, str):
+                        lengte = float(lengte_value.replace(',', '.'))
                     else:
                         continue
 
-                    if netto > 0:  # Only add positive values
-                        materials[material] += netto
+                    if isinstance(breedte_value, (int, float)):
+                        breedte = float(breedte_value)
+                    elif isinstance(breedte_value, str):
+                        breedte = float(breedte_value.replace(',', '.'))
+                    else:
+                        continue
 
-                except (ValueError, TypeError):
-                    # Skip rows with invalid numeric values
+                    # Calculate m²: (lengte × breedte) / 1,000,000
+                    if lengte > 0 and breedte > 0:
+                        m2 = (lengte * breedte) / 1_000_000
+                        materials[material] += m2
+
+                except (ValueError, TypeError, IndexError):
+                    # Skip rows with invalid data
                     continue
 
             self.processed_files.append(file_path.name)

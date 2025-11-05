@@ -34,7 +34,192 @@ class PlatenCalcGUI:
         self.visible_materials = []  # Materials to show in table (filtered)
         self.material_visibility = {}  # Dict of material: visible (bool)
 
+        self.setup_menu()
         self.setup_ui()
+
+    def setup_menu(self):
+        """Setup de menu balk"""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+
+        # Acties menu
+        acties_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Acties", menu=acties_menu)
+        acties_menu.add_command(label="Magazijn Ophalen", command=self.magazijn_ophalen)
+        acties_menu.add_separator()
+        acties_menu.add_command(label="Bestelberekening", command=self.open_bestelberekening)
+
+    def magazijn_ophalen(self):
+        """Magazijn Ophalen functionaliteit - Scan ContentResult CSV bestand"""
+        # Ask user to select the CSV file
+        csv_file = filedialog.askopenfilename(
+            title="Selecteer ContentResult CSV bestand",
+            initialdir=self.folder_var.get(),
+            filetypes=[
+                ("CSV bestanden", "*.csv"),
+                ("Alle bestanden", "*.*")
+            ]
+        )
+
+        if not csv_file:
+            self.log("Magazijn Ophalen geannuleerd", 'warning')
+            return
+
+        self.log(f"Magazijn Ophalen gestart: {Path(csv_file).name}", 'info')
+        self.status_var.set("Magazijn bestand laden...")
+
+        try:
+            import csv
+
+            # Read the CSV file
+            # Correct format: ID;Materiaal;Lengte;Breedte;Dikte;Nummer;Aantal;...;HOOFD NR field
+            materials_data = []
+            with open(csv_file, 'r', encoding='utf-8-sig') as f:
+                reader = csv.reader(f, delimiter=';')
+
+                for row in reader:
+                    if len(row) >= 17:
+                        # Parse the row
+                        # Format: ID;Materiaal;Lengte;Breedte;Dikte;Nummer;Aantal;...;HOOFD NR (column 17)
+                        try:
+                            row_id = row[0].strip()
+                            material_name = row[1].strip()
+                            lengte = row[2].strip()  # Lengte (Length)
+                            breedte = row[3].strip()  # Breedte (Width)
+                            dikte = row[4].strip()  # Dikte (Thickness)
+                            nummer = row[5].strip()  # Nummer
+                            aantal = row[6].strip()  # Aantal (Quantity)
+                            # Column 17 (index 16) contains "HOOFD NR      " for main warehouse items
+                            hoofd_nr = row[16].strip() if len(row) > 16 else ""
+
+                            # Only include rows with "HOOFD NR" marker
+                            if material_name and "HOOFD NR" in hoofd_nr:
+                                # Calculate m² = (lengte * breedte * aantal) / 1,000,000
+                                try:
+                                    lengte_val = float(lengte) if lengte else 0
+                                    breedte_val = float(breedte) if breedte else 0
+                                    aantal_val = float(aantal) if aantal else 0
+                                    m2 = (lengte_val * breedte_val * aantal_val) / 1_000_000
+                                except (ValueError, ZeroDivisionError):
+                                    m2 = 0
+
+                                materials_data.append({
+                                    'id': row_id,
+                                    'name': material_name,
+                                    'lengte': lengte,
+                                    'breedte': breedte,
+                                    'dikte': dikte,
+                                    'nummer': nummer,
+                                    'aantal': aantal,
+                                    'm2': m2
+                                })
+                        except (ValueError, IndexError):
+                            continue
+
+            self.log(f"✓ {len(materials_data)} HOOFD NR materialen geladen", 'success')
+
+            # Display results in a new window
+            self.show_magazijn_window(materials_data, Path(csv_file).name)
+
+        except Exception as e:
+            self.log(f"✗ Fout bij laden magazijn bestand: {e}", 'error')
+            messagebox.showerror("Fout", f"Fout bij laden bestand:\n{e}")
+            self.status_var.set("Fout bij laden")
+
+    def show_magazijn_window(self, materials_data, filename):
+        """Toon magazijn data in een nieuw venster"""
+        # Create new window
+        mag_window = tk.Toplevel(self.root)
+        mag_window.title(f"Magazijn Overzicht - {filename}")
+        mag_window.geometry("1100x600")
+        mag_window.transient(self.root)
+
+        # Main frame
+        main = ttk.Frame(mag_window, padding="10")
+        main.pack(fill=tk.BOTH, expand=True)
+        main.columnconfigure(0, weight=1)
+        main.rowconfigure(1, weight=1)
+
+        # Info label
+        info_label = ttk.Label(
+            main,
+            text=f"Magazijn voorraad (HOOFD NR): {len(materials_data)} materialen",
+            font=('TkDefaultFont', 10, 'bold')
+        )
+        info_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
+
+        # Create table frame
+        table_frame = ttk.Frame(main)
+        table_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        table_frame.columnconfigure(0, weight=1)
+        table_frame.rowconfigure(0, weight=1)
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(table_frame, orient="vertical")
+        hsb = ttk.Scrollbar(table_frame, orient="horizontal")
+
+        # Create treeview with correct columns: ID, Materiaal, Lengte, Breedte, Dikte, Nummer, Aantal, m²
+        columns = ["ID", "Materiaal", "Lengte", "Breedte", "Dikte", "Nummer", "Aantal", "m²"]
+        tree = ttk.Treeview(
+            table_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set
+        )
+
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+
+        # Configure columns
+        tree.heading("ID", text="ID")
+        tree.heading("Materiaal", text="Materiaal")
+        tree.heading("Lengte", text="Lengte (mm)")
+        tree.heading("Breedte", text="Breedte (mm)")
+        tree.heading("Dikte", text="Dikte (mm)")
+        tree.heading("Nummer", text="Nummer")
+        tree.heading("Aantal", text="Aantal")
+        tree.heading("m²", text="m²")
+
+        tree.column("ID", width=60, anchor=tk.CENTER)
+        tree.column("Materiaal", width=350, anchor=tk.W)
+        tree.column("Lengte", width=100, anchor=tk.E)
+        tree.column("Breedte", width=100, anchor=tk.E)
+        tree.column("Dikte", width=80, anchor=tk.E)
+        tree.column("Nummer", width=80, anchor=tk.E)
+        tree.column("Aantal", width=80, anchor=tk.E)
+        tree.column("m²", width=100, anchor=tk.E)
+
+        # Insert data
+        for item in materials_data:
+            tree.insert("", "end", values=(
+                item['id'],
+                item['name'],
+                item['lengte'],
+                item['breedte'],
+                item['dikte'],
+                item['nummer'],
+                item['aantal'],
+                f"{item['m2']:.2f}"
+            ))
+
+        # Grid layout
+        tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        vsb.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        hsb.grid(row=1, column=0, sticky=(tk.W, tk.E))
+
+        # Button frame
+        button_frame = ttk.Frame(main)
+        button_frame.grid(row=2, column=0, pady=(10, 0))
+
+        ttk.Button(button_frame, text="Sluiten", command=mag_window.destroy, width=15).pack(side=tk.LEFT, padx=5)
+
+        self.status_var.set(f"Magazijn overzicht weergegeven: {len(materials_data)} HOOFD NR items")
+        self.log(f"✓ Magazijn overzicht geopend", 'success')
+
+    def open_bestelberekening(self):
+        """Open Bestelberekening window"""
+        BestelberekeningWindow(self.root, self.folder_var.get())
 
     def setup_ui(self):
         """Setup de gebruikersinterface"""
@@ -686,6 +871,615 @@ class PlatenCalcGUI:
             except Exception as e:
                 messagebox.showerror("Fout", f"Fout bij exporteren: {e}")
                 self.log(f"✗ Export fout: {e}", 'error')
+
+
+class BestelberekeningWindow:
+    """Enterprise-grade Bestelberekening window met tabs"""
+
+    def __init__(self, parent, default_folder):
+        self.parent = parent
+        self.default_folder = default_folder
+
+        # Data storage
+        self.orders_data = {}  # {material_name: netto_m2}
+        self.stock_data = {}  # {material_name: stock_m2}
+        self.settings = {
+            'rendement_pct': 75.0,  # Default 75%
+            'safety_margin_m2': 0.0,
+            'material_overrides': {}  # {material: {rendement, safety}}
+        }
+
+        # Create window
+        self.window = tk.Toplevel(parent)
+        self.window.title("Bestelberekening - Enterprise Material Planning")
+        self.window.geometry("1400x800")
+        self.window.transient(parent)
+
+        # Setup UI
+        self.setup_ui()
+
+    def setup_ui(self):
+        """Setup the tabbed interface"""
+        # Main container
+        main_frame = ttk.Frame(self.window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        title_label = ttk.Label(
+            main_frame,
+            text="Bestelberekening - Material Order Calculation",
+            font=('Segoe UI', 14, 'bold')
+        )
+        title_label.pack(pady=(0, 10))
+
+        # Create notebook (tabs)
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Create tabs
+        self.tab1 = ttk.Frame(self.notebook)
+        self.tab2 = ttk.Frame(self.notebook)
+        self.tab3 = ttk.Frame(self.notebook)
+        self.tab4 = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.tab1, text="① Orders")
+        self.notebook.add(self.tab2, text="② Magazijn")
+        self.notebook.add(self.tab3, text="③ Instellingen")
+        self.notebook.add(self.tab4, text="④ Berekening")
+
+        # Setup each tab
+        self.setup_tab1_orders()
+        self.setup_tab2_magazijn()
+        self.setup_tab3_instellingen()
+        self.setup_tab4_berekening()
+
+        # Status bar
+        self.status_var = tk.StringVar(value="Klaar om te beginnen")
+        status_bar = ttk.Label(
+            main_frame,
+            textvariable=self.status_var,
+            relief=tk.SUNKEN,
+            anchor=tk.W
+        )
+        status_bar.pack(fill=tk.X, pady=(10, 0))
+
+    def setup_tab1_orders(self):
+        """Tab 1: Scan orders and extract netto m²"""
+        frame = ttk.Frame(self.tab1, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        ttk.Label(
+            frame,
+            text="Stap 1: Orders Scannen",
+            font=('Segoe UI', 12, 'bold')
+        ).pack(anchor=tk.W, pady=(0, 5))
+
+        ttk.Label(
+            frame,
+            text="Scan Excel bestanden om netto m² per materiaal te berekenen",
+            foreground='gray'
+        ).pack(anchor=tk.W, pady=(0, 20))
+
+        # Folder selection
+        folder_frame = ttk.LabelFrame(frame, text="Map Selectie", padding="10")
+        folder_frame.pack(fill=tk.X, pady=(0, 10))
+
+        path_container = ttk.Frame(folder_frame)
+        path_container.pack(fill=tk.X)
+        path_container.columnconfigure(0, weight=1)
+
+        self.orders_folder_var = tk.StringVar(value=self.default_folder)
+        ttk.Entry(path_container, textvariable=self.orders_folder_var).grid(
+            row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5)
+        )
+        ttk.Button(path_container, text="Bladeren...", command=self.browse_orders_folder).grid(
+            row=0, column=1
+        )
+
+        # Scan button
+        ttk.Button(
+            folder_frame,
+            text="Scan Orders",
+            command=self.scan_orders,
+            width=20
+        ).pack(pady=(10, 0))
+
+        # Results table
+        results_frame = ttk.LabelFrame(frame, text="Gevonden Materialen", padding="10")
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(results_frame, orient="vertical")
+        hsb = ttk.Scrollbar(results_frame, orient="horizontal")
+
+        # Treeview
+        columns = ["Materiaal", "Netto (m²)"]
+        self.orders_tree = ttk.Treeview(
+            results_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            height=15
+        )
+
+        vsb.config(command=self.orders_tree.yview)
+        hsb.config(command=self.orders_tree.xview)
+
+        self.orders_tree.heading("Materiaal", text="Materiaal")
+        self.orders_tree.heading("Netto (m²)", text="Netto (m²)")
+
+        self.orders_tree.column("Materiaal", width=500, anchor=tk.W)
+        self.orders_tree.column("Netto (m²)", width=150, anchor=tk.E)
+
+        self.orders_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def setup_tab2_magazijn(self):
+        """Tab 2: Load magazijn stock data"""
+        frame = ttk.Frame(self.tab2, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        ttk.Label(
+            frame,
+            text="Stap 2: Magazijn Voorraad Laden",
+            font=('Segoe UI', 12, 'bold')
+        ).pack(anchor=tk.W, pady=(0, 5))
+
+        ttk.Label(
+            frame,
+            text="Laad huidige voorraad uit ContentResult CSV bestand",
+            foreground='gray'
+        ).pack(anchor=tk.W, pady=(0, 20))
+
+        # File selection
+        file_frame = ttk.LabelFrame(frame, text="CSV Bestand", padding="10")
+        file_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(
+            file_frame,
+            text="Selecteer Magazijn CSV",
+            command=self.load_magazijn_data,
+            width=25
+        ).pack()
+
+        # Results table
+        results_frame = ttk.LabelFrame(frame, text="Magazijn Voorraad (HOOFD NR)", padding="10")
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(results_frame, orient="vertical")
+        hsb = ttk.Scrollbar(results_frame, orient="horizontal")
+
+        # Treeview
+        columns = ["Materiaal", "Stock (m²)"]
+        self.magazijn_tree = ttk.Treeview(
+            results_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            height=15
+        )
+
+        vsb.config(command=self.magazijn_tree.yview)
+        hsb.config(command=self.magazijn_tree.xview)
+
+        self.magazijn_tree.heading("Materiaal", text="Materiaal")
+        self.magazijn_tree.heading("Stock (m²)", text="Stock (m²)")
+
+        self.magazijn_tree.column("Materiaal", width=500, anchor=tk.W)
+        self.magazijn_tree.column("Stock (m²)", width=150, anchor=tk.E)
+
+        self.magazijn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def setup_tab3_instellingen(self):
+        """Tab 3: Configure settings"""
+        frame = ttk.Frame(self.tab3, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        ttk.Label(
+            frame,
+            text="Stap 3: Instellingen Configureren",
+            font=('Segoe UI', 12, 'bold')
+        ).pack(anchor=tk.W, pady=(0, 5))
+
+        ttk.Label(
+            frame,
+            text="Stel globale parameters in voor de berekening",
+            foreground='gray'
+        ).pack(anchor=tk.W, pady=(0, 20))
+
+        # Global settings
+        settings_frame = ttk.LabelFrame(frame, text="Globale Instellingen", padding="15")
+        settings_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Rendement percentage
+        rendement_frame = ttk.Frame(settings_frame)
+        rendement_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(rendement_frame, text="Rendement %:", width=25).pack(side=tk.LEFT)
+        self.rendement_var = tk.StringVar(value="75.0")
+        rendement_entry = ttk.Entry(rendement_frame, textvariable=self.rendement_var, width=15)
+        rendement_entry.pack(side=tk.LEFT, padx=5)
+        ttk.Label(rendement_frame, text="(Default: 75% = 0.75)", foreground='gray').pack(side=tk.LEFT)
+
+        # Safety margin
+        safety_frame = ttk.Frame(settings_frame)
+        safety_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(safety_frame, text="Veiligheidsvoorraad (m²):", width=25).pack(side=tk.LEFT)
+        self.safety_var = tk.StringVar(value="0.0")
+        safety_entry = ttk.Entry(safety_frame, textvariable=self.safety_var, width=15)
+        safety_entry.pack(side=tk.LEFT, padx=5)
+        ttk.Label(safety_frame, text="(Globaal voor alle materialen)", foreground='gray').pack(side=tk.LEFT)
+
+        # Apply button
+        ttk.Button(
+            settings_frame,
+            text="Instellingen Toepassen",
+            command=self.apply_settings,
+            width=25
+        ).pack(pady=(15, 0))
+
+        # Info
+        info_frame = ttk.LabelFrame(frame, text="Berekeningsformules", padding="15")
+        info_frame.pack(fill=tk.X, pady=(10, 0))
+
+        formulas = [
+            "Bruto m² = Netto m² ÷ (Rendement % / 100)",
+            "Totaal Stock = Huidige Stock + Veiligheidsvoorraad",
+            "Bestellen m² = Bruto m² - Totaal Stock",
+            "",
+            "Voorbeeld met Rendement 75%:",
+            "  Netto: 100 m² → Bruto: 100 ÷ 0.75 = 133.33 m²"
+        ]
+
+        for formula in formulas:
+            ttk.Label(
+                info_frame,
+                text=formula,
+                font=('Courier New', 9),
+                foreground='#0066cc' if '=' in formula else 'gray'
+            ).pack(anchor=tk.W, pady=2)
+
+    def setup_tab4_berekening(self):
+        """Tab 4: Final calculation and export"""
+        frame = ttk.Frame(self.tab4, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        header_frame = ttk.Frame(frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(
+            header_frame,
+            text="Stap 4: Bestelberekening",
+            font=('Segoe UI', 12, 'bold')
+        ).pack(side=tk.LEFT)
+
+        # Action buttons
+        button_frame = ttk.Frame(header_frame)
+        button_frame.pack(side=tk.RIGHT)
+
+        ttk.Button(button_frame, text="Berekenen", command=self.calculate, width=15).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Exporteer Excel", command=self.export_excel, width=15).pack(side=tk.LEFT, padx=5)
+
+        # Results table
+        results_frame = ttk.Frame(frame)
+        results_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(results_frame, orient="vertical")
+        hsb = ttk.Scrollbar(results_frame, orient="horizontal")
+
+        # Treeview
+        columns = ["Materiaal", "Netto (m²)", "R%", "Bruto m²", "Stock (m²)", "Veiligh. (m²)", "Totaal (m²)", "Bestellen (m²)"]
+        self.calc_tree = ttk.Treeview(
+            results_frame,
+            columns=columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set
+        )
+
+        vsb.config(command=self.calc_tree.yview)
+        hsb.config(command=self.calc_tree.xview)
+
+        # Configure columns
+        self.calc_tree.heading("Materiaal", text="Materiaal")
+        self.calc_tree.heading("Netto (m²)", text="Netto (m²)")
+        self.calc_tree.heading("R%", text="R%")
+        self.calc_tree.heading("Bruto m²", text="Bruto m²")
+        self.calc_tree.heading("Stock (m²)", text="Stock (m²)")
+        self.calc_tree.heading("Veiligh. (m²)", text="Veiligheidsvoorraad")
+        self.calc_tree.heading("Totaal (m²)", text="Totaal m²")
+        self.calc_tree.heading("Bestellen (m²)", text="Bestellen m²")
+
+        self.calc_tree.column("Materiaal", width=300, anchor=tk.W)
+        self.calc_tree.column("Netto (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("R%", width=70, anchor=tk.E)
+        self.calc_tree.column("Bruto m²", width=100, anchor=tk.E)
+        self.calc_tree.column("Stock (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("Veiligh. (m²)", width=120, anchor=tk.E)
+        self.calc_tree.column("Totaal (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("Bestellen (m²)", width=120, anchor=tk.E)
+
+        self.calc_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Configure tag for negative values
+        self.calc_tree.tag_configure('positive', foreground='green')
+        self.calc_tree.tag_configure('negative', foreground='red')
+        self.calc_tree.tag_configure('total', background='#e0e0e0', font=('TkDefaultFont', 9, 'bold'))
+
+    # Tab 1 Methods
+    def browse_orders_folder(self):
+        """Browse for orders folder"""
+        folder = filedialog.askdirectory(
+            title="Selecteer Map met Excel Bestanden",
+            initialdir=self.orders_folder_var.get()
+        )
+        if folder:
+            self.orders_folder_var.set(folder)
+
+    def scan_orders(self):
+        """Scan orders folder and extract netto m²"""
+        folder = self.orders_folder_var.get()
+        self.status_var.set("Orders scannen...")
+
+        try:
+            calculator = MaterialCalculator(folder)
+            files = calculator.scan_folder()
+
+            if not files:
+                messagebox.showwarning("Waarschuwing", "Geen Excel bestanden gevonden!")
+                self.status_var.set("Geen bestanden gevonden")
+                return
+
+            # Process files
+            material_totals = defaultdict(float)
+            for file_path in files:
+                materials = calculator.extract_material_data(file_path)
+                for material, amount in materials.items():
+                    material_totals[material] += amount
+
+            # Store data
+            self.orders_data = dict(material_totals)
+
+            # Update table
+            for item in self.orders_tree.get_children():
+                self.orders_tree.delete(item)
+
+            sorted_materials = sorted(
+                material_totals.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )
+
+            for material, netto_m2 in sorted_materials:
+                self.orders_tree.insert("", "end", values=(material, f"{netto_m2:.2f}"))
+
+            self.status_var.set(f"✓ {len(files)} bestanden gescand, {len(material_totals)} materialen gevonden")
+            messagebox.showinfo("Succes", f"Orders gescand!\n\n{len(files)} bestanden\n{len(material_totals)} unieke materialen")
+
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij scannen orders:\n{e}")
+            self.status_var.set("Fout bij scannen")
+
+    # Tab 2 Methods
+    def load_magazijn_data(self):
+        """Load magazijn CSV data"""
+        csv_file = filedialog.askopenfilename(
+            title="Selecteer ContentResult CSV bestand",
+            initialdir=self.default_folder,
+            filetypes=[("CSV bestanden", "*.csv"), ("Alle bestanden", "*.*")]
+        )
+
+        if not csv_file:
+            return
+
+        self.status_var.set("Magazijn data laden...")
+
+        try:
+            import csv
+
+            # Read and process CSV
+            materials_data = {}
+            with open(csv_file, 'r', encoding='utf-8-sig') as f:
+                reader = csv.reader(f, delimiter=';')
+
+                for row in reader:
+                    if len(row) >= 17:
+                        try:
+                            material_name = row[1].strip()
+                            lengte = float(row[2].strip()) if row[2].strip() else 0
+                            breedte = float(row[3].strip()) if row[3].strip() else 0
+                            aantal = float(row[6].strip()) if row[6].strip() else 0
+                            hoofd_nr = row[16].strip() if len(row) > 16 else ""
+
+                            # Only HOOFD NR materials
+                            if material_name and "HOOFD NR" in hoofd_nr:
+                                m2 = (lengte * breedte * aantal) / 1_000_000
+                                # Aggregate if material already exists
+                                if material_name in materials_data:
+                                    materials_data[material_name] += m2
+                                else:
+                                    materials_data[material_name] = m2
+
+                        except (ValueError, IndexError):
+                            continue
+
+            # Store data
+            self.stock_data = materials_data
+
+            # Update table
+            for item in self.magazijn_tree.get_children():
+                self.magazijn_tree.delete(item)
+
+            sorted_materials = sorted(
+                materials_data.items(),
+                key=lambda x: x[0]
+            )
+
+            for material, stock_m2 in sorted_materials:
+                self.magazijn_tree.insert("", "end", values=(material, f"{stock_m2:.2f}"))
+
+            self.status_var.set(f"✓ Magazijn data geladen: {len(materials_data)} materialen")
+            messagebox.showinfo("Succes", f"Magazijn data geladen!\n\n{len(materials_data)} materialen met HOOFD NR")
+
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij laden magazijn:\n{e}")
+            self.status_var.set("Fout bij laden")
+
+    # Tab 3 Methods
+    def apply_settings(self):
+        """Apply global settings"""
+        try:
+            rendement = float(self.rendement_var.get())
+            safety = float(self.safety_var.get())
+
+            if rendement <= 0 or rendement > 100:
+                messagebox.showerror("Fout", "Rendement % moet tussen 0 en 100 zijn!")
+                return
+
+            if safety < 0:
+                messagebox.showerror("Fout", "Veiligheidsvoorraad kan niet negatief zijn!")
+                return
+
+            self.settings['rendement_pct'] = rendement
+            self.settings['safety_margin_m2'] = safety
+
+            self.status_var.set(f"✓ Instellingen toegepast: R={rendement}%, Veiligh={safety} m²")
+            messagebox.showinfo("Succes", f"Instellingen toegepast!\n\nRendement: {rendement}%\nVeiligheidsvoorraad: {safety} m²")
+
+        except ValueError:
+            messagebox.showerror("Fout", "Ongeldige waarden! Gebruik alleen getallen.")
+
+    # Tab 4 Methods
+    def calculate(self):
+        """Calculate order requirements"""
+        if not self.orders_data:
+            messagebox.showwarning("Waarschuwing", "Scan eerst de orders (Tab 1)!")
+            self.notebook.select(self.tab1)
+            return
+
+        self.status_var.set("Berekening uitvoeren...")
+
+        try:
+            # Clear table
+            for item in self.calc_tree.get_children():
+                self.calc_tree.delete(item)
+
+            # Get all unique materials from orders
+            all_materials = sorted(self.orders_data.keys(), key=lambda m: self.orders_data[m], reverse=True)
+
+            total_netto = 0
+            total_bruto = 0
+            total_bestellen = 0
+
+            for material in all_materials:
+                netto_m2 = self.orders_data[material]
+                rendement_pct = self.settings['rendement_pct']
+                safety_m2 = self.settings['safety_margin_m2']
+                stock_m2 = self.stock_data.get(material, 0.0)
+
+                # Calculate
+                rendement_decimal = rendement_pct / 100.0
+                bruto_m2 = netto_m2 / rendement_decimal
+                totaal_stock_m2 = stock_m2 + safety_m2
+                bestellen_m2 = bruto_m2 - totaal_stock_m2
+
+                # Totals
+                total_netto += netto_m2
+                total_bruto += bruto_m2
+                total_bestellen += bestellen_m2
+
+                # Insert row
+                tag = 'positive' if bestellen_m2 < 0 else 'negative' if bestellen_m2 > 0 else ''
+                self.calc_tree.insert("", "end", values=(
+                    material,
+                    f"{netto_m2:.2f}",
+                    f"{rendement_decimal:.2f}",
+                    f"{bruto_m2:.2f}",
+                    f"{stock_m2:.2f}",
+                    f"{safety_m2:.2f}",
+                    f"{totaal_stock_m2:.2f}",
+                    f"{bestellen_m2:.2f}"
+                ), tags=(tag,))
+
+            # Add total row
+            self.calc_tree.insert("", "end", values=(
+                "TOTAAL",
+                f"{total_netto:.2f}",
+                "",
+                f"{total_bruto:.2f}",
+                "",
+                "",
+                "",
+                f"{total_bestellen:.2f}"
+            ), tags=('total',))
+
+            self.status_var.set(f"✓ Berekening voltooid: {len(all_materials)} materialen")
+
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij berekenen:\n{e}")
+            self.status_var.set("Fout bij berekenen")
+
+    def export_excel(self):
+        """Export calculation to Excel"""
+        if not self.calc_tree.get_children():
+            messagebox.showwarning("Waarschuwing", "Voer eerst de berekening uit!")
+            return
+
+        # Ask for filename
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"bestelberekening_{timestamp}.csv"
+
+        filename = filedialog.asksaveasfilename(
+            title="Exporteer Bestelberekening",
+            initialfile=default_filename,
+            defaultextension=".csv",
+            filetypes=[("CSV bestanden", "*.csv"), ("Alle bestanden", "*.*")]
+        )
+
+        if filename:
+            try:
+                import csv
+
+                with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+                    writer = csv.writer(f, delimiter=';')
+
+                    # Header
+                    writer.writerow([
+                        'Materiaal',
+                        'Netto (m²)',
+                        'R%',
+                        'Bruto m²',
+                        'm² huidige stock',
+                        'm² veiligheidsvoorraad',
+                        'Totaal m²',
+                        'Bestellen m²'
+                    ])
+
+                    # Data
+                    for item in self.calc_tree.get_children():
+                        values = self.calc_tree.item(item, 'values')
+                        writer.writerow(values)
+
+                self.status_var.set(f"✓ Geëxporteerd naar {Path(filename).name}")
+                messagebox.showinfo("Succes", f"Bestelberekening geëxporteerd naar:\n{filename}")
+
+            except Exception as e:
+                messagebox.showerror("Fout", f"Fout bij exporteren:\n{e}")
 
 
 def main():

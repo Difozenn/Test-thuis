@@ -473,9 +473,9 @@ class BestelberekeningApp:
         self.magazijn_tree.column("Aantal", width=80, anchor=tk.E)
         self.magazijn_tree.column("m²", width=100, anchor=tk.E)
 
-        self.magazijn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.magazijn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def build_tab3_instellingen(self):
         """Build Settings tab"""
@@ -617,9 +617,9 @@ class BestelberekeningApp:
         self.safety_tree.column("Veiligheidsvoorraad (m²)", width=180, anchor=tk.E)
         self.safety_tree.column("Rendement %", width=120, anchor=tk.E)
 
-        self.safety_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.safety_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Bind double-click to edit
         self.safety_tree.bind('<Double-1>', self.edit_safety_margin)
@@ -686,7 +686,7 @@ class BestelberekeningApp:
             "Bruto m²",
             "Veiligh. (m²)",
             "Stock (m²)",
-            "Bestellen (m²)"
+            "Saldo (m²)"
         ]
 
         self.calc_tree = ttk.Treeview(
@@ -711,11 +711,11 @@ class BestelberekeningApp:
         self.calc_tree.column("Bruto m²", width=120, anchor=tk.E)
         self.calc_tree.column("Veiligh. (m²)", width=140, anchor=tk.E)
         self.calc_tree.column("Stock (m²)", width=120, anchor=tk.E)
-        self.calc_tree.column("Bestellen (m²)", width=140, anchor=tk.E)
+        self.calc_tree.column("Saldo (m²)", width=140, anchor=tk.E)
 
-        self.calc_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.calc_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Configure tags for color coding
         self.calc_tree.tag_configure('need_order', foreground=ModernTheme.DANGER)
@@ -1030,6 +1030,24 @@ class BestelberekeningApp:
 
             self.stock_data = materials_data
             self.stock_details = details_list
+
+            # Clean up config: remove entries for materials not in current magazijn
+            current_materiaal_ids = set(detail['materiaal_id'] for detail in details_list)
+
+            # Clean safety margins
+            orphaned_safety = [mid for mid in self.safety_margins.keys() if mid not in current_materiaal_ids]
+            for mid in orphaned_safety:
+                del self.safety_margins[mid]
+
+            # Clean material rendement
+            orphaned_rendement = [mid for mid in self.material_rendement.keys() if mid not in current_materiaal_ids]
+            for mid in orphaned_rendement:
+                del self.material_rendement[mid]
+
+            # Log cleanup if any entries were removed
+            total_orphaned = len(orphaned_safety) + len(orphaned_rendement)
+            if total_orphaned > 0:
+                print(f"Config cleanup: Removed {len(orphaned_safety)} orphaned safety margins, {len(orphaned_rendement)} orphaned rendement entries")
 
             # Update table with detailed view
             for item in self.magazijn_tree.get_children():
@@ -1413,10 +1431,11 @@ class BestelberekeningApp:
                 rendement_pct = self.material_rendement.get(materiaal_id, self.settings['rendement_pct']) if materiaal_id else self.settings['rendement_pct']
 
                 # Calculate
-                # Formula: Gross need + safety − current stock = te bestellen m²
+                # Formula: stock - (bruto + safety) = saldo (positive = surplus, negative = deficit)
                 rendement_decimal = rendement_pct / 100.0
                 bruto_m2 = netto_m2 / rendement_decimal
-                bestellen_m2 = bruto_m2 + safety_m2 - stock_m2
+                needed_m2 = bruto_m2 + safety_m2
+                saldo_m2 = stock_m2 - needed_m2  # Positive = surplus, Negative = need to order
 
                 # Store result
                 result = {
@@ -1426,15 +1445,15 @@ class BestelberekeningApp:
                     'bruto': bruto_m2,
                     'stock': stock_m2,
                     'safety': safety_m2,
-                    'bestellen': bestellen_m2
+                    'bestellen': saldo_m2
                 }
                 self.calculation_results.append(result)
 
-                # Color coding: RED when need to order (positive), GREEN when have enough stock (negative)
-                if bestellen_m2 > 0:
-                    tag = 'need_order'  # Red - need to order
-                elif bestellen_m2 < 0:
-                    tag = 'overstock'  # Green - have enough stock
+                # Color coding: GREEN when positive (surplus), RED when negative (deficit/need to order)
+                if saldo_m2 < 0:
+                    tag = 'need_order'  # Red - need to order (deficit)
+                elif saldo_m2 > 0:
+                    tag = 'overstock'  # Green - have surplus
                 else:
                     tag = ''
 
@@ -1445,7 +1464,7 @@ class BestelberekeningApp:
                     f"{bruto_m2:.2f}",
                     f"{safety_m2:.2f}",
                     f"{stock_m2:.2f}",
-                    f"{bestellen_m2:.2f}"
+                    f"{saldo_m2:.2f}"
                 ), tags=(tag,))
 
             # Show warning if some materials were excluded
@@ -1521,7 +1540,7 @@ class BestelberekeningApp:
                 })
 
                 # Write headers
-                headers = ['Materiaal', 'Netto (m²)', 'R%', 'Bruto m²', 'm² veiligheidsvoorraad', 'm² huidige stock', 'Bestellen m²']
+                headers = ['Materiaal', 'Netto (m²)', 'R%', 'Bruto m²', 'm² veiligheidsvoorraad', 'm² huidige stock', 'Saldo m²']
                 for col, header in enumerate(headers):
                     worksheet.write(0, col, header, header_format)
 
@@ -1539,14 +1558,14 @@ class BestelberekeningApp:
                     worksheet.write(row, 4, result['safety'], normal_format)
                     worksheet.write(row, 5, result['stock'], normal_format)
 
-                    # Apply color coding to "Bestellen" column
-                    bestellen = result['bestellen']
-                    if bestellen > 0:
-                        worksheet.write(row, 6, bestellen, red_format)  # Need to order - RED
-                    elif bestellen < 0:
-                        worksheet.write(row, 6, bestellen, green_format)  # Have enough - GREEN
+                    # Apply color coding to "Saldo" column
+                    saldo = result['bestellen']  # Note: key still named 'bestellen' in result dict
+                    if saldo < 0:
+                        worksheet.write(row, 6, saldo, red_format)  # Deficit - RED (need to order)
+                    elif saldo > 0:
+                        worksheet.write(row, 6, saldo, green_format)  # Surplus - GREEN
                     else:
-                        worksheet.write(row, 6, bestellen, normal_format)
+                        worksheet.write(row, 6, saldo, normal_format)
 
                     row += 1
 

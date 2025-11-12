@@ -131,6 +131,69 @@ def create_menu(root, main_app):
         root._tab_buttons.append(btn)
         root._tab_frames.append(frame)
 
+    # Add SPOED warning frame (initially hidden)
+    root.spoed_warning_frame = tk.Frame(menu_frame, bg="#ff4444", height=75, width=300)
+    root.spoed_warning_frame.pack_propagate(False)
+
+    # Inner frame for content
+    inner_frame = tk.Frame(root.spoed_warning_frame, bg="#ff4444")
+    inner_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    # SPOED warning label
+    root.spoed_warning_label = tk.Label(
+        inner_frame,
+        text="⚠️ SPOED: ",
+        bg="#ff4444",
+        fg="white",
+        font=("Arial", 10, "bold"),
+        anchor="w",
+        wraplength=250
+    )
+    root.spoed_warning_label.pack(side=tk.LEFT, padx=(5, 5), fill=tk.BOTH, expand=True)
+
+    # Close button for SPOED warning
+    root.spoed_close_btn = tk.Button(
+        inner_frame,
+        text="✕",
+        bg="#ff4444",
+        fg="white",
+        font=("Arial", 12, "bold"),
+        bd=0,
+        highlightthickness=0,
+        activebackground="#ff6666",
+        activeforeground="white",
+        padx=5,
+        pady=2,
+        command=lambda: hide_spoed_warning()
+    )
+    root.spoed_close_btn.pack(side=tk.RIGHT, padx=(5, 5))
+
+    # Track dismissed SPOED projects
+    root.dismissed_spoed_projects = set()
+    root.current_spoed_project = None
+
+    def show_spoed_warning(project_name):
+        """Show SPOED warning for a specific project"""
+        if project_name not in root.dismissed_spoed_projects:
+            root.current_spoed_project = project_name
+            root.spoed_warning_label.config(text=f"⚠️ SPOED: {project_name}")
+            # Pack with fixed width
+            root.spoed_warning_frame.pack(side=tk.LEFT, padx=(10, 0), fill=tk.Y)
+            root.spoed_warning_frame.pack_propagate(False)  # Maintain fixed size
+            print(f"[SPOED WARNING] Showing warning for project: {project_name}")
+
+    def hide_spoed_warning():
+        """Hide the current SPOED warning and mark it as dismissed"""
+        if root.current_spoed_project:
+            root.dismissed_spoed_projects.add(root.current_spoed_project)
+            print(f"[SPOED WARNING] Dismissed warning for project: {root.current_spoed_project}")
+        root.spoed_warning_frame.pack_forget()
+        root.current_spoed_project = None
+
+    # Store functions for external access
+    root.show_spoed_warning = show_spoed_warning
+    root.hide_spoed_warning = hide_spoed_warning
+
     # Open the first panel by default
     open_panel_idx(0)
     # Ensure frame backgrounds are set correctly at startup

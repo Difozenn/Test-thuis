@@ -1,6 +1,16 @@
 import os
 import sys
 import time
+import atexit
+import signal
+
+# Import Windows shutdown handler if available
+try:
+    from windows_shutdown import WindowsShutdownHandler
+    windows_shutdown_available = True
+except ImportError:
+    windows_shutdown_available = False
+    print("[APP] Windows shutdown handler not available")
 
 # Debug mode check
 DEBUG = os.environ.get('BARCODEMATCH_DEBUG', '').lower() == 'true'
@@ -33,6 +43,7 @@ class BarcodeMatchApp:
         self.db_connection_status = "Niet verbonden"
         self.db_connection_status_color = "red"
         self._db_status_callbacks = []
+        self._shutdown_called = False  # Prevent multiple shutdown calls
 
         # Initialize panels lazily - only create when needed
         self.panels = {}
@@ -50,6 +61,8 @@ class BarcodeMatchApp:
         # Create menu and start background services
         create_menu(self.root, self)
         self._start_db_connection_check()
+        # Delay SPOED monitoring slightly to ensure menu is ready
+        self.root.after(1000, self._start_spoed_monitoring)
         
         # Pre-load critical panels in background
         if not skip_preload:
@@ -126,6 +139,175 @@ class BarcodeMatchApp:
                 cb(self.db_connection_status, self.db_connection_status_color)
             except Exception as e:
                 print(f'[DB STATUS ERROR] Callback failed: {e}')
+
+    def _check_for_spoed_projects(self, logs_data, current_user):
+        """Check logs for SPOED projects that are OPEN but not AFGEMELD for current user"""
+        open_projects = {}  # Track projects with OPEN events
+        closed_projects = set()  # Track projects that have been AFGEMELD
+
+        # First pass: identify all projects and their states for this user
+        for log in logs_data:
+            # Skip if not a dict
+            if not isinstance(log, dict):
+                continue
+
+            # Check if this log is for the current user
+            user = log.get('user') or ''
+            if user.upper() != current_user.upper():
+                continue
+
+            project = log.get('project', '')
+            if not project:
+                continue
+
+            event = log.get('event') or ''
+            event_upper = event.upper()
+
+            # Track OPEN and AFGEMELD events
+            if event_upper == 'OPEN':
+                if project not in open_projects:
+                    open_projects[project] = True
+            elif event_upper == 'AFGEMELD':
+                closed_projects.add(project)
+
+        # Second pass: find SPOED projects that are OPEN but not AFGEMELD
+        active_spoed_projects = []
+        for project in open_projects:
+            # Skip if project has been closed (AFGEMELD)
+            if project in closed_projects:
+                continue
+
+            # Check if project name contains SPOED patterns
+            if self._is_spoed_project(project):
+                active_spoed_projects.append(project)
+                print(f'[SPOED MONITOR] Found active SPOED project (OPEN, not AFGEMELD): {project}')
+
+        return active_spoed_projects
+
+    def _is_spoed_project(self, project_name):
+        """Check if project name contains SPOED patterns"""
+        if not project_name:
+            return False
+
+        # Convert to uppercase for case-insensitive matching
+        project_upper = project_name.upper()
+
+        # Check for SPOED patterns
+        spoed_patterns = ['_SPOED_', '_SPOED', 'SPOED_', 'SPOED']
+        for pattern in spoed_patterns:
+            if pattern in project_upper:
+                return True
+
+        return False
+
+    def _start_spoed_monitoring(self):
+        """Start background monitoring for SPOED projects"""
+        def monitor_spoed():
+            import time
+            import requests
+
+            print('[SPOED MONITOR] Starting monitoring loop...')
+
+            # Initial check after 3 seconds to test quickly
+            time.sleep(3)
+
+            while True:
+                try:
+
+                    # Check if app is still running
+                    if self._shutdown_called:
+                        break
+
+                    # Get current configuration
+                    config = load_config()
+                    if not config.get('database_enabled', True):
+                        print('[SPOED MONITOR] Database disabled, skipping check')
+                        time.sleep(15)
+                        continue
+
+                    # Get current user
+                    current_user = config.get('user', '')
+                    if not current_user:
+                        print('[SPOED MONITOR] No user configured, skipping check')
+                        time.sleep(15)
+                        continue
+
+                    print(f'[SPOED MONITOR] Checking for SPOED projects for user: {current_user}')
+
+                    # Get API URL
+                    api_url = config.get('api_url', 'http://localhost:5001/log')
+                    logs_url = api_url.replace('/log', '/logs')
+
+                    # Fetch logs
+                    response = requests.get(logs_url,
+                                          params={'user': current_user},
+                                          timeout=2,
+                                          proxies={"http": None, "https": None})
+
+                    if response.status_code == 200:
+                        logs_data = response.json()
+
+                        # Count relevant entries for debugging
+                        user_logs = [log for log in logs_data
+                                   if isinstance(log, dict)
+                                   and (log.get('user') or '').upper() == current_user.upper()]
+
+                        open_events = [log for log in user_logs
+                                     if (log.get('event') or '').upper() == 'OPEN']
+
+                        afgemeld_events = [log for log in user_logs
+                                         if (log.get('event') or '').upper() == 'AFGEMELD']
+
+                        print(f'[SPOED MONITOR] User {current_user}: {len(open_events)} OPEN, {len(afgemeld_events)} AFGEMELD (from {len(user_logs)} user logs, {len(logs_data)} total)')
+
+                        # Check for SPOED projects
+                        spoed_projects = self._check_for_spoed_projects(logs_data, current_user)
+
+                        if spoed_projects:
+                            print(f'[SPOED MONITOR] Active SPOED projects: {spoed_projects}')
+                            # Check if any SPOED project hasn't been dismissed
+                            for project in spoed_projects:
+                                if hasattr(self.root, 'dismissed_spoed_projects'):
+                                    if project not in self.root.dismissed_spoed_projects:
+                                        print(f'[SPOED MONITOR] Showing warning for: {project}')
+                                        # Show warning in main thread
+                                        if hasattr(self.root, 'show_spoed_warning'):
+                                            self.root.after(0, lambda p=project: self.root.show_spoed_warning(p))
+                                        else:
+                                            print('[SPOED MONITOR] Warning function not available yet')
+                                        break  # Only show one at a time
+                                    else:
+                                        print(f'[SPOED MONITOR] Project already dismissed: {project}')
+                                else:
+                                    print('[SPOED MONITOR] Dismissed projects tracking not initialized')
+                        else:
+                            print('[SPOED MONITOR] No SPOED projects found')
+                    else:
+                        print(f'[SPOED MONITOR] API request failed: {response.status_code}')
+
+                    # Wait for next check
+                    time.sleep(15)
+
+                except Exception as e:
+                    print(f'[SPOED MONITOR ERROR] {e}')
+                    import traceback
+                    traceback.print_exc()
+                    time.sleep(15)
+                    continue
+
+        # Start monitoring thread
+        monitoring_thread = threading.Thread(target=monitor_spoed, daemon=True)
+        monitoring_thread.start()
+
+        print('[SPOED MONITOR] Background monitoring started')
+
+    def test_spoed_warning(self, project_name="TEST_SPOED_PROJECT"):
+        """Manual test function to trigger SPOED warning"""
+        print(f'[SPOED TEST] Triggering warning for: {project_name}')
+        if hasattr(self.root, 'show_spoed_warning'):
+            self.root.show_spoed_warning(project_name)
+        else:
+            print('[SPOED TEST] Warning system not initialized')
 
     def _start_db_connection_check(self):
         """Start database connection checking"""
@@ -225,6 +407,34 @@ class BarcodeMatchApp:
         except Exception as e:
             print(f"[ERROR] Could not load app config: {e}")
             return {}
+    
+    def cleanup_on_shutdown(self):
+        """Cleanup method called on application shutdown, crash, or system shutdown.
+        
+        This method ensures active sessions are paused even if the application
+        crashes or Windows shuts down without proper window close.
+        """
+        if self._shutdown_called:
+            return  # Already cleaned up
+        
+        self._shutdown_called = True
+        
+        if DEBUG:
+            print('[CLEANUP] Application shutdown cleanup started')
+        
+        # Shutdown all panels that have a shutdown method
+        if hasattr(self, 'panels'):
+            for panel_name, panel in self.panels.items():
+                if panel and hasattr(panel, 'shutdown'):
+                    try:
+                        if DEBUG:
+                            print(f'[CLEANUP] Shutting down {panel_name} panel')
+                        panel.shutdown()
+                    except Exception as e:
+                        print(f"[CLEANUP ERROR] Error shutting down {panel_name}: {e}")
+        
+        if DEBUG:
+            print('[CLEANUP] Application shutdown cleanup completed')
 
     def switch_to_panel(self, panel_name):
         """Switches to the specified panel.
@@ -322,6 +532,12 @@ class BarcodeMatchApp:
                 already_on_scanner = (hasattr(self.root, '_active_panel') and 
                                     self.root._active_panel is scanner_panel)
                 
+                # IMPORTANT: Load Excel file FIRST (before pack) so session is restored
+                # This ensures the session exists when pack() triggers the resume logic
+                if DEBUG:
+                    print(f"[SWITCH] Loading Excel file before showing panel")
+                scanner_panel.load_project_excel(excel_file_path, user=user)
+                
                 if not already_on_scanner:
                     # Hide current panel if exists
                     if hasattr(self.root, '_active_panel') and self.root._active_panel is not None:
@@ -329,14 +545,14 @@ class BarcodeMatchApp:
                             print(f"[SWITCH] Hiding current panel: {type(self.root._active_panel).__name__}")
                         self.root._active_panel.pack_forget()
                     
-                    # Show Scanner panel
+                    # Show Scanner panel (session should now be restored)
                     self.root._active_panel = scanner_panel
                     if DEBUG:
-                        print(f"[SWITCH] Showing Scanner panel")
+                        print(f"[SWITCH] Showing Scanner panel (session restored: {scanner_panel.current_session_id})")
                     scanner_panel.pack(fill=tk.BOTH, expand=True)
                 else:
                     if DEBUG:
-                        print(f"[SWITCH] Already on Scanner panel, just loading Excel")
+                        print(f"[SWITCH] Already on Scanner panel, Excel loaded")
                 
                 # Update tab state if the menu system is initialized
                 if hasattr(self.root, 'active_tab'):
@@ -354,12 +570,9 @@ class BarcodeMatchApp:
                             btn.config(bg=MENU_BG, relief=tk.FLAT)
                 
                 if DEBUG:
-                    print(f"[SWITCH] Tab switching completed, now loading Excel file")
+                    print(f"[SWITCH] Tab switching completed")
             else:
                 print("[WARN] Could not find Scanner in menu options.")
-            
-            # Load the Excel file with user information
-            scanner_panel.load_project_excel(excel_file_path, user=user)
             if DEBUG:
                 print(f"[SWITCH] Successfully switched to Scanner and loaded: {excel_file_path}")
             
@@ -471,21 +684,48 @@ def run_app():
     # Schedule the main window to appear after 2 seconds
     root.after(2000, show_main_window)
     
-    # Setup cleanup on window close
+    # Setup cleanup handlers for various shutdown scenarios
+    def cleanup_handler():
+        """Handler for atexit and signal handlers"""
+        if app_instance:
+            app_instance.cleanup_on_shutdown()
+    
+    # Register cleanup for normal exit and crashes
+    atexit.register(cleanup_handler)
+    
+    # Register signal handlers for Windows system shutdown and Ctrl+C
+    def signal_handler(signum, frame):
+        if DEBUG:
+            print(f'[SIGNAL] Received signal {signum}, cleaning up...')
+        cleanup_handler()
+        sys.exit(0)
+    
+    # SIGTERM: sent by Windows on system shutdown
+    signal.signal(signal.SIGTERM, signal_handler)
+    # SIGINT: sent on Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+    # SIGBREAK: Windows-specific signal for Ctrl+Break
+    if hasattr(signal, 'SIGBREAK'):
+        signal.signal(signal.SIGBREAK, signal_handler)
+
+    # Setup Windows-specific shutdown detection
+    windows_handler = None
+    if windows_shutdown_available and sys.platform == 'win32':
+        try:
+            print("[APP] Setting up Windows shutdown handler")
+            windows_handler = WindowsShutdownHandler(cleanup_handler)
+            windows_handler.start()
+        except Exception as e:
+            print(f"[APP ERROR] Failed to setup Windows shutdown handler: {e}")
+
+    # Setup cleanup on window close (normal close button)
     def on_closing():
         if DEBUG:
-            print('[DIAG] Window closing, shutting down panels...')
+            print('[DIAG] Window closing via close button...')
         
-        # Shutdown all panels that have a shutdown method
-        if app_instance and hasattr(app_instance, 'panels'):
-            for panel_name, panel in app_instance.panels.items():
-                if panel and hasattr(panel, 'shutdown'):
-                    try:
-                        if DEBUG:
-                            print(f'[DIAG] Shutting down {panel_name} panel')
-                        panel.shutdown()
-                    except Exception as e:
-                        print(f"[DIAG ERROR] Error shutting down {panel_name}: {e}")
+        # Call cleanup method
+        if app_instance:
+            app_instance.cleanup_on_shutdown()
         
         if DEBUG:
             print('[DIAG] Destroying window...')

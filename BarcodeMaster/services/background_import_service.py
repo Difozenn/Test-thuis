@@ -16,21 +16,24 @@ import time
 import random
 import pandas as pd
 import pyodbc
+import shutil
 # PDF imports removed - now using Excel processing
 
 from config_utils import get_config
 from path_utils import get_writable_path
 # PDF database manager removed - now using Excel processing
 from .excel_processing_functions import (
-    find_excel_file_for_project, 
-    parse_excel_for_nesting, 
-    parse_excel_for_accura, 
+    find_excel_file_for_project,
+    parse_excel_for_nesting,
+    parse_excel_for_accura,
     parse_excel_for_boere,
+    parse_excel_for_afwerking,
     parse_excel_for_massief,
     parse_excel_for_handwerk,
     process_excel_for_all_types,
     generate_excel_for_accura,
     generate_excel_for_boere,
+    generate_excel_for_afwerking,
     generate_excel_for_massief,
     generate_excel_for_handwerk
 )
@@ -57,6 +60,7 @@ class BackgroundImportService:
             'nesting_imports_triggered': 0,  # New stat for nesting processing
             'accura_imports_triggered': 0,  # New stat for accura processing
             'boere_imports_triggered': 0,  # New stat for boere processing
+            'afwerking_imports_triggered': 0,  # New stat for afwerking processing
             'massief_imports_triggered': 0,  # New stat for massief processing
             'handwerk_imports_triggered': 0,  # New stat for handwerk processing
             'total_imports_triggered': 0
@@ -144,11 +148,12 @@ class BackgroundImportService:
         nesting_users = []
         accura_users = []
         boere_users = []
+        afwerking_users = []
         massief_users = []
         handwerk_users = []
-        
+
         for user in self.scanner_users:
-            if (self.scanner_user_logic_active.get(user, False) and 
+            if (self.scanner_user_logic_active.get(user, False) and
                 bool(self.scanner_user_paths.get(user))):
                 processing_type = self.scanner_user_to_processing_type_map.get(user)
                 if processing_type == 'HOPS_PROCESSING':
@@ -161,6 +166,8 @@ class BackgroundImportService:
                     accura_users.append(user)
                 elif processing_type == 'BOERE_PROCESSING':
                     boere_users.append(user)
+                elif processing_type == 'AFWERKING_PROCESSING':
+                    afwerking_users.append(user)
                 elif processing_type == 'MASSIEF_PROCESSING':
                     massief_users.append(user)
                 elif processing_type == 'HANDWERK_PROCESSING':
@@ -173,6 +180,7 @@ class BackgroundImportService:
             'nesting_processing_users': nesting_users,
             'accura_processing_users': accura_users,
             'boere_processing_users': boere_users,
+            'afwerking_processing_users': afwerking_users,
             'massief_processing_users': massief_users,
             'handwerk_processing_users': handwerk_users,
             'hops_imports_triggered': self.stats['hops_imports_triggered'],
@@ -180,6 +188,7 @@ class BackgroundImportService:
             'nesting_imports_triggered': self.stats['nesting_imports_triggered'],
             'accura_imports_triggered': self.stats['accura_imports_triggered'],
             'boere_imports_triggered': self.stats['boere_imports_triggered'],
+            'afwerking_imports_triggered': self.stats['afwerking_imports_triggered'],
             'massief_imports_triggered': self.stats['massief_imports_triggered'],
             'handwerk_imports_triggered': self.stats['handwerk_imports_triggered'],
             'total_imports_triggered': self.stats['total_imports_triggered']
@@ -354,9 +363,21 @@ class BackgroundImportService:
         elif processing_type == 'BOERE_PROCESSING':
             # For BOERE users - use unified Excel handling
             self._log(f"BOERE_PROCESSING voor user '{user_type}': triggering unified Excel processing voor '{project_code}'")
-            
+
             # Process ALL Excel users when any Excel user scans
             # This ensures ACCURA/BOERE get processed and Excel files are generated
+            thread = threading.Thread(
+                target=self._process_all_excel_users_unified,
+                args=(user_type, project_code, event_details, timestamp, user_specific_path)
+            )
+            thread.start()
+
+        elif processing_type == 'AFWERKING_PROCESSING':
+            # For AFWERKING users - use unified Excel handling
+            self._log(f"AFWERKING_PROCESSING voor user '{user_type}': triggering unified Excel processing voor '{project_code}'")
+
+            # Process ALL Excel users when any Excel user scans
+            # This ensures AFWERKING get processed and Excel files are generated
             thread = threading.Thread(
                 target=self._process_all_excel_users_unified,
                 args=(user_type, project_code, event_details, timestamp, user_specific_path)
@@ -470,7 +491,7 @@ class BackgroundImportService:
                     
                     # Track Excel-based processing types
                     processing_type = user_to_processing_type.get(user)
-                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
+                    if processing_type in ['ACCURA_PROCESSING', 'BOERE_PROCESSING', 'AFWERKING_PROCESSING', 'NESTING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
                         if user_dir not in excel_processing_users:
                             excel_processing_users[user_dir] = {}
                         excel_processing_users[user_dir][user] = processing_type
@@ -798,7 +819,7 @@ class BackgroundImportService:
                                 'total_items': result.get('item_count', 0),
                                 'source_file': excel_file
                             }
-                        elif proc_type in ['BOERE_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
+                        elif proc_type in ['BOERE_PROCESSING', 'AFWERKING_PROCESSING', 'MASSIEF_PROCESSING', 'HANDWERK_PROCESSING']:
                             extraction_result['users'][user] = {
                                 'processing_type': proc_type,
                                 'item_count': result.get('item_count', 0),
@@ -1060,7 +1081,7 @@ class BackgroundImportService:
                             'color': result['color'],
                             'items_list': result.get('items_list', [])
                         }
-                        
+
                         # Generate Excel file for BOERE if items found
                         if result['item_count'] > 0 and result.get('items_list'):
                             try:
@@ -1076,7 +1097,34 @@ class BackgroundImportService:
                                     results[user]['generated_excel'] = excel_path
                             except Exception as e:
                                 self._log(f"[BOERE] Error generating Excel: {e}")
-                    
+
+                    elif proc_type == 'AFWERKING_PROCESSING':
+                        results[user] = {
+                            'has_work': result['item_count'] > 0,
+                            'item_count': result['item_count'],
+                            'mo_number': result['mo_number'],
+                            'so_number': result['so_number'],
+                            'customer_name': result['customer_name'],
+                            'color': result['color'],
+                            'items_list': result.get('items_list', [])
+                        }
+
+                        # Generate Excel file for AFWERKING if items found
+                        if result['item_count'] > 0 and result.get('items_list'):
+                            try:
+                                excel_path = generate_excel_for_afwerking(
+                                    result['items_list'],
+                                    result['mo_number'],
+                                    result['so_number'],
+                                    result['customer_name'],
+                                    project_code_to_log  # Pass the project name
+                                )
+                                if excel_path:
+                                    self._log(f"[AFWERKING] Generated Excel file: {excel_path}")
+                                    results[user]['generated_excel'] = excel_path
+                            except Exception as e:
+                                self._log(f"[AFWERKING] Error generating Excel: {e}")
+
                     elif proc_type == 'MASSIEF_PROCESSING':
                         results[user] = {
                             'has_work': result['item_count'] > 0,
@@ -1166,6 +1214,10 @@ class BackgroundImportService:
                                 item_count = results[user]['item_count']
                                 self._log(f"[UNIFIED_EXCEL] BOERE callback: {item_count} items")
                                 self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
+                            elif processing_type == 'AFWERKING_PROCESSING':
+                                item_count = results[user]['item_count']
+                                self._log(f"[UNIFIED_EXCEL] AFWERKING callback: {item_count} items")
+                                self.log_callback(f"BACKGROUND_WORK_FOUND:{project_code_to_log}:{user}:{item_count}")
                             elif processing_type == 'MASSIEF_PROCESSING':
                                 item_count = results[user]['item_count']
                                 self._log(f"[UNIFIED_EXCEL] MASSIEF callback: {item_count} items")
@@ -1248,6 +1300,10 @@ class BackgroundImportService:
                                 data_open['aantal_sides'] = int(result_data['aantal_sides'])
                         elif processing_type == 'BOERE_PROCESSING':
                             # Add boere counts
+                            if result_data.get('item_count'):
+                                data_open['item_count'] = int(result_data['item_count'])
+                        elif processing_type == 'AFWERKING_PROCESSING':
+                            # Add afwerking counts
                             if result_data.get('item_count'):
                                 data_open['item_count'] = int(result_data['item_count'])
                         elif processing_type == 'MASSIEF_PROCESSING':
@@ -1402,6 +1458,10 @@ class BackgroundImportService:
                         if self.log_callback:
                             self.log_callback(f"BACKGROUND_NO_EXCEL_FILE:{project_code_to_log}:{user}")
             
+            # Archive Excel file if enabled and NESTING processing was involved
+            if 'NESTING' in excel_processors and excel_file:
+                self._archive_excel_if_enabled(excel_file, project_code_to_log)
+
             # Send completion message when ALL users are truly done
             self._log(f"[UNIFIED_EXCEL] Completed unified Excel processing for project '{project_code_to_log}'")
             if self.log_callback:
@@ -2050,6 +2110,70 @@ class BackgroundImportService:
             self.logger.error(f"{processing_type} error: {e}")
             import traceback
             traceback.print_exc()
+
+    def _archive_excel_if_enabled(self, excel_file_path, project_code):
+        """Archive Excel file if archiving is enabled for NESTING processing."""
+        try:
+            # Load archive configuration
+            config = self._load_settings_from_api()
+
+            archive_enabled = config.get('nesting_archive_enabled', False)
+            archive_directory = config.get('nesting_archive_directory', '')
+            archive_mode = config.get('nesting_archive_mode', 'copy')  # 'copy' or 'move'
+
+            if not archive_enabled:
+                self._log(f"[ARCHIVE] Archiving disabled, skipping archive for {excel_file_path}")
+                return
+
+            if not archive_directory:
+                self._log(f"[ARCHIVE] Archive directory not configured, skipping archive")
+                return
+
+            if not os.path.exists(excel_file_path):
+                self._log(f"[ARCHIVE] Excel file not found: {excel_file_path}")
+                return
+
+            # Create "ARCHIEF" subdirectory within the archive directory
+            archief_dir = os.path.join(archive_directory, "ARCHIEF")
+
+            if not os.path.exists(archief_dir):
+                try:
+                    os.makedirs(archief_dir)
+                    self._log(f"[ARCHIVE] Created ARCHIEF directory: {archief_dir}")
+                except Exception as e:
+                    self._log(f"[ARCHIVE] Failed to create ARCHIEF directory: {e}")
+                    return
+
+            # Generate archive filename with date and timestamp
+            original_filename = os.path.basename(excel_file_path)
+            date_stamp = datetime.now().strftime("%Y%m%d")
+            time_stamp = datetime.now().strftime("%H%M%S")
+            base_name, ext = os.path.splitext(original_filename)
+            archive_filename = f"{base_name}_{project_code}_{date_stamp}_{time_stamp}{ext}"
+            archive_path = os.path.join(archief_dir, archive_filename)
+
+            # Archive the file based on mode
+            try:
+                if archive_mode == 'move':
+                    # Move the file to archive
+                    shutil.move(excel_file_path, archive_path)
+                    self._log(f"[ARCHIVE] Successfully MOVED Excel file to archive:")
+                    self._log(f"[ARCHIVE]   From: {excel_file_path}")
+                    self._log(f"[ARCHIVE]   To: {archive_path}")
+                else:
+                    # Copy the file to archive
+                    shutil.copy2(excel_file_path, archive_path)
+                    self._log(f"[ARCHIVE] Successfully COPIED Excel file to archive:")
+                    self._log(f"[ARCHIVE]   From: {excel_file_path}")
+                    self._log(f"[ARCHIVE]   To: {archive_path}")
+
+            except Exception as e:
+                self._log(f"[ARCHIVE] Failed to archive file: {e}")
+
+        except Exception as e:
+            self._log(f"[ARCHIVE] Error in archive process: {e}")
+            import traceback
+            self._log(traceback.format_exc())
 
     def _update_project_metadata(self, project_code, mo_number, so_number, customer_name, color=None):
         """Update project metadata in database."""

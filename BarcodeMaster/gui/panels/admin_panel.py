@@ -994,14 +994,15 @@ class AdminPanel(tk.Frame):
         self.scanner_panel_open_event_user_logic_active = config.get('scanner_panel_open_event_user_logic_active', {})
         self.scanner_user_to_processing_type_map = config.get('scanner_user_to_processing_type_map', {})
         self.available_processing_types = [
-            "GEEN_PROCESSING", 
-            "MDB_PROCESSING", 
-            "HOPS_PROCESSING", 
+            "GEEN_PROCESSING",
+            "MDB_PROCESSING",
+            "HOPS_PROCESSING",
             "NESTING_PROCESSING",
             "MASSIEF_PROCESSING",
             "HANDWERK_PROCESSING",
-            "ACCURA_PROCESSING", 
-            "BOERE_PROCESSING"
+            "ACCURA_PROCESSING",
+            "BOERE_PROCESSING",
+            "AFWERKING_PROCESSING"
         ]
         
         # Build user list

@@ -14,10 +14,21 @@ from datetime import datetime
 from PIL import Image, ImageTk
 from config_utils import get_config_path, load_config as _load_full_config, update_config as _save_full_config
 
+# Import session manager for crash recovery
+try:
+    from session_manager import SessionManager
+    session_manager_available = True
+except ImportError:
+    session_manager_available = False
+    print("[SCANNER] Session manager not available - crash recovery disabled")
+
 class ScannerPanel(ttk.Frame):
     def __init__(self, parent, main_app, **kwargs):
         super().__init__(parent, **kwargs)
         self.main_app = main_app # Store main_app for later use
+
+        # Initialize session manager for crash recovery
+        self.session_manager = SessionManager() if session_manager_available else None
 
         # --- Variables ---
         self.barcode_data = {}
@@ -57,6 +68,19 @@ class ScannerPanel(ttk.Frame):
         self.build_tab()
         self._load_config()
         self._on_scanner_type_change() # Set initial UI state
+
+        # Check for crash recovery before checking orphaned sessions
+        if self.session_manager:
+            try:
+                # Check if we crashed last time
+                if self.session_manager.check_crash_recovery():
+                    print("[SCANNER] Crash detected - recovering session")
+                    self.session_manager.recover_session(self)
+                # Create lock file for this instance
+                self.session_manager.create_lock()
+            except Exception as e:
+                print(f"[SCANNER] Error during crash recovery check: {e}")
+
         self._check_and_cleanup_orphaned_sessions() # Check for orphaned sessions on startup
 
     def build_tab(self):
@@ -466,7 +490,10 @@ class ScannerPanel(ttk.Frame):
                 messagebox.showerror("Configuratiefout", "API URL niet geconfigureerd.")
                 return
             
-            user = self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
+            # PRIORITY 1: Use active_user if available (set when project was loaded)
+            # PRIORITY 2: Extract from file path
+            # PRIORITY 3: Fallback to config user
+            user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
             
             # First, end the current session if there is one
             if self.current_session_id:
@@ -585,9 +612,6 @@ class ScannerPanel(ttk.Frame):
             # Log current session state
             self._log(f"[DEBUG] _load_excel_data - current session: {self.current_session_id}, paused: {self.session_paused}")
             
-            # Start session when Excel file is loaded (user begins working)
-            self._start_session_for_excel_work(file_path)
-            
             path_to_load = file_path
             potential_updated_path = self._generate_updated_path(file_path)
             if potential_updated_path and os.path.exists(potential_updated_path):
@@ -693,6 +717,11 @@ class ScannerPanel(ttk.Frame):
             # After loading, immediately save to ensure the loaded data (even from original) is in an _updated file if changes occur
             # Or, only save when a change actually occurs. Let's opt for saving on change.
             # self._save_updated_excel() # Consider if initial save is needed or only on change.
+            
+            # Start session AFTER Excel data is loaded (user begins working)
+            # This ensures barcode_data is populated with the correct item count
+            self._start_session_for_excel_work(file_path)
+            
         except FileNotFoundError:
             messagebox.showerror("Fout", f"Bestand niet gevonden: {file_path}")
             self._log(f"[FOUT] Bestand niet gevonden: {file_path}", "error")
@@ -746,10 +775,23 @@ class ScannerPanel(ttk.Frame):
                 if not api_url:
                     return
                 
-                # Determine user from file path (e.g., C:/BOERE/... -> BOERE)
-                user = self._determine_user_from_path(excel_file_path)
-                if not user:
-                    user = config.get('user', 'NESTING')  # Fallback
+                # PRIORITY 1: Use active_user if set (from database panel double-click)
+                # PRIORITY 2: Determine user from file path (e.g., C:/BOERE/... -> BOERE)
+                # PRIORITY 3: Fallback to config user
+                user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_file_path) or config.get('user', 'NESTING')
+                
+                # Log which user source was used
+                if getattr(self, 'active_user', None):
+                    self._log(f"[DEBUG] Using active_user from database panel: {user}")
+                elif self._determine_user_from_path(excel_file_path):
+                    self._log(f"[DEBUG] Using user from file path: {user}")
+                else:
+                    self._log(f"[DEBUG] Using fallback user from config: {user}")
+                
+                # Normalize user name: remove spaces and special characters for session ID
+                # This prevents issues with session IDs containing spaces
+                user_normalized = user.replace(' ', '_') if user else user
+                self._log(f"[DEBUG] Normalized user for session: {user_normalized}")
 
                 # Extract project from filename
                 project_name = self._extract_project_from_filename(excel_file_path)
@@ -767,7 +809,7 @@ class ScannerPanel(ttk.Frame):
 
                         self._log(f"[DEBUG] Current session project: '{session_project}', Loading project: '{project_name}'")
 
-                        if session_project == project_name and session_user == user:
+                        if session_project == project_name and session_user == user_normalized:
                             # Same project, just resume the existing session
                             self._log(f"[DEBUG] Session matches current project, resuming: {self.current_session_id}")
                             if self.session_paused:
@@ -785,7 +827,7 @@ class ScannerPanel(ttk.Frame):
 
                 # Check if there's an existing paused session for this project/user
                 # This handles the case when switching from database panel with BEZIG project
-                existing_session = self._check_for_existing_session(api_url, user, project_name)
+                existing_session = self._check_for_existing_session(api_url, user_normalized, project_name)
                 
                 if existing_session:
                     # Resume the existing session
@@ -804,33 +846,58 @@ class ScannerPanel(ttk.Frame):
                 # No existing session, create a new one
                 self.session_start_time = datetime.now()
                 # Include project in session_id to match what the API expects
+                # Sanitize project name for session_id: remove special characters
                 if project_name:
-                    self.current_session_id = f"{user}_{project_name}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                    # Replace special characters with underscores for session_id
+                    import re
+                    project_sanitized = re.sub(r'[^\w\-]', '_', project_name)
+                    # Remove multiple underscores and trim
+                    project_sanitized = re.sub(r'_+', '_', project_sanitized).strip('_')
+                    self.current_session_id = f"{user_normalized}_{project_sanitized}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 else:
-                    self.current_session_id = f"{user}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                    self.current_session_id = f"{user_normalized}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 self.session_item_count = 0
                 self.session_paused = False
                 self.pause_start_time = None
                 self.total_pause_duration = 0
                 
                 self._log(f"[DEBUG] Created new session: {self.current_session_id}")
-                
+
+                # Save session state for crash recovery
+                if self.session_manager:
+                    try:
+                        session_data = {
+                            'session_id': self.current_session_id,
+                            'user': user,
+                            'project': project_name if project_name else 'Unknown',
+                            'file_path': excel_file_path,
+                            'start_time': self.session_start_time.isoformat(),
+                            'paused': False,
+                            'item_count': len(getattr(self, 'barcode_data', {}))
+                        }
+                        self.session_manager.save_session(session_data)
+                    except Exception as e:
+                        print(f"[SCANNER] Error saving session state: {e}")
+
                 # Send session start event
                 data = {
-                    'session_id': self.current_session_id,
-                    'user': user,
+                    'event': 'XLSX_UPDATED',  # Changed from session_type to event
+                    'user': user,  # Use original user name with spaces for API
+                    'project': project_name if project_name else 'Unknown',
+                    'file_path': excel_file_path,  # Add the file path
+                    'item_count': len(getattr(self, 'barcode_data', {})),  # Number of items in Excel
                     'timestamp': self.session_start_time.isoformat(),
-                    'session_type': 'XLSX_UPDATED',
-                    'item_count': len(getattr(self, 'barcode_data', {}))  # Number of items in Excel
+                    'session_id': self.current_session_id  # Include session_id for tracking
                 }
-                
-                if project_name:
-                    data['project'] = project_name
                 
                 # Make API call in background thread
                 def start_session_api():
                     try:
-                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
+                        endpoint = api_url.replace('/log', '/session/xlsx_updated')
+                        self._log(f"[DEBUG] Sending session start to: {endpoint}")
+                        self._log(f"[DEBUG] Session data: {json.dumps(data, indent=2)}")
+                        
+                        response = requests.post(endpoint,
                                                json=data, timeout=3, proxies={"http": None, "https": None})
                         if response.ok:
                             result = response.json()
@@ -843,8 +910,14 @@ class ScannerPanel(ttk.Frame):
                                 self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
                         else:
                             self._log(f"Failed to start XLSX session: HTTP {response.status_code}")
+                            self._log(f"[DEBUG] Response text: {response.text}")
+                            # Log the exact data that was sent for debugging
+                            self._log(f"[DEBUG] Request URL: {endpoint}")
+                            self._log(f"[DEBUG] Request data: {json.dumps(data, indent=2)}")
                     except Exception as e:
                         self._log(f"Failed to start XLSX session: {e}")
+                        import traceback
+                        self._log(f"[DEBUG] Traceback: {traceback.format_exc()}")
                 
                 threading.Thread(target=start_session_api, daemon=True).start()
                         
@@ -889,13 +962,33 @@ class ScannerPanel(ttk.Frame):
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
                             # Find project by matching file path (Windows path normalization)
+                            # Normalize current file path
                             normalized_file_path = file_path.replace('\\', '/')
+                            
+                            # Generate alternate path formats for matching
+                            # If current path is UNC, also try drive letter version
+                            # If current path is drive letter, also try UNC version
+                            alternate_paths = [normalized_file_path]
+                            
+                            if file_path.startswith('\\\\'):
+                                # Current path is UNC, try to convert to drive letter
+                                # Check hardcoded mappings
+                                if '\\\\172.30.2.54\\vlecad' in file_path:
+                                    drive_path = file_path.replace('\\\\172.30.2.54\\vlecad', 'Y:')
+                                    alternate_paths.append(drive_path.replace('\\', '/'))
+                            elif len(file_path) > 1 and file_path[1] == ':':
+                                # Current path is drive letter, convert to UNC
+                                unc_path = self._convert_to_unc_path(file_path)
+                                if unc_path:
+                                    alternate_paths.append(unc_path.replace('\\', '/'))
+                            
                             for log_entry in logs_data:
                                 if isinstance(log_entry, dict) and 'file_path' in log_entry and 'project' in log_entry:
                                     log_file_path = log_entry['file_path']
                                     if log_file_path:
                                         normalized_log_path = log_file_path.replace('\\', '/')
-                                        if normalized_log_path == normalized_file_path:
+                                        # Match against any of the alternate path formats
+                                        if normalized_log_path in alternate_paths:
                                             return log_entry['project']
                                             
                             # Priority 2: Match by filename in file_path field
@@ -1063,6 +1156,26 @@ class ScannerPanel(ttk.Frame):
             # Always set pause_start_time when pausing
             if not self.pause_start_time:
                 self.pause_start_time = datetime.now()
+
+            # Update session state file to show paused
+            if self.session_manager:
+                try:
+                    excel_path = self.excel_file_path_var.get()
+                    user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or 'UNKNOWN'
+                    project = self._extract_project_from_filename(excel_path)
+
+                    session_data = {
+                        'session_id': self.current_session_id,
+                        'user': user,
+                        'project': project,
+                        'file_path': excel_path,
+                        'start_time': self.session_start_time.isoformat() if self.session_start_time else None,
+                        'paused': True,
+                        'pause_time': self.pause_start_time.isoformat()
+                    }
+                    self.session_manager.save_session(session_data)
+                except Exception as e:
+                    print(f"[SCANNER] Error updating session state on pause: {e}")
             
             try:
                 config_file_path = get_config_path()
@@ -1073,13 +1186,16 @@ class ScannerPanel(ttk.Frame):
                     api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
                         # Get user and project for the pause event
-                        user = self._determine_user_from_path(self.excel_file_path_var.get()) or config.get('user', 'UNKNOWN')
-                        project = self._extract_project_from_filename(self.excel_file_path_var.get())
+                        # PRIORITY 1: Use active_user if available (set when project was loaded)
+                        # PRIORITY 2: Extract from file path
+                        excel_path = self.excel_file_path_var.get()
+                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
+                        project = self._extract_project_from_filename(excel_path)
                         
                         data = {
                             'session_id': self.current_session_id,
                             'timestamp': self.pause_start_time.isoformat(),
-                            'user': user,
+                            'user': user,  # Use original user name with spaces for API
                             'project': project
                         }
                         
@@ -1096,15 +1212,22 @@ class ScannerPanel(ttk.Frame):
                                 
                                 if response.ok:
                                     response_data = response.json()
-                                    
+
                                     # Check if session was already paused
                                     if response_data.get('already_paused'):
                                         print(f"[PAUSE_API] Session was already paused, skipping SESSION_PAUSE event")
                                         self._log(f"Session was already paused: {self.current_session_id}")
+                                        # Clear session file since it's safely paused
+                                        if self.session_manager:
+                                            self.session_manager.clear_session()
                                         return  # Don't send duplicate SESSION_PAUSE event
-                                    
+
                                     print(f"[PAUSE_API] Session pause successful")
                                     self._log(f"Session paused: {self.current_session_id}")
+
+                                    # Clear session file since it's safely paused
+                                    if self.session_manager:
+                                        self.session_manager.clear_session()
                                     
                                     # Check if project has been marked as AFGEMELD before sending SESSION_PAUSE
                                     check_data = {
@@ -1113,12 +1236,7 @@ class ScannerPanel(ttk.Frame):
                                     }
                                     should_send_pause = True
                                     try:
-                                        check_response = requests.get(
-                                            api_url.replace('/log', '/project/status'),
-                                            params=check_data,
-                                            timeout=1,
-                                            proxies={"http": None, "https": None}
-                                        )
+                                        check_response = requests.get(api_url.replace('/log', '/project/status'), params=check_data, timeout=1, proxies={"http": None, "https": None})
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
@@ -1134,7 +1252,7 @@ class ScannerPanel(ttk.Frame):
                                         pause_timestamp = self.pause_start_time.isoformat() if self.pause_start_time else datetime.now().isoformat()
                                         log_data = {
                                             'event': 'SESSION_PAUSE',
-                                            'user': user,
+                                            'user': user,  # Use original user name with spaces for API
                                             'project': project,
                                             'session_id': self.current_session_id,
                                             'details': f'Session paused - panel hidden',
@@ -1205,8 +1323,12 @@ class ScannerPanel(ttk.Frame):
                     api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
                         # Get user and project for the resume event
-                        user = self._determine_user_from_path(self.excel_file_path_var.get()) or config.get('user', 'UNKNOWN')
-                        project = self._extract_project_from_filename(self.excel_file_path_var.get())
+                        # PRIORITY 1: Use active_user if available (set when project was loaded)
+                        # PRIORITY 2: Extract from file path
+                        excel_path = self.excel_file_path_var.get()
+                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
+                        project = self._extract_project_from_filename(excel_path)
+                        print(f"[RESUME_DEBUG] User: '{user}', Project: '{project}'")
                         
                         data = {
                             'session_id': self.current_session_id,
@@ -1233,12 +1355,7 @@ class ScannerPanel(ttk.Frame):
                                         'user': user
                                     }
                                     try:
-                                        check_response = requests.get(
-                                            api_url.replace('/log', '/project/status'),
-                                            params=check_data,
-                                            timeout=1,
-                                            proxies={"http": None, "https": None}
-                                        )
+                                        check_response = requests.get(api_url.replace('/log', '/project/status'), params=check_data, timeout=1, proxies={"http": None, "https": None})
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
@@ -1329,7 +1446,7 @@ class ScannerPanel(ttk.Frame):
             user = config.get('user', 'UNKNOWN')
             
             # Query database for active sessions from this user
-            response = requests.get(f"{api_url.replace('/log', '')}/api/user/{user}/active-sessions", timeout=5, proxies={"http": None, "https": None})
+            response = requests.get(api_url.replace('/log', '/api/user/') + user + '/active-sessions', timeout=5, proxies={"http": None, "https": None})
             if response.ok and response.json().get('success'):
                 active_sessions = response.json().get('sessions', [])
                 for session in active_sessions:
@@ -1381,17 +1498,6 @@ class ScannerPanel(ttk.Frame):
         except Exception as e:
             print(f"[ScannerPanel] Unexpected error during session cleanup: {e}")
     
-    def shutdown(self):
-        """Gracefully pause session on app shutdown."""
-        print("[ScannerPanel] Shutdown called.")
-        # Pause session if active and not already paused
-        if self.current_session_id and not self.session_paused:
-            print(f"[ScannerPanel] Pausing active session on shutdown: {self.current_session_id}")
-            self._pause_session()
-            # Give the API call a moment to complete
-            import time
-            time.sleep(0.5)
-
     def _end_session(self):
         """End the current session"""
         if not self.current_session_id:
@@ -1664,11 +1770,8 @@ class ScannerPanel(ttk.Frame):
             scale_x = (canvas_width - 20) / img_width
             scale_y = (canvas_height - 20) / img_height
 
-            # Use initial scale of 1.5 or fit to window, whichever is smaller
-            initial_scale = min(1.5, scale_x, scale_y)
-
-            # But ensure minimum scale of 0.5 for very large images
-            self.current_scale = max(0.5, initial_scale)
+            # Default to fit to window
+            self.current_scale = min(scale_x, scale_y)
 
             # Display the image
             self._update_image_display()
@@ -1867,7 +1970,9 @@ class ScannerPanel(ttk.Frame):
 
         # Read API URL and username consistent with DatabasePanel
         api_url = self._ensure_url_protocol(config.get('api_url', '')) # Reads 'api_url' from the root of the config
-        current_user = config.get('user', 'BarcodeMatchUser') # Reads 'user' from the root of the config
+        # PRIORITY 1: Use active_user if available (set when project was loaded)
+        # PRIORITY 2: Fallback to config user
+        current_user = getattr(self, 'active_user', None) or config.get('user', 'BarcodeMatchUser')
         
         # Include session_id in AFGEMELD event
         db_panel = self.main_app.get_panel_by_name("Database")

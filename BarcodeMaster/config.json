@@ -13,7 +13,8 @@
         "KL GANNOMAT",
         "HANDWERK",
         "GR GANNOMAT",
-        "BOERE"
+        "BOERE",
+        "AFWERKING"
     ],
     "scanner_user_to_processing_type_map": {
         "NESTING": "NESTING_PROCESSING",
@@ -21,6 +22,7 @@
         "KL GANNOMAT": "MDB_PROCESSING",
         "ACCURA": "ACCURA_PROCESSING",
         "BOERE": "BOERE_PROCESSING",
+        "AFWERKING": "AFWERKING_PROCESSING",
         "HANDWERK": "HANDWERK_PROCESSING",
         "GR GANNOMAT": "MASSIEF_PROCESSING"
     },
@@ -33,6 +35,7 @@
         "KL GANNOMAT": true,
         "ACCURA": true,
         "BOERE": true,
+        "AFWERKING": true,
         "HANDWERK": true,
         "GR GANNOMAT": true
     },
@@ -44,6 +47,7 @@
         "KL GANNOMAT": "//WIN-D62BRA7BHMI/Server/GANNOMAT",
         "ACCURA": "//WIN-D62BRA7BHMI/Server/Rapporten",
         "BOERE": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "AFWERKING": "//WIN-D62BRA7BHMI/Server/Rapporten",
         "HANDWERK": "//WIN-D62BRA7BHMI/Server/Rapporten",
         "GR GANNOMAT": "//WIN-D62BRA7BHMI/Server/Rapporten"
     },
@@ -51,7 +55,7 @@
     "backup_enabled": true,
     "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
-    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2025-10-23 14:58:56)",
+    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2025-11-10 19:28:58)",
     "work_hours": {
         "monday": {
             "start": 7.5,
@@ -81,7 +85,6 @@
             2,
             3,
             4,
-            5,
             6
         ],
         "saturday": {
@@ -98,11 +101,16 @@
         "ACCURA": 20,
         "OPUS": 15,
         "KL GANNOMAT": 15,
-        "BOERE": 20
+        "BOERE": 20,
+        "AFWERKING": 20
     },
     "efficiency_targets_updated": "2025-07-19T22:14:03.443231",
     "efficiency_targets_created": "2025-07-06T14:34:24.492524",
     "accura_output_dir": "//WIN-D62BRA7BHMI/Server/ACCURA",
     "boere_output_dir": "//WIN-D62BRA7BHMI/Server/BOERE",
-    "scanner_panel_com_auto_connect": true
+    "afwerking_output_dir": "//WIN-D62BRA7BHMI/Server/AFWERKING",
+    "scanner_panel_com_auto_connect": true,
+    "nesting_archive_enabled": true,
+    "nesting_archive_directory": "C:/Users/Rob_v/Desktop/Stuklijsten",
+    "nesting_archive_mode": "move"
 }

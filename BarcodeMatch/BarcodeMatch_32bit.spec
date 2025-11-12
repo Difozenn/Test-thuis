@@ -8,7 +8,7 @@ block_cipher = None
 is_32bit = sys.maxsize <= 2**32
 
 # Get absolute paths
-ROOT_DIR = Path(r'C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMatch').resolve()
+ROOT_DIR = Path(r'C:\Users\opususer\Desktop\Test-thuis-main\Test-thuis-main\BarcodeMatch').resolve()
 ASSETS_DIR = ROOT_DIR / 'assets'
 GUI_DIR = ROOT_DIR / 'gui'
 PANELS_DIR = GUI_DIR / 'panels'
@@ -46,7 +46,9 @@ hiddenimports = [
     'config_utils',
     'build_info',
     'startup_utils',
-    
+    'session_manager',
+    'windows_shutdown',
+
     # GUI modules
     'gui.app',
     'gui.menu',

@@ -7,6 +7,7 @@ import requests
 from config_utils import get_config_path, update_config
 from datetime import datetime, date
 import threading
+import subprocess
 
 class DatabasePanel(ttk.Frame):
     def __init__(self, parent, main_app):
@@ -15,6 +16,7 @@ class DatabasePanel(ttk.Frame):
         self.config = self.load_config()
         self._logs_refresh_running = False
         self._logs_thread = None
+        self._all_log_items = []  # Store all log items for filtering
         self._setup_ui()
 
     def load_config(self):
@@ -120,6 +122,18 @@ class DatabasePanel(ttk.Frame):
         logs_frame = ttk.LabelFrame(frame, text="Logs", padding=10)
         logs_frame.pack(fill='both', expand=True, padx=10, pady=10)
         
+        # Create search frame
+        search_frame = ttk.Frame(logs_frame)
+        search_frame.pack(fill='x', pady=(0, 5))
+        
+        ttk.Label(search_frame, text="Zoeken:").pack(side='left', padx=(0, 5))
+        self.search_var = tk.StringVar()
+        self.search_var.trace('w', lambda *args: self._filter_logs())
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
+        search_entry.pack(side='left', padx=(0, 5))
+        
+        ttk.Button(search_frame, text="Wissen", command=self._clear_search, width=8).pack(side='left')
+        
         # Create a frame to hold the treeview and scrollbar
         tree_frame = ttk.Frame(logs_frame)
         tree_frame.pack(fill='both', expand=True)
@@ -145,6 +159,9 @@ class DatabasePanel(ttk.Frame):
         
         self.logs_tree.pack(side='left', fill='both', expand=True)
 
+        # Configure tag for SPOED projects (red background)
+        self.logs_tree.tag_configure('spoed', background='#ff6666', foreground='#ffffff')
+
         # Right-click context menu
         self.tree_menu = tk.Menu(self, tearoff=0)
         # self.tree_menu.add_command(label="Log 'OPEN' Event", command=lambda: self._log_manual_event("OPEN"))
@@ -160,6 +177,107 @@ class DatabasePanel(ttk.Frame):
         spacer.pack(expand=True, fill='both')
         copyright_label = tk.Label(self, text="© 2025 RVL", font=(None, 9), fg="#888888")
         copyright_label.pack(side=tk.BOTTOM, pady=2)
+
+    def _normalize_network_path(self, path):
+        """Normalize a network path and try to resolve it if it doesn't exist.
+        
+        Handles cases where:
+        - Path uses mapped drive (Y:\) on one PC but UNC (\\server\share\) on another
+        - Path uses forward slashes vs backslashes
+        - Path has trailing slashes or spaces
+        
+        Returns: (normalized_path, exists) tuple
+        """
+        if not path or path == 'None':
+            return None, False
+        
+        # Clean and normalize the path
+        path = path.strip()
+        normalized = os.path.normpath(path)
+        
+        print(f"[PATH DEBUG] Original: '{path}'")
+        print(f"[PATH DEBUG] Normalized: '{normalized}'")
+        print(f"[PATH DEBUG] Exists: {os.path.exists(normalized)}")
+        
+        # If the normalized path exists, return it
+        if os.path.exists(normalized):
+            return normalized, True
+        
+        # Try with raw string (sometimes helps with network paths)
+        if os.path.exists(path):
+            print(f"[PATH DEBUG] Raw path exists (normalized didn't)")
+            return path, True
+        
+        # If it's a UNC path that doesn't exist, log it
+        if normalized.startswith('\\\\'):
+            print(f"[PATH DEBUG] UNC path not accessible: {normalized}")
+            print(f"[PATH DEBUG] This may indicate network connectivity issues or unmapped network drive")
+        
+        # If it's a mapped drive that doesn't exist, log it
+        if len(normalized) > 1 and normalized[1] == ':':
+            drive_letter = normalized[0]
+            print(f"[PATH DEBUG] Mapped drive '{drive_letter}:' not accessible")
+            print(f"[PATH DEBUG] Drive may not be mapped on this computer")
+            print(f"[PATH DEBUG] Attempting to resolve {drive_letter}: to UNC path...")
+
+            try:
+                unc_root = self._get_unc_for_drive(drive_letter)
+                print(f"[PATH DEBUG] UNC lookup result for {drive_letter}: = '{unc_root}'")
+                if unc_root:
+                    rebuilt = os.path.normpath(unc_root + normalized[2:])
+                    print(f"[PATH DEBUG] Resolved {drive_letter}: to UNC '{unc_root}' -> '{rebuilt}' (exists: {os.path.exists(rebuilt)})")
+                    if os.path.exists(rebuilt):
+                        return rebuilt, True
+                else:
+                    print(f"[PATH DEBUG] No UNC mapping found for {drive_letter}: in 'net use' output")
+                    # Fallback: Try hardcoded mapping for known drives
+                    drive_mappings = {
+                        'Y': r'\\172.30.2.54\vlecad',
+                        'N': r'\\192.168.244.155\Vlecad',
+                        'G': r'\\Mintjens-VM-03\Gebruikers\boere',
+                        'J': r'\\mintjens-vm-03\DISK2',
+                        'K': r'\\192.168.244.153\Grundner-KAM',
+                        'L': r'\\mintjens-vm-03\Rapporten',
+                        'O': r'\\192.168.244.92\OptAuf',
+                        'T': r'\\192.168.244.150\Grundner'
+                    }
+                    unc_root = drive_mappings.get(drive_letter.upper())
+                    if unc_root:
+                        print(f"[PATH DEBUG] Using hardcoded mapping for {drive_letter}: -> {unc_root}")
+                        rebuilt = os.path.normpath(unc_root + normalized[2:])
+                        print(f"[PATH DEBUG] Rebuilt path: '{rebuilt}' (exists: {os.path.exists(rebuilt)})")
+                        if os.path.exists(rebuilt):
+                            return rebuilt, True
+            except Exception as e:
+                print(f"[PATH DEBUG] Error resolving mapped drive to UNC: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        return normalized, False
+
+    def _get_unc_for_drive(self, drive_letter):
+        try:
+            print(f"[PATH DEBUG] Running 'net use' to find UNC for {drive_letter}:")
+            output = subprocess.check_output(["cmd", "/C", "net use"], stderr=subprocess.STDOUT)
+            text = output.decode(errors='ignore')
+            print(f"[PATH DEBUG] net use output:\n{text}")
+            # Match pattern like "OK           Y:        \\172.30.2.54\vlecad"
+            # The pattern handles both \\server\share and \\IP\share formats
+            pattern = rf"{re.escape(drive_letter.upper())}:\s+(\\\\[\d\w\.\-]+\\[\w\-]+)"
+            print(f"[PATH DEBUG] Searching for pattern: {pattern}")
+            for line in text.splitlines():
+                m = re.search(pattern, line, re.IGNORECASE)
+                if m:
+                    print(f"[PATH DEBUG] Found match in line: {line}")
+                    unc_path = m.group(1)
+                    print(f"[PATH DEBUG] Extracted UNC: {unc_path}")
+                    return unc_path
+            print(f"[PATH DEBUG] No match found for {drive_letter}: in net use output")
+        except Exception as e:
+            print(f"[PATH DEBUG] Exception in _get_unc_for_drive: {e}")
+            import traceback
+            traceback.print_exc()
+        return None
 
     def _on_log_double_click(self, event):
         """Handles double-click events on the logs_tree with enhanced debugging."""
@@ -245,33 +363,65 @@ class DatabasePanel(ttk.Frame):
 
             # Now use the file path (either from the event or looked up from OPEN)
             if file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')):
-                # Always trust the database path - it knows where the file was saved
-                path_to_load = file_path_from_db
-                print(f"[DBLCLICK] Using Excel file path from database: {path_to_load}")
-                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
-                return
+                # Normalize the path for network compatibility
+                normalized_path, path_exists = self._normalize_network_path(file_path_from_db)
+                
+                if path_exists:
+                    path_to_load = normalized_path
+                    print(f"[DBLCLICK] Using Excel file path from database: {path_to_load}")
+                    self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
+                    return
+                else:
+                    print(f"[DBLCLICK] Excel file from DB not accessible: {file_path_from_db}")
+                    
+                    # Provide detailed diagnostic information
+                    diagnostic_info = f"Origineel pad: {file_path_from_db}\n"
+                    if normalized_path != file_path_from_db:
+                        diagnostic_info += f"Genormaliseerd pad: {normalized_path}\n"
+                    
+                    # Check if it's a network path
+                    if file_path_from_db.startswith('\\\\') or (normalized_path and normalized_path.startswith('\\\\')):
+                        diagnostic_info += "\nType: UNC netwerkpad (\\\\server\\share\\...)"
+                    elif len(file_path_from_db) > 1 and file_path_from_db[1] == ':':
+                        drive = file_path_from_db[0]
+                        diagnostic_info += f"\nType: Gekoppelde netwerkschijf ({drive}:)"
+                    
+                    messagebox.showerror(
+                        "Netwerkpad niet toegankelijk",
+                        f"Het Excel-bestand kan niet worden geopend:\n\n{diagnostic_info}\n\n"
+                        f"Mogelijke oorzaken:\n"
+                        f"• Netwerkschijf is niet gekoppeld op deze computer\n"
+                        f"• Netwerklocatie is niet toegankelijk\n"
+                        f"• Pad gebruikt een andere schijfletter op deze computer\n"
+                        f"• Bestand is verplaatst of verwijderd\n\n"
+                        f"Controleer of de netwerklocatie toegankelijk is in Windows Verkenner."
+                    )
+                    return
 
             # PRIORITY 2: If file_path_from_db is a directory, search for Excel files in it
             print(f"[DBLCLICK DEBUG] PRIORITY 2: Checking if path is directory")
-            print(f"[DBLCLICK DEBUG] Is directory: {os.path.isdir(file_path_from_db) if file_path_from_db else False}")
             
-            if file_path_from_db and file_path_from_db != 'None' and file_path_from_db.strip() and os.path.isdir(file_path_from_db):
-                print(f"[DBLCLICK] Searching for Excel in directory from database: {file_path_from_db}")
+            # Normalize directory path for network compatibility
+            normalized_dir_path, dir_exists = self._normalize_network_path(file_path_from_db)
+            print(f"[DBLCLICK DEBUG] Is directory: {os.path.isdir(normalized_dir_path) if normalized_dir_path else False}")
+            
+            if normalized_dir_path and dir_exists and os.path.isdir(normalized_dir_path):
+                print(f"[DBLCLICK] Searching for Excel in directory from database: {normalized_dir_path}")
                 # Determine the base for the Excel filename based on the user type
                 excel_filename_base = ""
                 if log_user in ['GANNOMAT', 'KL GANNOMAT']:  # Handle both variants
                     excel_filename_base = project_name
                     print(f"[DBLCLICK] User is GANNOMAT-type, using project_name '{project_name}' for Excel filename.")
                 else: # Default behavior for OPUS and others
-                    excel_filename_base = os.path.basename(os.path.normpath(file_path_from_db))
+                    excel_filename_base = os.path.basename(os.path.normpath(normalized_dir_path))
                     print(f"[DBLCLICK] User is {log_user}, using directory base name '{excel_filename_base}' for Excel filename.")
 
                 excel_filename_updated = f"{excel_filename_base}_updated.xlsx"
                 excel_filename_original = f"{excel_filename_base}.xlsx"
 
                 potential_paths = [
-                    os.path.join(file_path_from_db, excel_filename_updated),
-                    os.path.join(file_path_from_db, excel_filename_original)
+                    os.path.join(normalized_dir_path, excel_filename_updated),
+                    os.path.join(normalized_dir_path, excel_filename_original)
                 ]
                 
                 print(f"[DBLCLICK DEBUG] Potential paths to check:")
@@ -285,7 +435,7 @@ class DatabasePanel(ttk.Frame):
                         self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
                         return
 
-                print(f"[DBLCLICK] Excel not found in DB directory '{file_path_from_db}'. Proceeding to fallbacks.")
+                print(f"[DBLCLICK] Excel not found in DB directory '{normalized_dir_path}'. Proceeding to fallbacks.")
 
             # PRIORITY 3: Check config for last Excel file (especially useful for ACCURA/BOERE)
             print(f"[DBLCLICK DEBUG] PRIORITY 3: Checking config last_excel_file")
@@ -528,6 +678,74 @@ class DatabasePanel(ttk.Frame):
         self._log_sort_column = col
         for idx, (val, k) in enumerate(data):
             self.logs_tree.move(k, '', idx)
+    
+    def _is_spoed_project(self, project_name):
+        """Check if project name contains SPOED patterns"""
+        if not project_name:
+            return False
+
+        # Convert to uppercase for case-insensitive matching
+        project_upper = project_name.upper()
+
+        # Check for SPOED patterns
+        spoed_patterns = ['_SPOED_', '_SPOED', 'SPOED_', 'SPOED']
+        for pattern in spoed_patterns:
+            if pattern in project_upper:
+                return True
+
+        return False
+
+    def _clear_search(self):
+        """Clear the search field"""
+        self.search_var.set('')
+    
+    def _filter_logs(self):
+        """Filter the displayed logs based on search text"""
+        search_text = self.search_var.get().lower().strip()
+        
+        # Clear current tree
+        for item in self.logs_tree.get_children():
+            self.logs_tree.delete(item)
+        
+        # If no search text, show all items
+        if not search_text:
+            items_to_show = self._all_log_items
+        else:
+            # Filter items that match search text in any column
+            items_to_show = []
+            for item_values in self._all_log_items:
+                # Search in timestamp, status, project, details, and user columns
+                searchable_text = ' '.join(str(v).lower() for v in item_values[:5])  # First 5 columns (exclude FilePath)
+                if search_text in searchable_text:
+                    items_to_show.append(item_values)
+        
+        # Re-populate tree with filtered items
+        new_item_to_select = None
+        for item_values in items_to_show:
+            # Check if this is a SPOED project (project is 3rd column, index 2)
+            project_name = item_values[2] if len(item_values) > 2 else ''
+            is_spoed = self._is_spoed_project(project_name)
+
+            # Insert with appropriate tag for SPOED projects
+            if is_spoed:
+                new_item = self.logs_tree.insert("", "end", values=item_values, tags=('spoed',))
+            else:
+                new_item = self.logs_tree.insert("", "end", values=item_values)
+        
+        # Re-apply sort if one was active
+        if self._log_sort_column:
+            data = [(self.logs_tree.set(k, self._log_sort_column), k) for k in self.logs_tree.get_children("")]
+            def try_num(val):
+                try:
+                    return int(val)
+                except Exception:
+                    try:
+                        return float(val)
+                    except Exception:
+                        return val.lower() if isinstance(val, str) else val
+            data.sort(key=lambda t: try_num(t[0]), reverse=self._log_sort_reverse)
+            for idx, (val, k) in enumerate(data):
+                self.logs_tree.move(k, '', idx)
 
     def _pause_work_session(self, user, project):
         """Pause a work session by sending PAUZE event to the API."""
@@ -976,6 +1194,10 @@ class DatabasePanel(ttk.Frame):
                     selected_item_data = self.logs_tree.item(selected_items[0], 'values')
                 except (tk.TclError, IndexError):
                     selected_item_data = None
+            
+            # Store the current sort state
+            saved_sort_column = self._log_sort_column
+            saved_sort_reverse = self._log_sort_reverse
                 
             # Clear the tree
             for row in self.logs_tree.get_children():
@@ -983,11 +1205,13 @@ class DatabasePanel(ttk.Frame):
 
             user = self.user_var.get() if hasattr(self, 'user_var') else ''
             if error:
-                self.logs_tree.insert("", "end", values=("Fout", error, "", "", user, ""))
+                self._all_log_items = [("Fout", error, "", "", user, "")]
+                self.logs_tree.insert("", "end", values=self._all_log_items[0])
                 return # Stop further processing if there's an error fetching logs
 
             if not logs:
-                self.logs_tree.insert("", "end", values=("", "Geen logs gevonden voor gebruiker", "", "", user, ""))
+                self._all_log_items = [("", "Geen logs gevonden voor gebruiker", "", "", user, "")]
+                self.logs_tree.insert("", "end", values=self._all_log_items[0])
                 return
 
             # First pass: identify projects that have been AFGEMELD more than a day ago
@@ -1069,8 +1293,11 @@ class DatabasePanel(ttk.Frame):
             sorted_log_items = sorted(latest_events.values(), key=lambda l: datetime.fromisoformat(l['timestamp']), reverse=True)
 
             if not sorted_log_items:
-                self.logs_tree.insert("", "end", values=("", "Geen relevante logs gevonden", "", "", user, ""))
+                self._all_log_items = [("", "Geen relevante logs gevonden", "", "", user, "")]
+                self.logs_tree.insert("", "end", values=self._all_log_items[0])
             else:
+                # Store all log items for filtering
+                self._all_log_items = []
                 new_item_to_select = None
                 for log_item in sorted_log_items:
                     # Format timestamp for display if needed, e.g., to exclude microseconds
@@ -1084,7 +1311,16 @@ class DatabasePanel(ttk.Frame):
                         log_item.get('user', ''),
                         file_path
                     )
-                    new_item = self.logs_tree.insert("", "end", values=item_values)
+                    self._all_log_items.append(item_values)
+
+                    # Check if this is a SPOED project
+                    is_spoed = self._is_spoed_project(log_item.get('project', ''))
+
+                    # Insert with appropriate tag for SPOED projects
+                    if is_spoed:
+                        new_item = self.logs_tree.insert("", "end", values=item_values, tags=('spoed',))
+                    else:
+                        new_item = self.logs_tree.insert("", "end", values=item_values)
                     
                     # Check if this item matches the previously selected item
                     if (selected_item_data and len(selected_item_data) >= 3 and 
@@ -1103,6 +1339,29 @@ class DatabasePanel(ttk.Frame):
                         self.logs_tree.see(new_item_to_select)
                     except tk.TclError:
                         pass  # Selection restoration failed, but that's okay
+                
+                # Re-apply search filter if active
+                if hasattr(self, 'search_var') and self.search_var.get().strip():
+                    self._filter_logs()
+                else:
+                    # Re-apply the sort state if it was set
+                    if saved_sort_column:
+                        # Restore the sort state variables
+                        self._log_sort_column = saved_sort_column
+                        self._log_sort_reverse = saved_sort_reverse
+                        # Re-sort the tree
+                        data = [(self.logs_tree.set(k, saved_sort_column), k) for k in self.logs_tree.get_children("")]
+                        def try_num(val):
+                            try:
+                                return int(val)
+                            except Exception:
+                                try:
+                                    return float(val)
+                                except Exception:
+                                    return val.lower() if isinstance(val, str) else val
+                        data.sort(key=lambda t: try_num(t[0]), reverse=saved_sort_reverse)
+                        for idx, (val, k) in enumerate(data):
+                            self.logs_tree.move(k, '', idx)
         except tk.TclError:
             # This can happen if the widget is destroyed while a refresh is pending
             pass # Silently ignore, as the panel is being closed

@@ -183,7 +183,9 @@ hiddenimports = [
     'config_utils',
     'build_info',
     'startup_utils',
-    
+    'session_manager',
+    'windows_shutdown',
+
     # GUI modules
     'gui.app',
     'gui.menu',

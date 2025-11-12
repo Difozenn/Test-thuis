@@ -108,22 +108,110 @@ def get_sheet_name(excel_path):
         return '1 PLATEN'
 
 
+def extract_mo_number_from_excel(excel_path, sheet_name):
+    """
+    Extract MO number from cell B1 in the Excel file.
+    Note: B1 may be merged with C1:D1 (B1:D1), but reading B1 gets the merged cell value.
+
+    Args:
+        excel_path: Path to Excel file
+        sheet_name: Name of sheet to read (typically "1 PLATEN")
+
+    Returns:
+        str: MO number (e.g., "MO05491") or None if not found
+    """
+    try:
+        # Read the header section (first 5 rows) without processing
+        # Cell B1 is row index 0, column index 1 (0-indexed)
+        # Even if merged (B1:D1), the value appears in B1
+        df_header = pd.read_excel(excel_path, sheet_name=sheet_name, header=None, nrows=5)
+
+        # Check if we have at least 1 row and 2 columns
+        if len(df_header) >= 1 and len(df_header.columns) >= 2:
+            # Cell B1 is at index [0, 1]
+            cell_b1 = df_header.iloc[0, 1]
+
+            if pd.notna(cell_b1):
+                cell_value = str(cell_b1).strip()
+                print(f"[MO_NUMBER] Cell B1 contains: '{cell_value}'")
+
+                # Check if it matches MO number pattern (MO followed by 4 or 5 digits)
+                mo_match = re.search(r'(MO\d{4,5})', cell_value, re.IGNORECASE)
+                if mo_match:
+                    mo_number = mo_match.group(1).upper()
+                    print(f"[MO_NUMBER] Found MO number in cell B1: {mo_number}")
+                    return mo_number
+                else:
+                    print(f"[MO_NUMBER] Cell B1 contains '{cell_value}' but no valid MO number pattern")
+        else:
+            print(f"[MO_NUMBER] Excel sheet doesn't have enough rows/columns for cell B1")
+
+        print("[MO_NUMBER] No MO number found in cell B1")
+        return None
+
+    except Exception as e:
+        print(f"[MO_NUMBER] Error extracting MO number: {e}")
+        return None
+
+
+def extract_so_number_from_excel(excel_path, sheet_name):
+    """
+    Extract SO number from cell B2 in the Excel file.
+
+    Args:
+        excel_path: Path to Excel file
+        sheet_name: Name of sheet to read (typically "1 PLATEN")
+
+    Returns:
+        str: SO number (e.g., "S03715") or None if not found
+    """
+    try:
+        # Read the header section (first 5 rows) without processing
+        # Cell B2 is row index 1, column index 1 (0-indexed)
+        df_header = pd.read_excel(excel_path, sheet_name=sheet_name, header=None, nrows=5)
+
+        # Check if we have at least 2 rows and 2 columns
+        if len(df_header) >= 2 and len(df_header.columns) >= 2:
+            # Cell B2 is at index [1, 1]
+            cell_b2 = df_header.iloc[1, 1]
+
+            if pd.notna(cell_b2):
+                cell_value = str(cell_b2).strip()
+                # Check if it matches SO number pattern (S followed by 5 digits)
+                so_match = re.search(r'(S\d{5})', cell_value, re.IGNORECASE)
+                if so_match:
+                    so_number = so_match.group(1).upper()
+                    print(f"[SO_NUMBER] Found SO number in cell B2: {so_number}")
+                    return so_number
+                else:
+                    print(f"[SO_NUMBER] Cell B2 contains '{cell_value}' but no valid SO number pattern")
+        else:
+            print(f"[SO_NUMBER] Excel sheet doesn't have enough rows/columns for cell B2")
+
+        print("[SO_NUMBER] No SO number found in cell B2")
+        return None
+
+    except Exception as e:
+        print(f"[SO_NUMBER] Error extracting SO number: {e}")
+        return None
+
+
 def extract_color_from_excel(excel_path, sheet_name):
     """
     Extract color information from Excel file header section.
     The color is typically in the first few rows, after 'Kleur: '.
-    
+
     Args:
         excel_path: Path to Excel file
         sheet_name: Name of sheet to read
-        
+
     Returns:
         str: Color value or None if not found
     """
     try:
         # Read the header section (first 10 rows) without processing
         df_header = pd.read_excel(excel_path, sheet_name=sheet_name, header=None, nrows=10)
-        
+
         # Look for "Kleur:" in the header section
         for i in range(len(df_header)):
             for j in range(len(df_header.columns)):
@@ -137,7 +225,7 @@ def extract_color_from_excel(excel_path, sheet_name):
                             color_str = str(color_value).strip()
                             print(f"[COLOR] Found color: {color_str}")
                             return color_str
-                    
+
                     # Check same row, different columns
                     for k in range(j + 1, min(j + 5, len(df_header.columns))):
                         color_value = df_header.iloc[i, k]
@@ -146,10 +234,10 @@ def extract_color_from_excel(excel_path, sheet_name):
                             if not color_str.startswith('Unnamed'):
                                 print(f"[COLOR] Found color: {color_str}")
                                 return color_str
-                    
+
         print("[COLOR] No color found in header section")
         return None
-        
+
     except Exception as e:
         print(f"[COLOR] Error extracting color: {e}")
         return None
@@ -288,19 +376,30 @@ def parse_excel_for_nesting(excel_path):
         
         # Extract MO/SO numbers and customer from filename or sheet
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            result['so_number'] = so_match.group(1).upper()
-            
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
         # Try to extract customer name from filename (after last underscore before .xls)
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             result['customer_name'] = customer_match.group(1)
-        
+
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
         
@@ -387,15 +486,20 @@ def parse_excel_for_accura(excel_path):
         mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            result['so_number'] = so_match.group(1).upper()
-            
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             result['customer_name'] = customer_match.group(1)
-        
+
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
         
@@ -449,12 +553,68 @@ def parse_excel_for_accura(excel_path):
         }
 
 
+def get_te_bestellen_items(excel_path):
+    """
+    Extract items from '2 BESLAG' tab under 'TE BESTELLEN' section.
+    Returns list of (materiaal, naam) tuples to be excluded from BOERE count.
+    """
+    try:
+        # Check if 2 BESLAG sheet exists
+        xl = pd.ExcelFile(excel_path)
+        beslag_sheet = None
+        for sheet in xl.sheet_names:
+            if '2' in sheet and 'BESLAG' in sheet.upper():
+                beslag_sheet = sheet
+                break
+
+        if not beslag_sheet:
+            return []
+
+        # Read the BESLAG sheet
+        df_beslag = pd.read_excel(excel_path, sheet_name=beslag_sheet)
+
+        # Find TE BESTELLEN section
+        te_bestellen_start = None
+        for idx, row in df_beslag.iterrows():
+            row_text = ' '.join([str(v) for v in row.values if pd.notna(v)])
+            if 'TE BESTELLEN' in row_text.upper():
+                te_bestellen_start = idx
+                break
+
+        if te_bestellen_start is None:
+            return []
+
+        # Parse items from TE BESTELLEN section
+        # Next row after TE BESTELLEN should be the header
+        te_bestellen_items = []
+        for idx in range(te_bestellen_start + 2, len(df_beslag)):
+            row = df_beslag.iloc[idx]
+            materiaal = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ''
+            naam = str(row.iloc[1]) if pd.notna(row.iloc[1]) else ''
+
+            # Stop at empty row or other sections
+            if not materiaal or materiaal == 'nan':
+                continue
+            if 'LADE BESLAG' in materiaal or 'Beslag' == materiaal:
+                break
+
+            te_bestellen_items.append((materiaal, naam))
+
+        print(f"[BOERE] Found {len(te_bestellen_items)} items in TE BESTELLEN section")
+        return te_bestellen_items
+
+    except Exception as e:
+        print(f"[BOERE] Error reading TE BESTELLEN section: {e}")
+        return []
+
+
 def parse_excel_for_boere(excel_path):
     """
     Parse Excel file for BOERE processing.
     Look in 1 PLATEN tab at Materiaal column.
     Every row with content in Materiaal = 1 count
-    
+    EXCLUDES items that match TE BESTELLEN section in 2 BESLAG tab.
+
     Returns:
         dict with item_count, mo_number, so_number, customer_name, items_list
     """
@@ -471,13 +631,13 @@ def parse_excel_for_boere(excel_path):
                 'color': None,
                 'items_list': []
             }
-        
+
         # Find header row
         header_row = find_header_row(excel_path, sheet_name)
-        
+
         # Read Excel file with correct header row
         df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
-        
+
         result = {
             'item_count': 0,
             'mo_number': None,
@@ -486,42 +646,165 @@ def parse_excel_for_boere(excel_path):
             'color': None,
             'items_list': []  # List of items for Excel generation
         }
-        
+
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
         mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            result['so_number'] = so_match.group(1).upper()
-            
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             result['customer_name'] = customer_match.group(1)
-        
+
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
-        
+
+        # Get TE BESTELLEN items to exclude
+        te_bestellen_items = get_te_bestellen_items(excel_path)
+        excluded_count = 0
+
+        # Count Materiaal entries and collect items (excluding TE BESTELLEN matches)
+        if 'Materiaal' in df.columns:
+            for idx, row in df.iterrows():
+                if pd.notna(row['Materiaal']):
+                    materiaal = str(row['Materiaal']).strip()
+                    wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+
+                    # Check if this item is in TE BESTELLEN (should be excluded)
+                    is_te_bestellen = False
+                    for te_mat, te_naam in te_bestellen_items:
+                        if materiaal == te_mat and wand_naam == te_naam:
+                            is_te_bestellen = True
+                            excluded_count += 1
+                            print(f"[BOERE] Excluding TE BESTELLEN item: {materiaal} | {wand_naam}")
+                            break
+
+                    # Only count if NOT in TE BESTELLEN
+                    if not is_te_bestellen:
+                        result['item_count'] += 1
+
+                        # Extract Positie, Lengte, Breedte, and Dikte for item list
+                        positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
+                        lengte = str(row.get('lengte', '')).strip() if pd.notna(row.get('lengte')) else ''
+                        breedte = str(row.get('Breedte', '')).strip() if pd.notna(row.get('Breedte')) else ''
+                        dikte = str(row.get('Dikte', '')).strip() if pd.notna(row.get('Dikte')) else ''
+
+                        # Create item dict with all information
+                        item_dict = {
+                            'positie': positie,
+                            'wand_naam': wand_naam,
+                            'lengte': lengte,
+                            'breedte': breedte,
+                            'dikte': dikte
+                        }
+                        result['items_list'].append(item_dict)
+
+        if excluded_count > 0:
+            print(f"[BOERE] Excluded {excluded_count} items matching TE BESTELLEN section")
+
+        return result
+
+    except Exception as e:
+        print(f"Error parsing Excel for BOERE: {e}")
+        traceback.print_exc()
+        return {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []
+        }
+
+
+def parse_excel_for_afwerking(excel_path):
+    """
+    Parse Excel file for AFWERKING processing.
+    Look in 1 PLATEN tab at Materiaal column.
+    Every row with content in Materiaal = 1 count
+
+    Returns:
+        dict with item_count, mo_number, so_number, customer_name, items_list
+    """
+    try:
+        # Get correct sheet name
+        sheet_name = get_sheet_name(excel_path)
+        if not sheet_name:
+            print(f"[AFWERKING] No valid sheet found in {excel_path}")
+            return {
+                'item_count': 0,
+                'mo_number': None,
+                'so_number': None,
+                'customer_name': None,
+                'color': None,
+                'items_list': []
+            }
+
+        # Find header row
+        header_row = find_header_row(excel_path, sheet_name)
+
+        # Read Excel file with correct header row
+        df = pd.read_excel(excel_path, sheet_name=sheet_name, header=header_row)
+
+        result = {
+            'item_count': 0,
+            'mo_number': None,
+            'so_number': None,
+            'customer_name': None,
+            'color': None,
+            'items_list': []  # List of items for Excel generation
+        }
+
+        # Extract MO/SO numbers and customer
+        filename = os.path.basename(excel_path)
+        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+        if mo_match:
+            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
+        customer_match = re.search(r'_([^_]+)\.xls', filename)
+        if customer_match:
+            result['customer_name'] = customer_match.group(1)
+
+        # Extract color from Excel
+        result['color'] = extract_color_from_excel(excel_path, sheet_name)
+
         # Count Materiaal entries and collect items
         if 'Materiaal' in df.columns:
             for idx, row in df.iterrows():
                 if pd.notna(row['Materiaal']):
                     result['item_count'] += 1
-                    
+
                     # Extract Positie and Wand Naam for item list
                     positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                     wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                    
+
                     # Format as "Positie - Wand Naam"
                     item_name = f"{positie} - {wand_naam}"
                     result['items_list'].append(item_name)
-            
+
         return result
-        
+
     except Exception as e:
-        print(f"Error parsing Excel for BOERE: {e}")
+        print(f"Error parsing Excel for AFWERKING: {e}")
         traceback.print_exc()
         return {
             'item_count': 0,
@@ -565,19 +848,31 @@ def process_excel_for_all_types(excel_path, processor_types):
         so_number = None
         customer_name = None
         color = None
-        
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            mo_number = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            so_number = so_match.group(1).upper()
-            
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        mo_number = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not mo_number:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                mo_number = mo_match.group(1).upper()
+                print(f"[MO_NUMBER] Fallback: Found MO number in filename: {mo_number}")
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        so_number = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not so_number:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                so_number = so_match.group(1).upper()
+                print(f"[SO_NUMBER] Fallback: Found SO number in filename: {so_number}")
+
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             customer_name = customer_match.group(1)
-            
+
         # Extract color from Excel
         color = extract_color_from_excel(excel_path, sheet_name)
         
@@ -653,20 +948,74 @@ def process_excel_for_all_types(excel_path, processor_types):
                     'color': color,
                     'items_list': []  # Add items_list for Excel generation
                 }
-                
+
+                # Get TE BESTELLEN items to exclude
+                te_bestellen_items = get_te_bestellen_items(excel_path)
+                excluded_count = 0
+
+                if 'Materiaal' in df.columns:
+                    for idx, row in df.iterrows():
+                        if pd.notna(row['Materiaal']):
+                            materiaal = str(row['Materiaal']).strip()
+                            wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
+
+                            # Check if this item is in TE BESTELLEN (should be excluded)
+                            is_te_bestellen = False
+                            for te_mat, te_naam in te_bestellen_items:
+                                if materiaal == te_mat and wand_naam == te_naam:
+                                    is_te_bestellen = True
+                                    excluded_count += 1
+                                    print(f"[BOERE] Excluding TE BESTELLEN item: {materiaal} | {wand_naam}")
+                                    break
+
+                            # Only count if NOT in TE BESTELLEN
+                            if not is_te_bestellen:
+                                result['item_count'] += 1
+
+                                # Extract all required fields as dict for Excel generation
+                                positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
+                                lengte = str(row.get('lengte', '')).strip() if pd.notna(row.get('lengte')) else ''
+                                breedte = str(row.get('Breedte', '')).strip() if pd.notna(row.get('Breedte')) else ''
+                                dikte = str(row.get('Dikte', '')).strip() if pd.notna(row.get('Dikte')) else ''
+
+                                # Create item dict with all information
+                                item_dict = {
+                                    'positie': positie,
+                                    'wand_naam': wand_naam,
+                                    'lengte': lengte,
+                                    'breedte': breedte,
+                                    'dikte': dikte
+                                }
+                                result['items_list'].append(item_dict)
+
+                if excluded_count > 0:
+                    print(f"[BOERE] Excluded {excluded_count} items matching TE BESTELLEN section")
+
+                results[proc_type] = result
+
+            elif proc_type == 'AFWERKING_PROCESSING':
+                result = {
+                    'item_count': 0,
+                    'mo_number': mo_number,
+                    'so_number': so_number,
+                    'customer_name': customer_name,
+                    'color': color,
+                    'items_list': []  # Add items_list for Excel generation
+                }
+
                 if 'Materiaal' in df.columns:
                     for idx, row in df.iterrows():
                         if pd.notna(row['Materiaal']):
                             result['item_count'] += 1
-                            
+
                             # Extract Positie and Wand Naam for item list
                             positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                             wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                            
+
                             # Format as "Positie - Wand Naam"
                             item_name = f"{positie} - {wand_naam}"
                             result['items_list'].append(item_name)
-                
+
                 results[proc_type] = result
                 
             elif proc_type == 'MASSIEF_PROCESSING':
@@ -826,14 +1175,14 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
 def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, project_name=None):
     """
     Generate Excel file for BOERE processing with item list.
-    
+
     Args:
-        items_list: List of items formatted as "Positie - Wand Naam"
+        items_list: List of dicts with positie, wand_naam, lengte, breedte, dikte
         mo_number: MO number for filename
         so_number: SO number for filename
         customer_name: Customer name for filename
         project_name: Optional project name from BarcodeMaster
-    
+
     Returns:
         Path to generated Excel file or None if failed
     """
@@ -841,31 +1190,31 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         # Get output directory from DATABASE
         import requests
         import json
-        
+
         # Load from database API - use config to get correct API URL
         from config_utils import get_config
         config = get_config()
         api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
         # Remove /log suffix if present to get base URL
         base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
-        
+
         response = requests.get(f'{base_url}/api/settings', timeout=5)
         if response.status_code != 200:
             raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
-        
+
         data = response.json()
         if not data.get('success'):
             raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
-        
+
         settings = data.get('settings', {})
         output_dir = settings.get('boere_output_dir')
         if not output_dir:
             raise Exception("boere_output_dir not configured in database settings")
-        
+
         # Normalize path
         output_dir = os.path.normpath(output_dir)
         os.makedirs(output_dir, exist_ok=True)
-        
+
         # Use project name if provided to ensure consistency
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         if project_name:
@@ -875,26 +1224,32 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
             # Fallback: use only MO number to avoid confusion
             filename = f"{mo_number}_{timestamp}.xlsx"
         output_path = os.path.join(output_dir, filename)
-        
-        # Create DataFrame with Item and Status columns
-        df = pd.DataFrame({
-            'Item': items_list,
+
+        # Create DataFrame with all columns from item dicts
+        # Items are now dicts with positie, wand_naam, lengte, breedte, dikte
+        df_data = {
+            'Positie': [item['positie'] for item in items_list],
+            'Wand Naam': [item['wand_naam'] for item in items_list],
+            'Lengte': [item['lengte'] for item in items_list],
+            'Breedte': [item['breedte'] for item in items_list],
+            'Dikte': [item['dikte'] for item in items_list],
             'Status': [''] * len(items_list)  # Empty status column
-        })
-        
+        }
+        df = pd.DataFrame(df_data)
+
         # Save to Excel with metadata if project_name provided
         if project_name:
             with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
                 # Main data sheet
                 df.to_excel(writer, sheet_name='Items', index=False)
-                
+
                 # Add metadata sheet
                 metadata_df = pd.DataFrame({
                     'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
                     'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
                 })
                 metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
-                
+
                 # Hide the metadata sheet
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
@@ -902,12 +1257,101 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
-        
+
         print(f"[BOERE] Excel file generated: {output_path}")
         return output_path
-        
+
     except Exception as e:
         print(f"Error generating Excel for BOERE: {e}")
+        traceback.print_exc()
+        return None
+
+
+def generate_excel_for_afwerking(items_list, mo_number, so_number, customer_name, project_name=None):
+    """
+    Generate Excel file for AFWERKING processing with item list.
+
+    Args:
+        items_list: List of items formatted as "Positie - Wand Naam"
+        mo_number: MO number for filename
+        so_number: SO number for filename
+        customer_name: Customer name for filename
+        project_name: Optional project name from BarcodeMaster
+
+    Returns:
+        Path to generated Excel file or None if failed
+    """
+    try:
+        # Get output directory from DATABASE
+        import requests
+        import json
+
+        # Load from database API - use config to get correct API URL
+        from config_utils import get_config
+        config = get_config()
+        api_url = config.get('api_url', 'http://localhost:5000').rstrip('/')
+        # Remove /log suffix if present to get base URL
+        base_url = api_url.replace('/log', '') if api_url.endswith('/log') else api_url
+
+        response = requests.get(f'{base_url}/api/settings', timeout=5)
+        if response.status_code != 200:
+            raise Exception(f"Failed to load settings from database API: HTTP {response.status_code}")
+
+        data = response.json()
+        if not data.get('success'):
+            raise Exception(f"Database API returned error: {data.get('error', 'Unknown error')}")
+
+        settings = data.get('settings', {})
+        output_dir = settings.get('afwerking_output_dir')
+        if not output_dir:
+            raise Exception("afwerking_output_dir not configured in database settings")
+
+        # Normalize path
+        output_dir = os.path.normpath(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Use project name if provided to ensure consistency
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if project_name:
+            # Use the actual project name to prevent duplicate project issues
+            filename = f"{project_name}_{timestamp}.xlsx"
+        else:
+            # Fallback: use only MO number to avoid confusion
+            filename = f"{mo_number}_{timestamp}.xlsx"
+        output_path = os.path.join(output_dir, filename)
+
+        # Create DataFrame with Item and Status columns
+        df = pd.DataFrame({
+            'Item': items_list,
+            'Status': [''] * len(items_list)  # Empty status column
+        })
+
+        # Save to Excel with metadata if project_name provided
+        if project_name:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # Main data sheet
+                df.to_excel(writer, sheet_name='Items', index=False)
+
+                # Add metadata sheet
+                metadata_df = pd.DataFrame({
+                    'Property': ['project_name', 'mo_number', 'so_number', 'customer_name', 'created_by'],
+                    'Value': [project_name, mo_number, so_number, customer_name, 'BarcodeMaster']
+                })
+                metadata_df.to_excel(writer, sheet_name='_ProjectInfo', index=False)
+
+                # Hide the metadata sheet
+                workbook = writer.book
+                worksheet = workbook['_ProjectInfo']
+                worksheet.sheet_state = 'hidden'
+        else:
+            # Fallback to simple Excel write
+            df.to_excel(output_path, index=False, sheet_name='Items')
+
+        print(f"[AFWERKING] Excel file generated: {output_path}")
+        return output_path
+
+    except Exception as e:
+        print(f"Error generating Excel for AFWERKING: {e}")
         traceback.print_exc()
         return None
 
@@ -956,15 +1400,20 @@ def parse_excel_for_massief(excel_path):
         mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            result['so_number'] = so_match.group(1).upper()
-            
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             result['customer_name'] = customer_match.group(1)
-        
+
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
         
@@ -1134,15 +1583,20 @@ def parse_excel_for_handwerk(excel_path):
         mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
         if mo_match:
             result['mo_number'] = mo_match.group(1).upper()
-        
-        so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
-        if so_match:
-            result['so_number'] = so_match.group(1).upper()
-            
+
+        # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
+        result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract SO number from filename if not found in Excel
+        if not result['so_number']:
+            so_match = re.search(r'(S\d{5})', filename, re.IGNORECASE)
+            if so_match:
+                result['so_number'] = so_match.group(1).upper()
+
         customer_match = re.search(r'_([^_]+)\.xls', filename)
         if customer_match:
             result['customer_name'] = customer_match.group(1)
-        
+
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
         

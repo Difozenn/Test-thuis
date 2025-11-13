@@ -6538,9 +6538,13 @@ def logs_project():
         # Get work hours configuration
         work_hours_config = WORK_HOURS.copy()
         
-        # Get sessions data for this project using normalized project_id
+        # Get sessions data for this project
+        # Note: We match on exact project name, not normalized project_id
+        # This ensures REP variants are tracked separately for time calculations
+
+        # Still calculate project_id for template display purposes
         project_id = normalize_project_id(project)
-        
+
         # Get all linked sessions for this project (including via session_projects)
         c.execute('''
             SELECT DISTINCT
@@ -6563,11 +6567,10 @@ def logs_project():
                 (SELECT SUM(item_count) FROM session_projects WHERE session_id = s.session_id) as total_items_in_session
             FROM sessions s
             LEFT JOIN session_projects sp ON s.session_id = sp.session_id AND sp.project = ?
-            WHERE s.project_id = ? 
-               OR s.project = ?
+            WHERE s.project = ?
                OR sp.project = ?
             ORDER BY s.sequence_number, s.start_time ASC
-        ''', (project, project, project_id, project, project))
+        ''', (project, project, project, project))
         linked_sessions = []
         for row in c.fetchall():
             session = dict(row)

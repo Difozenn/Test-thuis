@@ -196,6 +196,45 @@ def extract_so_number_from_excel(excel_path, sheet_name):
         return None
 
 
+def extract_customer_name_from_excel(excel_path, sheet_name):
+    """
+    Extract customer name from cell B3 in the Excel file.
+
+    Args:
+        excel_path: Path to Excel file
+        sheet_name: Name of sheet to read (typically "1 PLATEN")
+
+    Returns:
+        str: Customer name or None if not found
+    """
+    try:
+        # Read the header section (first 5 rows) without processing
+        # Cell B3 is row index 2, column index 1 (0-indexed)
+        df_header = pd.read_excel(excel_path, sheet_name=sheet_name, header=None, nrows=5)
+
+        # Check if we have at least 3 rows and 2 columns
+        if len(df_header) >= 3 and len(df_header.columns) >= 2:
+            # Cell B3 is at index [2, 1]
+            cell_b3 = df_header.iloc[2, 1]
+
+            if pd.notna(cell_b3):
+                customer_name = str(cell_b3).strip()
+                if customer_name:
+                    print(f"[CUSTOMER] Found customer name in cell B3: {customer_name}")
+                    return customer_name
+                else:
+                    print(f"[CUSTOMER] Cell B3 is empty")
+        else:
+            print(f"[CUSTOMER] Excel sheet doesn't have enough rows/columns for cell B3")
+
+        print("[CUSTOMER] No customer name found in cell B3")
+        return None
+
+    except Exception as e:
+        print(f"[CUSTOMER] Error extracting customer name: {e}")
+        return None
+
+
 def extract_color_from_excel(excel_path, sheet_name):
     """
     Extract color information from Excel file header section.
@@ -483,9 +522,15 @@ def parse_excel_for_accura(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
 
         # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
         result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
@@ -496,9 +541,14 @@ def parse_excel_for_accura(excel_path):
             if so_match:
                 result['so_number'] = so_match.group(1).upper()
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            result['customer_name'] = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        result['customer_name'] = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not result['customer_name']:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                result['customer_name'] = customer_match.group(1)
 
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
@@ -649,9 +699,15 @@ def parse_excel_for_boere(excel_path):
 
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
 
         # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
         result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
@@ -662,9 +718,14 @@ def parse_excel_for_boere(excel_path):
             if so_match:
                 result['so_number'] = so_match.group(1).upper()
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            result['customer_name'] = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        result['customer_name'] = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not result['customer_name']:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                result['customer_name'] = customer_match.group(1)
 
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
@@ -767,9 +828,15 @@ def parse_excel_for_afwerking(excel_path):
 
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
 
         # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
         result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
@@ -780,9 +847,14 @@ def parse_excel_for_afwerking(excel_path):
             if so_match:
                 result['so_number'] = so_match.group(1).upper()
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            result['customer_name'] = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        result['customer_name'] = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not result['customer_name']:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                result['customer_name'] = customer_match.group(1)
 
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
@@ -869,9 +941,15 @@ def process_excel_for_all_types(excel_path, processor_types):
                 so_number = so_match.group(1).upper()
                 print(f"[SO_NUMBER] Fallback: Found SO number in filename: {so_number}")
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            customer_name = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        customer_name = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not customer_name:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                customer_name = customer_match.group(1)
+                print(f"[CUSTOMER] Fallback: Found customer name in filename: {customer_name}")
 
         # Extract color from Excel
         color = extract_color_from_excel(excel_path, sheet_name)
@@ -1397,9 +1475,15 @@ def parse_excel_for_massief(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
 
         # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
         result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
@@ -1410,9 +1494,14 @@ def parse_excel_for_massief(excel_path):
             if so_match:
                 result['so_number'] = so_match.group(1).upper()
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            result['customer_name'] = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        result['customer_name'] = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not result['customer_name']:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                result['customer_name'] = customer_match.group(1)
 
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)
@@ -1580,9 +1669,15 @@ def parse_excel_for_handwerk(excel_path):
         
         # Extract MO/SO numbers and customer
         filename = os.path.basename(excel_path)
-        mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
-        if mo_match:
-            result['mo_number'] = mo_match.group(1).upper()
+
+        # Extract MO number from Excel file (cell B1) - PRIMARY METHOD
+        result['mo_number'] = extract_mo_number_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract MO number from filename if not found in Excel
+        if not result['mo_number']:
+            mo_match = re.search(r'(MO\d{4,5})', filename, re.IGNORECASE)
+            if mo_match:
+                result['mo_number'] = mo_match.group(1).upper()
 
         # Extract SO number from Excel file (cell B2) - PRIMARY METHOD
         result['so_number'] = extract_so_number_from_excel(excel_path, sheet_name)
@@ -1593,9 +1688,14 @@ def parse_excel_for_handwerk(excel_path):
             if so_match:
                 result['so_number'] = so_match.group(1).upper()
 
-        customer_match = re.search(r'_([^_]+)\.xls', filename)
-        if customer_match:
-            result['customer_name'] = customer_match.group(1)
+        # Extract customer name from Excel file (cell B3) - PRIMARY METHOD
+        result['customer_name'] = extract_customer_name_from_excel(excel_path, sheet_name)
+
+        # Fallback: Extract customer name from filename if not found in Excel
+        if not result['customer_name']:
+            customer_match = re.search(r'_([^_]+)\.xls', filename)
+            if customer_match:
+                result['customer_name'] = customer_match.group(1)
 
         # Extract color from Excel
         result['color'] = extract_color_from_excel(excel_path, sheet_name)

@@ -902,10 +902,11 @@ class ScannerPanel(ttk.Frame):
                         if response.ok:
                             result = response.json()
                             if result.get('session_id'):
-                                # Update to use the API's session_id
-                                old_session_id = self.current_session_id
-                                self.current_session_id = result['session_id']
-                                self._log(f"Started XLSX session - API session_id: {self.current_session_id} (was: {old_session_id})")
+                                # Log the API's session_id but keep our local one to maintain consistency
+                                # This prevents breaking the file path lookup in database panel
+                                api_session_id = result['session_id']
+                                self._log(f"Started XLSX session - Local: {self.current_session_id}, API returned: {api_session_id}")
+                                # Don't overwrite self.current_session_id - keep the original for consistency
                             else:
                                 self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
                         else:

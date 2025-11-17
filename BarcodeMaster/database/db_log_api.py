@@ -528,6 +528,9 @@ def init_db():
         if 'pause_duration_minutes' not in sessions_columns:
             c.execute('ALTER TABLE sessions ADD COLUMN pause_duration_minutes REAL DEFAULT 0')
             logging.info("Added 'pause_duration_minutes' column to sessions table.")
+        if 'pause_start' not in sessions_columns:
+            c.execute('ALTER TABLE sessions ADD COLUMN pause_start TEXT')
+            logging.info("Added 'pause_start' column to sessions table.")
         if 'project_id' not in sessions_columns:
             c.execute('ALTER TABLE sessions ADD COLUMN project_id TEXT')
             logging.info("Added 'project_id' column to sessions table.")
@@ -2380,12 +2383,12 @@ def get_user_active_sessions(user):
         
         # Get all active sessions for this user
         c.execute("""
-            SELECT session_id, user, session_type, project, start_time, pause_start, total_pause_duration
+            SELECT session_id, user, session_type, project, start_time, pause_start, pause_duration_minutes
             FROM sessions
             WHERE user = ? AND status = 'active'
             ORDER BY start_time DESC
         """, (user,))
-        
+
         sessions = []
         for row in c.fetchall():
             sessions.append({
@@ -2396,7 +2399,7 @@ def get_user_active_sessions(user):
                 'start_time': row['start_time'],
                 'pause_start': row['pause_start'],
                 'is_paused': row['pause_start'] is not None,
-                'total_pause_duration': row['total_pause_duration'] or 0
+                'total_pause_duration': row['pause_duration_minutes'] or 0
             })
         
         conn.close()

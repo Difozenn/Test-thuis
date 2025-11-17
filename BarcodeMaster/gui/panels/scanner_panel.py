@@ -3923,17 +3923,12 @@ class ScannerPanel(tk.Frame):
         project_entry = tk.Entry(scrollable_frame, textvariable=project_code_var, width=30, font=('Arial', 10))
         project_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
-        # Base MO Code (pre-filled)
-        tk.Label(scrollable_frame, text="Base MO Code:", font=('Arial', 10), bg="#f0f0f0").grid(row=2, column=0, sticky='w', pady=5)
-        base_mo_code_var = tk.StringVar(value=extracted.get('base_mo_code', ''))
-        base_mo_entry = tk.Entry(scrollable_frame, textvariable=base_mo_code_var, width=30, font=('Arial', 10))
-        base_mo_entry.grid(row=2, column=1, sticky='ew', pady=5)
-
         # MO Number (auto-extracted from project code)
-        tk.Label(scrollable_frame, text="MO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=3, column=0, sticky='w', pady=5)
+        tk.Label(scrollable_frame, text="MO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=2, column=0, sticky='w', pady=5)
         mo_number_var = tk.StringVar(value=extracted.get('mo_number', '') or '')
         mo_entry = tk.Entry(scrollable_frame, textvariable=mo_number_var, width=30, font=('Arial', 10), state='readonly', bg='#f5f5f5')
-        mo_entry.grid(row=3, column=1, sticky='ew', pady=5)
+        mo_entry.grid(row=2, column=1, sticky='ew', pady=5)
+        tk.Label(scrollable_frame, text="(automatisch ingevuld)", fg="gray", bg="#f0f0f0", font=("Arial", 8, "italic")).grid(row=2, column=2, sticky='w', padx=5)
 
         # Auto-extract MO number when project code changes
         def on_project_code_change_edit(*args):
@@ -3943,44 +3938,41 @@ class ScannerPanel(tk.Frame):
                 mo_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
                 if mo_match:
                     mo_number_var.set(mo_match.group(1).upper())
-                    base_mo_code_var.set(mo_match.group(1).upper())
                 else:
                     mo_number_var.set('')
-                    base_mo_code_var.set(project_code.split('-')[0])
             else:
                 mo_number_var.set('')
-                base_mo_code_var.set('')
 
         project_code_var.trace_add('write', on_project_code_change_edit)
 
         # SO Number (pre-filled)
-        tk.Label(scrollable_frame, text="SO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=4, column=0, sticky='w', pady=5)
+        tk.Label(scrollable_frame, text="SO Nummer:", font=('Arial', 10), bg="#f0f0f0").grid(row=3, column=0, sticky='w', pady=5)
         so_number_var = tk.StringVar(value=extracted.get('so_number', '') or '')
         so_entry = tk.Entry(scrollable_frame, textvariable=so_number_var, width=30, font=('Arial', 10))
-        so_entry.grid(row=4, column=1, sticky='ew', pady=5)
+        so_entry.grid(row=3, column=1, sticky='ew', pady=5)
 
         # Customer Name (pre-filled)
-        tk.Label(scrollable_frame, text="Klantnaam:", font=('Arial', 10), bg="#f0f0f0").grid(row=5, column=0, sticky='w', pady=5)
+        tk.Label(scrollable_frame, text="Klantnaam:", font=('Arial', 10), bg="#f0f0f0").grid(row=4, column=0, sticky='w', pady=5)
         customer_name_var = tk.StringVar(value=extracted.get('customer_name', '') or '')
         customer_entry = tk.Entry(scrollable_frame, textvariable=customer_name_var, width=30, font=('Arial', 10))
-        customer_entry.grid(row=5, column=1, sticky='ew', pady=5)
+        customer_entry.grid(row=4, column=1, sticky='ew', pady=5)
 
         # Color (pre-filled)
-        tk.Label(scrollable_frame, text="Kleur:", font=('Arial', 10), bg="#f0f0f0").grid(row=6, column=0, sticky='w', pady=5)
+        tk.Label(scrollable_frame, text="Kleur:", font=('Arial', 10), bg="#f0f0f0").grid(row=5, column=0, sticky='w', pady=5)
         color_var = tk.StringVar(value=extracted.get('color', '') or '')
         color_entry = tk.Entry(scrollable_frame, textvariable=color_var, width=30, font=('Arial', 10))
-        color_entry.grid(row=6, column=1, sticky='ew', pady=5)
+        color_entry.grid(row=5, column=1, sticky='ew', pady=5)
 
         # Separator
         separator = tk.Frame(scrollable_frame, height=2, bg="#ddd")
-        separator.grid(row=7, column=0, columnspan=2, sticky='ew', pady=10)
+        separator.grid(row=6, column=0, columnspan=2, sticky='ew', pady=10)
 
         # User entries section
-        tk.Label(scrollable_frame, text="Gebruiker Aantallen", font=('Arial', 12, 'bold'), bg="#f0f0f0").grid(row=8, column=0, columnspan=2, pady=(10, 5), sticky='w')
+        tk.Label(scrollable_frame, text="Gebruiker Aantallen", font=('Arial', 12, 'bold'), bg="#f0f0f0").grid(row=7, column=0, columnspan=2, pady=(10, 5), sticky='w')
 
         # Store user entry variables
         user_entries = {}
-        row_num = 9
+        row_num = 8
 
         # Get configured users from database
         config = self._load_settings_from_api()
@@ -4100,8 +4092,14 @@ class ScannerPanel(tk.Frame):
                 messagebox.showerror("Fout", "Project code is verplicht!")
                 return
 
-            base_mo_code = base_mo_code_var.get().strip() or project_code.split('-')[0]
-            mo_number = mo_number_var.get().strip()
+            # Extract base_mo_code from project code (same logic as manual entry)
+            base_mo_code_match = re.search(r'(MO\d{5})', project_code, re.IGNORECASE)
+            base_mo_code = base_mo_code_match.group(1).upper() if base_mo_code_match else project_code
+
+            # Get values (use base_mo_code as fallback for mo_number)
+            mo_number_from_var = mo_number_var.get().strip()
+            mo_number = mo_number_from_var or (base_mo_code if base_mo_code_match else None)
+
             so_number = so_number_var.get().strip()
             customer_name = customer_name_var.get().strip()
             color = color_var.get().strip()

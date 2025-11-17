@@ -1303,17 +1303,46 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
             filename = f"{mo_number}_{timestamp}.xlsx"
         output_path = os.path.join(output_dir, filename)
 
-        # Create DataFrame with all columns from item dicts
-        # Items are now dicts with positie, wand_naam, lengte, breedte, dikte
-        df_data = {
-            'Positie': [item['positie'] for item in items_list],
-            'Wand Naam': [item['wand_naam'] for item in items_list],
-            'Lengte': [item['lengte'] for item in items_list],
-            'Breedte': [item['breedte'] for item in items_list],
-            'Dikte': [item['dikte'] for item in items_list],
+        # Create DataFrame with unified Item column (positie - wand_naam format) + dimensions
+        # Items can be either dicts (from Excel parsing) or strings (from manual entry)
+        items_formatted = []
+        lengte_list = []
+        breedte_list = []
+        dikte_list = []
+
+        for item in items_list:
+            if isinstance(item, dict):
+                # Dictionary format from Excel parsing
+                positie = item.get('positie', '').strip() if item.get('positie') else ''
+                wand_naam = item.get('wand_naam', '').strip() if item.get('wand_naam') else ''
+
+                if positie and wand_naam:
+                    formatted_item = f"{positie} - {wand_naam}"
+                elif positie:
+                    formatted_item = positie
+                elif wand_naam:
+                    formatted_item = wand_naam
+                else:
+                    formatted_item = ''
+
+                items_formatted.append(formatted_item)
+                lengte_list.append(item.get('lengte', ''))
+                breedte_list.append(item.get('breedte', ''))
+                dikte_list.append(item.get('dikte', ''))
+            else:
+                # String format from manual entry
+                items_formatted.append(str(item))
+                lengte_list.append('')
+                breedte_list.append('')
+                dikte_list.append('')
+
+        df = pd.DataFrame({
+            'Item': items_formatted,
+            'Lengte': lengte_list,
+            'Breedte': breedte_list,
+            'Dikte': dikte_list,
             'Status': [''] * len(items_list)  # Empty status column
-        }
-        df = pd.DataFrame(df_data)
+        })
 
         # Save to Excel with metadata if project_name provided
         if project_name:

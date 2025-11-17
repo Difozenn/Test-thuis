@@ -702,11 +702,21 @@ class DatabasePanel(ttk.Frame):
     def _filter_logs(self):
         """Filter the displayed logs based on search text"""
         search_text = self.search_var.get().lower().strip()
-        
+
+        # Store the currently selected item's data for restoration
+        selected_item_data = None
+        selected_items = self.logs_tree.selection()
+        if selected_items:
+            try:
+                # Get the values of the first selected item
+                selected_item_data = self.logs_tree.item(selected_items[0], 'values')
+            except (tk.TclError, IndexError):
+                selected_item_data = None
+
         # Clear current tree
         for item in self.logs_tree.get_children():
             self.logs_tree.delete(item)
-        
+
         # If no search text, show all items
         if not search_text:
             items_to_show = self._all_log_items
@@ -718,7 +728,7 @@ class DatabasePanel(ttk.Frame):
                 searchable_text = ' '.join(str(v).lower() for v in item_values[:5])  # First 5 columns (exclude FilePath)
                 if search_text in searchable_text:
                     items_to_show.append(item_values)
-        
+
         # Re-populate tree with filtered items
         new_item_to_select = None
         for item_values in items_to_show:
@@ -731,7 +741,15 @@ class DatabasePanel(ttk.Frame):
                 new_item = self.logs_tree.insert("", "end", values=item_values, tags=('spoed',))
             else:
                 new_item = self.logs_tree.insert("", "end", values=item_values)
-        
+
+            # Check if this item matches the previously selected item
+            if (selected_item_data and len(selected_item_data) >= 3 and
+                len(item_values) >= 3 and
+                # Match by project name and status (most reliable identifiers)
+                selected_item_data[2] == item_values[2] and  # project
+                selected_item_data[1] == item_values[1]):    # status
+                new_item_to_select = new_item
+
         # Re-apply sort if one was active
         if self._log_sort_column:
             data = [(self.logs_tree.set(k, self._log_sort_column), k) for k in self.logs_tree.get_children("")]
@@ -746,6 +764,16 @@ class DatabasePanel(ttk.Frame):
             data.sort(key=lambda t: try_num(t[0]), reverse=self._log_sort_reverse)
             for idx, (val, k) in enumerate(data):
                 self.logs_tree.move(k, '', idx)
+
+        # Restore selection if we found a matching item
+        if new_item_to_select:
+            try:
+                self.logs_tree.selection_set(new_item_to_select)
+                self.logs_tree.focus(new_item_to_select)
+                # Ensure the selected item is visible
+                self.logs_tree.see(new_item_to_select)
+            except tk.TclError:
+                pass  # Selection restoration failed, but that's okay
 
     def _pause_work_session(self, user, project):
         """Pause a work session by sending PAUZE event to the API."""

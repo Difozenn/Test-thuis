@@ -52,7 +52,8 @@ class ScannerPanel(ttk.Frame):
         self._pending_config_updates = {} # For staging config changes
         
         # --- Session Tracking ---
-        self.current_session_id = None
+        self.current_session_id = None  # Local session ID for internal tracking
+        self.api_session_id = None  # API's session ID used for API requests
         self.session_start_time = None
         self.session_item_count = 0
         self.session_paused = False
@@ -202,11 +203,15 @@ class ScannerPanel(ttk.Frame):
         ttk.Label(self.usb_frame, text="USB-scanner is actief indien geselecteerd. Scans worden globaal vastgelegd.").pack(padx=5, pady=5, fill="x")
 
         # --- Treeview ---
+        # Initialize with base columns - additional columns will be added dynamically when Excel loads
         self.tree = ttk.Treeview(tree_frame, columns=('Status', 'Item'), show='headings')
         self.tree.heading('Status', text='Status')
         self.tree.heading('Item', text='Item')
         self.tree.column('Status', width=150, minwidth=150, stretch=tk.NO, anchor='center') # Status column, centered text
         self.tree.column('Item', width=300, anchor='w')   # Item (was Barcode)
+
+        # Store current dynamic columns for reference
+        self.dynamic_columns = []  # Will be populated when Excel is loaded
         # Define a bold font for the 'OK' status
         self.bold_ok_font = None # Initialize
         try:
@@ -606,6 +611,24 @@ class ScannerPanel(ttk.Frame):
         updated_name = f"{name}_updated{ext}"
         return os.path.join(directory, updated_name)
 
+    def _configure_treeview_columns(self, columns):
+        """Dynamically configure treeview columns based on Excel file structure."""
+        # Update treeview column configuration
+        self.tree['columns'] = columns
+
+        # Configure each column
+        for col in columns:
+            self.tree.heading(col, text=col)
+
+            # Set column widths based on column type
+            if col == 'Status':
+                self.tree.column(col, width=150, minwidth=150, stretch=tk.NO, anchor='center')
+            elif col == 'Item':
+                self.tree.column(col, width=300, minwidth=200, anchor='w')
+            else:
+                # Additional columns get medium width and center alignment
+                self.tree.column(col, width=100, minwidth=80, anchor='center')
+
     def _load_excel_data(self, file_path, update_config_path=True):
         """Laadt gegevens uit het geselecteerde Excel-bestand en vult de treeview."""
         try:
@@ -628,6 +651,17 @@ class ScannerPanel(ttk.Frame):
                 messagebox.showerror("Fout", "Excel-bestand moet de kolom 'Item' bevatten.")
                 self._log("[FOUT] Excel-bestand mist vereiste kolom 'Item'.", "error")
                 return
+
+            # Detect additional columns (exclude required/known columns)
+            base_columns = ['Item', 'Status', 'Omschrijving']
+            additional_columns = [col for col in df.columns if col not in base_columns]
+
+            # Reconfigure treeview if additional columns are present
+            if additional_columns != self.dynamic_columns:
+                self._configure_treeview_columns(['Status', 'Item'] + additional_columns)
+                self.dynamic_columns = additional_columns
+                if additional_columns:
+                    self._log(f"Gevonden extra kolommen: {', '.join(additional_columns)}")
 
             self.barcode_data.clear()
             self.tree.delete(*self.tree.get_children()) # Clear existing tree items
@@ -669,17 +703,40 @@ class ScannerPanel(ttk.Frame):
                         tree_tag = 'NOT_OK'
                 # --- End of new logic for status handling ---
 
-                # Treeview: Status, Item.
-                item_id = self.tree.insert('', 'end', values=(display_status_for_treeview, barcode_val), tags=(tree_tag,))
+                # Build tree row values: Status, Item, and any additional columns
+                tree_values = [display_status_for_treeview, barcode_val]
+
+                # Add values for additional dynamic columns
+                additional_data = {}
+                for col in self.dynamic_columns:
+                    if col in df.columns:
+                        val = row.get(col, '')
+                        # Format the value for display (handle NaN, numbers, etc.)
+                        if pd.isna(val):
+                            display_val = ''
+                        elif isinstance(val, (int, float)):
+                            display_val = str(int(val)) if val == int(val) else str(val)
+                        else:
+                            display_val = str(val)
+                        tree_values.append(display_val)
+                        additional_data[col] = display_val
+                    else:
+                        tree_values.append('')
+
+                # Insert into treeview with all column values
+                item_id = self.tree.insert('', 'end', values=tuple(tree_values), tags=(tree_tag,))
 
                 # Force tag color application for compiled executables
                 if tree_tag == 'OK':
                     self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')
+
+                # Store item data including additional columns
                 self.barcode_data[barcode_val] = {
                     'description': description_val,
                     'status': internal_status, # Store the determined internal_status
                     'id': item_id,
-                    'item_value': barcode_val
+                    'item_value': barcode_val,
+                    'additional_data': additional_data  # Store additional column data
                 }
 
             self._log(f"{len(self.barcode_data)} items geladen uit {os.path.basename(path_to_load)}.")
@@ -793,8 +850,12 @@ class ScannerPanel(ttk.Frame):
                 user_normalized = user.replace(' ', '_') if user else user
                 self._log(f"[DEBUG] Normalized user for session: {user_normalized}")
 
-                # Extract project from filename
-                project_name = self._extract_project_from_filename(excel_file_path)
+                # Extract project from Excel metadata (more reliable than filename)
+                # This ensures consistency with the API which also uses metadata
+                _, project_name = self._extract_project_info_from_excel(excel_file_path)
+                if not project_name:
+                    # Fallback to filename extraction if metadata is not available
+                    project_name = self._extract_project_from_filename(excel_file_path)
 
                 # Check if current session matches the project being loaded
                 if self.current_session_id and project_name:
@@ -821,6 +882,7 @@ class ScannerPanel(ttk.Frame):
                             self._log(f"[DEBUG] Ending old session and loading correct session")
                             # Don't pause - just clear the old session from memory
                             self.current_session_id = None
+                            self.api_session_id = None
                             self.session_start_time = None
                             self.session_paused = False
                             self.pause_start_time = None
@@ -832,13 +894,15 @@ class ScannerPanel(ttk.Frame):
                 if existing_session:
                     # Resume the existing session
                     self._log(f"[DEBUG] Found existing paused session: {existing_session['session_id']}")
-                    self.current_session_id = existing_session['session_id']
+                    # When resuming from database, the session_id from API is the authoritative one
+                    self.api_session_id = existing_session['session_id']
+                    self.current_session_id = existing_session['session_id']  # Use same for local tracking
                     self.session_start_time = datetime.fromisoformat(existing_session['start_time'])
                     self.session_item_count = existing_session.get('item_count', 0)
                     self.session_paused = True  # It was paused
                     self.pause_start_time = datetime.now()  # Track when it was paused
                     self.total_pause_duration = existing_session.get('pause_duration_minutes', 0)
-                    
+
                     # Now resume it
                     self._resume_session()
                     return
@@ -848,12 +912,9 @@ class ScannerPanel(ttk.Frame):
                 # Include project in session_id to match what the API expects
                 # Sanitize project name for session_id: remove special characters
                 if project_name:
-                    # Replace special characters with underscores for session_id
-                    import re
-                    project_sanitized = re.sub(r'[^\w\-]', '_', project_name)
-                    # Remove multiple underscores and trim
-                    project_sanitized = re.sub(r'_+', '_', project_sanitized).strip('_')
-                    self.current_session_id = f"{user_normalized}_{project_sanitized}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
+                    # Use project name as-is for session_id to match API format
+                    # The API will handle any necessary sanitization
+                    self.current_session_id = f"{user_normalized}_{project_name}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 else:
                     self.current_session_id = f"{user_normalized}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 self.session_item_count = 0
@@ -902,11 +963,10 @@ class ScannerPanel(ttk.Frame):
                         if response.ok:
                             result = response.json()
                             if result.get('session_id'):
-                                # Log the API's session_id but keep our local one to maintain consistency
-                                # This prevents breaking the file path lookup in database panel
-                                api_session_id = result['session_id']
-                                self._log(f"Started XLSX session - Local: {self.current_session_id}, API returned: {api_session_id}")
-                                # Don't overwrite self.current_session_id - keep the original for consistency
+                                # Store the API's session_id separately for API requests (pause/resume)
+                                # Keep our local session_id for internal tracking and file path lookups
+                                self.api_session_id = result['session_id']
+                                self._log(f"Started XLSX session - Local: {self.current_session_id}, API: {self.api_session_id}")
                             else:
                                 self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
                         else:
@@ -1192,9 +1252,12 @@ class ScannerPanel(ttk.Frame):
                         excel_path = self.excel_file_path_var.get()
                         user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
                         project = self._extract_project_from_filename(excel_path)
-                        
+
+                        # Use API session_id for pause requests (fallback to local if API ID not available)
+                        session_id_for_api = self.api_session_id if self.api_session_id else self.current_session_id
+
                         data = {
-                            'session_id': self.current_session_id,
+                            'session_id': session_id_for_api,
                             'timestamp': self.pause_start_time.isoformat(),
                             'user': user,  # Use original user name with spaces for API
                             'project': project
@@ -1330,9 +1393,12 @@ class ScannerPanel(ttk.Frame):
                         user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
                         project = self._extract_project_from_filename(excel_path)
                         print(f"[RESUME_DEBUG] User: '{user}', Project: '{project}'")
-                        
+
+                        # Use API session_id for resume requests (fallback to local if API ID not available)
+                        session_id_for_api = self.api_session_id if self.api_session_id else self.current_session_id
+
                         data = {
-                            'session_id': self.current_session_id,
+                            'session_id': session_id_for_api,
                             'timestamp': datetime.now().isoformat(),
                             'total_pause_duration': self.total_pause_duration,
                             'user': user,
@@ -1534,8 +1600,9 @@ class ScannerPanel(ttk.Frame):
                             self._log(f"Failed to end session (non-blocking): {e}")
                     
                     threading.Thread(target=end_session_api, daemon=True).start()
-                        
+
             self.current_session_id = None
+            self.api_session_id = None
             self.session_start_time = None
             self.session_item_count = 0
             self.session_paused = False
@@ -2028,8 +2095,10 @@ class ScannerPanel(ttk.Frame):
 
         current_values = self.tree.item(item_id)['values']
         if current_values:
-            new_values = (display_status, current_values[1])  # Update only the status column
-            self.tree.item(item_id, values=new_values, tags=(tag,))
+            # Preserve all columns, only update the status column (first column)
+            new_values = list(current_values)
+            new_values[0] = display_status  # Update status column
+            self.tree.item(item_id, values=tuple(new_values), tags=(tag,))
 
             # Force visual update for better compatibility with compiled executables
             try:

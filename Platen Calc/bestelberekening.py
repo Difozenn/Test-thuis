@@ -173,29 +173,7 @@ class BestelberekeningApp:
         main_container = tk.Frame(self.root, bg=ModernTheme.BG_SECONDARY)
         main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        # Header section
-        header_frame = tk.Frame(main_container, bg=ModernTheme.BG_MAIN, relief="flat", bd=1)
-        header_frame.pack(fill=tk.X, pady=(0, 20))
-
-        header_content = tk.Frame(header_frame, bg=ModernTheme.BG_MAIN)
-        header_content.pack(fill=tk.X, padx=30, pady=20)
-
-        # Title and subtitle
-        title_label = ttk.Label(
-            header_content,
-            text="Bestelberekening",
-            style="Title.TLabel"
-        )
-        title_label.pack(anchor=tk.W)
-
-        subtitle_label = ttk.Label(
-            header_content,
-            text="Bestelberekening",
-            style="Subtitle.TLabel"
-        )
-        subtitle_label.pack(anchor=tk.W, pady=(5, 0))
-
-        # Tabs container
+        # Tabs container - now at the top
         tabs_frame = tk.Frame(main_container, bg=ModernTheme.BG_MAIN, relief="flat", bd=1)
         tabs_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
@@ -239,8 +217,9 @@ class BestelberekeningApp:
 
     def build_tab1_orders(self):
         """Build Orders tab"""
+        # Standard container with consistent padding
         container = tk.Frame(self.tab1, bg=ModernTheme.BG_MAIN)
-        container.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
         # Header
         ttk.Label(
@@ -253,7 +232,7 @@ class BestelberekeningApp:
             container,
             text="Scan Excel bestanden om netto m² per materiaal te berekenen",
             style="Subtitle.TLabel"
-        ).pack(anchor=tk.W, pady=(5, 25))
+        ).pack(anchor=tk.W, pady=(5, 20))
 
         # Folder selection card
         folder_card = tk.Frame(container, bg=ModernTheme.BG_SECONDARY, relief="flat")
@@ -342,18 +321,19 @@ class BestelberekeningApp:
             cursor="hand2"
         ).pack(side=tk.LEFT)
 
-        # Results section
+        # Results section header
         tk.Label(
             container,
             text="Gevonden Projecten",
             bg=ModernTheme.BG_MAIN,
             fg=ModernTheme.TEXT_PRIMARY,
             font=ModernTheme.FONT_HEADER
-        ).pack(anchor=tk.W, pady=(0, 10))
+        ).pack(anchor=tk.W, pady=(15, 10))
 
-        # Table with horizontal scroll
-        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        # Table with horizontal scroll - fixed height for consistency
+        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
         table_frame.pack(fill=tk.BOTH, expand=True)
+        table_frame.pack_propagate(False)
 
         # Scrollbars
         vsb = ttk.Scrollbar(table_frame, orient="vertical")
@@ -382,8 +362,9 @@ class BestelberekeningApp:
 
     def build_tab2_magazijn(self):
         """Build Magazijn tab"""
+        # Standard container with consistent padding
         container = tk.Frame(self.tab2, bg=ModernTheme.BG_MAIN)
-        container.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
         # Header
         ttk.Label(
@@ -396,7 +377,7 @@ class BestelberekeningApp:
             container,
             text="Laad huidige voorraad uit ContentResult CSV bestand",
             style="Subtitle.TLabel"
-        ).pack(anchor=tk.W, pady=(5, 25))
+        ).pack(anchor=tk.W, pady=(5, 20))
 
         # File selection card
         file_card = tk.Frame(container, bg=ModernTheme.BG_SECONDARY, relief="flat")
@@ -413,9 +394,37 @@ class BestelberekeningApp:
             font=ModernTheme.FONT_NORMAL
         ).pack(anchor=tk.W, pady=(0, 10))
 
+        path_frame = tk.Frame(file_inner, bg=ModernTheme.BG_SECONDARY)
+        path_frame.pack(fill=tk.X)
+
+        self.magazijn_file_var = tk.StringVar(value="t_temp_ContentResult.csv")
+        file_entry = tk.Entry(
+            path_frame,
+            textvariable=self.magazijn_file_var,
+            font=ModernTheme.FONT_NORMAL,
+            relief="solid",
+            bd=1,
+            bg=ModernTheme.BG_MAIN
+        )
+        file_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        browse_btn = tk.Button(
+            path_frame,
+            text="Bladeren...",
+            command=self.browse_magazijn_file,
+            bg=ModernTheme.BG_TERTIARY,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=20,
+            pady=8,
+            cursor="hand2"
+        )
+        browse_btn.pack(side=tk.LEFT)
+
         load_btn = tk.Button(
             file_inner,
-            text="Selecteer Magazijn CSV",
+            text="Laad Magazijn",
             command=self.load_magazijn_data,
             bg=ModernTheme.PRIMARY,
             fg="white",
@@ -425,20 +434,21 @@ class BestelberekeningApp:
             pady=10,
             cursor="hand2"
         )
-        load_btn.pack()
+        load_btn.pack(pady=(15, 0))
 
-        # Results section
+        # Results section header
         tk.Label(
             container,
             text="Magazijn Voorraad (HOOFD NR)",
             bg=ModernTheme.BG_MAIN,
             fg=ModernTheme.TEXT_PRIMARY,
             font=ModernTheme.FONT_HEADER
-        ).pack(anchor=tk.W, pady=(20, 10))
+        ).pack(anchor=tk.W, pady=(15, 10))
 
-        # Table
-        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        # Table - fixed height for consistency
+        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
         table_frame.pack(fill=tk.BOTH, expand=True)
+        table_frame.pack_propagate(False)
 
         vsb = ttk.Scrollbar(table_frame, orient="vertical")
         hsb = ttk.Scrollbar(table_frame, orient="horizontal")
@@ -479,8 +489,9 @@ class BestelberekeningApp:
 
     def build_tab3_instellingen(self):
         """Build Settings tab"""
+        # Standard container with consistent padding
         container = tk.Frame(self.tab3, bg=ModernTheme.BG_MAIN)
-        container.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
         # Header
         ttk.Label(
@@ -493,22 +504,22 @@ class BestelberekeningApp:
             container,
             text="Configureer rendement en veiligheidsvoorraad per materiaal",
             style="Subtitle.TLabel"
-        ).pack(anchor=tk.W, pady=(5, 25))
+        ).pack(anchor=tk.W, pady=(5, 20))
 
-        # Rendement section
+        # Rendement section - more compact
         rendement_card = tk.Frame(container, bg=ModernTheme.BG_SECONDARY, relief="flat")
         rendement_card.pack(fill=tk.X, pady=(0, 20))
 
         rendement_inner = tk.Frame(rendement_card, bg=ModernTheme.BG_SECONDARY)
-        rendement_inner.pack(fill=tk.BOTH, padx=30, pady=25)
+        rendement_inner.pack(fill=tk.BOTH, padx=20, pady=20)
 
         tk.Label(
             rendement_inner,
             text="Globaal Rendement %",
             bg=ModernTheme.BG_SECONDARY,
             fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_HEADER
-        ).pack(anchor=tk.W, pady=(0, 15))
+            font=ModernTheme.FONT_NORMAL
+        ).pack(anchor=tk.W, pady=(0, 10))
 
         rendement_frame = tk.Frame(rendement_inner, bg=ModernTheme.BG_SECONDARY)
         rendement_frame.pack(fill=tk.X)
@@ -520,7 +531,7 @@ class BestelberekeningApp:
             fg=ModernTheme.TEXT_PRIMARY,
             font=ModernTheme.FONT_NORMAL,
             anchor=tk.W,
-            width=20
+            width=15
         ).pack(side=tk.LEFT)
 
         self.rendement_var = tk.StringVar(value="75.0")
@@ -535,30 +546,30 @@ class BestelberekeningApp:
         rendement_entry.pack(side=tk.LEFT, padx=(10, 10))
 
         tk.Button(
-            rendement_inner,
+            rendement_frame,
             text="Rendement Toepassen",
             command=self.apply_rendement,
             bg=ModernTheme.PRIMARY,
             fg="white",
             font=ModernTheme.FONT_NORMAL,
             relief="flat",
-            padx=25,
+            padx=20,
             pady=8,
             cursor="hand2"
-        ).pack(pady=(15, 0))
+        ).pack(side=tk.LEFT)
 
-        # Safety margins section
+        # Safety margins section header
         tk.Label(
             container,
             text="Veiligheidsvoorraad per Materiaal",
             bg=ModernTheme.BG_MAIN,
             fg=ModernTheme.TEXT_PRIMARY,
             font=ModernTheme.FONT_HEADER
-        ).pack(anchor=tk.W, pady=(20, 10))
+        ).pack(anchor=tk.W, pady=(15, 10))
 
         # Action buttons
         actions_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
-        actions_frame.pack(fill=tk.X, pady=(0, 10))
+        actions_frame.pack(fill=tk.X, pady=(0, 15))
 
         tk.Button(
             actions_frame,
@@ -586,9 +597,10 @@ class BestelberekeningApp:
             cursor="hand2"
         ).pack(side=tk.LEFT)
 
-        # Table for safety margins
-        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        # Table for safety margins - fixed height for consistency
+        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
         table_frame.pack(fill=tk.BOTH, expand=True)
+        table_frame.pack_propagate(False)
 
         vsb = ttk.Scrollbar(table_frame, orient="vertical")
         hsb = ttk.Scrollbar(table_frame, orient="horizontal")
@@ -626,25 +638,28 @@ class BestelberekeningApp:
 
     def build_tab4_berekening(self):
         """Build Calculation tab"""
+        # Standard container with consistent padding
         container = tk.Frame(self.tab4, bg=ModernTheme.BG_MAIN)
-        container.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
-        # Header with buttons
-        header_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
-        header_frame.pack(fill=tk.X, pady=(0, 20))
-
-        tk.Label(
-            header_frame,
+        # Header
+        ttk.Label(
+            container,
             text="Bestelberekening",
-            bg=ModernTheme.BG_MAIN,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_HEADER
-        ).pack(side=tk.LEFT)
+            style="Header.TLabel"
+        ).pack(anchor=tk.W)
 
-        button_container = tk.Frame(header_frame, bg=ModernTheme.BG_MAIN)
-        button_container.pack(side=tk.RIGHT)
+        ttk.Label(
+            container,
+            text="Bekijk en exporteer de berekende bestelhoeveelheden",
+            style="Subtitle.TLabel"
+        ).pack(anchor=tk.W, pady=(5, 20))
 
-        calc_btn = tk.Button(
+        # Action buttons
+        button_container = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        button_container.pack(fill=tk.X, pady=(0, 15))
+
+        tk.Button(
             button_container,
             text="Berekenen",
             command=self.calculate,
@@ -652,13 +667,12 @@ class BestelberekeningApp:
             fg="white",
             font=ModernTheme.FONT_NORMAL,
             relief="flat",
-            padx=25,
+            padx=20,
             pady=8,
             cursor="hand2"
-        )
-        calc_btn.pack(side=tk.LEFT, padx=(0, 10))
+        ).pack(side=tk.LEFT, padx=(0, 10))
 
-        export_btn = tk.Button(
+        tk.Button(
             button_container,
             text="Exporteer CSV",
             command=self.export_csv,
@@ -666,15 +680,24 @@ class BestelberekeningApp:
             fg="white",
             font=ModernTheme.FONT_NORMAL,
             relief="flat",
-            padx=25,
+            padx=20,
             pady=8,
             cursor="hand2"
-        )
-        export_btn.pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT)
 
-        # Results table
-        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        # Results section header
+        tk.Label(
+            container,
+            text="Berekende Resultaten",
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_HEADER
+        ).pack(anchor=tk.W, pady=(15, 10))
+
+        # Results table - fixed height for consistency
+        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
         table_frame.pack(fill=tk.BOTH, expand=True)
+        table_frame.pack_propagate(False)
 
         vsb = ttk.Scrollbar(table_frame, orient="vertical")
         hsb = ttk.Scrollbar(table_frame, orient="horizontal")
@@ -975,14 +998,22 @@ class BestelberekeningApp:
         self.update_orders_totals()
         self.status_var.set("✓ Alle projecten gedeselecteerd")
 
-    def load_magazijn_data(self):
-        """Load magazijn stock from CSV"""
+    def browse_magazijn_file(self):
+        """Browse for magazijn CSV file"""
         csv_file = filedialog.askopenfilename(
             title="Selecteer ContentResult CSV",
+            initialdir=Path(self.magazijn_file_var.get()).parent if Path(self.magazijn_file_var.get()).exists() else ".",
             filetypes=[("CSV bestanden", "*.csv"), ("Alle bestanden", "*.*")]
         )
+        if csv_file:
+            self.magazijn_file_var.set(csv_file)
 
-        if not csv_file:
+    def load_magazijn_data(self):
+        """Load magazijn stock from CSV"""
+        csv_file = self.magazijn_file_var.get()
+
+        if not csv_file or not Path(csv_file).exists():
+            messagebox.showerror("Fout", f"Bestand niet gevonden: {csv_file}")
             return
 
         self.status_var.set("Magazijn data laden...")

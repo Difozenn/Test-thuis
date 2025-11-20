@@ -112,5 +112,6 @@
     "scanner_panel_com_auto_connect": true,
     "nesting_archive_enabled": true,
     "nesting_archive_directory": "C:/Users/Rob_v/Desktop/Stuklijsten",
-    "nesting_archive_mode": "move"
+    "nesting_archive_mode": "move",
+    "massief_output_dir": "C:/GR_GANNOMAT"
 }

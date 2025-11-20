@@ -100,7 +100,7 @@ class WindowsShutdownHandler:
                     ('cbWndExtra', ctypes.c_int),
                     ('hInstance', ctypes.wintypes.HINSTANCE),
                     ('hIcon', ctypes.wintypes.HICON),
-                    ('hCursor', ctypes.wintypes.HCURSOR),
+                    ('hCursor', ctypes.wintypes.HANDLE),
                     ('hbrBackground', ctypes.wintypes.HBRUSH),
                     ('lpszMenuName', ctypes.wintypes.LPCWSTR),
                     ('lpszClassName', ctypes.wintypes.LPCWSTR)

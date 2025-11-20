@@ -1026,10 +1026,14 @@ class BackgroundImportService:
             
             # Map results back to users
             results = {}
+            self._log(f"[UNIFIED_EXCEL DEBUG] excel_processors: {excel_processors}")
+            self._log(f"[UNIFIED_EXCEL DEBUG] all_results keys: {list(all_results.keys())}")
             for user, proc_type in excel_processors.items():
+                self._log(f"[UNIFIED_EXCEL DEBUG] Processing user='{user}', proc_type='{proc_type}'")
                 if proc_type in all_results:
                     result = all_results[proc_type]
-                    
+                    self._log(f"[UNIFIED_EXCEL DEBUG] Found result for {proc_type}: item_count={result.get('item_count', 'N/A')}")
+
                     if proc_type == 'NESTING_PROCESSING':
                         results[user] = {
                             'has_work': (result['nesting_count'] > 0 or result['opdeelzaag_count'] > 0),
@@ -1126,6 +1130,7 @@ class BackgroundImportService:
                                 self._log(f"[AFWERKING] Error generating Excel: {e}")
 
                     elif proc_type == 'MASSIEF_PROCESSING':
+                        self._log(f"[MASSIEF DEBUG] *** ENTERING MASSIEF_PROCESSING BLOCK for user '{user}' ***")
                         results[user] = {
                             'has_work': result['item_count'] > 0,
                             'item_count': result['item_count'],
@@ -1135,9 +1140,11 @@ class BackgroundImportService:
                             'color': result['color'],
                             'items_list': result.get('items_list', [])
                         }
-                        
+
                         # Generate Excel file for MASSIEF if items found
+                        self._log(f"[MASSIEF DEBUG] Checking Excel generation: item_count={result['item_count']}, items_list_len={len(result.get('items_list', []))}")
                         if result['item_count'] > 0 and result.get('items_list'):
+                            self._log(f"[MASSIEF DEBUG] Starting Excel generation for user '{user}'")
                             try:
                                 excel_path = generate_excel_for_massief(
                                     result['items_list'],
@@ -1146,11 +1153,18 @@ class BackgroundImportService:
                                     result['customer_name'],
                                     project_code_to_log  # Pass the project name
                                 )
+                                self._log(f"[MASSIEF DEBUG] Excel generation returned: {excel_path}")
                                 if excel_path:
                                     self._log(f"[MASSIEF] Generated Excel file: {excel_path}")
                                     results[user]['generated_excel'] = excel_path
+                                else:
+                                    self._log(f"[MASSIEF DEBUG] Excel generation returned None!")
                             except Exception as e:
                                 self._log(f"[MASSIEF] Error generating Excel: {e}")
+                                import traceback
+                                self._log(f"[MASSIEF] Traceback: {traceback.format_exc()}")
+                        else:
+                            self._log(f"[MASSIEF DEBUG] Skipping Excel generation - conditions not met")
                     
                     elif proc_type == 'HANDWERK_PROCESSING':
                         results[user] = {

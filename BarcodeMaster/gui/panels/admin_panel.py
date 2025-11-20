@@ -768,7 +768,23 @@ class AdminPanel(tk.Frame):
             else:
                 # Regular output directory configuration for other users
                 default_dir = f'C:/{user}' if os.name == 'nt' else f'/tmp/{user}'
-                key = f'{user.lower()}_output_dir'
+                # Use processing-type-based key to match what Excel functions expect
+                proc_type = processing_types.get(user, '')
+                if proc_type == 'MASSIEF_PROCESSING':
+                    key = 'massief_output_dir'
+                elif proc_type == 'HANDWERK_PROCESSING':
+                    key = 'handwerk_output_dir'
+                elif proc_type == 'AFWERKING_PROCESSING':
+                    key = 'afwerking_output_dir'
+                elif proc_type == 'ACCURA_PROCESSING':
+                    key = 'accura_output_dir'
+                elif proc_type == 'BOERE_PROCESSING':
+                    key = 'boere_output_dir'
+                elif proc_type == 'NESTING_PROCESSING':
+                    key = 'nesting_output_dir'
+                else:
+                    # Fallback to user-based key for unknown processing types
+                    key = f'{user.lower().replace(" ", "_")}_output_dir'
                 self.excel_output_vars[user] = tk.StringVar(value=settings.get(key, default_dir))
                 self.excel_entries[user] = ttk.Entry(settings_frame, textvariable=self.excel_output_vars[user], state='readonly')
                 self.excel_entries[user].grid(row=idx, column=1, padx=5, pady=5, sticky='ew')
@@ -809,7 +825,27 @@ class AdminPanel(tk.Frame):
         if directory:
             path_var.set(directory)
             # Save to database via API
-            config_key = f'{user_type.lower()}_output_dir'
+            # Get the processing type for this user to determine the correct key
+            settings = self._load_settings_from_api()
+            processing_types = settings.get('scanner_user_to_processing_type_map', {})
+            proc_type = processing_types.get(user_type, '')
+
+            # Use processing-type-based key to match what Excel functions expect
+            if proc_type == 'MASSIEF_PROCESSING':
+                config_key = 'massief_output_dir'
+            elif proc_type == 'HANDWERK_PROCESSING':
+                config_key = 'handwerk_output_dir'
+            elif proc_type == 'AFWERKING_PROCESSING':
+                config_key = 'afwerking_output_dir'
+            elif proc_type == 'ACCURA_PROCESSING':
+                config_key = 'accura_output_dir'
+            elif proc_type == 'BOERE_PROCESSING':
+                config_key = 'boere_output_dir'
+            elif proc_type == 'NESTING_PROCESSING':
+                config_key = 'nesting_output_dir'
+            else:
+                # Fallback to user-based key for unknown processing types
+                config_key = f'{user_type.lower().replace(" ", "_")}_output_dir'
             if self._save_settings_to_api({config_key: directory}):
                 self.log_to_queue(f"Output directory voor {user_type} opgeslagen in database: {directory}")
             else:

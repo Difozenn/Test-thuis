@@ -845,10 +845,9 @@ class ScannerPanel(ttk.Frame):
                 else:
                     self._log(f"[DEBUG] Using fallback user from config: {user}")
                 
-                # Normalize user name: remove spaces and special characters for session ID
-                # This prevents issues with session IDs containing spaces
-                user_normalized = user.replace(' ', '_') if user else user
-                self._log(f"[DEBUG] Normalized user for session: {user_normalized}")
+                # Use user name as-is for session ID to match database exactly
+                user_normalized = user
+                self._log(f"[DEBUG] Using user for session: {user_normalized}")
 
                 # Extract project from Excel metadata (more reliable than filename)
                 # This ensures consistency with the API which also uses metadata

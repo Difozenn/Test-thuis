@@ -688,8 +688,10 @@ class AdminPanel(tk.Frame):
             'BOERE_PROCESSING',
             'MASSIEF_PROCESSING',
             'HANDWERK_PROCESSING',
+            'AFWERKING_PROCESSING',  # AFWERKING uses this
             'HOPS_PROCESSING',  # OPUS, KL GANNOMAT typically use this
-            'MDB_PROCESSING'    # Alternative for OPUS, KL GANNOMAT
+            'MDB_PROCESSING',   # Alternative for OPUS, KL GANNOMAT
+            'NESTING_PROCESSING'  # NESTING may also need Excel output
         ]
 
         # Filter users that have Excel-generating processing types
@@ -714,8 +716,21 @@ class AdminPanel(tk.Frame):
         # Load settings from database via API
         settings = self._load_settings_from_api()
 
-        # --- Excel Output Settings Frame ---
-        settings_frame = ttk.LabelFrame(self.excel_output_tab, text="Excel Output Directory Configuratie")
+        # Create scrollable canvas (like User Config tab)
+        canvas = tk.Canvas(self.excel_output_tab, bg="#f0f0f0")
+        scrollbar = ttk.Scrollbar(self.excel_output_tab, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # --- Excel Output Settings Frame (now in scrollable_frame) ---
+        settings_frame = ttk.LabelFrame(scrollable_frame, text="Excel Output Directory Configuratie")
         settings_frame.pack(fill='x', padx=5, pady=5)
         settings_frame.columnconfigure(1, weight=1)
 
@@ -796,8 +811,8 @@ class AdminPanel(tk.Frame):
                 )
                 self.excel_browse_btns[user].grid(row=idx, column=2, padx=5, pady=5)
 
-        # Status Frame
-        status_frame = ttk.LabelFrame(self.excel_output_tab, text="Directory Status")
+        # Status Frame (now in scrollable_frame)
+        status_frame = ttk.LabelFrame(scrollable_frame, text="Directory Status")
         status_frame.pack(fill='x', padx=5, pady=(10, 5))
         status_frame.columnconfigure(1, weight=1)
 
@@ -807,14 +822,18 @@ class AdminPanel(tk.Frame):
             self.excel_status_labels[user] = ttk.Label(status_frame, text="")
             self.excel_status_labels[user].grid(row=idx, column=0, columnspan=2, padx=5, pady=2, sticky='w')
 
-        # Refresh button
-        refresh_frame = ttk.Frame(self.excel_output_tab)
+        # Refresh button (now in scrollable_frame)
+        refresh_frame = ttk.Frame(scrollable_frame)
         refresh_frame.pack(fill='x', padx=5, pady=5)
         ttk.Button(
             refresh_frame,
             text="🔄 Ververs & Rebuild",
             command=self._rebuild_excel_output_tab
         ).pack(side='right', padx=5)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
         # Update status on creation
         self._update_excel_output_status()
@@ -859,16 +878,31 @@ class AdminPanel(tk.Frame):
         """Load settings from database via API"""
         try:
             base_url = self.api_url.split('/log')[0]
-            response = requests.get(f"{base_url}/api/settings", timeout=5)
+            api_settings_url = f"{base_url}/api/settings"
+            self.log_to_queue(f"[DEBUG] Loading settings from API: {api_settings_url}")
+            response = requests.get(api_settings_url, timeout=5)
+            self.log_to_queue(f"[DEBUG] API response status: {response.status_code}")
             if response.status_code == 200:
                 data = response.json()
                 if data.get('success'):
-                    return data.get('settings', {})
+                    settings = data.get('settings', {})
+                    users = settings.get('scanner_panel_open_event_users', [])
+                    self.log_to_queue(f"[DEBUG] Loaded {len(users)} users from API: {users}")
+                    return settings
+                else:
+                    self.log_to_queue(f"[DEBUG] API returned success=false")
+            else:
+                self.log_to_queue(f"[DEBUG] API returned non-200 status: {response.status_code}")
         except Exception as e:
+            self.log_to_queue(f"[DEBUG] API connection failed: {type(e).__name__}: {e}")
             self.log_to_queue(f"Kon instellingen niet laden van database: {e}")
 
         # Fallback to config file
-        return get_config()
+        self.log_to_queue("[DEBUG] Falling back to config file")
+        config = get_config()
+        users = config.get('scanner_panel_open_event_users', [])
+        self.log_to_queue(f"[DEBUG] Loaded {len(users)} users from config: {users}")
+        return config
 
     def _save_settings_to_api(self, settings_dict):
         """Save settings to database via API"""

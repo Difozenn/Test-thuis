@@ -14,7 +14,8 @@
         "HANDWERK",
         "GR GANNOMAT",
         "BOERE",
-        "AFWERKING"
+        "AFWERKING",
+        "OPZET"
     ],
     "scanner_user_to_processing_type_map": {
         "NESTING": "NESTING_PROCESSING",
@@ -24,7 +25,8 @@
         "BOERE": "BOERE_PROCESSING",
         "AFWERKING": "AFWERKING_PROCESSING",
         "HANDWERK": "HANDWERK_PROCESSING",
-        "GR GANNOMAT": "MASSIEF_PROCESSING"
+        "GR GANNOMAT": "MASSIEF_PROCESSING",
+        "OPZET": "BOERE_PROCESSING"
     },
     "scanner_panel_event_type": "OPEN",
     "scanner_panel_event_type_locked": true,
@@ -37,7 +39,8 @@
         "BOERE": true,
         "AFWERKING": true,
         "HANDWERK": true,
-        "GR GANNOMAT": true
+        "GR GANNOMAT": true,
+        "OPZET": true
     },
     "scanner_panel_baud_rate": "9600",
     "scanner_panel_com_connected": false,

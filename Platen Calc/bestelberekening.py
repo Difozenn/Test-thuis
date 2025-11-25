@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 import csv
+import threading
 
 # Import existing calculator
 from material_calculator import MaterialCalculator
@@ -64,6 +65,7 @@ class BestelberekeningApp:
         self.safety_margins = {}  # {material_id: safety_m2}
         self.material_rendement = {}  # {material_id: rendement_pct} - defaults to global if not set
         self.calculation_results = []
+        self.in_bestelling = {}  # {material: m2_in_bestelling} - user-editable values
 
         # Load settings from config
         self.load_config()
@@ -290,6 +292,20 @@ class BestelberekeningApp:
             cursor="hand2"
         )
         scan_btn.pack(pady=(15, 0))
+
+        # Progress bar (hidden by default)
+        self.orders_progress = ttk.Progressbar(
+            folder_inner,
+            mode='indeterminate',
+            style="TProgressbar"
+        )
+        self.orders_progress_label = tk.Label(
+            folder_inner,
+            text="",
+            bg=ModernTheme.BG_SECONDARY,
+            fg=ModernTheme.TEXT_SECONDARY,
+            font=ModernTheme.FONT_SMALL
+        )
 
         # Quick actions
         actions_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
@@ -706,9 +722,10 @@ class BestelberekeningApp:
             "Materiaal",
             "Netto (m²)",
             "R%",
-            "Bruto m²",
+            "Bruto (m²)",
             "Veiligh. (m²)",
             "Stock (m²)",
+            "In Bestelling (m²)",
             "Saldo (m²)"
         ]
 
@@ -728,13 +745,14 @@ class BestelberekeningApp:
         for col in columns:
             self.calc_tree.heading(col, text=col)
 
-        self.calc_tree.column("Materiaal", width=350, anchor=tk.W)
-        self.calc_tree.column("Netto (m²)", width=120, anchor=tk.E)
-        self.calc_tree.column("R%", width=80, anchor=tk.E)
-        self.calc_tree.column("Bruto m²", width=120, anchor=tk.E)
-        self.calc_tree.column("Veiligh. (m²)", width=140, anchor=tk.E)
-        self.calc_tree.column("Stock (m²)", width=120, anchor=tk.E)
-        self.calc_tree.column("Saldo (m²)", width=140, anchor=tk.E)
+        self.calc_tree.column("Materiaal", width=300, anchor=tk.W)
+        self.calc_tree.column("Netto (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("R%", width=60, anchor=tk.E)
+        self.calc_tree.column("Bruto (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("Veiligh. (m²)", width=120, anchor=tk.E)
+        self.calc_tree.column("Stock (m²)", width=100, anchor=tk.E)
+        self.calc_tree.column("In Bestelling (m²)", width=140, anchor=tk.E)
+        self.calc_tree.column("Saldo (m²)", width=120, anchor=tk.E)
 
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
@@ -744,6 +762,9 @@ class BestelberekeningApp:
         self.calc_tree.tag_configure('need_order', foreground=ModernTheme.DANGER)
         self.calc_tree.tag_configure('overstock', foreground=ModernTheme.SECONDARY)
         self.calc_tree.tag_configure('total', background=ModernTheme.BG_TERTIARY, font=ModernTheme.FONT_HEADER)
+
+        # Bind double-click to edit "In Bestelling" column
+        self.calc_tree.bind('<Double-1>', self.edit_in_bestelling)
 
     # === EVENT HANDLERS ===
 
@@ -764,23 +785,40 @@ class BestelberekeningApp:
             messagebox.showerror("Fout", f"Map niet gevonden: {folder}")
             return
 
-        self.status_var.set("Orders scannen...")
-        self.root.update()
+        # Show progress bar and disable scan button
+        self.orders_progress_label.config(text="Orders scannen...")
+        self.orders_progress_label.pack(pady=(10, 0))
+        self.orders_progress.pack(pady=(5, 0), fill=tk.X)
+        self.orders_progress.start(10)
 
+        # Start scanning in a separate thread
+        thread = threading.Thread(target=self._scan_orders_thread, args=(folder,))
+        thread.daemon = True
+        thread.start()
+
+    def _scan_orders_thread(self, folder):
+        """Scan orders in a separate thread"""
         try:
             calculator = MaterialCalculator(folder)
+
+            # Update progress
+            self.root.after(0, lambda: self.orders_progress_label.config(text="Zoeken naar Excel bestanden..."))
             files = calculator.scan_folder()
 
             if not files:
-                messagebox.showwarning("Waarschuwing", "Geen Excel bestanden gevonden!")
-                self.status_var.set("Geen bestanden gevonden")
+                self.root.after(0, lambda: self._scan_complete(False, "Geen Excel bestanden gevonden!"))
                 return
 
             # Process files and build file_data structure
             self.file_data = []
             all_materials_dict = defaultdict(float)
 
-            for file_path in files:
+            total_files = len(files)
+            for idx, file_path in enumerate(files, 1):
+                # Update progress
+                self.root.after(0, lambda i=idx, t=total_files, f=file_path.name:
+                    self.orders_progress_label.config(text=f"Verwerken ({i}/{t}): {f[:50]}..."))
+
                 materials = calculator.extract_material_data(file_path)
 
                 if materials:
@@ -802,17 +840,28 @@ class BestelberekeningApp:
             )
 
             # Build the Excel-like table
-            self.build_orders_table()
+            self.root.after(0, self.build_orders_table)
 
-            self.status_var.set(f"✓ {len(files)} bestanden gescand, {len(self.all_materials)} materialen gevonden")
-            messagebox.showinfo(
-                "Succes",
-                f"Orders gescand!\n\n{len(files)} bestanden\n{len(self.all_materials)} unieke materialen"
-            )
+            # Complete
+            self.root.after(0, lambda: self._scan_complete(True,
+                f"Orders gescand!\n\n{len(files)} bestanden\n{len(self.all_materials)} unieke materialen"))
 
         except Exception as e:
-            messagebox.showerror("Fout", f"Fout bij scannen:\n{e}")
+            self.root.after(0, lambda: self._scan_complete(False, f"Fout bij scannen:\n{e}"))
+
+    def _scan_complete(self, success, message):
+        """Complete the scanning process"""
+        # Hide progress bar
+        self.orders_progress.stop()
+        self.orders_progress.pack_forget()
+        self.orders_progress_label.pack_forget()
+
+        if success:
+            self.status_var.set(f"✓ {len(self.file_data)} bestanden gescand, {len(self.all_materials)} materialen gevonden")
+            messagebox.showinfo("Succes", message)
+        else:
             self.status_var.set("Fout bij scannen")
+            messagebox.showerror("Fout", message)
 
     def build_orders_table(self):
         """Build Excel-like table with checkbox, filename, and material columns"""
@@ -1388,7 +1437,171 @@ class BestelberekeningApp:
         ).pack(side=tk.LEFT)
 
         # Bind Enter key
-        entry.bind('<Return>', lambda e: save())
+        safety_entry.bind('<Return>', lambda e: save())
+        rendement_entry.bind('<Return>', lambda e: save())
+
+    def edit_in_bestelling(self, event):
+        """Edit the In Bestelling (m²) value for selected material"""
+        region = self.calc_tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+
+        column = self.calc_tree.identify_column(event.x)
+        item = self.calc_tree.identify_row(event.y)
+
+        if not item:
+            return
+
+        # Get column index (In Bestelling is column #7)
+        col_idx = int(column[1:]) - 1
+
+        # Only allow editing the "In Bestelling (m²)" column (index 6)
+        if col_idx != 6:
+            return
+
+        # Get current values
+        values = self.calc_tree.item(item, 'values')
+        material_name = values[0]
+        current_in_bestelling = values[6]
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"In Bestelling - {material_name}")
+        dialog.geometry("450x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Center dialog
+        dialog.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (dialog.winfo_width() // 2)
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        main = tk.Frame(dialog, bg=ModernTheme.BG_MAIN, padx=30, pady=30)
+        main.pack(fill=tk.BOTH, expand=True)
+
+        tk.Label(
+            main,
+            text=material_name,
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_HEADER
+        ).pack(anchor=tk.W, pady=(0, 20))
+
+        # Input frame
+        input_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
+        input_frame.pack(fill=tk.X, pady=(0, 20))
+
+        tk.Label(
+            input_frame,
+            text="In Bestelling (m²):",
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        value_var = tk.StringVar(value=current_in_bestelling)
+        value_entry = tk.Entry(
+            input_frame,
+            textvariable=value_var,
+            font=ModernTheme.FONT_NORMAL,
+            width=15,
+            relief="solid",
+            bd=1
+        )
+        value_entry.pack(side=tk.LEFT)
+        value_entry.focus()
+        value_entry.select_range(0, tk.END)
+
+        def save():
+            try:
+                new_value = float(value_var.get())
+                if new_value < 0:
+                    messagebox.showerror("Fout", "Waarde kan niet negatief zijn!")
+                    return
+
+                # Update the in_bestelling dict
+                self.in_bestelling[material_name] = new_value
+
+                # Recalculate just for this material and update the table
+                self.update_single_calculation(item, material_name)
+
+                dialog.destroy()
+                self.status_var.set(f"✓ In Bestelling voor {material_name} bijgewerkt naar {new_value:.2f} m²")
+
+            except ValueError:
+                messagebox.showerror("Fout", "Ongeldige waarde! Gebruik alleen getallen.")
+
+        button_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
+        button_frame.pack()
+
+        tk.Button(
+            button_frame,
+            text="Opslaan",
+            command=save,
+            bg=ModernTheme.PRIMARY,
+            fg="white",
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=25,
+            pady=8,
+            cursor="hand2"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Button(
+            button_frame,
+            text="Annuleren",
+            command=dialog.destroy,
+            bg=ModernTheme.BG_TERTIARY,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=25,
+            pady=8,
+            cursor="hand2"
+        ).pack(side=tk.LEFT)
+
+        # Bind Enter key
+        value_entry.bind('<Return>', lambda e: save())
+
+    def update_single_calculation(self, item, material_name):
+        """Update calculation for a single material after In Bestelling change"""
+        # Get current values from the tree
+        values = list(self.calc_tree.item(item, 'values'))
+
+        # Recalculate saldo with new in_bestelling value
+        netto_m2 = float(values[1])
+        rendement = float(values[2])
+        bruto_m2 = float(values[3])
+        safety_m2 = float(values[4])
+        stock_m2 = float(values[5])
+        in_bestelling_m2 = self.in_bestelling.get(material_name, 0.0)
+
+        # New saldo calculation
+        needed_m2 = bruto_m2 + safety_m2
+        saldo_m2 = stock_m2 + in_bestelling_m2 - needed_m2
+
+        # Update values
+        values[6] = f"{in_bestelling_m2:.2f}"
+        values[7] = f"{saldo_m2:.2f}"
+
+        # Determine tag for color coding
+        if saldo_m2 < 0:
+            tag = 'need_order'
+        elif saldo_m2 > 0:
+            tag = 'overstock'
+        else:
+            tag = ''
+
+        # Update the tree item
+        self.calc_tree.item(item, values=values, tags=(tag,))
+
+        # Update the calculation_results list
+        for result in self.calculation_results:
+            if result['material'] == material_name:
+                result['in_bestelling'] = in_bestelling_m2
+                result['bestellen'] = saldo_m2
+                break
 
     def calculate(self):
         """Perform calculation"""
@@ -1462,11 +1675,12 @@ class BestelberekeningApp:
                 rendement_pct = self.material_rendement.get(materiaal_id, self.settings['rendement_pct']) if materiaal_id else self.settings['rendement_pct']
 
                 # Calculate
-                # Formula: stock - (bruto + safety) = saldo (positive = surplus, negative = deficit)
+                # Formula: stock + in_bestelling - (bruto + safety) = saldo (positive = surplus, negative = deficit)
                 rendement_decimal = rendement_pct / 100.0
                 bruto_m2 = netto_m2 / rendement_decimal
+                in_bestelling_m2 = self.in_bestelling.get(material, 0.0)
                 needed_m2 = bruto_m2 + safety_m2
-                saldo_m2 = stock_m2 - needed_m2  # Positive = surplus, Negative = need to order
+                saldo_m2 = stock_m2 + in_bestelling_m2 - needed_m2  # Positive = surplus, Negative = need to order
 
                 # Store result
                 result = {
@@ -1476,6 +1690,7 @@ class BestelberekeningApp:
                     'bruto': bruto_m2,
                     'stock': stock_m2,
                     'safety': safety_m2,
+                    'in_bestelling': in_bestelling_m2,
                     'bestellen': saldo_m2
                 }
                 self.calculation_results.append(result)
@@ -1495,6 +1710,7 @@ class BestelberekeningApp:
                     f"{bruto_m2:.2f}",
                     f"{safety_m2:.2f}",
                     f"{stock_m2:.2f}",
+                    f"{in_bestelling_m2:.2f}",
                     f"{saldo_m2:.2f}"
                 ), tags=(tag,))
 
@@ -1520,7 +1736,7 @@ class BestelberekeningApp:
             messagebox.showwarning("Waarschuwing", "Voer eerst de berekening uit!")
             return
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%d_%m_%Y")
         default_filename = f"bestelberekening_{timestamp}.xlsx"
 
         filename = filedialog.asksaveasfilename(
@@ -1566,39 +1782,83 @@ class BestelberekeningApp:
                     'border': 1
                 })
 
+                percent_format = workbook.add_format({
+                    'num_format': '0.00%',
+                    'border': 1
+                })
+
                 text_format = workbook.add_format({
                     'border': 1
                 })
 
-                # Write headers
-                headers = ['Materiaal', 'Netto (m²)', 'R%', 'Bruto m²', 'm² veiligheidsvoorraad', 'm² huidige stock', 'Saldo m²']
+                # Create editable format for "In Bestelling" column
+                editable_format = workbook.add_format({
+                    'num_format': '0.00',
+                    'border': 1,
+                    'bg_color': '#f0f8ff',  # Light blue background to indicate editable
+                    'locked': False
+                })
+
+                # Write headers - exactly matching tab 4
+                headers = ['Materiaal', 'Netto (m²)', 'R%', 'Bruto (m²)', 'Veiligh. (m²)', 'Stock (m²)', 'In Bestelling (m²)', 'Saldo (m²)']
                 for col, header in enumerate(headers):
                     worksheet.write(0, col, header, header_format)
 
                 # Set column widths
                 worksheet.set_column(0, 0, 30)  # Materiaal
-                worksheet.set_column(1, 6, 15)  # Numbers
+                worksheet.set_column(1, 7, 15)  # Numbers
 
-                # Write data with color coding
+                # Write data with color coding and formulas
                 row = 1
                 for result in self.calculation_results:
                     worksheet.write(row, 0, result['material'], text_format)
                     worksheet.write(row, 1, result['netto'], normal_format)
-                    worksheet.write(row, 2, result['rendement'], normal_format)
+                    worksheet.write(row, 2, result['rendement'], percent_format)  # Use percent format for R%
                     worksheet.write(row, 3, result['bruto'], normal_format)
                     worksheet.write(row, 4, result['safety'], normal_format)
                     worksheet.write(row, 5, result['stock'], normal_format)
 
-                    # Apply color coding to "Saldo" column
-                    saldo = result['bestellen']  # Note: key still named 'bestellen' in result dict
-                    if saldo < 0:
-                        worksheet.write(row, 6, saldo, red_format)  # Deficit - RED (need to order)
-                    elif saldo > 0:
-                        worksheet.write(row, 6, saldo, green_format)  # Surplus - GREEN
-                    else:
-                        worksheet.write(row, 6, saldo, normal_format)
+                    # In Bestelling column with editable format
+                    worksheet.write(row, 6, result.get('in_bestelling', 0.0), editable_format)
+
+                    # Saldo column with FORMULA for automatic recalculation
+                    # Formula: Stock (F) + In Bestelling (G) - (Bruto (D) + Veiligh (E))
+                    excel_row = row + 1  # Excel rows are 1-based
+                    formula = f'=F{excel_row}+G{excel_row}-(D{excel_row}+E{excel_row})'
+
+                    # Calculate the initial value to display
+                    initial_value = result['bestellen']
+
+                    # Write formula with initial value and normal format
+                    # The value parameter helps Excel show the correct result immediately
+                    worksheet.write_formula(row, 7, formula, normal_format, initial_value)
 
                     row += 1
+
+                # Add conditional formatting for Saldo column (column H, index 7)
+                # This makes colors update automatically when values change
+                # Apply to data rows only (row 1 to last data row, which is row-1)
+                if row > 1:  # Only if there's data
+                    # Red format for negative values (deficit)
+                    worksheet.conditional_format(f'H2:H{row}', {
+                        'type': 'cell',
+                        'criteria': '<',
+                        'value': 0,
+                        'format': red_format
+                    })
+
+                    # Green format for positive values (surplus)
+                    worksheet.conditional_format(f'H2:H{row}', {
+                        'type': 'cell',
+                        'criteria': '>',
+                        'value': 0,
+                        'format': green_format
+                    })
+
+                # Add note about In Bestelling column
+                worksheet.write(row + 1, 0,
+                    "Let op: Wijzig de 'In Bestelling (m²)' kolom om de Saldo automatisch te herberekenen.",
+                    workbook.add_format({'italic': True, 'font_color': '#5f6368'}))
 
                 workbook.close()
 

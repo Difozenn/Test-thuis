@@ -1,5 +1,14 @@
 """
 Windows Shutdown Handler - Detects Windows shutdown/logoff events
+
+PLATFORM COMPATIBILITY:
+Works on both 32-bit and 64-bit Windows systems. The ctypes.wintypes types
+(LPARAM, WPARAM, HWND, etc.) automatically adjust their size based on the platform:
+- 32-bit Windows: 32-bit pointers and handles
+- 64-bit Windows: 64-bit pointers and handles
+
+This prevents overflow errors when handling Windows messages with large pointer
+values on 64-bit systems.
 """
 
 import sys
@@ -55,6 +64,74 @@ class WindowsShutdownHandler:
                 ctypes.wintypes.WPARAM,
                 ctypes.wintypes.LPARAM
             )
+
+            # Set up proper argument types for Windows API functions to prevent overflow
+            # These ctypes.wintypes types automatically adjust to the correct size for both 32-bit and 64-bit Windows:
+            # - On 32-bit Windows: LPARAM/WPARAM are 32-bit
+            # - On 64-bit Windows: LPARAM/WPARAM are 64-bit
+            # This ensures the code works correctly on both architectures
+
+            # DefWindowProcW
+            ctypes.windll.user32.DefWindowProcW.argtypes = [
+                ctypes.wintypes.HWND,
+                ctypes.c_uint,
+                ctypes.wintypes.WPARAM,
+                ctypes.wintypes.LPARAM
+            ]
+            ctypes.windll.user32.DefWindowProcW.restype = ctypes.c_long
+
+            # RegisterClassW
+            ctypes.windll.user32.RegisterClassW.argtypes = [ctypes.c_void_p]
+            ctypes.windll.user32.RegisterClassW.restype = ctypes.c_ushort
+
+            # CreateWindowExW
+            ctypes.windll.user32.CreateWindowExW.argtypes = [
+                ctypes.wintypes.DWORD,  # dwExStyle
+                ctypes.wintypes.LPCWSTR,  # lpClassName
+                ctypes.wintypes.LPCWSTR,  # lpWindowName
+                ctypes.wintypes.DWORD,  # dwStyle
+                ctypes.c_int,  # X
+                ctypes.c_int,  # Y
+                ctypes.c_int,  # nWidth
+                ctypes.c_int,  # nHeight
+                ctypes.wintypes.HWND,  # hWndParent
+                ctypes.wintypes.HMENU,  # hMenu
+                ctypes.wintypes.HINSTANCE,  # hInstance
+                ctypes.c_void_p  # lpParam
+            ]
+            ctypes.windll.user32.CreateWindowExW.restype = ctypes.wintypes.HWND
+
+            # GetMessageW
+            ctypes.windll.user32.GetMessageW.argtypes = [
+                ctypes.c_void_p,  # lpMsg
+                ctypes.wintypes.HWND,  # hWnd
+                ctypes.wintypes.UINT,  # wMsgFilterMin
+                ctypes.wintypes.UINT  # wMsgFilterMax
+            ]
+            ctypes.windll.user32.GetMessageW.restype = ctypes.c_int
+
+            # TranslateMessage and DispatchMessageW
+            ctypes.windll.user32.TranslateMessage.argtypes = [ctypes.c_void_p]
+            ctypes.windll.user32.TranslateMessage.restype = ctypes.wintypes.BOOL
+            ctypes.windll.user32.DispatchMessageW.argtypes = [ctypes.c_void_p]
+            ctypes.windll.user32.DispatchMessageW.restype = ctypes.c_long
+
+            # PostQuitMessage
+            ctypes.windll.user32.PostQuitMessage.argtypes = [ctypes.c_int]
+            ctypes.windll.user32.PostQuitMessage.restype = None
+
+            # PostMessageW
+            ctypes.windll.user32.PostMessageW.argtypes = [
+                ctypes.wintypes.HWND,
+                ctypes.wintypes.UINT,
+                ctypes.wintypes.WPARAM,
+                ctypes.wintypes.LPARAM
+            ]
+            ctypes.windll.user32.PostMessageW.restype = ctypes.wintypes.BOOL
+
+            # GetModuleHandleW
+            ctypes.windll.kernel32.GetModuleHandleW.argtypes = [ctypes.wintypes.LPCWSTR]
+            ctypes.windll.kernel32.GetModuleHandleW.restype = ctypes.wintypes.HMODULE
 
             # Window procedure to handle messages
             def wndproc(hwnd, msg, wparam, lparam):

@@ -1,0 +1,31 @@
+1. Remote SMB Share + BYOVI (Bring Your Own Vulnerable Driver)
+This is the classic and still most reliable technique.
+
+Attacker hosts the malicious EXE or DLL on an SMB share (\ATTACKER-IP\share\malicious.exe)
+Attacker has a signed but vulnerable kernel driver (e.g., old versions of Dell DBAnalyzer, ASUS ASIO, Capcom driver, EDR-specific drivers, etc.)
+The vulnerable driver is exploited to disable driver signature enforcement (DSE) or directly map arbitrary files into kernel space.
+Once DSE is off, the attacker uses LolDrivers-style techniques or tools like KDMapper, EfiGuard, or custom mappers to load an unsigned driver that contains logic to read the remote EXE via SMB and execute it (e.g., reflective loading from \ATTACKER-IP\share).
+Modern variants use direct system call mapping from the vulnerable driver to call ZwCreateSection → ZwMapViewOfSection on a remote file path (\ATTACKER-IP\share\payload.exe). Windows natively supports creating a section from a remote image file over SMB.
+
+Result: The EXE is mapped into memory and executed without ever touching the local disk.
+2. WebDAV Instead of SMB (Bypasses SMB Blocking)
+Many enterprise networks block outbound SMB (port 445), but leave WebDAV (port 80/443) open.
+
+Host the EXE on a WebDAV server (e.g., \attacker.com@80\dav\payload.exe or \attacker.com@davwwroot$/payload.exe)
+Same kernel driver tricks as above, but use the WebDAV UNC path.
+Windows treats WebDAV UNC paths exactly like SMB for section creation/mapping.
+Tools: Cobalt Strike’s execute-assembly via WebDAV, or custom drivers that call ZwCreateFile + ZwCreateSection on the WebDAV path.
+
+3. Direct Memory Execution via Kernel Read Primitive (No Section Needed)
+Some vulnerable/byovd drivers give arbitrary kernel read/write.
+
+Attacker hosts the EXE anywhere (HTTP server, SMB, WebDAV, etc.)
+Malicious code running in kernel mode opens the remote file with ZwCreateFile, reads the entire PE into a kernel buffer using ZwReadFile, parses it manually, performs relocations, resolves imports, then jumps to EntryPoint.
+This is exactly what advanced fileless malware (e.g., some TrickBot or QakBot modules) and tools like GhostEngine (2024–2025 campaign) do.
+
+4. Section Mapping Over HTTP(S) Using Mini-Redirector Drivers
+More exotic but real:
+
+Load a custom kernel mini-filter or mini-redirector that registers a new network protocol or re-uses WebDAV.
+Some researchers have demonstrated mapping HTTP directly as a UNC path using custom IFS (Installable File System) drivers.
+Practically, attackers just stick to SMB/WebDAV because they’re already supported.

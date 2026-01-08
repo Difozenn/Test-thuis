@@ -3,7 +3,10 @@
     "allow": [
       "Bash(python:*)",
       "Bash(ls:*)",
-      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/**)"
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/**)",
+      "Bash(node:*)",
+      "Bash(identify:*)",
+      "Bash(tesseract:*)"
     ],
     "deny": []
   }

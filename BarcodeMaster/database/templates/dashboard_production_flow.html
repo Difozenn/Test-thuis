@@ -711,6 +711,54 @@
     font-size: 14px;
 }
 
+/* Workflow Filter Toggle */
+.workflow-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.workflow-toggle input {
+    display: none;
+}
+
+.toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+}
+
+.workflow-toggle input:checked + .toggle-slider {
+    background: var(--secondary-blue);
+}
+
+.workflow-toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: #495057;
+    font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 1400px) {
     .department-nodes {
@@ -770,9 +818,16 @@
     <div class="pipeline-section">
         <div class="pipeline-header">
             <h2 class="pipeline-title">Production Pipeline & Tijdschattingen</h2>
-            <button class="btn-refresh" onclick="refreshProductionEstimates()" title="Vernieuw tijdschattingen">
-                <i class="fas fa-sync-alt"></i>
-            </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label class="workflow-toggle" title="Toon alleen projecten die klaar zijn voor deze afdeling (vorige afdeling heeft afgemeld)">
+                    <input type="checkbox" id="workflowFilterToggle" onchange="toggleWorkflowFilter()">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Workflow Filter</span>
+                </label>
+                <button class="btn-refresh" onclick="refreshProductionEstimates()" title="Vernieuw tijdschattingen">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
         </div>
 
         <div class="pipeline-flow">
@@ -827,6 +882,124 @@
 // Store user projects data from server
 const usersProjectsData = {{ users_projects | tojson }};
 const deptStats = {{ dept_stats | tojson }};
+const dashboardUsers = {{ dashboard_users | tojson }};
+
+// Workflow filter state
+let workflowFilterEnabled = false;
+let workflowCompletionData = {};
+
+// Fetch workflow completion data
+async function fetchWorkflowCompletion() {
+    try {
+        const response = await fetch('/api/workflow-completion');
+        const data = await response.json();
+        if (data.success) {
+            workflowCompletionData = data.workflow_completion;
+        }
+    } catch (error) {
+        console.error('Error fetching workflow completion:', error);
+    }
+}
+
+// Check if a project is ready for a user based on workflow
+function isProjectReadyForUser(project, userIndex) {
+    // First user in workflow sees all projects
+    if (userIndex === 0) {
+        return true;
+    }
+
+    // For other users, check if previous user has AFGEMELD this project
+    const previousUser = dashboardUsers[userIndex - 1];
+    const completedBy = workflowCompletionData[project.project] || [];
+
+    return completedBy.includes(previousUser);
+}
+
+// Filter projects for a user based on workflow
+function getFilteredProjectsForUser(user) {
+    const userIndex = dashboardUsers.indexOf(user);
+    const userProjects = usersProjectsData[user] || [];
+
+    if (!workflowFilterEnabled || userIndex === -1) {
+        return userProjects;
+    }
+
+    return userProjects.filter(project => {
+        // Also filter out projects where status is BEZIG for another user
+        // (but we don't have that data here, so just check workflow completion)
+        return isProjectReadyForUser(project, userIndex);
+    });
+}
+
+// Toggle workflow filter
+async function toggleWorkflowFilter() {
+    workflowFilterEnabled = document.getElementById('workflowFilterToggle').checked;
+
+    if (workflowFilterEnabled && Object.keys(workflowCompletionData).length === 0) {
+        // Fetch workflow data if not already loaded
+        await fetchWorkflowCompletion();
+    }
+
+    // Update the department node counts
+    updateDepartmentCounts();
+
+    // Refresh the current user's projects view
+    const activeTab = document.querySelector('.user-tab.active');
+    if (activeTab) {
+        const user = activeTab.textContent.trim();
+        showUserProjects(user, activeTab);
+    }
+}
+
+// Update department node counts based on filter
+function updateDepartmentCounts() {
+    dashboardUsers.forEach((user, index) => {
+        const filteredProjects = getFilteredProjectsForUser(user);
+        const count = filteredProjects.length;
+
+        // Update pipeline node
+        const node = document.querySelector(`.dept-node[data-user="${user}"]`);
+        if (node) {
+            const countElement = node.querySelector('.dept-node-count');
+            const labelElement = node.querySelector('.dept-node-label');
+
+            if (countElement) {
+                countElement.textContent = count;
+            }
+            if (labelElement) {
+                if (count === 1) {
+                    labelElement.textContent = 'project';
+                } else if (count > 1) {
+                    labelElement.textContent = 'projects';
+                } else {
+                    labelElement.textContent = 'idle';
+                }
+            }
+
+            // Update active class
+            if (count > 0) {
+                node.classList.add('active');
+            } else {
+                node.classList.remove('active');
+            }
+        }
+
+        // Update status dot in user tab
+        const tabs = document.querySelectorAll('.user-tab');
+        tabs.forEach(tab => {
+            if (tab.textContent.trim() === user) {
+                const statusDot = tab.querySelector('.user-status-dot');
+                if (statusDot) {
+                    if (count > 0) {
+                        statusDot.classList.remove('offline');
+                    } else {
+                        statusDot.classList.add('offline');
+                    }
+                }
+            }
+        });
+    });
+}
 
 // Bottleneck Detection - DISABLED FOR NOW
 // function detectBottlenecks() {
@@ -889,7 +1062,8 @@ function showUserProjects(user, tabElement) {
     tabElement.classList.add('active');
 
     const projectsContainer = document.getElementById('userProjects');
-    const userProjects = usersProjectsData[user] || [];
+    // Use filtered projects if workflow filter is enabled
+    const userProjects = getFilteredProjectsForUser(user);
 
     if (userProjects.length === 0) {
         projectsContainer.innerHTML = `

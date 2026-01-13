@@ -263,6 +263,13 @@ class BarcodeMatchApp:
                         # Check for SPOED projects
                         spoed_projects = self._check_for_spoed_projects(logs_data, current_user)
 
+                        # Auto-hide warning if current SPOED project was marked AFGEMELD
+                        if hasattr(self.root, 'current_spoed_project') and self.root.current_spoed_project:
+                            if self.root.current_spoed_project not in spoed_projects:
+                                print(f'[SPOED MONITOR] Project {self.root.current_spoed_project} is no longer active (AFGEMELD), auto-hiding warning')
+                                if hasattr(self.root, 'auto_hide_spoed_warning'):
+                                    self.root.after(0, self.root.auto_hide_spoed_warning)
+
                         if spoed_projects:
                             print(f'[SPOED MONITOR] Active SPOED projects: {spoed_projects}')
                             # Check if any SPOED project hasn't been dismissed

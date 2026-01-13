@@ -4701,23 +4701,16 @@ def dashboard_production_flow():
         users_projects = {}
         completed_projects = set()
 
+        # Find ANY project that has been AFGEMELD before today (not just latest status)
+        # Once a project is AFGEMELD, it cannot be re-opened
+        # Check both event='AFGEMELD' and status='AFGEMELD' (some records have status set differently)
         c.execute("""
-            WITH latest_status_per_user AS (
-                SELECT user, project, MAX(timestamp) as max_ts
-                FROM logs
-                WHERE user IS NOT NULL
-                AND project IS NOT NULL
-                AND status IS NOT NULL
-                GROUP BY user, project
-            )
-            SELECT l.user, l.project
-            FROM logs l
-            INNER JOIN latest_status_per_user lspu
-                ON l.user = lspu.user
-                AND l.project = lspu.project
-                AND l.timestamp = lspu.max_ts
-            WHERE l.event = 'AFGEMELD'
-              AND DATE(l.timestamp) < ?
+            SELECT DISTINCT user, project
+            FROM logs
+            WHERE (event = 'AFGEMELD' OR status = 'AFGEMELD')
+              AND DATE(timestamp) < ?
+              AND user IS NOT NULL
+              AND project IS NOT NULL
         """, (today.isoformat(),))
 
         for row in c.fetchall():
@@ -4851,6 +4844,46 @@ def get_configured_users():
         'success': True,
         'users': users
     })
+
+@app.route('/api/workflow-completion')
+def get_workflow_completion():
+    """Get which projects have been AFGEMELD by which users for workflow filtering"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get all AFGEMELD events grouped by project and user
+        # Check both event='AFGEMELD' and status='AFGEMELD' (some records have status set differently)
+        c.execute("""
+            SELECT DISTINCT project, user
+            FROM logs
+            WHERE (event = 'AFGEMELD' OR status = 'AFGEMELD')
+              AND project IS NOT NULL
+              AND user IS NOT NULL
+        """)
+
+        # Build a dict: project -> list of users who have AFGEMELD it
+        workflow_completion = {}
+        for row in c.fetchall():
+            project = row['project']
+            user = row['user']
+            if project not in workflow_completion:
+                workflow_completion[project] = []
+            if user not in workflow_completion[project]:
+                workflow_completion[project].append(user)
+
+        # Get the workflow order
+        workflow_order = get_setting_from_db('scanner_panel_open_event_users', fallback_to_config=True, default_value=[])
+
+        return jsonify({
+            'success': True,
+            'workflow_completion': workflow_completion,
+            'workflow_order': workflow_order
+        })
+
+    except Exception as e:
+        logging.error(f"Workflow completion API error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/config')
 def get_config_api():
@@ -6885,8 +6918,9 @@ def sales_order_detail(so_number):
             if row['is_completed']:
                 total_completed += 1
             
-            # Check if this is a REP variant
-            is_rep = '_REP' in row['project'].upper()
+            # Check if this is a REP variant or SPOED project
+            project_upper = row['project'].upper()
+            is_rep = '_REP' in project_upper or 'SPOED' in project_upper
                 
             # Use the EXACT same calculations as logs_project by calling the internal functions
             # Get work duration from sessions

@@ -492,7 +492,7 @@
         return cleanName;
     }
 
-    // Initialize project display names
+    // Initialize project display names and apply default sort
     document.addEventListener('DOMContentLoaded', function() {
         const projectDisplayNames = document.querySelectorAll('.project-display-name');
         projectDisplayNames.forEach(element => {
@@ -500,6 +500,9 @@
             const displayName = formatProjectDisplayName(rawCode);
             element.textContent = displayName;
         });
+
+        // Apply default sort (recent/last activity) on page load
+        applyFilters();
     });
 
     function applyFilters() {

@@ -582,8 +582,8 @@ def parse_excel_for_accura(excel_path):
                     positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                     wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
                     
-                    # Format as "Positie - Wand Naam"
-                    item_name = f"{positie} - {wand_naam}"
+                    # Format as "PositieWand Naam"
+                    item_name = f"{positie}{wand_naam}"
                     result['items_list'].append(item_name)
                     
         return result
@@ -750,8 +750,16 @@ def parse_excel_for_boere(excel_path):
                             print(f"[BOERE] Excluding TE BESTELLEN item: {materiaal} | {wand_naam}")
                             break
 
-                    # Only count if NOT in TE BESTELLEN
-                    if not is_te_bestellen:
+                    # Check if materiaal contains Melamine or MELxMEL (should be excluded)
+                    is_melamine = False
+                    materiaal_upper = materiaal.upper()
+                    if 'MELAMINE' in materiaal_upper or 'MELXMEL' in materiaal_upper:
+                        is_melamine = True
+                        excluded_count += 1
+                        print(f"[BOERE] Excluding Melamine item: {materiaal} | {wand_naam}")
+
+                    # Only count if NOT in TE BESTELLEN and NOT Melamine
+                    if not is_te_bestellen and not is_melamine:
                         result['item_count'] += 1
 
                         # Extract Positie, Lengte, Breedte, and Dikte for item list
@@ -869,8 +877,8 @@ def parse_excel_for_afwerking(excel_path):
                     positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                     wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
 
-                    # Format as "Positie - Wand Naam"
-                    item_name = f"{positie} - {wand_naam}"
+                    # Format as "PositieWand Naam"
+                    item_name = f"{positie}{wand_naam}"
                     result['items_list'].append(item_name)
 
         return result
@@ -1011,12 +1019,12 @@ def process_excel_for_all_types(excel_path, processor_types):
                             positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                             wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
                             
-                            # Format as "Positie - Wand Naam"
-                            item_name = f"{positie} - {wand_naam}"
+                            # Format as "PositieWand_Naam"
+                            item_name = f"{positie}{wand_naam}"
                             result['items_list'].append(item_name)
-                
+
                 results[proc_type] = result
-                
+
             elif proc_type == 'BOERE_PROCESSING':
                 result = {
                     'item_count': 0,
@@ -1046,8 +1054,16 @@ def process_excel_for_all_types(excel_path, processor_types):
                                     print(f"[BOERE] Excluding TE BESTELLEN item: {materiaal} | {wand_naam}")
                                     break
 
-                            # Only count if NOT in TE BESTELLEN
-                            if not is_te_bestellen:
+                            # Check if materiaal contains Melamine or MELxMEL (should be excluded)
+                            is_melamine = False
+                            materiaal_upper = materiaal.upper()
+                            if 'MELAMINE' in materiaal_upper or 'MELXMEL' in materiaal_upper:
+                                is_melamine = True
+                                excluded_count += 1
+                                print(f"[BOERE] Excluding Melamine item: {materiaal} | {wand_naam}")
+
+                            # Only count if NOT in TE BESTELLEN and NOT Melamine
+                            if not is_te_bestellen and not is_melamine:
                                 result['item_count'] += 1
 
                                 # Extract all required fields as dict for Excel generation
@@ -1090,12 +1106,12 @@ def process_excel_for_all_types(excel_path, processor_types):
                             positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                             wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
 
-                            # Format as "Positie - Wand Naam"
-                            item_name = f"{positie} - {wand_naam}"
+                            # Format as "PositieWand_Naam"
+                            item_name = f"{positie}{wand_naam}"
                             result['items_list'].append(item_name)
 
                 results[proc_type] = result
-                
+
             elif proc_type == 'MASSIEF_PROCESSING':
                 result = {
                     'item_count': 0,
@@ -1109,18 +1125,20 @@ def process_excel_for_all_types(excel_path, processor_types):
                 if 'Materiaal' in df.columns:
                     for idx, row in df.iterrows():
                         materiaal_value = str(row['Materiaal']) if pd.notna(row['Materiaal']) else ''
-                        # Check if row contains "Massief_" (case-insensitive)
-                        if 'massief_' in materiaal_value.lower():
+                        # Check if row contains "Massief" (case-insensitive) - matches "massief_xxx" and "massief xxx"
+                        if 'massief' in materiaal_value.lower():
                             result['item_count'] += 1
-                            
-                            # Use Wand Naam for item list (not Positie - Wand Naam format)
+
+                            # Extract Positie and Wand Naam for item list
+                            positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                             wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                            
-                            # Add Wand Naam directly as the item
-                            if wand_naam:
-                                result['items_list'].append(wand_naam)
+
+                            # Format as "PositieWand_Naam"
+                            item_name = f"{positie}{wand_naam}"
+                            if item_name:
+                                result['items_list'].append(item_name)
                             else:
-                                # Fallback to material name if no Wand Naam
+                                # Fallback to material name if no Positie/Wand Naam
                                 result['items_list'].append(materiaal_value)
                 
                 results[proc_type] = result
@@ -1141,15 +1159,17 @@ def process_excel_for_all_types(excel_path, processor_types):
                         # Check if row contains "(HAND)" (case-insensitive)
                         if '(hand)' in commentaar_value.lower():
                             result['item_count'] += 1
-                            
-                            # Use Wand Naam for item list
+
+                            # Extract Positie and Wand Naam for item list
+                            positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                             wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                            
-                            # Add Wand Naam directly as the item
-                            if wand_naam:
-                                result['items_list'].append(wand_naam)
+
+                            # Format as "PositieWand_Naam"
+                            item_name = f"{positie}{wand_naam}"
+                            if item_name:
+                                result['items_list'].append(item_name)
                             else:
-                                # Fallback to row description if no Wand Naam
+                                # Fallback to row description if no Positie/Wand Naam
                                 result['items_list'].append(f"HAND item {result['item_count']}")
                 
                 results[proc_type] = result
@@ -1166,7 +1186,7 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
     Generate Excel file for ACCURA processing with item list.
     
     Args:
-        items_list: List of items formatted as "Positie - Wand Naam"
+        items_list: List of items formatted as "PositieWand Naam"
         mo_number: MO number for filename
         so_number: SO number for filename
         customer_name: Customer name for filename
@@ -1303,7 +1323,7 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
             filename = f"{mo_number}_{timestamp}.xlsx"
         output_path = os.path.join(output_dir, filename)
 
-        # Create DataFrame with unified Item column (positie - wand_naam format) + dimensions
+        # Create DataFrame with unified Item column (positiewand_naam format) + dimensions
         # Items can be either dicts (from Excel parsing) or strings (from manual entry)
         items_formatted = []
         lengte_list = []
@@ -1317,7 +1337,7 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
                 wand_naam = item.get('wand_naam', '').strip() if item.get('wand_naam') else ''
 
                 if positie and wand_naam:
-                    formatted_item = f"{positie} - {wand_naam}"
+                    formatted_item = f"{positie}{wand_naam}"
                 elif positie:
                     formatted_item = positie
                 elif wand_naam:
@@ -1379,7 +1399,7 @@ def generate_excel_for_afwerking(items_list, mo_number, so_number, customer_name
     Generate Excel file for AFWERKING processing with item list.
 
     Args:
-        items_list: List of items formatted as "Positie - Wand Naam"
+        items_list: List of items formatted as "PositieWand Naam"
         mo_number: MO number for filename
         so_number: SO number for filename
         customer_name: Customer name for filename
@@ -1539,18 +1559,20 @@ def parse_excel_for_massief(excel_path):
         if 'Materiaal' in df.columns:
             for idx, row in df.iterrows():
                 materiaal_value = str(row['Materiaal']) if pd.notna(row['Materiaal']) else ''
-                # Check if row contains "Massief_" (case-insensitive)
-                if 'massief_' in materiaal_value.lower():
+                # Check if row contains "Massief" (case-insensitive) - matches "massief_xxx" and "massief xxx"
+                if 'massief' in materiaal_value.lower():
                     result['item_count'] += 1
-                    
-                    # Use Wand Naam for item list (not Positie - Wand Naam format)
+
+                    # Extract Positie and Wand Naam for item list
+                    positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                     wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                    
-                    # Add Wand Naam directly as the item
-                    if wand_naam:
-                        result['items_list'].append(wand_naam)
+
+                    # Format as "PositieWand_Naam"
+                    item_name = f"{positie}{wand_naam}"
+                    if item_name:
+                        result['items_list'].append(item_name)
                     else:
-                        # Fallback to material name if no Wand Naam
+                        # Fallback to material name if no Positie/Wand Naam
                         result['items_list'].append(materiaal_value)
             
         return result
@@ -1736,17 +1758,19 @@ def parse_excel_for_handwerk(excel_path):
                 # Check if row contains "(HAND)" (case-insensitive)
                 if '(hand)' in commentaar_value.lower():
                     result['item_count'] += 1
-                    
-                    # Use Wand Naam for item list
+
+                    # Extract Positie and Wand Naam for item list
+                    positie = str(row.get('Positie', '')).strip() if pd.notna(row.get('Positie')) else ''
                     wand_naam = str(row.get('Wand Naam', '')).strip() if pd.notna(row.get('Wand Naam')) else ''
-                    
-                    # Add Wand Naam directly as the item
-                    if wand_naam:
-                        result['items_list'].append(wand_naam)
+
+                    # Format as "PositieWand_Naam"
+                    item_name = f"{positie}{wand_naam}"
+                    if item_name:
+                        result['items_list'].append(item_name)
                     else:
-                        # Fallback to row description if no Wand Naam
+                        # Fallback to row description if no Positie/Wand Naam
                         result['items_list'].append(f"HAND item {result['item_count']}")
-            
+
         return result
         
     except Exception as e:

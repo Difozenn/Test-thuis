@@ -1,0 +1,491 @@
+2026-01-12 11:54:05.585 | INFO | ================================================================================
+2026-01-12 11:54:05.585 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 11:54:05.585 | INFO | ================================================================================
+2026-01-12 11:54:06.264 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 11:55:50.804 | INFO | ============================================================
+2026-01-12 11:55:50.804 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 11:55:50.804 | INFO |   excel_file_path: C:\ACCURA\MO08588_Dressing_(3-7)_20260112_115516.xlsx
+2026-01-12 11:55:50.807 | INFO |   existing current_session_id: None
+2026-01-12 11:55:50.807 | INFO |   existing api_session_id: None
+2026-01-12 11:55:50.807 | INFO |   existing active_project: None
+2026-01-12 11:55:50.807 | INFO |   existing active_user: ACCURA
+2026-01-12 11:55:50.807 | INFO |   User source: active_user = ACCURA
+2026-01-12 11:55:50.813 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-12 11:55:50.813 | INFO |   Checking for existing session: user=ACCURA, project=MO08588_Dressing_(3-7)
+2026-01-12 11:55:52.829 | INFO |   No existing session found - creating NEW session
+2026-01-12 11:55:52.829 | INFO |   NEW session created: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:55:52.829 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 11:55:52.829 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 11:55:52.829 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "file_path": "C:\\ACCURA\\MO08588_Dressing_(3-7)_20260112_115516.xlsx", "item_count": 31, "timestamp": "2026-01-12T11:55:52.829149", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115552"}
+2026-01-12 11:55:54.879 | INFO |   API RESPONSE: session_id=ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:55:54.880 | INFO |   SESSION IDs NOW: api=ACCURA_MO08588_Dressing_(3-7)_20260112_115554, local=ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:03.564 | INFO | ============================================================
+2026-01-12 11:56:03.564 | INFO | _pause_session CALLED
+2026-01-12 11:56:03.564 | INFO |   blocking: False
+2026-01-12 11:56:03.564 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:03.571 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:03.571 | INFO |   session_paused: False
+2026-01-12 11:56:03.571 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:03.571 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:03.571 | INFO |   Session marked as paused at 2026-01-12 11:56:03.571367
+2026-01-12 11:56:03.571 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:03.571 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:03.573 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:03.573 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:03.571367", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:03.573 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 11:56:05.617 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 11:56:05.620 | INFO |   Session pause SUCCESSFUL
+2026-01-12 11:56:06.647 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T11:56:03.571367"}
+2026-01-12 11:56:08.723 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 11:56:08.723 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 11:56:31.197 | INFO | ============================================================
+2026-01-12 11:56:31.198 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 11:56:31.198 | INFO |   excel_file_path: C:\ACCURA\MO08588_Dressing_(3-7)_20260112_115516.xlsx
+2026-01-12 11:56:31.198 | INFO |   existing current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:31.198 | INFO |   existing api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.198 | INFO |   existing active_project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.198 | INFO |   existing active_user: ACCURA
+2026-01-12 11:56:31.198 | INFO |   User source: active_user = ACCURA
+2026-01-12 11:56:31.206 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.206 | INFO | ============================================================
+2026-01-12 11:56:31.206 | INFO | _resume_session CALLED
+2026-01-12 11:56:31.206 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:31.206 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.206 | INFO |   session_paused: True
+2026-01-12 11:56:31.206 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.206 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:31.206 | INFO |   Session marked as resumed
+2026-01-12 11:56:31.207 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:31.207 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.207 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.207 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:31.207516", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:31.208 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 11:56:32.239 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 11:56:33.261 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session resumed - pause duration: 0.5 minutes", "status": "BEZIG", "timestamp": "2026-01-12T11:56:33.261490"}
+2026-01-12 11:56:34.283 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 11:56:41.346 | INFO | ============================================================
+2026-01-12 11:56:41.346 | INFO | _pause_session CALLED
+2026-01-12 11:56:41.346 | INFO |   blocking: False
+2026-01-12 11:56:41.346 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:41.346 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:41.346 | INFO |   session_paused: False
+2026-01-12 11:56:41.346 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:41.346 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:41.346 | INFO |   Session marked as paused at 2026-01-12 11:56:41.346267
+2026-01-12 11:56:41.346 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:41.346 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:41.346 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:41.346 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:41.346267", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:41.346 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 11:56:43.424 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 11:56:43.426 | INFO |   Session pause SUCCESSFUL
+2026-01-12 11:56:44.446 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T11:56:41.346267"}
+2026-01-12 11:56:46.498 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 11:56:46.498 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 12:45:36.310 | INFO | ================================================================================
+2026-01-12 12:45:36.310 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 12:45:36.310 | INFO | ================================================================================
+2026-01-12 12:45:36.887 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 12:55:24.190 | INFO | ============================================================
+2026-01-12 12:55:24.190 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 12:55:24.190 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_125326.xlsx
+2026-01-12 12:55:24.190 | INFO |   existing current_session_id: None
+2026-01-12 12:55:24.190 | INFO |   existing api_session_id: None
+2026-01-12 12:55:24.190 | INFO |   existing active_project: None
+2026-01-12 12:55:24.190 | INFO |   existing active_user: ACCURA
+2026-01-12 12:55:24.190 | INFO |   User source: active_user = ACCURA
+2026-01-12 12:55:24.200 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:24.200 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.206 | INFO |   FOUND existing session from API:
+2026-01-12 12:55:26.206 | INFO |     session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |     is_paused: True
+2026-01-12 12:55:26.206 | INFO |   Session IDs synchronized: api=ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450, local=ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 12:55:26.206 | INFO | ============================================================
+2026-01-12 12:55:26.206 | INFO | _resume_session CALLED
+2026-01-12 12:55:26.206 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   session_paused: True
+2026-01-12 12:55:26.206 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.206 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 12:55:26.206 | INFO |   Session marked as resumed
+2026-01-12 12:55:26.206 | INFO |   Using CACHED user: ACCURA
+2026-01-12 12:55:26.206 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.208 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.208 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "timestamp": "2026-01-12T12:55:26.208061", "total_pause_duration": 2.92, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 12:55:26.208 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 12:55:27.237 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 12:55:28.258 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T12:55:28.258554"}
+2026-01-12 12:55:29.285 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 12:56:24.823 | INFO | ============================================================
+2026-01-12 12:56:24.823 | INFO | _pause_session CALLED
+2026-01-12 12:56:24.823 | INFO |   blocking: False
+2026-01-12 12:56:24.823 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   session_paused: False
+2026-01-12 12:56:24.823 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 12:56:24.823 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 12:56:24.823 | INFO |   Session marked as paused at 2026-01-12 12:56:24.823937
+2026-01-12 12:56:24.823 | INFO |   Using CACHED user: ACCURA
+2026-01-12 12:56:24.823 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 12:56:24.823 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "timestamp": "2026-01-12T12:56:24.823937", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 12:56:24.823 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 12:56:26.885 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 12:56:26.885 | INFO |   Session pause SUCCESSFUL
+2026-01-12 12:56:27.918 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T12:56:24.823937"}
+2026-01-12 12:56:29.983 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 12:56:29.984 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:01:22.282 | INFO | ================================================================================
+2026-01-12 13:01:22.283 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 13:01:22.283 | INFO | ================================================================================
+2026-01-12 13:01:22.807 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 13:08:26.935 | INFO | ============================================================
+2026-01-12 13:08:26.935 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:08:26.935 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:08:26.935 | INFO |   existing current_session_id: None
+2026-01-12 13:08:26.935 | INFO |   existing api_session_id: None
+2026-01-12 13:08:26.935 | INFO |   existing active_project: None
+2026-01-12 13:08:26.935 | INFO |   existing active_user: ACCURA
+2026-01-12 13:08:26.936 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:08:26.942 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:26.942 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:28.975 | INFO |   No existing session found - creating NEW session
+2026-01-12 13:08:28.975 | INFO |   NEW session created: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:28.975 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 13:08:28.975 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 13:08:28.975 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:\\ACCURA\\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx", "item_count": 19, "timestamp": "2026-01-12T13:08:28.975406", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828"}
+2026-01-12 13:08:31.058 | INFO |   API RESPONSE: session_id=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:31.058 | INFO |   SESSION IDs NOW: api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831, local=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:52.510 | INFO | ============================================================
+2026-01-12 13:08:52.510 | INFO | _pause_session CALLED
+2026-01-12 13:08:52.511 | INFO |   blocking: False
+2026-01-12 13:08:52.511 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:52.511 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:52.511 | INFO |   session_paused: False
+2026-01-12 13:08:52.511 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:52.511 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:08:52.511 | INFO |   Session marked as paused at 2026-01-12 13:08:52.511862
+2026-01-12 13:08:52.511 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:08:52.511 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:52.513 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:52.513 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:08:52.511862", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:08:52.513 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:08:54.561 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:08:54.561 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:08:55.626 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:08:52.511862"}
+2026-01-12 13:08:57.666 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:08:57.666 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:10:13.542 | INFO | ============================================================
+2026-01-12 13:10:13.542 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:10:13.542 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:10:13.542 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:13.542 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.542 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.542 | INFO |   existing active_user: ACCURA
+2026-01-12 13:10:13.542 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:10:13.547 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.547 | INFO | ============================================================
+2026-01-12 13:10:13.547 | INFO | _resume_session CALLED
+2026-01-12 13:10:13.547 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:13.547 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.547 | INFO |   session_paused: True
+2026-01-12 13:10:13.547 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.547 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:13.547 | INFO |   Session marked as resumed
+2026-01-12 13:10:13.547 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:13.550 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.550 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.550 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:13.550474", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:13.550 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:10:14.579 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:10:15.600 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 1.4 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:10:15.600972"}
+2026-01-12 13:10:16.644 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 13:10:24.552 | INFO | _save_updated_excel: Session already exists (api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831), skipping XLSX_UPDATED
+2026-01-12 13:10:30.818 | INFO | ============================================================
+2026-01-12 13:10:30.818 | INFO | _pause_session CALLED
+2026-01-12 13:10:30.818 | INFO |   blocking: False
+2026-01-12 13:10:30.818 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:30.818 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:30.820 | INFO |   session_paused: False
+2026-01-12 13:10:30.820 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:30.820 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:30.820 | INFO |   Session marked as paused at 2026-01-12 13:10:30.820183
+2026-01-12 13:10:30.820 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:30.820 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:30.821 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:30.821 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:30.820183", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:30.821 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:10:32.904 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:10:32.904 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:10:33.917 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:10:30.820183"}
+2026-01-12 13:10:35.995 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:10:35.995 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:10:46.606 | INFO | ============================================================
+2026-01-12 13:10:46.606 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:10:46.606 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:10:46.606 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:46.606 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.606 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.606 | INFO |   existing active_user: ACCURA
+2026-01-12 13:10:46.606 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:10:46.613 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO | ============================================================
+2026-01-12 13:10:46.613 | INFO | _resume_session CALLED
+2026-01-12 13:10:46.613 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:46.613 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.613 | INFO |   session_paused: True
+2026-01-12 13:10:46.613 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:46.613 | INFO |   Session marked as resumed
+2026-01-12 13:10:46.613 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:46.613 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.613 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:46.613545", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:46.613 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:10:47.639 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:10:48.651 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 0.3 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:10:48.651665"}
+2026-01-12 13:10:49.672 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 13:12:00.420 | INFO | ============================================================
+2026-01-12 13:12:00.420 | INFO | _pause_session CALLED
+2026-01-12 13:12:00.420 | INFO |   blocking: False
+2026-01-12 13:12:00.420 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:12:00.420 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:12:00.420 | INFO |   session_paused: False
+2026-01-12 13:12:00.420 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:12:00.420 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:12:00.420 | INFO |   Session marked as paused at 2026-01-12 13:12:00.420019
+2026-01-12 13:12:00.420 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:12:00.420 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:12:00.420 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:12:00.420 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:12:00.420019", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:12:00.420 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:12:02.484 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:12:02.484 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:12:03.507 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:12:00.420019"}
+2026-01-12 13:12:05.564 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:12:05.564 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:17:30.134 | INFO | ============================================================
+2026-01-12 13:17:30.134 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:17:30.134 | INFO |   excel_file_path: C:\ACCURA\MO08587_TV-wand_(2-7)_20260112_131438.xlsx
+2026-01-12 13:17:30.134 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:17:30.134 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:17:30.134 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:17:30.134 | INFO |   existing active_user: ACCURA
+2026-01-12 13:17:30.134 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:17:30.145 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-01-12 13:17:30.145 | INFO |   Checking for existing session: user=ACCURA, project=MO08587_TV-wand_(2-7)
+2026-01-12 13:17:32.157 | INFO |   No existing session found - creating NEW session
+2026-01-12 13:17:32.157 | INFO |   NEW session created: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:32.157 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 13:17:32.158 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 13:17:32.158 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\ACCURA\\MO08587_TV-wand_(2-7)_20260112_131438.xlsx", "item_count": 53, "timestamp": "2026-01-12T13:17:32.157621", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131732"}
+2026-01-12 13:17:34.193 | INFO |   API RESPONSE: session_id=ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:34.193 | INFO |   SESSION IDs NOW: api=ACCURA_MO08587_TV-wand_(2-7)_20260112_131734, local=ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:38.970 | INFO | ============================================================
+2026-01-12 13:17:38.970 | INFO | _pause_session CALLED
+2026-01-12 13:17:38.970 | INFO |   blocking: False
+2026-01-12 13:17:38.970 | INFO |   current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:38.970 | INFO |   api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:38.970 | INFO |   session_paused: False
+2026-01-12 13:17:38.970 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-01-12 13:17:38.970 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:17:38.970 | INFO |   Session marked as paused at 2026-01-12 13:17:38.970915
+2026-01-12 13:17:38.970 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:17:38.970 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-01-12 13:17:38.970 | INFO |   Using session_id for API: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:38.970 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131734", "timestamp": "2026-01-12T13:17:38.970915", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)"}
+2026-01-12 13:17:38.970 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:17:41.030 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:17:41.032 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:17:42.054 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131734", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:17:38.970915"}
+2026-01-12 13:17:44.100 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:17:44.100 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:18:32.802 | INFO | ============================================================
+2026-01-12 13:18:32.802 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:18:32.802 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:18:32.802 | INFO |   existing current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:18:32.802 | INFO |   existing api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:18:32.802 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-01-12 13:18:32.802 | INFO |   existing active_user: ACCURA
+2026-01-12 13:18:32.802 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:18:32.808 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:32.808 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   FOUND existing session from API:
+2026-01-12 13:18:34.822 | INFO |     session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |     is_paused: True
+2026-01-12 13:18:34.822 | INFO |   Session IDs synchronized: api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831, local=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 13:18:34.822 | INFO | ============================================================
+2026-01-12 13:18:34.822 | INFO | _resume_session CALLED
+2026-01-12 13:18:34.822 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   session_paused: True
+2026-01-12 13:18:34.822 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:18:34.822 | INFO |   Session marked as resumed
+2026-01-12 13:18:34.822 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:18:34.822 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:18:34.822869", "total_pause_duration": 1.61, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:18:34.822 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:18:35.857 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:18:36.881 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:18:36.881645"}
+2026-01-12 13:18:37.919 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 14:06:04.647 | INFO | ============================================================
+2026-01-12 14:06:04.647 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 14:06:04.647 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 14:06:04.647 | INFO |   existing current_session_id: None
+2026-01-12 14:06:04.647 | INFO |   existing api_session_id: None
+2026-01-12 14:06:04.647 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:04.647 | INFO |   existing active_user: BOERE
+2026-01-12 14:06:04.647 | INFO |   User source: active_user = BOERE
+2026-01-12 14:06:04.656 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:04.656 | INFO |   Checking for existing session: user=BOERE, project=MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:06.679 | INFO |   No existing session found - creating NEW session
+2026-01-12 14:06:06.680 | INFO |   NEW session created: BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:06:06.680 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 14:06:06.681 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 14:06:06.681 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:\\BOERE\\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-01-12T14:06:06.680266", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140606"}
+2026-01-12 14:06:08.753 | INFO |   API RESPONSE: session_id=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:06:08.753 | INFO |   SESSION IDs NOW: api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608, local=BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:30:34.345 | INFO | ============================================================
+2026-01-12 14:30:34.345 | INFO | _pause_session CALLED
+2026-01-12 14:30:34.345 | INFO |   blocking: True
+2026-01-12 14:30:34.345 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:30:34.345 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:30:34.345 | INFO |   session_paused: False
+2026-01-12 14:30:34.345 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 14:30:34.345 | INFO |   active_user (CACHED): BOERE
+2026-01-12 14:30:34.345 | INFO |   Session marked as paused at 2026-01-12 14:30:34.345841
+2026-01-12 14:30:34.345 | INFO |   Using CACHED user: BOERE
+2026-01-12 14:30:34.345 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:30:34.348 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:30:34.348 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T14:30:34.345841", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 14:30:34.348 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 14:30:36.399 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 14:30:36.399 | INFO |   Session pause SUCCESSFUL
+2026-01-12 14:31:46.250 | INFO | ================================================================================
+2026-01-12 14:31:46.250 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 14:31:46.251 | INFO | ================================================================================
+2026-01-12 14:31:46.802 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 14:32:12.397 | INFO | ============================================================
+2026-01-12 14:32:12.397 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 14:32:12.397 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 14:32:12.397 | INFO |   existing current_session_id: None
+2026-01-12 14:32:12.399 | INFO |   existing api_session_id: None
+2026-01-12 14:32:12.399 | INFO |   existing active_project: None
+2026-01-12 14:32:12.399 | INFO |   existing active_user: BOERE
+2026-01-12 14:32:12.399 | INFO |   User source: active_user = BOERE
+2026-01-12 14:32:12.407 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:12.407 | INFO |   Checking for existing session: user=BOERE, project=MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.426 | INFO |   FOUND existing session from API:
+2026-01-12 14:32:14.426 | INFO |     session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |     is_paused: True
+2026-01-12 14:32:14.426 | INFO |   Session IDs synchronized: api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608, local=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 14:32:14.426 | INFO | ============================================================
+2026-01-12 14:32:14.426 | INFO | _resume_session CALLED
+2026-01-12 14:32:14.426 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   session_paused: True
+2026-01-12 14:32:14.426 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.426 | INFO |   active_user (CACHED): BOERE
+2026-01-12 14:32:14.426 | INFO |   Session marked as resumed
+2026-01-12 14:32:14.426 | INFO |   Using CACHED user: BOERE
+2026-01-12 14:32:14.426 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.427 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.427 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T14:32:14.427154", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 14:32:14.427 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 14:32:15.450 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 14:32:16.471 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T14:32:16.471255"}
+2026-01-12 14:32:17.496 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 19:22:48.733 | INFO | ============================================================
+2026-01-12 19:22:48.733 | INFO | _pause_session CALLED
+2026-01-12 19:22:48.733 | INFO |   blocking: False
+2026-01-12 19:22:48.733 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.733 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.733 | INFO |   session_paused: False
+2026-01-12 19:22:48.733 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:48.733 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:22:48.733 | INFO |   Session marked as paused at 2026-01-12 19:22:48.733054
+2026-01-12 19:22:48.733 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:22:48.733 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:48.735 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.735 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:22:48.733054", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:22:48.735 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 19:22:50.817 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 19:22:50.817 | INFO |   Session pause SUCCESSFUL
+2026-01-12 19:22:51.863 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T19:22:48.733054"}
+2026-01-12 19:22:53.941 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 19:22:53.941 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 19:22:59.713 | INFO | ============================================================
+2026-01-12 19:22:59.715 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 19:22:59.715 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 19:22:59.715 | INFO |   existing current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.715 | INFO |   existing api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.715 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.715 | INFO |   existing active_user: BOERE
+2026-01-12 19:22:59.716 | INFO |   User source: active_user = BOERE
+2026-01-12 19:22:59.720 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.720 | INFO | ============================================================
+2026-01-12 19:22:59.720 | INFO | _resume_session CALLED
+2026-01-12 19:22:59.720 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.720 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.720 | INFO |   session_paused: True
+2026-01-12 19:22:59.720 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.720 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:22:59.720 | INFO |   Session marked as resumed
+2026-01-12 19:22:59.720 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:22:59.720 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.726 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.726 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:22:59.726083", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:22:59.726 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 19:23:00.768 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 19:23:01.786 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.2 minutes", "status": "BEZIG", "timestamp": "2026-01-12T19:23:01.786171"}
+2026-01-12 19:23:02.805 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 19:23:03.930 | INFO | _save_updated_excel: Session already exists (api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608), skipping XLSX_UPDATED
+2026-01-12 19:23:05.754 | INFO | ============================================================
+2026-01-12 19:23:05.754 | INFO | _pause_session CALLED
+2026-01-12 19:23:05.754 | INFO |   blocking: False
+2026-01-12 19:23:05.754 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.754 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.754 | INFO |   session_paused: False
+2026-01-12 19:23:05.754 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:05.754 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:23:05.754 | INFO |   Session marked as paused at 2026-01-12 19:23:05.754928
+2026-01-12 19:23:05.754 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:23:05.754 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:05.754 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.758 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:23:05.754928", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:23:05.758 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 19:23:07.831 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 19:23:07.832 | INFO |   Session pause SUCCESSFUL
+2026-01-12 19:23:08.843 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T19:23:05.754928"}
+2026-01-12 19:23:10.919 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 19:23:10.919 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 19:23:14.998 | INFO | ============================================================
+2026-01-12 19:23:15.002 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 19:23:15.002 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 19:23:15.002 | INFO |   existing current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.002 | INFO |   existing api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.002 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.002 | INFO |   existing active_user: BOERE
+2026-01-12 19:23:15.002 | INFO |   User source: active_user = BOERE
+2026-01-12 19:23:15.008 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO | ============================================================
+2026-01-12 19:23:15.008 | INFO | _resume_session CALLED
+2026-01-12 19:23:15.008 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   session_paused: True
+2026-01-12 19:23:15.008 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:23:15.008 | INFO |   Session marked as resumed
+2026-01-12 19:23:15.008 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:23:15.008 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:23:15.008172", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:23:15.008 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 19:23:16.053 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 19:23:17.063 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.2 minutes", "status": "BEZIG", "timestamp": "2026-01-12T19:23:17.063429"}
+2026-01-12 19:23:18.098 | INFO |   SESSION_RESUME log response: 201

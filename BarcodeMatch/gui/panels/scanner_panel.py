@@ -10,9 +10,42 @@ import os
 import re
 import requests
 import json
+import logging
 from datetime import datetime
 from PIL import Image, ImageTk
 from config_utils import get_config_path, load_config as _load_full_config, update_config as _save_full_config
+
+# --- Session Debug Logger Setup ---
+def _setup_session_logger():
+    """Setup dedicated logger for session tracking debug"""
+    logger = logging.getLogger('session_debug')
+    logger.setLevel(logging.DEBUG)
+
+    # Prevent duplicate handlers
+    if logger.handlers:
+        return logger
+
+    # Create log directory if needed
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+
+    # File handler with detailed format
+    log_file = os.path.join(log_dir, 'session_debug.log')
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s.%(msecs)03d | %(levelname)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Log startup
+    logger.info("=" * 80)
+    logger.info("SESSION DEBUG LOGGER INITIALIZED")
+    logger.info("=" * 80)
+
+    return logger
+
+# Initialize session logger
+session_logger = _setup_session_logger()
 
 # Import session manager for crash recovery
 try:
@@ -52,13 +85,22 @@ class ScannerPanel(ttk.Frame):
         self._pending_config_updates = {} # For staging config changes
         
         # --- Session Tracking ---
-        self.current_session_id = None  # Local session ID for internal tracking
-        self.api_session_id = None  # API's session ID used for API requests
+        self.current_session_id = None  # Local session ID for display/logging only
+        self.api_session_id = None  # API's session ID - AUTHORITATIVE for all API calls
         self.session_start_time = None
         self.session_item_count = 0
         self.session_paused = False
         self.pause_start_time = None
         self.total_pause_duration = 0
+        self.active_project = None  # Cached project name - set once when file loaded, used for all operations
+        self.active_user = None  # Cached user name - set once when file loaded
+
+        # --- Session Thread Synchronization (Fix #4) ---
+        self._session_lock = threading.Lock()  # Protects session state changes
+        self._pause_complete_event = threading.Event()  # Signals when pause is complete
+        self._pause_complete_event.set()  # Initially set (not pausing)
+
+        session_logger.info(f"ScannerPanel initialized - thread sync enabled")
 
         # --- Image Viewer Window ---
         self.image_viewer_window = None
@@ -260,6 +302,8 @@ class ScannerPanel(ttk.Frame):
         self.context_menu = tk.Menu(self, tearoff=0)
         self.context_menu.add_command(label="Markeer als OK", command=self._mark_item_ok)
         self.context_menu.add_command(label="Status wissen", command=self._clear_item_status) # Changed from Markeer als NIET OK
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Stuktekening openen", command=self._open_stuktekening_for_selected)
         self.tree.bind("<Button-3>", self._show_context_menu)
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
         self.tree.bind("<Double-1>", self._on_tree_double_click)
@@ -809,7 +853,8 @@ class ScannerPanel(ttk.Frame):
                         'session_id': result.get('session_id'),
                         'start_time': result.get('start_time'),
                         'item_count': result.get('item_count', 0),
-                        'pause_duration_minutes': result.get('pause_duration_minutes', 0)
+                        'pause_duration_minutes': result.get('pause_duration_minutes', 0),
+                        'is_paused': result.get('is_paused', False)  # Capture actual pause state from API
                     }
             
             return None
@@ -820,6 +865,13 @@ class ScannerPanel(ttk.Frame):
     
     def _start_session_for_excel_work(self, excel_file_path):
         """Start a session when user begins working on Excel file"""
+        session_logger.info("=" * 60)
+        session_logger.info(f"_start_session_for_excel_work CALLED")
+        session_logger.info(f"  excel_file_path: {excel_file_path}")
+        session_logger.info(f"  existing current_session_id: {self.current_session_id}")
+        session_logger.info(f"  existing api_session_id: {self.api_session_id}")
+        session_logger.info(f"  existing active_project: {self.active_project}")
+        session_logger.info(f"  existing active_user: {self.active_user}")
         self._log(f"[DEBUG] _start_session_for_excel_work - existing session: {self.current_session_id}")
 
         try:
@@ -827,25 +879,30 @@ class ScannerPanel(ttk.Frame):
             if os.path.exists(config_file_path):
                 with open(config_file_path, 'r') as f:
                     config = json.load(f)
-                    
+
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if not api_url:
+                    session_logger.warning("No API URL configured, returning")
                     return
-                
+
                 # PRIORITY 1: Use active_user if set (from database panel double-click)
                 # PRIORITY 2: Determine user from file path (e.g., C:/BOERE/... -> BOERE)
                 # PRIORITY 3: Fallback to config user
-                user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_file_path) or config.get('user', 'NESTING')
-                
+                user = self.active_user or self._determine_user_from_path(excel_file_path) or config.get('user', 'NESTING')
+
                 # Log which user source was used
-                if getattr(self, 'active_user', None):
+                if self.active_user:
                     self._log(f"[DEBUG] Using active_user from database panel: {user}")
+                    session_logger.info(f"  User source: active_user = {user}")
                 elif self._determine_user_from_path(excel_file_path):
                     self._log(f"[DEBUG] Using user from file path: {user}")
+                    session_logger.info(f"  User source: file_path = {user}")
                 else:
                     self._log(f"[DEBUG] Using fallback user from config: {user}")
-                
-                # Use user name as-is for session ID to match database exactly
+                    session_logger.info(f"  User source: config fallback = {user}")
+
+                # Cache the user (Fix #1) - store once, use everywhere
+                self.active_user = user
                 user_normalized = user
                 self._log(f"[DEBUG] Using user for session: {user_normalized}")
 
@@ -855,6 +912,10 @@ class ScannerPanel(ttk.Frame):
                 if not project_name:
                     # Fallback to filename extraction if metadata is not available
                     project_name = self._extract_project_from_filename(excel_file_path)
+
+                # Cache the project name (Fix #1) - store once, use everywhere
+                self.active_project = project_name
+                session_logger.info(f"  Project extracted and CACHED: {project_name}")
 
                 # Check if current session matches the project being loaded
                 if self.current_session_id and project_name:
@@ -888,31 +949,45 @@ class ScannerPanel(ttk.Frame):
 
                 # Check if there's an existing paused session for this project/user
                 # This handles the case when switching from database panel with BEZIG project
+                session_logger.info(f"  Checking for existing session: user={user_normalized}, project={project_name}")
                 existing_session = self._check_for_existing_session(api_url, user_normalized, project_name)
-                
+
                 if existing_session:
-                    # Resume the existing session
-                    self._log(f"[DEBUG] Found existing paused session: {existing_session['session_id']}")
-                    # When resuming from database, the session_id from API is the authoritative one
+                    # Found existing session - restore session state
+                    is_paused = existing_session.get('is_paused', False)
+                    session_logger.info(f"  FOUND existing session from API:")
+                    session_logger.info(f"    session_id: {existing_session['session_id']}")
+                    session_logger.info(f"    is_paused: {is_paused}")
+                    self._log(f"[DEBUG] Found existing session: {existing_session['session_id']}, is_paused: {is_paused}")
+
+                    # When resuming from database, the session_id from API is AUTHORITATIVE (Fix #2)
                     self.api_session_id = existing_session['session_id']
-                    self.current_session_id = existing_session['session_id']  # Use same for local tracking
+                    self.current_session_id = existing_session['session_id']  # Sync local to API ID
                     self.session_start_time = datetime.fromisoformat(existing_session['start_time'])
                     self.session_item_count = existing_session.get('item_count', 0)
-                    self.session_paused = True  # It was paused
-                    self.pause_start_time = datetime.now()  # Track when it was paused
                     self.total_pause_duration = existing_session.get('pause_duration_minutes', 0)
 
-                    # Now resume it
-                    self._resume_session()
+                    session_logger.info(f"  Session IDs synchronized: api={self.api_session_id}, local={self.current_session_id}")
+
+                    # Only resume if the session is actually paused
+                    if is_paused:
+                        session_logger.info(f"  Session IS paused - will call _resume_session()")
+                        self.session_paused = True
+                        self.pause_start_time = datetime.now()
+                        self._resume_session()
+                    else:
+                        # Session is already active, just restore state without sending resume event
+                        session_logger.info(f"  Session NOT paused - no resume needed")
+                        self.session_paused = False
+                        self.pause_start_time = None
+                        self._log(f"[DEBUG] Session already active, no resume needed")
                     return
-                
+
                 # No existing session, create a new one
+                session_logger.info(f"  No existing session found - creating NEW session")
                 self.session_start_time = datetime.now()
                 # Include project in session_id to match what the API expects
-                # Sanitize project name for session_id: remove special characters
                 if project_name:
-                    # Use project name as-is for session_id to match API format
-                    # The API will handle any necessary sanitization
                     self.current_session_id = f"{user_normalized}_{project_name}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
                 else:
                     self.current_session_id = f"{user_normalized}_{self.session_start_time.strftime('%Y%m%d_%H%M%S')}"
@@ -920,7 +995,9 @@ class ScannerPanel(ttk.Frame):
                 self.session_paused = False
                 self.pause_start_time = None
                 self.total_pause_duration = 0
-                
+
+                session_logger.info(f"  NEW session created: {self.current_session_id}")
+                session_logger.info(f"  (api_session_id will be set when API responds)")
                 self._log(f"[DEBUG] Created new session: {self.current_session_id}")
 
                 # Save session state for crash recovery
@@ -954,31 +1031,32 @@ class ScannerPanel(ttk.Frame):
                 def start_session_api():
                     try:
                         endpoint = api_url.replace('/log', '/session/xlsx_updated')
+                        session_logger.info(f"  API CALL: POST {endpoint}")
+                        session_logger.info(f"  API DATA: {json.dumps(data, default=str)}")
                         self._log(f"[DEBUG] Sending session start to: {endpoint}")
-                        self._log(f"[DEBUG] Session data: {json.dumps(data, indent=2)}")
-                        
+
                         response = requests.post(endpoint,
                                                json=data, timeout=3, proxies={"http": None, "https": None})
                         if response.ok:
                             result = response.json()
                             if result.get('session_id'):
-                                # Store the API's session_id separately for API requests (pause/resume)
-                                # Keep our local session_id for internal tracking and file path lookups
-                                self.api_session_id = result['session_id']
+                                # Use lock to safely update session IDs (Fix #4)
+                                with self._session_lock:
+                                    # API session_id is AUTHORITATIVE (Fix #2)
+                                    self.api_session_id = result['session_id']
+                                    session_logger.info(f"  API RESPONSE: session_id={result['session_id']}")
+                                    session_logger.info(f"  SESSION IDs NOW: api={self.api_session_id}, local={self.current_session_id}")
                                 self._log(f"Started XLSX session - Local: {self.current_session_id}, API: {self.api_session_id}")
                             else:
+                                session_logger.warning(f"  API RESPONSE: No session_id returned")
                                 self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
                         else:
+                            session_logger.error(f"  API ERROR: HTTP {response.status_code} - {response.text}")
                             self._log(f"Failed to start XLSX session: HTTP {response.status_code}")
-                            self._log(f"[DEBUG] Response text: {response.text}")
-                            # Log the exact data that was sent for debugging
-                            self._log(f"[DEBUG] Request URL: {endpoint}")
-                            self._log(f"[DEBUG] Request data: {json.dumps(data, indent=2)}")
                     except Exception as e:
+                        session_logger.error(f"  API EXCEPTION: {e}")
                         self._log(f"Failed to start XLSX session: {e}")
-                        import traceback
-                        self._log(f"[DEBUG] Traceback: {traceback.format_exc()}")
-                
+
                 threading.Thread(target=start_session_api, daemon=True).start()
                         
         except Exception as e:
@@ -999,12 +1077,39 @@ class ScannerPanel(ttk.Frame):
                 return part.upper()
         
         return None
-    
+
+    def _convert_to_unc_path(self, file_path):
+        """Convert drive letter path to UNC path if mapping exists (Fix #3)"""
+        if not file_path or len(file_path) < 2:
+            return None
+
+        # Skip if already UNC
+        if file_path.startswith('\\\\'):
+            return file_path
+
+        drive_letter = file_path[0].upper()
+
+        # Known drive letter to UNC mappings
+        drive_mappings = {
+            'Y': '\\\\172.30.2.54\\vlecad',
+            'Z': '\\\\172.30.2.54\\data',
+            # Add more mappings as needed
+        }
+
+        if drive_letter in drive_mappings:
+            unc_base = drive_mappings[drive_letter]
+            # Replace drive letter (e.g., "Y:") with UNC path
+            unc_path = unc_base + file_path[2:]
+            session_logger.debug(f"Converted drive path to UNC: {file_path} -> {unc_path}")
+            return unc_path
+
+        return None
+
     def _extract_project_from_filename(self, file_path):
         """Extract project name from filename dynamically"""
         if not file_path:
             return None
-        
+
         filename = os.path.basename(file_path)
         
         # Priority 1: Look up project from database using file path
@@ -1206,24 +1311,41 @@ class ScannerPanel(ttk.Frame):
             blocking: If True, waits for API call to complete before returning.
                      Use True during shutdown to ensure pause is registered.
         """
+        session_logger.info("=" * 60)
+        session_logger.info(f"_pause_session CALLED")
+        session_logger.info(f"  blocking: {blocking}")
+        session_logger.info(f"  current_session_id: {self.current_session_id}")
+        session_logger.info(f"  api_session_id: {self.api_session_id}")
+        session_logger.info(f"  session_paused: {self.session_paused}")
+        session_logger.info(f"  active_project (CACHED): {self.active_project}")
+        session_logger.info(f"  active_user (CACHED): {self.active_user}")
         print(f"[PAUSE_DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, blocking: {blocking}")
         self._log(f"[DEBUG] _pause_session called - session_id: {self.current_session_id}, paused: {self.session_paused}, blocking: {blocking}")
 
+        # Signal that pause is starting (Fix #4)
+        self._pause_complete_event.clear()
+
         # Only pause if we have an active session that's not already paused
         if self.current_session_id and not self.session_paused:
-            # Mark as paused immediately to prevent duplicate pause attempts
-            self.session_paused = True
-            # Always set pause_start_time when pausing
-            if not self.pause_start_time:
-                self.pause_start_time = datetime.now()
+            # Use lock to safely update session state (Fix #4)
+            with self._session_lock:
+                # Mark as paused immediately to prevent duplicate pause attempts
+                self.session_paused = True
+                # Always set pause_start_time when pausing
+                if not self.pause_start_time:
+                    self.pause_start_time = datetime.now()
+                session_logger.info(f"  Session marked as paused at {self.pause_start_time}")
+
+            # Use CACHED values (Fix #1) - never re-extract during pause/resume
+            user = self.active_user or 'UNKNOWN'
+            project = self.active_project or 'UNKNOWN'
+            session_logger.info(f"  Using CACHED user: {user}")
+            session_logger.info(f"  Using CACHED project: {project}")
 
             # Update session state file to show paused
             if self.session_manager:
                 try:
                     excel_path = self.excel_file_path_var.get()
-                    user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or 'UNKNOWN'
-                    project = self._extract_project_from_filename(excel_path)
-
                     session_data = {
                         'session_id': self.current_session_id,
                         'user': user,
@@ -1236,118 +1358,119 @@ class ScannerPanel(ttk.Frame):
                     self.session_manager.save_session(session_data)
                 except Exception as e:
                     print(f"[SCANNER] Error updating session state on pause: {e}")
-            
+
             try:
                 config_file_path = get_config_path()
                 if os.path.exists(config_file_path):
                     with open(config_file_path, 'r') as f:
                         config = json.load(f)
-                        
+
                     api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
-                        # Get user and project for the pause event
-                        # PRIORITY 1: Use active_user if available (set when project was loaded)
-                        # PRIORITY 2: Extract from file path
-                        excel_path = self.excel_file_path_var.get()
-                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
-                        project = self._extract_project_from_filename(excel_path)
-
-                        # Use API session_id for pause requests (fallback to local if API ID not available)
+                        # Use API session_id as AUTHORITATIVE (Fix #2)
                         session_id_for_api = self.api_session_id if self.api_session_id else self.current_session_id
+                        session_logger.info(f"  Using session_id for API: {session_id_for_api}")
 
                         data = {
                             'session_id': session_id_for_api,
                             'timestamp': self.pause_start_time.isoformat(),
-                            'user': user,  # Use original user name with spaces for API
+                            'user': user,
                             'project': project
                         }
+                        session_logger.info(f"  PAUSE API data: {json.dumps(data, default=str)}")
                         
                         def pause_session_api():
                             try:
                                 pause_url = api_url.replace('/log', '/session/pause')
+                                session_logger.info(f"  PAUSE API CALL: POST {pause_url}")
                                 print(f"[PAUSE_API] Sending pause request to {pause_url}")
                                 print(f"[PAUSE_API] Pause data: {data}")
-                                
+
                                 # Send pause event to session endpoint
                                 response = requests.post(pause_url, json=data, timeout=3, proxies={"http": None, "https": None})
+                                session_logger.info(f"  PAUSE API RESPONSE: {response.status_code}")
                                 print(f"[PAUSE_API] Session pause response status: {response.status_code}")
                                 print(f"[PAUSE_API] Session pause response body: {response.text}")
-                                
+
                                 if response.ok:
                                     response_data = response.json()
 
                                     # Check if session was already paused
                                     if response_data.get('already_paused'):
+                                        session_logger.info(f"  Session was ALREADY paused - skipping SESSION_PAUSE event")
                                         print(f"[PAUSE_API] Session was already paused, skipping SESSION_PAUSE event")
                                         self._log(f"Session was already paused: {self.current_session_id}")
-                                        # Clear session file since it's safely paused
                                         if self.session_manager:
                                             self.session_manager.clear_session()
                                         return  # Don't send duplicate SESSION_PAUSE event
 
+                                    session_logger.info(f"  Session pause SUCCESSFUL")
                                     print(f"[PAUSE_API] Session pause successful")
                                     self._log(f"Session paused: {self.current_session_id}")
 
-                                    # Clear session file since it's safely paused
                                     if self.session_manager:
                                         self.session_manager.clear_session()
-                                    
+
                                     # Check if project has been marked as AFGEMELD before sending SESSION_PAUSE
-                                    check_data = {
-                                        'project': project,
-                                        'user': user
-                                    }
                                     should_send_pause = True
                                     try:
-                                        check_response = requests.get(api_url.replace('/log', '/project/status'), params=check_data, timeout=1, proxies={"http": None, "https": None})
+                                        check_response = requests.get(api_url.replace('/log', '/project/status'),
+                                                                     params={'project': project, 'user': user},
+                                                                     timeout=1, proxies={"http": None, "https": None})
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
+                                                session_logger.info(f"  Skipping SESSION_PAUSE - project AFGEMELD")
                                                 print(f"[PAUSE_API] Skipping SESSION_PAUSE - project already AFGEMELD for {user}")
-                                                self._log(f"Cannot pause - project already AFGEMELD for {user}")
                                                 should_send_pause = False
                                     except:
-                                        pass  # Continue if check fails
-                                    
+                                        pass
+
                                     if should_send_pause:
-                                        # Also log SESSION_PAUSE event for tracking
-                                        # Use pause_start_time if available, otherwise use current time
+                                        # Use CACHED values and AUTHORITATIVE session_id for log event
                                         pause_timestamp = self.pause_start_time.isoformat() if self.pause_start_time else datetime.now().isoformat()
                                         log_data = {
                                             'event': 'SESSION_PAUSE',
-                                            'user': user,  # Use original user name with spaces for API
+                                            'user': user,
                                             'project': project,
-                                            'session_id': self.current_session_id,
-                                            'details': f'Session paused - panel hidden',
-                                            'status': 'PAUZE',  # Add status for visibility
+                                            'session_id': session_id_for_api,  # Use authoritative session ID (Fix #2)
+                                            'details': 'Session paused - panel hidden',
+                                            'status': 'PAUZE',
                                             'timestamp': pause_timestamp
                                         }
+                                        session_logger.info(f"  SESSION_PAUSE log event: {json.dumps(log_data, default=str)}")
                                         print(f"[PAUSE_API] Sending SESSION_PAUSE event to {api_url}")
-                                        print(f"[PAUSE_API] Event data: {log_data}")
-                                        
+
                                         try:
                                             pause_log_response = requests.post(api_url, json=log_data, timeout=3, proxies={"http": None, "https": None})
+                                            session_logger.info(f"  SESSION_PAUSE log response: {pause_log_response.status_code}")
                                             print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
-                                            print(f"[PAUSE_API] SESSION_PAUSE event body: {pause_log_response.text}")
                                         except Exception as log_error:
+                                            session_logger.error(f"  SESSION_PAUSE log FAILED: {log_error}")
                                             print(f"[PAUSE_API ERROR] Failed to send SESSION_PAUSE event: {log_error}")
                                 else:
-                                    # Reset flag if pause failed
+                                    session_logger.error(f"  PAUSE API FAILED: {response.status_code} - {response.text}")
                                     print(f"[PAUSE_API ERROR] Session pause failed with status {response.status_code}: {response.text}")
-                                    self.session_paused = False
+                                    with self._session_lock:
+                                        self.session_paused = False
                                     self._log(f"Failed to pause session: HTTP {response.status_code}")
                             except requests.exceptions.ConnectionError as e:
+                                session_logger.error(f"  PAUSE API CONNECTION ERROR: {e}")
                                 print(f"[PAUSE_API ERROR] Connection error - is database running? {e}")
                                 self._log(f"Connection error during pause: {e}")
-                                self.session_paused = False
+                                with self._session_lock:
+                                    self.session_paused = False
                             except Exception as e:
+                                session_logger.error(f"  PAUSE API EXCEPTION: {e}")
                                 print(f"[PAUSE_API ERROR] Unexpected error during pause: {e}")
-                                import traceback
-                                traceback.print_exc()
                                 self._log(f"Failed to pause session: {e}")
-                                # Reset flag if pause failed
-                                self.session_paused = False
-                        
+                                with self._session_lock:
+                                    self.session_paused = False
+                            finally:
+                                # Signal that pause is complete (Fix #4)
+                                self._pause_complete_event.set()
+                                session_logger.info(f"  PAUSE COMPLETE - _pause_complete_event SET")
+
                         # Start thread - if blocking mode, wait for completion
                         pause_thread = threading.Thread(target=pause_session_api, daemon=not blocking)
                         pause_thread.start()
@@ -1358,43 +1481,64 @@ class ScannerPanel(ttk.Frame):
                             if pause_thread.is_alive():
                                 self._log("Warning: Pause API call timed out during shutdown")
                                 print("[PAUSE_WARNING] Pause API call exceeded 5 second timeout during shutdown")
+                    else:
+                        # No API URL - still signal completion
+                        self._pause_complete_event.set()
 
             except Exception as e:
+                session_logger.error(f"  PAUSE EXCEPTION: {e}")
                 self._log(f"Error pausing session: {e}")
                 self.session_paused = False
-    
+                self._pause_complete_event.set()  # Signal completion even on error
+        else:
+            # No session to pause or already paused - signal completion immediately
+            session_logger.info(f"  No pause needed - session_id={self.current_session_id}, paused={self.session_paused}")
+            self._pause_complete_event.set()
+
     def _resume_session(self):
         """Resume the current session when panel is shown"""
+        session_logger.info("=" * 60)
+        session_logger.info(f"_resume_session CALLED")
+        session_logger.info(f"  current_session_id: {self.current_session_id}")
+        session_logger.info(f"  api_session_id: {self.api_session_id}")
+        session_logger.info(f"  session_paused: {self.session_paused}")
+        session_logger.info(f"  active_project (CACHED): {self.active_project}")
+        session_logger.info(f"  active_user (CACHED): {self.active_user}")
+
+        # Wait for any pending pause to complete before resuming (Fix #4)
+        if not self._pause_complete_event.wait(timeout=3):
+            session_logger.warning(f"  Timeout waiting for pause to complete - proceeding anyway")
+
         if self.current_session_id and self.session_paused:
-            # Don't calculate pause duration locally - let the API do it with work-hours awareness
+            # Calculate pause duration for logging
             pause_duration_seconds = 0
             if self.pause_start_time:
-                # Just for logging purposes, show raw duration
                 pause_duration_seconds = (datetime.now() - self.pause_start_time).total_seconds()
-                # Don't add to total - the API will track the correct work-hours-aware total
-            
-            # Mark as resumed immediately to prevent duplicate calls
-            self.session_paused = False
-            self.pause_start_time = None
-            
+
+            # Use lock to safely update session state (Fix #4)
+            with self._session_lock:
+                self.session_paused = False
+                self.pause_start_time = None
+                session_logger.info(f"  Session marked as resumed")
+
+            # Use CACHED values (Fix #1) - never re-extract during pause/resume
+            user = self.active_user or 'UNKNOWN'
+            project = self.active_project or 'UNKNOWN'
+            session_logger.info(f"  Using CACHED user: {user}")
+            session_logger.info(f"  Using CACHED project: {project}")
+            print(f"[RESUME_DEBUG] User: '{user}', Project: '{project}'")
+
             try:
                 config_file_path = get_config_path()
                 if os.path.exists(config_file_path):
                     with open(config_file_path, 'r') as f:
                         config = json.load(f)
-                        
+
                     api_url = self._ensure_url_protocol(config.get('api_url', ''))
                     if api_url:
-                        # Get user and project for the resume event
-                        # PRIORITY 1: Use active_user if available (set when project was loaded)
-                        # PRIORITY 2: Extract from file path
-                        excel_path = self.excel_file_path_var.get()
-                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(excel_path) or config.get('user', 'UNKNOWN')
-                        project = self._extract_project_from_filename(excel_path)
-                        print(f"[RESUME_DEBUG] User: '{user}', Project: '{project}'")
-
-                        # Use API session_id for resume requests (fallback to local if API ID not available)
+                        # Use API session_id as AUTHORITATIVE (Fix #2)
                         session_id_for_api = self.api_session_id if self.api_session_id else self.current_session_id
+                        session_logger.info(f"  Using session_id for API: {session_id_for_api}")
 
                         data = {
                             'session_id': session_id_for_api,
@@ -1403,54 +1547,63 @@ class ScannerPanel(ttk.Frame):
                             'user': user,
                             'project': project
                         }
-                        
+                        session_logger.info(f"  RESUME API data: {json.dumps(data, default=str)}")
+
                         def resume_session_api():
                             try:
-                                # Send resume event to session endpoint
-                                response = requests.post(api_url.replace('/log', '/session/resume'),
-                                                       json=data, timeout=1, proxies={"http": None, "https": None})
+                                resume_url = api_url.replace('/log', '/session/resume')
+                                session_logger.info(f"  RESUME API CALL: POST {resume_url}")
+                                response = requests.post(resume_url, json=data, timeout=1, proxies={"http": None, "https": None})
+                                session_logger.info(f"  RESUME API RESPONSE: {response.status_code}")
+
                                 if response.ok:
                                     self._log(f"Session resumed: {self.current_session_id}")
-                                    
-                                    # Also log SESSION_RESUME event for tracking - but check for AFGEMELD first
-                                    pause_minutes = round(pause_duration_seconds / 60, 1)
-                                    
+
                                     # Check if project has been marked as AFGEMELD before sending SESSION_RESUME
-                                    check_data = {
-                                        'project': project,
-                                        'user': user
-                                    }
                                     try:
-                                        check_response = requests.get(api_url.replace('/log', '/project/status'), params=check_data, timeout=1, proxies={"http": None, "https": None})
+                                        check_response = requests.get(api_url.replace('/log', '/project/status'),
+                                                                     params={'project': project, 'user': user},
+                                                                     timeout=1, proxies={"http": None, "https": None})
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
+                                                session_logger.info(f"  Skipping SESSION_RESUME - project AFGEMELD")
                                                 self._log(f"Cannot resume - project already AFGEMELD for {user}")
                                                 return
                                     except:
-                                        pass  # Continue if check fails
-                                    
+                                        pass
+
+                                    # Use CACHED values and AUTHORITATIVE session_id for log event
+                                    pause_minutes = round(pause_duration_seconds / 60, 1)
                                     log_data = {
                                         'event': 'SESSION_RESUME',
                                         'user': user,
                                         'project': project,
-                                        'session_id': self.current_session_id,
+                                        'session_id': session_id_for_api,  # Use authoritative session ID (Fix #2)
                                         'details': f'Session resumed - pause duration: {pause_minutes} minutes',
-                                        'status': 'BEZIG',  # Show that work is continuing
+                                        'status': 'BEZIG',
                                         'timestamp': datetime.now().isoformat()
                                     }
+                                    session_logger.info(f"  SESSION_RESUME log event: {json.dumps(log_data, default=str)}")
                                     print(f"[RESUME_API] Sending SESSION_RESUME event with data: {log_data}")
+
                                     resume_response = requests.post(api_url, json=log_data, timeout=1, proxies={"http": None, "https": None})
+                                    session_logger.info(f"  SESSION_RESUME log response: {resume_response.status_code}")
                                     print(f"[RESUME_API] SESSION_RESUME response: {resume_response.status_code}, body: {resume_response.text}")
                                 else:
+                                    session_logger.error(f"  RESUME API FAILED: {response.status_code}")
                                     self._log(f"Failed to resume session: HTTP {response.status_code}")
                             except Exception as e:
+                                session_logger.error(f"  RESUME API EXCEPTION: {e}")
                                 self._log(f"Failed to resume session: {e}")
-                        
+
                         threading.Thread(target=resume_session_api, daemon=True).start()
-                        
+
             except Exception as e:
+                session_logger.error(f"  RESUME EXCEPTION: {e}")
                 self._log(f"Error resuming session: {e}")
+        else:
+            session_logger.info(f"  No resume needed - session_id={self.current_session_id}, paused={self.session_paused}")
     
     def pack(self, **kwargs):
         """Override pack to detect when panel is shown"""
@@ -1521,41 +1674,21 @@ class ScannerPanel(ttk.Frame):
                     
                     print(f"[ScannerPanel] Found orphaned session: {session_id} (paused: {is_paused})")
                     
-                    # If session was paused, send resume first to maintain event consistency
-                    if is_paused:
-                        resume_data = {
+                    # Pause orphaned session if it's not already paused
+                    if not is_paused:
+                        pause_data = {
                             'session_id': session_id,
                             'timestamp': datetime.now().isoformat(),
                             'user': user,
                             'project': session.get('project', '')
                         }
-                        resume_response = requests.post(api_url.replace('/log', '/session/resume'), json=resume_data, timeout=1, proxies={"http": None, "https": None})
-                        if resume_response.ok:
-                            print(f"[ScannerPanel] Resumed paused session before cleanup: {session_id}")
-                            # Also log SESSION_RESUME event
-                            log_data = {
-                                'event': 'SESSION_RESUME',
-                                'user': user,
-                                'project': session.get('project', ''),
-                                'session_id': session_id,
-                                'details': 'Session resumed for cleanup',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            try:
-                                requests.post(api_url, json=log_data, timeout=1, proxies={"http": None, "https": None})
-                            except:
-                                pass  # Don't fail if event logging fails
-                    
-                    # Close orphaned session
-                    end_data = {
-                        'session_id': session_id,
-                        'timestamp': datetime.now().isoformat()
-                    }
-                    close_response = requests.post(api_url.replace('/log', '/session/end'), json=end_data, timeout=1, proxies={"http": None, "https": None})
-                    if close_response.ok:
-                        print(f"[ScannerPanel] Cleaned up orphaned session: {session_id}")
+                        pause_response = requests.post(api_url.replace('/log', '/session/pause'), json=pause_data, timeout=1, proxies={"http": None, "https": None})
+                        if pause_response.ok:
+                            print(f"[ScannerPanel] Paused orphaned session: {session_id}")
+                        else:
+                            print(f"[ScannerPanel] Failed to pause orphaned session: {session_id}")
                     else:
-                        print(f"[ScannerPanel] Failed to clean up session: {session_id}")
+                        print(f"[ScannerPanel] Orphaned session already paused: {session_id}")
             elif response.status_code == 404:
                 # Endpoint doesn't exist yet
                 print("[ScannerPanel] Active sessions endpoint not available, skipping cleanup")
@@ -1670,6 +1803,9 @@ class ScannerPanel(ttk.Frame):
 
             # Open PNG image if setting is enabled and it's an OPUS scan
             self._try_open_opus_image(log_barcode)
+
+            # Open PDF stuktekening if setting is enabled
+            self._try_open_stuktekening(log_barcode)
 
             self._all_items_ok_check()
 
@@ -1914,6 +2050,412 @@ class ScannerPanel(ttk.Frame):
         self.image_label = None
         self.current_image_path = None
 
+    # --- Stuktekening (PDF Drawing) Viewer ---
+
+    def _try_open_stuktekening(self, scanned_barcode):
+        """
+        Opens the corresponding PDF stuktekening (drawing) if the setting is enabled.
+        Searches for the scanned barcode in Objectnaam_Wandnaam field and displays that page.
+        """
+        try:
+            print(f"[STUKTEKENING] Starting search for barcode: '{scanned_barcode}'")
+            config = _load_full_config()
+            if not config.get('open_stuktekening_on_scan', False):
+                print("[STUKTEKENING] Feature disabled in settings")
+                return
+
+            pdf_directory = config.get('stuktekening_directory', '')
+            print(f"[STUKTEKENING] PDF directory: '{pdf_directory}'")
+            if not pdf_directory or not os.path.isdir(pdf_directory):
+                print(f"[STUKTEKENING] PDF directory not found or invalid")
+                return
+
+            excel_path = self.excel_file_path_var.get()
+            if not excel_path:
+                print("[STUKTEKENING] No Excel file loaded")
+                return
+
+            project_name = self._get_project_name_for_stuktekening(excel_path)
+            print(f"[STUKTEKENING] Project name: '{project_name}'")
+            if not project_name:
+                print("[STUKTEKENING] Could not determine project name")
+                return
+
+            pdf_path = self._find_matching_pdf(pdf_directory, project_name)
+            print(f"[STUKTEKENING] Matched PDF: '{pdf_path}'")
+            if not pdf_path:
+                self._log(f"[INFO] Geen PDF gevonden voor project: {project_name}")
+                return
+
+            page_number = self._find_barcode_in_pdf(pdf_path, scanned_barcode)
+            if page_number is not None:
+                print(f"[STUKTEKENING] Found on page {page_number + 1}")
+                # Get dimensions from barcode_data if available
+                dimensions = None
+                if scanned_barcode in self.barcode_data:
+                    additional = self.barcode_data[scanned_barcode].get('additional_data', {})
+                    # Look for dimension columns (case-insensitive)
+                    lengte = None
+                    breedte = None
+                    dikte = None
+                    for key, value in additional.items():
+                        key_lower = key.lower()
+                        if 'lengte' in key_lower and value:
+                            lengte = value
+                        elif 'breedte' in key_lower and value:
+                            breedte = value
+                        elif 'dikte' in key_lower and value:
+                            dikte = value
+                    if lengte or breedte or dikte:
+                        dimensions = {'lengte': lengte, 'breedte': breedte, 'dikte': dikte}
+                        print(f"[STUKTEKENING] Dimensions found: {dimensions}")
+                self._show_pdf_page_in_viewer(pdf_path, page_number, scanned_barcode, dimensions)
+            else:
+                print(f"[STUKTEKENING] Barcode '{scanned_barcode}' NOT found in PDF")
+                self._log(f"[INFO] '{scanned_barcode}' niet gevonden in PDF")
+
+        except Exception as e:
+            print(f"[STUKTEKENING] Error: {e}")
+            self._log(f"[WARN] Fout bij openen stuktekening: {e}")
+
+    def _get_project_name_for_stuktekening(self, excel_path):
+        """Gets the project name from Excel metadata or filename."""
+        try:
+            mo_number, project_name = self._extract_project_info_from_excel(excel_path)
+            if project_name:
+                return project_name
+            filename = os.path.basename(excel_path)
+            name = os.path.splitext(filename)[0]
+            if name.endswith('_updated'):
+                name = name[:-8]
+            return name
+        except:
+            return None
+
+    def _find_matching_pdf(self, pdf_directory, project_name):
+        """Finds a PDF file matching the project name."""
+        try:
+            mo_match = re.search(r'(MO\d{5})', project_name, re.IGNORECASE)
+            mo_number = mo_match.group(1).upper() if mo_match else None
+
+            for filename in os.listdir(pdf_directory):
+                if filename.lower().endswith('.pdf'):
+                    if mo_number and mo_number in filename.upper():
+                        return os.path.join(pdf_directory, filename)
+                    pdf_name = os.path.splitext(filename)[0]
+                    if project_name.lower() in pdf_name.lower():
+                        return os.path.join(pdf_directory, filename)
+            return None
+        except:
+            return None
+
+    def _find_barcode_in_pdf(self, pdf_path, barcode):
+        """Finds the page number containing the barcode in Objectnaam_Wandnaam."""
+        try:
+            import fitz  # PyMuPDF
+        except ImportError:
+            self._log("[WARN] PyMuPDF niet geinstalleerd. Installeer met: pip install PyMuPDF")
+            return None
+
+        try:
+            doc = fitz.open(pdf_path)
+            clean_barcode = os.path.splitext(barcode)[0] if '.' in barcode else barcode
+            # Normalize: remove all underscores for comparison
+            barcode_normalized = clean_barcode.replace('_', '').upper()
+            print(f"[STUKTEKENING] Searching for: '{clean_barcode}' -> normalized: '{barcode_normalized}'")
+            print(f"[STUKTEKENING] PDF has {len(doc)} pages")
+
+            found_objects = []
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                text = page.get_text()
+
+                if 'Objectnaam_Wandnaam' in text:
+                    match = re.search(r'Objectnaam_Wandnaam[:\s]+([^\n\r]+)', text)
+                    if match:
+                        obj_name = match.group(1).strip()
+                        # Normalize: remove all underscores for comparison
+                        obj_normalized = obj_name.replace('_', '').upper()
+                        found_objects.append((page_num + 1, obj_name))
+
+                        # Debug comparison
+                        print(f"[STUKTEKENING] Page {page_num + 1}: '{obj_name}' -> '{obj_normalized}' | Match: {barcode_normalized == obj_normalized}")
+
+                        if barcode_normalized == obj_normalized:
+                            print(f"[STUKTEKENING] MATCH on page {page_num + 1}")
+                            doc.close()
+                            return page_num
+
+            print(f"[STUKTEKENING] No match found. Objects in PDF: {found_objects[:10]}{'...' if len(found_objects) > 10 else ''}")
+            doc.close()
+            return None
+        except Exception as e:
+            print(f"[STUKTEKENING] Error searching PDF: {e}")
+            self._log(f"[WARN] Fout bij doorzoeken PDF: {e}")
+            return None
+
+    def _show_pdf_page_in_viewer(self, pdf_path, page_number, barcode_name, dimensions=None):
+        """Renders a PDF page and shows it in the viewer with optional dimensions info."""
+        try:
+            import fitz  # PyMuPDF
+        except ImportError:
+            return
+
+        try:
+            doc = fitz.open(pdf_path)
+            page = doc[page_number]
+
+            # Render page to image at 150 DPI for good quality
+            mat = fitz.Matrix(150/72, 150/72)
+            pix = page.get_pixmap(matrix=mat)
+
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            doc.close()
+
+            # Store dimensions for info label (shown above PDF, not as overlay)
+            self.stuktekening_dimensions = dimensions
+
+            # Store the image and show in viewer
+            self.stuktekening_original_image = img
+            self._show_stuktekening_in_viewer(img, f"{barcode_name} - {os.path.basename(pdf_path)}")
+
+            self._log(f"✓ Stuktekening geopend: {barcode_name} (pagina {page_number + 1})")
+
+        except Exception as e:
+            self._log(f"[WARN] Fout bij renderen PDF pagina: {e}")
+
+    def _add_dimensions_overlay(self, img, dimensions):
+        """Adds dimensions (lengte, breedte, dikte) overlay to top-right of image."""
+        try:
+            from PIL import ImageDraw, ImageFont
+
+            # Create a copy to draw on
+            img_copy = img.copy()
+            draw = ImageDraw.Draw(img_copy)
+
+            # Build dimension text
+            lines = []
+            if dimensions.get('lengte'):
+                lines.append(f"L: {dimensions['lengte']} mm")
+            if dimensions.get('breedte'):
+                lines.append(f"B: {dimensions['breedte']} mm")
+            if dimensions.get('dikte'):
+                lines.append(f"D: {dimensions['dikte']} mm")
+
+            if not lines:
+                return img
+
+            text = '\n'.join(lines)
+
+            # Try to use a larger font, fallback to default
+            try:
+                font = ImageFont.truetype("arial.ttf", 24)
+            except:
+                try:
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+                except:
+                    font = ImageFont.load_default()
+
+            # Calculate text size
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+
+            # Position in top-right corner with padding
+            padding = 15
+            box_padding = 10
+            x = img_copy.width - text_width - padding - box_padding * 2
+            y = padding
+
+            # Draw semi-transparent background box
+            box_coords = [
+                x - box_padding,
+                y - box_padding,
+                x + text_width + box_padding,
+                y + text_height + box_padding
+            ]
+            draw.rectangle(box_coords, fill=(255, 255, 200), outline=(0, 0, 0), width=2)
+
+            # Draw text
+            draw.text((x, y), text, fill=(0, 0, 0), font=font)
+
+            print(f"[STUKTEKENING] Added dimensions overlay: {lines}")
+            return img_copy
+
+        except Exception as e:
+            print(f"[STUKTEKENING] Error adding dimensions overlay: {e}")
+            return img
+
+    def _show_stuktekening_in_viewer(self, pil_image, title):
+        """Shows the stuktekening image in a viewer window."""
+        try:
+            if not hasattr(self, 'stuktekening_viewer_window') or self.stuktekening_viewer_window is None or not self.stuktekening_viewer_window.winfo_exists():
+                self._create_stuktekening_viewer_window()
+
+            self.stuktekening_original_image = pil_image
+            self._fit_stuktekening_to_window()
+            self.stuktekening_viewer_window.title(f"Stuktekening - {title}")
+
+            # Update dimensions info label (top-left, above PDF)
+            self._update_stuktekening_info_label()
+
+            self.stuktekening_viewer_window.lift()
+            self.stuktekening_viewer_window.focus_force()
+
+        except Exception as e:
+            self._log(f"[WARN] Fout bij tonen stuktekening: {e}")
+
+    def _update_stuktekening_info_label(self):
+        """Updates the info label above the PDF with dimensions."""
+        try:
+            if not hasattr(self, 'stuktekening_info_label'):
+                return
+
+            dimensions = getattr(self, 'stuktekening_dimensions', None)
+            if dimensions:
+                parts = []
+                if dimensions.get('lengte'):
+                    parts.append(f"L: {dimensions['lengte']} mm")
+                if dimensions.get('breedte'):
+                    parts.append(f"B: {dimensions['breedte']} mm")
+                if dimensions.get('dikte'):
+                    parts.append(f"D: {dimensions['dikte']} mm")
+
+                if parts:
+                    info_text = "  |  ".join(parts)
+                    self.stuktekening_info_label.configure(text=info_text)
+                    self.stuktekening_info_frame.pack(fill=tk.X, padx=10, pady=(10, 0), anchor='nw')
+                    print(f"[STUKTEKENING] Info label updated: {info_text}")
+                else:
+                    self.stuktekening_info_label.configure(text="")
+                    self.stuktekening_info_frame.pack_forget()
+            else:
+                self.stuktekening_info_label.configure(text="")
+                self.stuktekening_info_frame.pack_forget()
+        except Exception as e:
+            print(f"[STUKTEKENING] Error updating info label: {e}")
+
+    def _create_stuktekening_viewer_window(self):
+        """Creates the stuktekening viewer window."""
+        self.stuktekening_viewer_window = tk.Toplevel(self.winfo_toplevel())
+        self.stuktekening_viewer_window.title("Stuktekening Viewer")
+
+        window_width, window_height = 1200, 900
+        screen_width = self.stuktekening_viewer_window.winfo_screenwidth()
+        screen_height = self.stuktekening_viewer_window.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.stuktekening_viewer_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+        # Info frame at top-left for dimensions (above the PDF)
+        self.stuktekening_info_frame = ttk.Frame(self.stuktekening_viewer_window)
+        self.stuktekening_info_frame.pack(fill=tk.X, padx=10, pady=(10, 0), anchor='nw')
+
+        self.stuktekening_info_label = ttk.Label(
+            self.stuktekening_info_frame,
+            text="",
+            font=('Arial', 14, 'bold'),
+            background='#FFFFCC',
+            foreground='#000000',
+            padding=(10, 5)
+        )
+        self.stuktekening_info_label.pack(side=tk.LEFT, anchor='nw')
+
+        # Canvas with scrollbars
+        image_frame = ttk.Frame(self.stuktekening_viewer_window)
+        image_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.stuktekening_canvas = tk.Canvas(image_frame, bg='gray85')
+        v_scroll = ttk.Scrollbar(image_frame, orient=tk.VERTICAL, command=self.stuktekening_canvas.yview)
+        h_scroll = ttk.Scrollbar(image_frame, orient=tk.HORIZONTAL, command=self.stuktekening_canvas.xview)
+        self.stuktekening_canvas.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
+
+        self.stuktekening_canvas.grid(row=0, column=0, sticky='nsew')
+        v_scroll.grid(row=0, column=1, sticky='ns')
+        h_scroll.grid(row=1, column=0, sticky='ew')
+        image_frame.grid_rowconfigure(0, weight=1)
+        image_frame.grid_columnconfigure(0, weight=1)
+
+        self.stuktekening_scale = 1.0
+
+        # Control buttons
+        btn_frame = ttk.Frame(self.stuktekening_viewer_window)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Zoom In (+)", command=lambda: self._zoom_stuktekening(1.2)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Zoom Out (-)", command=lambda: self._zoom_stuktekening(0.8)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Passend (F)", command=self._fit_stuktekening_to_window).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="100% (O)", command=self._reset_stuktekening_size).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Sluiten (Esc)", command=self._close_stuktekening_viewer).pack(side=tk.RIGHT, padx=5)
+
+        # Keyboard shortcuts
+        self.stuktekening_viewer_window.bind('<plus>', lambda e: self._zoom_stuktekening(1.2))
+        self.stuktekening_viewer_window.bind('<minus>', lambda e: self._zoom_stuktekening(0.8))
+        self.stuktekening_viewer_window.bind('f', lambda e: self._fit_stuktekening_to_window())
+        self.stuktekening_viewer_window.bind('F', lambda e: self._fit_stuktekening_to_window())
+        self.stuktekening_viewer_window.bind('o', lambda e: self._reset_stuktekening_size())
+        self.stuktekening_viewer_window.bind('O', lambda e: self._reset_stuktekening_size())
+
+        # Mouse scroll wheel zoom
+        self.stuktekening_canvas.bind('<MouseWheel>', self._on_stuktekening_scroll_zoom)  # Windows/macOS
+        self.stuktekening_canvas.bind('<Button-4>', lambda e: self._zoom_stuktekening(1.1))  # Linux scroll up
+        self.stuktekening_canvas.bind('<Button-5>', lambda e: self._zoom_stuktekening(0.9))  # Linux scroll down
+        self.stuktekening_viewer_window.bind('<Escape>', lambda e: self._close_stuktekening_viewer())
+
+        self.stuktekening_viewer_window.protocol("WM_DELETE_WINDOW", self._close_stuktekening_viewer)
+
+    def _update_stuktekening_display(self):
+        """Updates the displayed stuktekening with current scale."""
+        if not hasattr(self, 'stuktekening_original_image'):
+            return
+        try:
+            img = self.stuktekening_original_image
+            new_size = (int(img.width * self.stuktekening_scale), int(img.height * self.stuktekening_scale))
+            resized = img.resize(new_size, Image.Resampling.LANCZOS)
+            self.stuktekening_photo = ImageTk.PhotoImage(resized)
+            self.stuktekening_canvas.delete("all")
+            self.stuktekening_canvas.create_image(0, 0, anchor='nw', image=self.stuktekening_photo)
+            self.stuktekening_canvas.configure(scrollregion=self.stuktekening_canvas.bbox("all"))
+        except Exception as e:
+            self._log(f"[WARN] Fout bij weergeven stuktekening: {e}")
+
+    def _zoom_stuktekening(self, factor):
+        """Zooms the stuktekening."""
+        self.stuktekening_scale = max(0.1, min(5.0, self.stuktekening_scale * factor))
+        self._update_stuktekening_display()
+
+    def _on_stuktekening_scroll_zoom(self, event):
+        """Handles mouse scroll wheel zoom on Windows/macOS."""
+        if event.delta > 0:
+            self._zoom_stuktekening(1.1)  # Scroll up = zoom in
+        else:
+            self._zoom_stuktekening(0.9)  # Scroll down = zoom out
+
+    def _fit_stuktekening_to_window(self):
+        """Fits the stuktekening to window size."""
+        if not hasattr(self, 'stuktekening_original_image'):
+            return
+        self.stuktekening_viewer_window.update_idletasks()
+        canvas_w = self.stuktekening_canvas.winfo_width() - 20
+        canvas_h = self.stuktekening_canvas.winfo_height() - 20
+        if canvas_w < 100: canvas_w = 1160
+        if canvas_h < 100: canvas_h = 800
+        img = self.stuktekening_original_image
+        self.stuktekening_scale = min(canvas_w / img.width, canvas_h / img.height)
+        self._update_stuktekening_display()
+
+    def _reset_stuktekening_size(self):
+        """Resets stuktekening to original size."""
+        self.stuktekening_scale = 1.0
+        self._update_stuktekening_display()
+
+    def _close_stuktekening_viewer(self):
+        """Closes the stuktekening viewer."""
+        if hasattr(self, 'stuktekening_viewer_window') and self.stuktekening_viewer_window:
+            self.stuktekening_viewer_window.destroy()
+            self.stuktekening_viewer_window = None
+
     def _all_items_ok_check(self):
         """Checks if all items are OK, then triggers completion actions."""
         if not self.barcode_data:
@@ -1923,15 +2465,23 @@ class ScannerPanel(ttk.Frame):
 
         if all_ok:
             self._log("[VOLTOOID] Alle items zijn nu OK!", "success")
-            
+
             # End the current session before completion actions
             self._end_session()
-            
+
             # Perform the completion actions
             self._perform_completion_actions()
-            
+
             # Show completion message
             messagebox.showinfo("Scan Voltooid", "Alle items zijn nu gescand en gemarkeerd als OK!")
+
+            # Switch to Database panel to view updated status
+            if self.main_app and hasattr(self.main_app, 'switch_to_panel'):
+                self._log("Switching to Database panel...")
+                try:
+                    self.main_app.switch_to_panel("Database")
+                except Exception as switch_error:
+                    self._log(f"Panel switch error: {switch_error}")
 
     def _extract_project_info_from_excel(self, excel_path):
         """
@@ -2155,44 +2705,54 @@ class ScannerPanel(ttk.Frame):
             save_path = updated_file_path
             
             if save_successful and is_first_save:  # Only send XLSX_UPDATED on FIRST save
-                # Use the SAME extraction logic as _perform_completion_actions
-                base_mo_code, full_project_code = self._extract_project_info_from_excel(save_path)
-                
-                # Send XLSX_UPDATED event to start a session
-                config_file_path = get_config_path()
-                if os.path.exists(config_file_path):
-                    with open(config_file_path, 'r') as f:
-                        config = json.load(f)
-                        
-                    api_url = config.get('api_url', '')
-                    if api_url:
-                        # Use the active user from database panel if available, otherwise try to determine from path
-                        user = getattr(self, 'active_user', None) or self._determine_user_from_path(save_path)
-                        
-                        if user and full_project_code:
-                            data = {
-                                'event': 'XLSX_UPDATED',
-                                'user': user,
-                                'project': full_project_code,  # Use the FULL project code
-                                'file_path': save_path,
-                                'item_count': len(self.barcode_data),
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            
-                            # Make API call in background thread to avoid blocking UI
-                            def send_api_call():
-                                try:
-                                    response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
-                                                           json=data, timeout=1, proxies={"http": None, "https": None})  # Reduced timeout
-                                    if response.ok:
-                                        self._log(f"Session started for {user} via XLSX update")
-                                    else:
-                                        self._log(f"API call failed with status: {response.status_code}")
-                                except Exception as e:
-                                    self._log(f"API call failed (non-blocking): {e}")
-                            
-                            # Run API call in background thread so it doesn't block scanning
-                            threading.Thread(target=send_api_call, daemon=True).start()
+                # Check if session already exists - don't create duplicate!
+                if self.api_session_id or self.current_session_id:
+                    session_logger.info(f"_save_updated_excel: Session already exists (api={self.api_session_id}), skipping XLSX_UPDATED")
+                    self._log(f"Session already active, skipping duplicate XLSX_UPDATED")
+                else:
+                    # Use CACHED project name to avoid timestamp corruption
+                    project_name = self.active_project
+                    if not project_name:
+                        # Fallback to extraction only if no cached value
+                        _, project_name = self._extract_project_info_from_excel(save_path)
+
+                    session_logger.info(f"_save_updated_excel: Using project={project_name} (cached={self.active_project})")
+
+                    # Send XLSX_UPDATED event to start a session
+                    config_file_path = get_config_path()
+                    if os.path.exists(config_file_path):
+                        with open(config_file_path, 'r') as f:
+                            config = json.load(f)
+
+                        api_url = config.get('api_url', '')
+                        if api_url:
+                            # Use cached user, fallback to path-based determination
+                            user = self.active_user or self._determine_user_from_path(save_path)
+
+                            if user and project_name:
+                                data = {
+                                    'event': 'XLSX_UPDATED',
+                                    'user': user,
+                                    'project': project_name,  # Use CACHED project name
+                                    'file_path': save_path,
+                                    'item_count': len(self.barcode_data),
+                                    'timestamp': datetime.now().isoformat()
+                                }
+                                session_logger.info(f"_save_updated_excel: Sending XLSX_UPDATED with project={project_name}")
+
+                                # Make API call in background thread to avoid blocking UI
+                                def send_api_call():
+                                    try:
+                                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
+                                                               json=data, timeout=1, proxies={"http": None, "https": None})
+                                        if response.ok:
+                                            self._log(f"Session started for {user} via XLSX update")
+                                        else:
+                                            self._log(f"API call failed with status: {response.status_code}")
+                                    except Exception as e:
+                                        self._log(f"API call failed (non-blocking): {e}")
+
+                                threading.Thread(target=send_api_call, daemon=True).start()
             
         except PermissionError:
             self._log(f"[FOUT] Geen toestemming om bestand te overschrijven: {updated_file_path}")
@@ -2268,6 +2828,13 @@ class ScannerPanel(ttk.Frame):
                 self._update_treeview(self.selected_item_id, 'NIET OK')
                 self._save_updated_excel()
                 self._log(f"Status gewist voor item '{barcode}'.")
+
+    def _open_stuktekening_for_selected(self):
+        """Opens the stuktekening PDF for the selected item."""
+        if self.selected_item_id:
+            barcode = self.tree.item(self.selected_item_id)['values'][1]  # Item column
+            if barcode:
+                self._try_open_stuktekening(barcode)
 
     def _start_usb_listener(self):
         """Start luisteren naar USB-toetsenbordscans."""

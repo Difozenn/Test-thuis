@@ -105,13 +105,13 @@
         </div>
         <div class="col-md-3">
             <select class="form-select" id="sortBy">
+                <option value="activity-desc" data-translate="sort_activity_newest">Activiteit (Nieuwste)</option>
+                <option value="activity-asc" data-translate="sort_activity_oldest">Activiteit (Oudste)</option>
                 <option value="so-desc" data-translate="sort_so_newest">SO Nummer (Nieuwste)</option>
                 <option value="so-asc" data-translate="sort_so_oldest">SO Nummer (Oudste)</option>
                 <option value="mos" data-translate="sort_most_mos">Meeste MOs</option>
                 <option value="items" data-translate="sort_most_items">Meeste Items</option>
                 <option value="completion" data-translate="sort_completion">Voltooiing %</option>
-                <option value="activity-desc" data-translate="sort_activity_newest">Activiteit (Nieuwste)</option>
-                <option value="activity-asc" data-translate="sort_activity_oldest">Activiteit (Oudste)</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -414,7 +414,7 @@ function translatePage(lang) {
 document.addEventListener('DOMContentLoaded', function() {
     const savedLang = localStorage.getItem('selectedLanguage') || 'nl';
     translatePage(savedLang);
-    
+
     // Listen for language changes
     const languageSelector = document.getElementById('languageSelector');
     if (languageSelector) {
@@ -424,6 +424,9 @@ document.addEventListener('DOMContentLoaded', function() {
             translatePage(this.value);
         });
     }
+
+    // Apply default sort (activity-desc) on page load
+    applyFilters();
 });
 </script>
 {% endblock %}

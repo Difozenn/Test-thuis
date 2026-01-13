@@ -58,7 +58,7 @@
     "backup_enabled": true,
     "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
     "backup_interval_minutes": 1440,
-    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2025-11-10 19:28:58)",
+    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2026-01-11 18:43:52)",
     "work_hours": {
         "monday": {
             "start": 7.5,
@@ -74,7 +74,7 @@
         },
         "thursday": {
             "start": 7.5,
-            "end": 20.0
+            "end": 16.0
         },
         "friday": {
             "start": 7.5,
@@ -87,8 +87,7 @@
             1,
             2,
             3,
-            4,
-            6
+            4
         ],
         "saturday": {
             "start": 0.0,

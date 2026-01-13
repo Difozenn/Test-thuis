@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from config_utils import load_config, update_config
 
 class ToolTip:
@@ -60,6 +60,20 @@ class SettingsPanel(ttk.Frame):
                 'description': 'Opent automatisch de bijbehorende PNG afbeelding wanneer een OPUS item succesvol is gescand. De afbeelding moet dezelfde naam hebben als het gescande .HOP/.HOPS bestand maar met een .png extensie.',
                 'default': False
             },
+            {
+                'id': 'open_stuktekening_on_scan',
+                'type': 'checkbox',
+                'label': 'Stuktekening openen bij scan',
+                'description': 'Opent automatisch de bijbehorende PDF stuktekening wanneer een item succesvol is gescand. Zoekt in de PDF naar de pagina met het gescande Objectnaam_Wandnaam.',
+                'default': False
+            },
+            {
+                'id': 'stuktekening_directory',
+                'type': 'directory',
+                'label': 'Stuktekening PDF Map',
+                'description': 'De map waar de PDF stuktekeningen staan. PDF bestandsnaam moet overeenkomen met de projectnaam.',
+                'default': ''
+            },
             # To add more settings in the future, just add a new dictionary here
         ]
 
@@ -93,7 +107,39 @@ class SettingsPanel(ttk.Frame):
 
             if 'description' in setting_def and setting_def['description']:
                 ToolTip(cb, text=setting_def['description'])
-        
+
+        elif setting_def['type'] == 'directory':
+            # Directory selector
+            var = tk.StringVar()
+            var.set(self.config.get(setting_def['id'], setting_def['default']))
+            self.vars[setting_def['id']] = var
+
+            ttk.Label(frame, text=setting_def['label'] + ":").pack(anchor='w')
+
+            dir_frame = ttk.Frame(frame)
+            dir_frame.pack(fill='x', pady=(2, 0))
+
+            entry = ttk.Entry(dir_frame, textvariable=var, width=60)
+            entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
+
+            def browse_directory(string_var=var, setting_id=setting_def['id']):
+                directory = filedialog.askdirectory(
+                    title=f"Selecteer {setting_def['label']}",
+                    initialdir=string_var.get() or None
+                )
+                if directory:
+                    string_var.set(directory)
+                    self._save_setting(setting_id, directory)
+
+            browse_btn = ttk.Button(dir_frame, text="Bladeren...", command=browse_directory)
+            browse_btn.pack(side='right')
+
+            # Save on manual entry change (when focus leaves)
+            entry.bind('<FocusOut>', lambda e, sid=setting_def['id'], v=var: self._save_setting(sid, v.get()))
+
+            if 'description' in setting_def and setting_def['description']:
+                ToolTip(entry, text=setting_def['description'])
+
         # Add 'elif' blocks here for other setting types like 'entry', 'dropdown', etc.
 
     def _save_setting(self, key, value):

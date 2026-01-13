@@ -25,5 +25,7 @@
     "archive_on_all_ok": false,
     "accura_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\ACCURA",
     "boere_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\BOERE",
-    "open_image_on_opus_scan": true
+    "open_image_on_opus_scan": true,
+    "stuktekening_directory": "C:/Users/Rob/Desktop/Test-thuis",
+    "open_stuktekening_on_scan": true
 }

@@ -190,9 +190,17 @@ def create_menu(root, main_app):
         root.spoed_warning_frame.pack_forget()
         root.current_spoed_project = None
 
+    def auto_hide_spoed_warning():
+        """Hide the current SPOED warning without marking as dismissed (for AFGEMELD projects)"""
+        if root.current_spoed_project:
+            print(f"[SPOED WARNING] Auto-hiding warning for AFGEMELD project: {root.current_spoed_project}")
+        root.spoed_warning_frame.pack_forget()
+        root.current_spoed_project = None
+
     # Store functions for external access
     root.show_spoed_warning = show_spoed_warning
     root.hide_spoed_warning = hide_spoed_warning
+    root.auto_hide_spoed_warning = auto_hide_spoed_warning
 
     # Open the first panel by default
     open_panel_idx(0)

@@ -1,0 +1,42 @@
+;MAKROTYP=0
+;BILD=
+;INFO=
+;WZGV=PROMASTER7123
+;WZGVCONFIG=
+;MASCHINE=BetterSIM
+;NCNAME=MW_01Traver_01LV
+;KOMMENTAR=Bouw en Reno 2026,MO00000,1121_MO00000_Wandkast_(1-2),MW_01,Traver_01
+;DX=0.0
+;DY=0.0
+;DZ=0.0
+;DIALOGDLL=Dialoge.Dll
+;DIALOGPROC=StandardFormAnzeigen
+;AUTOSCRIPTSTART=1
+;BUTTONBILD=
+;DIMENSION_UNIT=0
+VARS
+   DX := 823.500;*VAR*Dimension X
+   DY := 100.000;*VAR*Dimension Y
+   DZ := 19.000;*VAR*Dimension Z
+START
+
+;
+Fertigteil (DX,DY,DZ,0,0,0,0,0,'',0,0,0)
+CALL RB_Park ( VAL PARK:=10,X:=3700,Y:=0)
+; 
+
+;$NESTING_RESULT_FILE=""
+;SYS_NESTING_COMPOSITION="-1"
+;Potboor
+WZB (270,_VE,1500,_VA,_SD,_ANF,'1')
+Bohrung (100.000,78.500,35.000mm,5.000,0,0,0,0,1,0,0,0)
+Bohrung (724.000,78.500,35.000mm,5.000,0,0,0,0,1,0,0,0)
+;Verticale boringen
+WZB (501,_VE,_V,_VA,_SD,_ANF,'1')
+Bohrung (74.000,73.000,10.000mm,7.000,10,0,0,0,1,0,0,0)
+Bohrung (126.000,73.000,10.000mm,7.000,10,0,0,0,1,0,0,0)
+Bohrung (698.000,73.000,10.000mm,7.000,10,0,0,0,1,0,0,0)
+Bohrung (750.000,73.000,10.000mm,7.000,10,0,0,0,1,0,0,0)
+;Verticale boringen
+WZB (501,_VE,_V,_VA,_SD,_ANF,'1')
+Bohrung (81.000,73.750,2.500mm,16.000,10,0,0,0,1,0,0,0)

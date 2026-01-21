@@ -1,0 +1,3313 @@
+{% extends "base.html" %}
+
+{% block title %}Manufacturing Order - {{ project }} Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+/* Enterprise-grade styling consistent with other pages */
+.enterprise-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.enterprise-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.enterprise-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    transform: translateY(-3px);
+}
+
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.metric-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 15px;
+}
+
+.metric-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin: 0 0 5px 0;
+}
+
+.metric-content p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.metric-trend {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    color: white;
+}
+
+/* Clickable metadata links */
+.text-muted a {
+    color: var(--primary-blue);
+    transition: all 0.2s ease;
+}
+
+.text-muted a:hover {
+    color: var(--secondary-blue);
+    text-decoration: underline !important;
+    transform: translateX(2px);
+    display: inline-block;
+}
+
+.text-muted a strong {
+    font-weight: 600;
+}
+
+/* Status badges consistent with other pages */
+/* Status badge CSS removed - using global CSS from base.html for consistency */
+
+/* Additional status CSS removed - using global CSS from base.html */
+
+/* Professional view controls */
+.view-controls {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-group-view {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-view {
+    border: none;
+    padding: 8px 16px;
+    margin: 2px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.btn-view.active {
+    background: var(--secondary-blue);
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-view:not(.active):hover {
+    background: rgba(52, 152, 219, 0.1);
+    color: var(--secondary-blue);
+}
+
+/* Professional table styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid var(--secondary-blue);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--dark-blue);
+    padding: 15px 12px;
+    user-select: none;
+}
+
+.table th:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.table td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.03);
+}
+
+.sort-icon {
+    margin-left: 8px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Timeline styling */
+.timeline-item {
+    padding: 15px;
+    border-left: 4px solid var(--secondary-blue);
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.timeline-item.danger {
+    border-left-color: var(--danger-color);
+}
+
+.timeline-item.success {
+    border-left-color: var(--success-color);
+}
+
+.timeline-item.warning {
+    border-left-color: var(--warning-color);
+}
+
+/* Professional Workflow Chain Styles */
+.workflow-section {
+    margin-bottom: 30px;
+}
+
+.workflow-chain {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 30px 0;
+    min-height: 140px;
+}
+
+.chain-step {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    max-width: 160px;
+}
+
+.chain-step-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.8rem;
+    color: #6c757d;
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.chain-step.completed .chain-step-icon {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+    box-shadow: 0 6px 20px rgba(30, 142, 62, 0.3);
+}
+
+.chain-step.active .chain-step-icon {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+    animation: pulse 2s infinite;
+    box-shadow: 0 6px 20px rgba(249, 171, 0, 0.3);
+}
+
+.chain-step.processing .chain-step-icon {
+    background: var(--info-color);
+    border-color: var(--info-color);
+    color: white;
+    animation: pulse 2s infinite;
+    box-shadow: 0 6px 20px rgba(26, 115, 232, 0.3);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 6px 20px rgba(26, 115, 232, 0.3), 0 0 0 0 rgba(26, 115, 232, 0.4); }
+    70% { box-shadow: 0 6px 20px rgba(26, 115, 232, 0.3), 0 0 0 15px rgba(26, 115, 232, 0); }
+    100% { box-shadow: 0 6px 20px rgba(26, 115, 232, 0.3), 0 0 0 0 rgba(26, 115, 232, 0); }
+}
+
+.chain-step-label {
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.chain-step-user, .chain-step-time {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 3px;
+}
+
+.chain-connection {
+    position: absolute;
+    top: 50%;
+    left: 8%;
+    right: 8%;
+    height: 4px;
+    background: #dee2e6;
+    z-index: 1;
+    border-radius: 2px;
+}
+
+.chain-connection::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color), var(--info-color));
+    width: var(--progress, 0%);
+    transition: width 0.8s ease;
+    border-radius: 2px;
+}
+
+/* Professional Activity Timeline Styles */
+.activity-timeline {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.activity-timeline .timeline-item {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0;
+    background: transparent;
+    border-radius: 0;
+    border-left: none;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+.activity-timeline .timeline-item:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+    transform: translateX(5px);
+}
+
+.activity-timeline .timeline-item:last-child {
+    border-bottom: none;
+}
+
+.activity-timeline .status-badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.activity-timeline .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Live indicator animation */
+#live-indicator {
+    animation: liveIndicator 2s infinite;
+}
+
+@keyframes liveIndicator {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.6; }
+}
+
+/* Professional spacing and layout */
+.section-spacing {
+    margin-bottom: 35px;
+}
+
+.enterprise-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.enterprise-section:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.section-header {
+    border-bottom: 2px solid var(--secondary-blue);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.section-header h4 {
+    color: var(--dark-blue);
+    margin: 0;
+    font-weight: 600;
+}
+
+/* User performance card styling */
+#user-performance-grid .enterprise-card {
+    min-height: 200px;
+    position: relative;
+}
+
+#user-performance-grid .enterprise-card h5 {
+    color: var(--dark-blue);
+    font-weight: 600;
+}
+
+#user-performance-grid hr {
+    margin: 15px 0;
+    opacity: 0.2;
+}
+
+/* Enterprise Workflow Chain Styles */
+.workflow-chain {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 30px 20px;
+    overflow-x: auto;
+    min-height: 140px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.chain-connection {
+    position: absolute;
+    top: 60px; /* Position at the center of the indicators */
+    left: 50px; /* Start after first indicator */
+    right: 50px; /* End before last indicator */
+    height: 4px;
+    background: linear-gradient(
+        to right, 
+        var(--primary-blue) 0%, 
+        var(--primary-blue) var(--progress, 0%), 
+        #dee2e6 var(--progress, 0%), 
+        #dee2e6 100%
+    );
+    z-index: 1;
+    border-radius: 2px;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.2);
+}
+
+.chain-step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+    max-width: 140px;
+    transition: all 0.3s ease;
+    padding: 0 10px;
+}
+
+.chain-step:hover {
+    transform: translateY(-2px);
+}
+
+.chain-step-indicator {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 4px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #6c757d;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.chain-step.completed .chain-step-indicator {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border-color: #27ae60;
+    color: white;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+}
+
+.chain-step.completed .chain-step-indicator::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    z-index: -1;
+    opacity: 0.2;
+    animation: completedGlow 2s ease-in-out infinite alternate;
+}
+
+.chain-step.active .chain-step-indicator {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    border-color: #2980b9;
+    color: white;
+    box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
+    animation: activeStep 2s ease-in-out infinite alternate;
+}
+
+.chain-step.processing .chain-step-indicator {
+    background: linear-gradient(135deg, #f39c12, #f1c40f);
+    border-color: #f39c12;
+    color: white;
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.3);
+}
+
+.chain-step-content {
+    font-size: 0.9rem;
+    padding: 0 5px;
+}
+
+.chain-step-title {
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.chain-step.completed .chain-step-title {
+    color: #27ae60;
+}
+
+.chain-step.active .chain-step-title {
+    color: #2980b9;
+    font-weight: 800;
+}
+
+.chain-step-user {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    font-weight: 500;
+    background: rgba(108, 117, 125, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.chain-step.completed .chain-step-user {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+}
+
+.chain-step.active .chain-step-user {
+    background: rgba(41, 128, 185, 0.1);
+    color: #2980b9;
+}
+
+.chain-step-time {
+    color: #adb5bd;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes completedGlow {
+    0% { opacity: 0.2; transform: scale(1); }
+    100% { opacity: 0.4; transform: scale(1.05); }
+}
+
+@keyframes activeStep {
+    0% { 
+        box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
+        transform: scale(1);
+    }
+    100% { 
+        box-shadow: 0 8px 25px rgba(41, 128, 185, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Enterprise Responsive Design */
+@media (max-width: 1200px) {
+    .chain-step {
+        min-width: 110px;
+        max-width: 130px;
+    }
+}
+
+@media (max-width: 992px) {
+    .workflow-chain {
+        padding: 25px 15px;
+        gap: 0;
+    }
+    
+    .chain-step {
+        min-width: 100px;
+        max-width: 120px;
+    }
+    
+    .chain-step-indicator {
+        width: 50px;
+        height: 50px;
+        font-size: 1.1rem;
+    }
+    
+    .chain-connection {
+        top: 55px;
+        left: 45px;
+        right: 45px;
+    }
+}
+
+@media (max-width: 768px) {
+    .workflow-chain {
+        padding: 20px 10px;
+        min-height: 130px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+    }
+    
+    .chain-step {
+        min-width: 90px;
+        max-width: 100px;
+        scroll-snap-align: center;
+    }
+    
+    .chain-step-indicator {
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+    
+    .chain-connection {
+        top: 52px;
+        left: 40px;
+        right: 40px;
+        height: 3px;
+    }
+    
+    .chain-step-title {
+        font-size: 0.85rem;
+    }
+    
+    .chain-step-user {
+        font-size: 0.75rem;
+        padding: 3px 6px;
+    }
+}
+
+@media (max-width: 576px) {
+    .workflow-chain {
+        padding: 15px 5px;
+        min-height: 120px;
+    }
+    
+    .chain-step {
+        min-width: 80px;
+        max-width: 90px;
+    }
+    
+    .chain-step-indicator {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    .chain-connection {
+        top: 47px;
+        left: 35px;
+        right: 35px;
+    }
+    
+    .chain-step-title {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+    }
+    
+    .chain-step-user {
+        font-size: 0.7rem;
+    }
+    
+    .chain-step-time {
+        font-size: 0.65rem;
+    }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Project Dashboard</h1>
+    <p>Project tracking en performance metrics</p>
+</div>
+
+<!-- Project Header Card -->
+<div class="enterprise-section">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; margin-right: 15px;">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div>
+                <h3 class="mb-0" style="color: var(--dark-blue); font-weight: 600;" id="project-display-name">{{ project }}</h3>
+                <div class="mb-0">
+                    {% if so_number or mo_number %}
+                        <p class="mb-1 text-muted">
+                            {% if so_number %}Sales Order: <a href="/sales_order/{{ so_number }}" class="text-decoration-none"><strong>{{ so_number }}</strong></a>{% endif %}
+                            {% if so_number and mo_number %} | {% endif %}
+                            {% if mo_number %}Manufacturing Order: <strong>{{ mo_number }}</strong>{% endif %}
+                        </p>
+                    {% endif %}
+                    {% if customer_name %}
+                        <p class="mb-1 text-muted">Klant: <a href="/projects?search={{ customer_name | urlencode }}" class="text-decoration-none"><strong>{{ customer_name }}</strong></a></p>
+                    {% endif %}
+                    {% if color %}
+                        <p class="mb-1 text-muted">Kleur: <strong>{{ color }}</strong></p>
+                    {% endif %}
+                    {% if not so_number and not mo_number and not customer_name and not color %}
+                        <p class="mb-0 text-muted">Project Code</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end">
+                <div class="text-muted small">Laatste update:</div>
+                <div class="fw-bold" id="last-update">Laden...</div>
+            </div>
+            <button class="btn btn-outline-primary" onclick="refreshPage()">
+                <i class="fas fa-sync-alt"></i> Vernieuwen
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Productie Performance Metrics -->
+<div class="enterprise-grid section-spacing">
+    <div class="enterprise-card">
+        <div class="metric-header">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white;">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="metric-content">
+                <h3 id="total-project-time">-</h3>
+                <p>Totale Projecttijd</p>
+            </div>
+        </div>
+        <div class="metric-trend text-muted small" id="project-time-info">Van eerste log tot afgerond (binnen werktijden)</div>
+    </div>
+    
+    <div class="enterprise-card">
+        <div class="metric-header">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white;">
+                <i class="fas fa-pause-circle"></i>
+            </div>
+            <div class="metric-content">
+                <h3 id="total-idle-time">-</h3>
+                <p>Totale Idle Tijd <a href="#" id="idle-details-link" style="font-size: 0.8em; text-decoration: none;">[Details]</a></p>
+            </div>
+        </div>
+        <div class="metric-trend text-muted small" id="idle-time-info" style="line-height: 1.4;">Totale project tijd minus werk tijd</div>
+    </div>
+    
+    <div class="enterprise-card">
+        <div class="metric-header">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="metric-content">
+                <h3 id="total-work-time">-</h3>
+                <p>Totale Werktijd</p>
+            </div>
+        </div>
+        <div class="metric-trend text-muted small" id="work-time-info">Actieve sessietijd van alle gebruikers</div>
+    </div>
+    
+    <div class="enterprise-card">
+        <div class="metric-header">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white;">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="metric-content">
+                <h3 id="total-items-completed">-</h3>
+                <p>Aantal bewerkingen</p>
+            </div>
+        </div>
+        <div class="metric-trend" id="items-breakdown">Verdeling per gebruiker</div>
+    </div>
+    
+    <div class="enterprise-card">
+        <div class="metric-header">
+            <div class="metric-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="metric-content">
+                <h3 id="final-items-count">-</h3>
+                <p>Items</p>
+            </div>
+        </div>
+        <div class="metric-trend" id="final-items-info">Laatste gebruiker in keten</div>
+    </div>
+    
+</div>
+
+<!-- Enterprise Workflow Status -->
+<div class="enterprise-section section-spacing">
+    <div class="section-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="section-icon" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; margin-right: 15px;">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <h4 class="mb-0">Workflow Status & Progress</h4>
+            </div>
+            <div id="overall-status" class="badge bg-secondary">Analyseren...</div>
+        </div>
+    </div>
+    <div class="workflow-chain" id="workflowChain">
+        <div class="chain-connection" style="--progress: 0%;"></div>
+        
+        <div class="chain-step" id="step-started" data-step="start">
+            <div class="chain-step-indicator">
+                <i class="fas fa-play"></i>
+            </div>
+            <div class="chain-step-content">
+                <div class="chain-step-title">Project Start</div>
+                <div class="chain-step-user">-</div>
+                <div class="chain-step-time">-</div>
+            </div>
+        </div>
+        
+        {% for user in configured_users %}
+        <div class="chain-step" id="step-{{ user.lower().replace(' ', '-') }}" data-step="{{ user.lower().replace(' ', '-') }}">
+            <div class="chain-step-indicator">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="chain-step-content">
+                <div class="chain-step-title">{{ user }}</div>
+                <div class="chain-step-user">In afwachting</div>
+                <div class="chain-step-time">-</div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="chain-step" id="step-completed" data-step="completed">
+            <div class="chain-step-indicator">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="chain-step-content">
+                <div class="chain-step-title">Afgerond</div>
+                <div class="chain-step-user">-</div>
+                <div class="chain-step-time">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gebruiker Performance Analyse -->
+<div class="enterprise-section section-spacing">
+    <div class="section-header">
+        <div class="d-flex align-items-center">
+            <div class="section-icon" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; margin-right: 15px;">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h4 class="mb-0">Gebruiker Performance Analyse</h4>
+        </div>
+    </div>
+    <div id="user-performance-grid" class="row">
+        <!-- Dynamically populated user performance cards -->
+    </div>
+</div>
+
+
+<!-- Productieoverzicht Detail -->
+<div class="row">
+    <!-- Left Column - Project Logs -->
+    <div class="col-lg-8">
+        <div class="enterprise-section">
+            <!-- Professional Header with Controls -->
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; margin-right: 15px;">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <h4 class="mb-0">Project Activiteiten Log</h4>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-muted small">
+                            <span id="results-count">{{ log_entries|length }}</span> events
+                        </div>
+                        <div class="btn-group-view">
+                            <button class="btn btn-view active" onclick="setView('table')">
+                                <i class="fas fa-table"></i> Tabel
+                            </button>
+                            <button class="btn btn-view" onclick="setView('cards')">
+                                <i class="fas fa-th-large"></i> Kaarten
+                            </button>
+                            <button class="btn btn-view" onclick="setView('timeline')">
+                                <i class="fas fa-stream"></i> Timeline
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table View -->
+            <div id="table-view" class="view-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('id')">ID <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('timestamp')">Tijdstip <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('event')">Event <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('user')">Gebruiker <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('details')">Details <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('status')">Status <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('item_count')">Items <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('nesting_count')">Details <span class="sort-icon">▼</span></th>
+                                <th onclick="sortTable('aantal_sides')">Sides <span class="sort-icon">▼</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cards View -->
+            <div id="cards-view" class="view-container" style="display: none;">
+                <div class="row" id="cards-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Timeline View -->
+            <div id="timeline-view" class="view-container" style="display: none;">
+                <div id="timeline-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Pagination">
+                <ul class="pagination" id="pagination-container">
+                    <li class="page-item" id="prev-page">
+                        <a class="page-link" href="#" onclick="changePage(-1)">
+                            <i class="fas fa-chevron-left"></i> Vorige
+                        </a>
+                    </li>
+                    <!-- Page numbers will be dynamically inserted here -->
+                    <li class="page-item" id="next-page">
+                        <a class="page-link" href="#" onclick="changePage(1)">
+                            Volgende <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Right Column - Live Activity Feed -->
+    <div class="col-lg-4">
+        <div class="enterprise-section">
+            <div class="section-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-right: 15px;">
+                            <i class="fas fa-rss"></i>
+                        </div>
+                        <h4 class="mb-0">Live Activiteit</h4>
+                    </div>
+                    <span class="badge bg-success d-flex align-items-center gap-1" id="live-indicator">
+                        <i class="fas fa-circle" style="font-size: 0.6rem;"></i> LIVE
+                    </span>
+                </div>
+            </div>
+            <div class="activity-timeline" id="activityTimeline">
+                <!-- Real-time activity items will be populated here -->
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p class="mt-2 mb-0">Activiteiten laden...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enterprise Idle Time Analysis Modal -->
+<div class="modal fade" id="idleDetailsModal" tabindex="-1" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: white; border-bottom: 1px solid #dee2e6; padding: 1rem 1.5rem;">
+                <h5 class="modal-title" style="color: #495057; font-weight: 600;">
+                    <i class="fas fa-clock" style="margin-right: 10px; color: #6c757d;"></i>
+                    Idle Tijd Details
+                </h5>
+                <button type="button" class="btn-close" onclick="closeIdleDetailsModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div id="idle-details-content">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// COMPLETE FUNCTIONAL LOGS PROJECT PAGE IMPLEMENTATION
+let logData = {{ log_entries | tojson | safe }};
+let configuredUsers = {{ configured_users | tojson | safe }};
+let workHours = {{ work_hours | tojson | safe }};
+let sessionsData = {{ sessions_data | tojson | safe }};
+let filteredData = [...logData];
+let currentSort = { column: 'id', order: 'desc' };
+let currentView = 'table';
+let currentPage = 1;
+const itemsPerPage = 20;
+let efficiencyTargets = {};
+
+// Store v2 metrics data globally for use in modal
+let v2MetricsData = null;
+
+// Store idle time breakdown for modal
+let idleTimeBreakdown = {
+    pauseMinutes: 0,
+    handoffMinutes: 0,
+    handoffDetails: [],
+    otherGaps: 0,
+    totalIdleMinutes: 0
+};
+
+// Function to calculate TRUE idle/handoff time from logs
+// Idle = At least one AFGEMELD + At least one OPEN + Nobody BEZIG
+function calculateHandoffDelaysFromLogs() {
+    const logs = logData || [];
+    let handoffDetails = {};
+    let totalHandoffMinutes = 0;
+
+    // Filter for status events (OPEN, BEZIG, AFGEMELD)
+    const statusLogs = logs.filter(log =>
+        ['OPEN', 'BEZIG', 'AFGEMELD'].includes(log.event) && log.user
+    );
+
+    // Sort by timestamp
+    const sortedLogs = [...statusLogs].sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    if (sortedLogs.length === 0) {
+        return { totalHandoffMinutes: 0, handoffDetails: {} };
+    }
+
+    // Track current status for each user as we process events
+    let currentStatus = {};
+    for (const user of configuredUsers) {
+        currentStatus[user] = null; // No status initially
+    }
+
+    let currentIdleStart = null;
+    let waitingForUsers = [];
+
+    for (let i = 0; i < sortedLogs.length; i++) {
+        const event = sortedLogs[i];
+        const timestamp = new Date(event.timestamp);
+
+        // Update status for this user
+        currentStatus[event.user] = event.event;
+
+        // Check idle conditions
+        const hasAfgemeld = Object.values(currentStatus).some(status => status === 'AFGEMELD');
+        const hasOpen = Object.values(currentStatus).some(status => status === 'OPEN');
+        const hasBezig = Object.values(currentStatus).some(status => status === 'BEZIG');
+
+        const isIdle = hasAfgemeld && hasOpen && !hasBezig;
+
+        if (isIdle && currentIdleStart === null) {
+            // Start of idle period
+            currentIdleStart = timestamp;
+            waitingForUsers = Object.entries(currentStatus)
+                .filter(([user, status]) => status === 'OPEN')
+                .map(([user, status]) => user);
+
+            console.log(`Idle period started at ${timestamp.toISOString()}`, {
+                waitingFor: waitingForUsers,
+                statusSnapshot: {...currentStatus}
+            });
+        } else if (!isIdle && currentIdleStart !== null) {
+            // End of idle period
+            const idleMinutes = calculateWorkMinutes(currentIdleStart, timestamp);
+
+            if (idleMinutes > 0) {
+                // Create transition label showing who we were waiting for
+                const transition = waitingForUsers.length > 0
+                    ? `Wachten op ${waitingForUsers.join(', ')}`
+                    : 'Handoff vertraging';
+
+                handoffDetails[transition] = (handoffDetails[transition] || 0) + idleMinutes;
+                totalHandoffMinutes += idleMinutes;
+
+                console.log(`Idle period ended at ${timestamp.toISOString()}`, {
+                    duration: idleMinutes,
+                    transition: transition
+                });
+            }
+
+            currentIdleStart = null;
+            waitingForUsers = [];
+        }
+    }
+
+    // Handle case where project ends while still idle
+    if (currentIdleStart !== null && sortedLogs.length > 0) {
+        const lastTimestamp = new Date(sortedLogs[sortedLogs.length - 1].timestamp);
+        const idleMinutes = calculateWorkMinutes(currentIdleStart, lastTimestamp);
+
+        if (idleMinutes > 0) {
+            const transition = waitingForUsers.length > 0
+                ? `Wachten op ${waitingForUsers.join(', ')}`
+                : 'Handoff vertraging';
+
+            handoffDetails[transition] = (handoffDetails[transition] || 0) + idleMinutes;
+            totalHandoffMinutes += idleMinutes;
+
+            console.log('Project ended during idle period', {
+                duration: idleMinutes,
+                transition: transition
+            });
+        }
+    }
+
+    console.log('Total handoff calculation:', {
+        totalMinutes: totalHandoffMinutes,
+        details: handoffDetails
+    });
+
+    return {
+        totalHandoffMinutes: totalHandoffMinutes,
+        handoffDetails: handoffDetails
+    };
+}
+
+// Function to calculate pause time from SESSION_PAUSE/SESSION_RESUME events
+function calculatePauseTimeFromLogs() {
+    const logs = logData || [];
+    let totalPauseMinutes = 0;
+    let pausesByUser = {};
+    
+    // Find pause/resume pairs
+    const pauseEvents = logs.filter(log => 
+        log.event === 'SESSION_PAUSE' || log.event === 'SESSION_RESUME'
+    ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // Track pause duration from details field (e.g., "pause duration: 1.8 minutes" or "pauze duur: 1.8 minuten")
+    pauseEvents.forEach(log => {
+        if (log.event === 'SESSION_RESUME' && log.details) {
+            // Match both English and Dutch formats
+            const match = log.details.match(/(?:pause duration|pauze duur):\s*([\d.]+)\s*(?:minutes?|minuten?)/i);
+            if (match) {
+                const pauseDuration = parseFloat(match[1]);
+                if (!isNaN(pauseDuration)) {
+                    totalPauseMinutes += pauseDuration;
+                    
+                    // Track per user
+                    const user = log.user || 'Unknown';
+                    if (!pausesByUser[user]) {
+                        pausesByUser[user] = 0;
+                    }
+                    pausesByUser[user] += pauseDuration;
+                }
+            }
+        }
+    });
+    
+    return {
+        totalPauseMinutes: totalPauseMinutes,
+        pausesByUser: pausesByUser
+    };
+}
+
+// Helper Functions
+let userProcessingTypes = {}; // Will be loaded from config
+
+function formatProjectDisplayName(projectCode) {
+    // Extract clean project name from raw project code
+    // Example: "MO06787_Dressing_A_deel2_(5-16)" -> "Dressing A deel2 (5-16)"
+    
+    // Remove MO code prefix (MO followed by digits and underscore)
+    let cleanName = projectCode.replace(/^MO\d+_/, '');
+    
+    // Replace underscores with spaces
+    cleanName = cleanName.replace(/_/g, ' ');
+    
+    // Capitalize first letter of each word
+    cleanName = cleanName.replace(/\b\w/g, letter => letter.toUpperCase());
+    
+    return cleanName;
+}
+
+async function loadUserProcessingTypes() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        userProcessingTypes = config.scanner_user_to_processing_type_map || {};
+        console.log('Loaded user processing types:', userProcessingTypes);
+    } catch (error) {
+        console.error('Failed to load user processing types:', error);
+    }
+}
+
+function getItemCountForLog(log) {
+    // Use consolidated item_count approach - prioritize item_count field for all types
+    const processingType = userProcessingTypes[log.user] || 'DEFAULT';
+    
+    // For all processing types, first try the consolidated item_count field
+    if (log.item_count && log.item_count > 0) {
+        return log.item_count;
+    }
+    
+    // Fallback to legacy fields for backward compatibility
+    if (processingType === 'NESTING_PROCESSING' && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) {
+        return (log.nesting_count || 0) + (log.opdeelzaag_count || 0);
+    } else if (processingType === 'ACCURA_PROCESSING' && log.aantal_items > 0) {
+        return log.aantal_items || 0;
+    } else {
+        // Default fallback to item_count (which may be 0)
+        return log.item_count || 0;
+    }
+}
+
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '-';
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleString('nl-NL', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return timestamp;
+    }
+}
+
+function getTimeAgo(timestamp) {
+    if (!timestamp) return 'Onbekend';
+    try {
+        const now = new Date();
+        const then = new Date(timestamp);
+        const diffMinutes = Math.round((now - then) / 60000);
+        
+        if (diffMinutes < 1) return 'Zojuist';
+        if (diffMinutes < 60) return `${diffMinutes}m geleden`;
+        if (diffMinutes < 1440) {
+            const hours = Math.round(diffMinutes / 60);
+            return `${hours}u geleden`;
+        }
+        const days = Math.round(diffMinutes / 1440);
+        return `${days}d geleden`;
+    } catch (e) {
+        return 'Onbekend';
+    }
+}
+
+function getStatusClass(status) {
+    if (!status) return 'secondary';
+    
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'open') return 'open';
+    if (statusLower === 'bezig') return 'bezig';
+    if (statusLower === 'afgemeld' || statusLower === 'closed') return 'afgemeld';
+    if (statusLower.includes('error')) return 'error';
+    
+    return 'secondary';
+}
+
+function getEventIcon(event) {
+    if (!event) return '<i class="fas fa-circle text-muted" style="font-size: 0.8rem;"></i>';
+    
+    const eventLower = event.toLowerCase();
+    
+    if (eventLower === 'open') {
+        return '<i class="fas fa-folder-open text-primary" style="font-size: 0.9rem;"></i>';
+    } else if (eventLower === 'afgemeld') {
+        return '<i class="fas fa-check-circle text-success" style="font-size: 0.9rem;"></i>';
+    } else if (eventLower === 'project_start') {
+        return '<i class="fas fa-play-circle text-info" style="font-size: 0.9rem;"></i>';
+    } else if (eventLower === 'session_start') {
+        return '<i class="fas fa-power-off text-warning" style="font-size: 0.9rem;"></i>';
+    } else if (eventLower === 'session_end') {
+        return '<i class="fas fa-stop-circle text-danger" style="font-size: 0.9rem;"></i>';
+    } else if (eventLower === 'bezig' || eventLower === 'werk_update') {
+        return '<i class="fas fa-cog text-warning" style="font-size: 0.9rem;"></i>';
+    } else {
+        return '<i class="fas fa-info-circle text-secondary" style="font-size: 0.9rem;"></i>';
+    }
+}
+
+function getEventIconClass(event) {
+    if (!event) return 'fas fa-circle text-muted';
+    
+    const eventLower = event.toLowerCase();
+    if (eventLower === 'open') return 'fas fa-folder-open text-primary';
+    if (eventLower === 'afgemeld') return 'fas fa-check-circle text-success';
+    if (eventLower === 'project_start') return 'fas fa-play-circle text-info';
+    if (eventLower === 'session_start') return 'fas fa-power-off text-warning';
+    if (eventLower === 'session_end') return 'fas fa-stop-circle text-danger';
+    if (eventLower === 'bezig' || eventLower === 'werk_update') return 'fas fa-cog text-warning';
+    return 'fas fa-info-circle text-secondary';
+}
+
+// Enterprise Modal functions for idle time analysis
+function showIdleDetailsModal() {
+    const modal = document.getElementById('idleDetailsModal');
+    const content = document.getElementById('idle-details-content');
+    
+    // Add ESC key handler
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeIdleDetailsModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // Build idle details showing ONLY pauses per user and handoffs
+    let html = '';
+    
+    // Simple header with total idle time
+    html += '<div style="padding: 20px; background: #f8f9fa; border-bottom: 2px solid #dee2e6;">';
+    html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+    html += '<div>';
+    html += '<h5 style="margin: 0; color: #495057;">Totale Idle Tijd</h5>';
+    const idlePercent = idleTimeBreakdown.projectMinutes > 0 ? 
+        Math.round((idleTimeBreakdown.totalIdleMinutes / idleTimeBreakdown.projectMinutes) * 100) : 0;
+    html += `<small style="color: #6c757d;">${idlePercent}% van project tijd</small>`;
+    html += '</div>';
+    html += '<div style="text-align: right;">';
+    html += `<span style="font-size: 2rem; font-weight: 600; color: #495057;">${Math.floor(idleTimeBreakdown.totalIdleMinutes / 60)}h ${Math.round(idleTimeBreakdown.totalIdleMinutes % 60)}m</span>`;
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Breakdown components
+    html += '<div style="padding: 30px;">';
+    
+    // Get pause data from the already calculated idleTimeBreakdown
+    let userPauses = idleTimeBreakdown.pausesByUser || {};
+    let totalPauseMinutes = idleTimeBreakdown.pauseMinutes || 0;
+    let totalHandoffMinutes = idleTimeBreakdown.handoffMinutes || 0;
+    
+    // Always show the breakdown structure
+    html += '<div style="margin-bottom: 25px;">';
+    html += '<h5 style="color: #495057; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center;">';
+    html += '<i class="fas fa-list-ul" style="margin-right: 10px; color: #667eea;"></i>';
+    html += 'Idle Time Components';
+    html += '</h5>';
+        
+        // Simple table layout
+        html += '<div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">';
+        
+        // Pause times section
+        html += '<div style="padding: 20px; border-bottom: 1px solid #dee2e6;">';
+        html += '<h6 style="margin: 0 0 15px 0; color: #495057; font-weight: 600; display: flex; align-items: center;">';
+        html += '<i class="fas fa-pause-circle" style="color: #ffc107; margin-right: 10px;"></i>';
+        html += 'Pauze Tijden per Gebruiker';
+        html += '</h6>';
+        
+        if (Object.keys(userPauses).length > 0) {
+            html += '<table style="width: 100%;">';
+            for (const [user, pauseMinutes] of Object.entries(userPauses)) {
+                if (pauseMinutes > 0) {
+                    html += '<tr>';
+                    html += `<td style="padding: 8px 0; color: #495057;">${user}</td>`;
+                    html += `<td style="text-align: right; padding: 8px 0; color: #495057; font-weight: 600;">${Math.round(pauseMinutes)} minuten</td>`;
+                    html += '</tr>';
+                }
+            }
+            html += '</table>';
+        } else {
+            html += '<p style="color: #6c757d; margin: 0;">Geen pauzes geregistreerd</p>';
+        }
+        html += '</div>';
+        
+        // Handoff times section
+        html += '<div style="padding: 20px;">';
+        html += '<h6 style="margin: 0 0 15px 0; color: #495057; font-weight: 600; display: flex; align-items: center;">';
+        html += '<i class="fas fa-people-arrows" style="color: #28a745; margin-right: 10px;"></i>';
+        html += 'Handoff Tijden tussen Gebruikers';
+        html += '</h6>';
+        
+        if (idleTimeBreakdown.handoffDetails && Object.keys(idleTimeBreakdown.handoffDetails).length > 0) {
+            html += '<table style="width: 100%;">';
+            for (const [transition, minutes] of Object.entries(idleTimeBreakdown.handoffDetails)) {
+                if (minutes > 0) {
+                    html += '<tr>';
+                    html += `<td style="padding: 8px 0; color: #495057;">${transition}</td>`;
+                    html += `<td style="text-align: right; padding: 8px 0; color: #495057; font-weight: 600;">${Math.round(minutes)} minuten</td>`;
+                    html += '</tr>';
+                }
+            }
+            html += '</table>';
+        } else {
+            html += '<p style="color: #6c757d; margin: 0;">Geen handoff tijd geregistreerd</p>';
+        }
+        html += '</div>';
+        
+        // Close the white box
+        html += '</div>';
+        
+    html += '</div>';  // Close the breakdown div
+    
+    content.innerHTML = html;
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    
+    // Add backdrop with click-to-close functionality
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade show';
+    backdrop.id = 'idleModalBackdrop';
+    backdrop.style.cursor = 'pointer';
+    backdrop.onclick = closeIdleDetailsModal;
+    document.body.appendChild(backdrop);
+}
+
+function closeIdleDetailsModal() {
+    const modal = document.getElementById('idleDetailsModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    
+    // Remove backdrop
+    const backdrop = document.getElementById('idleModalBackdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+}
+
+// Initialize page on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    
+    // Add click handler for idle details link
+    const detailsLink = document.getElementById('idle-details-link');
+    if (detailsLink) {
+        detailsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showIdleDetailsModal();
+        });
+    }
+});
+
+async function initializePage() {
+    console.log('Initializing Logs Project Page');
+    
+    // Format project display name
+    const projectCode = '{{ project }}';
+    const displayName = formatProjectDisplayName(projectCode);
+    document.getElementById('project-display-name').textContent = displayName;
+    
+    // Load user processing types first
+    await loadUserProcessingTypes();
+    console.log('Log entries:', logData ? logData.length : 0);
+    console.log('Sessions:', sessionsData ? sessionsData.length : 0);
+    console.log('Users:', configuredUsers);
+    
+    // Initialize workflow chain structure
+    initializeWorkflowChain();
+    
+    // Update all components
+    await updatePerformanceMetrics();
+    updateWorkflowStatus();
+    updateActivityTimeline();
+    
+    // Initialize filters
+    populateEventFilter();
+    populateUserFilter();
+    
+    // Apply initial sorting and render
+    sortData();
+    renderCurrentView();
+    
+    // Setup real-time updates
+    setInterval(() => {
+        updateActivityTimeline();
+    }, 30000);
+}
+
+function populateEventFilter() {
+    const eventFilter = document.getElementById('eventFilter');
+    if (!eventFilter) return;
+    
+    const events = [...new Set(logData.map(log => log.event).filter(Boolean))];
+    
+    events.forEach(event => {
+        const option = document.createElement('option');
+        option.value = event;
+        option.textContent = event;
+        eventFilter.appendChild(option);
+    });
+}
+
+function populateUserFilter() {
+    const userFilter = document.getElementById('userFilter');
+    if (!userFilter) return;
+    
+    // Use configured users in the order from config
+    const configuredOrder = configuredUsers || [];
+    const dataUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
+    
+    // First add users in configured order
+    configuredOrder.forEach(user => {
+        if (dataUsers.includes(user)) {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user;
+            userFilter.appendChild(option);
+        }
+    });
+    
+    // Then add any users that are in data but not in config (shouldn't happen normally)
+    dataUsers.forEach(user => {
+        if (!configuredOrder.includes(user)) {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user + ' (*)'; // Mark as unconfigured
+            userFilter.appendChild(option);
+        }
+    });
+}
+
+function updateMetrics() {
+    // Total items - use helper function to get correct count for each user type
+    const totalItems = logData.reduce((sum, log) => sum + getItemCountForLog(log), 0);
+    document.getElementById('total-items').textContent = totalItems;
+    
+    // Today's logs
+    const today = new Date().toDateString();
+    const todayLogs = logData.filter(log => {
+        const logDate = new Date(log.timestamp).toDateString();
+        return logDate === today;
+    });
+    document.getElementById('today-logs').textContent = todayLogs.length;
+}
+
+function setupFilterListeners() {
+    document.getElementById('filterInput').addEventListener('input', debounce(applyFilters, 300));
+    document.getElementById('userFilter').addEventListener('change', applyFilters);
+    document.getElementById('eventFilter').addEventListener('change', applyFilters);
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function applyFilters() {
+    const textFilter = document.getElementById('filterInput').value.toLowerCase();
+    const userFilter = document.getElementById('userFilter').value;
+    const eventFilter = document.getElementById('eventFilter').value;
+    
+    filteredData = logData.filter(log => {
+        const matchesText = !textFilter || 
+            (log.details && log.details.toLowerCase().includes(textFilter)) ||
+            (log.event && log.event.toLowerCase().includes(textFilter)) ||
+            (log.user && log.user.toLowerCase().includes(textFilter));
+        
+        const matchesUser = !userFilter || log.user === userFilter;
+        const matchesEvent = !eventFilter || log.event === eventFilter;
+        
+        return matchesText && matchesUser && matchesEvent;
+    });
+    
+    // Update results count
+    document.getElementById('results-count').textContent = `${filteredData.length} resultaten`;
+    
+    // Reset to first page
+    currentPage = 1;
+    
+    // Re-render current view
+    renderCurrentView();
+}
+
+function sortTable(column) {
+    if (currentSort.column === column) {
+        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.column = column;
+        currentSort.order = 'asc';
+    }
+    
+    sortData();
+    renderCurrentView();
+    updateSortIcons();
+}
+
+function sortData() {
+    filteredData.sort((a, b) => {
+        let aVal = a[currentSort.column];
+        let bVal = b[currentSort.column];
+        
+        // Handle null/undefined values
+        if (aVal == null) aVal = '';
+        if (bVal == null) bVal = '';
+        
+        // Convert to string for comparison
+        aVal = String(aVal);
+        bVal = String(bVal);
+        
+        if (currentSort.order === 'asc') {
+            return aVal.localeCompare(bVal, undefined, { numeric: true });
+        } else {
+            return bVal.localeCompare(aVal, undefined, { numeric: true });
+        }
+    });
+}
+
+function updateSortIcons() {
+    // Reset all sort icons
+    document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.textContent = '▼';
+    });
+    
+    // Update current sort icon
+    const currentHeader = document.querySelector(`th[onclick="sortTable('${currentSort.column}')"] .sort-icon`);
+    if (currentHeader) {
+        currentHeader.textContent = currentSort.order === 'asc' ? '▲' : '▼';
+    }
+}
+
+function setView(viewType) {
+    currentView = viewType;
+    currentPage = 1;
+    
+    // Update active button
+    document.querySelectorAll('.btn-view').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    renderCurrentView();
+}
+
+function renderCurrentView() {
+    switch (currentView) {
+        case 'table':
+            renderTableView();
+            break;
+        case 'cards':
+            renderCardsView();
+            break;
+        case 'timeline':
+            renderTimelineView();
+            break;
+    }
+    
+    updatePagination();
+}
+
+function renderTableView() {
+    document.getElementById('table-view').style.display = 'block';
+    document.getElementById('cards-view').style.display = 'none';
+    document.getElementById('timeline-view').style.display = 'none';
+    
+    const tbody = document.getElementById('log-table-body');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    
+    tbody.innerHTML = paginatedData.map(log => `
+        <tr>
+            <td>${log.id}</td>
+            <td>${formatTimestamp(log.timestamp)}</td>
+            <td>${getEventIcon(log.event)} ${log.event || 'N/A'}</td>
+            <td>${log.user || 'N/A'}</td>
+            <td>${log.details || 'N/A'}</td>
+            <td><span class="status-badge status-${getStatusClass(log.status)}">${log.status || 'N/A'}</span></td>
+            <td>${getItemCountForLog(log) || 0}</td>
+            <td>${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? `${log.nesting_count}N + ${log.opdeelzaag_count}Z` : '-'}</td>
+            <td>${log.aantal_sides || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function renderCardsView() {
+    document.getElementById('table-view').style.display = 'none';
+    document.getElementById('cards-view').style.display = 'block';
+    document.getElementById('timeline-view').style.display = 'none';
+    
+    const container = document.getElementById('cards-container');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    
+    container.innerHTML = paginatedData.map(log => `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom d-flex justify-content-between">
+                    <span><i class="fas fa-hashtag"></i> ${log.id}</span>
+                    <span class="badge bg-light text-dark">${log.status || 'N/A'}</span>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">${getEventIcon(log.event)} ${log.event || 'N/A'}</h6>
+                    <p class="card-text">${log.details || 'Geen details'}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-user"></i> ${log.user || 'N/A'} • 
+                        <i class="far fa-clock"></i> ${formatTimestamp(log.timestamp)}
+                        ${getItemCountForLog(log) ? ` • <i class="fas fa-box"></i> ${getItemCountForLog(log)} items` : ''}
+                        ${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? ` (${log.nesting_count} nesting + ${log.opdeelzaag_count} opdeelzaag)` : ''}
+                        ${log.aantal_sides ? ` • <i class="fas fa-shapes"></i> ${log.aantal_sides} sides` : ''}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTimelineView() {
+    document.getElementById('table-view').style.display = 'none';
+    document.getElementById('cards-view').style.display = 'none';
+    document.getElementById('timeline-view').style.display = 'block';
+    
+    const container = document.getElementById('timeline-container');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    
+    container.innerHTML = paginatedData.map(log => `
+        <div class="timeline-item ${getTimelineClass(log)}">
+            <h6>${getEventIcon(log.event)} ${log.event || 'N/A'}</h6>
+            <p>${log.details || 'Geen details'}</p>
+            <small class="text-muted">
+                ${log.user || 'N/A'} • ${formatTimestamp(log.timestamp)}
+                ${getItemCountForLog(log) ? ` • ${getItemCountForLog(log)} items` : ''}
+                ${(log.nesting_count && log.opdeelzaag_count && (log.nesting_count > 0 || log.opdeelzaag_count > 0)) ? ` (${log.nesting_count} nesting + ${log.opdeelzaag_count} opdeelzaag)` : ''}
+                ${log.aantal_sides ? ` • ${log.aantal_sides} sides` : ''}
+            </small>
+        </div>
+    `).join('');
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const paginationContainer = document.getElementById('pagination-container');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    
+    // Remove existing page number items except prev and next buttons
+    const pageItems = paginationContainer.querySelectorAll('.page-item:not(#prev-page):not(#next-page)');
+    pageItems.forEach(item => item.remove());
+    
+    // Create page number items
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if end page is at maximum
+    if (endPage === totalPages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // Insert page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.classList.add('page-item');
+        if (i === currentPage) {
+            pageItem.classList.add('active');
+        }
+        
+        const pageLink = document.createElement('a');
+        pageLink.classList.add('page-link');
+        pageLink.href = '#';
+        pageLink.textContent = i;
+        pageLink.onclick = function() {
+            currentPage = i;
+            renderCurrentView();
+            return false;
+        };
+        
+        pageItem.appendChild(pageLink);
+        paginationContainer.insertBefore(pageItem, nextBtn);
+    }
+    
+    // Update prev/next buttons
+    if (currentPage <= 1) {
+        prevBtn.classList.add('disabled');
+    } else {
+        prevBtn.classList.remove('disabled');
+    }
+    
+    if (currentPage >= totalPages) {
+        nextBtn.classList.add('disabled');
+    } else {
+        nextBtn.classList.remove('disabled');
+    }
+}
+
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const newPage = currentPage + direction;
+    
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        renderCurrentView();
+    }
+}
+
+// Helper functions
+function formatTimestamp(timestamp) {
+    if (!timestamp) return 'N/A';
+    return new Date(timestamp).toLocaleString('nl-NL');
+}
+
+function getEventIcon(event) {
+    if (!event) return '<i class="fas fa-question"></i>';
+    
+    const eventLower = event.toLowerCase();
+    if (eventLower.includes('error')) return '<i class="fas fa-exclamation-triangle text-danger"></i>';
+    if (eventLower.includes('start')) return '<i class="fas fa-play text-success"></i>';
+    if (eventLower.includes('stop') || eventLower.includes('end')) return '<i class="fas fa-stop text-warning"></i>';
+    if (eventLower.includes('create')) return '<i class="fas fa-plus text-primary"></i>';
+    if (eventLower.includes('update')) return '<i class="fas fa-edit text-info"></i>';
+    if (eventLower.includes('delete')) return '<i class="fas fa-trash text-danger"></i>';
+    
+    return '<i class="fas fa-info-circle"></i>';
+}
+
+// Data filtering and sorting
+function filterData() {
+    const eventFilter = document.getElementById('eventFilter')?.value || '';
+    const userFilter = document.getElementById('userFilter')?.value || '';
+    const searchFilter = document.getElementById('searchFilter')?.value?.toLowerCase() || '';
+    
+    filteredData = logData.filter(log => {
+        if (eventFilter && log.event !== eventFilter) return false;
+        if (userFilter && log.user !== userFilter) return false;
+        if (searchFilter) {
+            const searchableText = [
+                log.event || '',
+                log.user || '',
+                log.project || '',
+                log.details || '',
+                log.status || ''
+            ].join(' ').toLowerCase();
+            if (!searchableText.includes(searchFilter)) return false;
+        }
+        return true;
+    });
+    
+    currentPage = 1;
+    renderCurrentView();
+}
+
+function sortData() {
+    if (!filteredData) filteredData = [...logData];
+    
+    filteredData.sort((a, b) => {
+        let aVal = a[currentSort.column];
+        let bVal = b[currentSort.column];
+        
+        if (currentSort.column === 'timestamp') {
+            aVal = new Date(aVal).getTime();
+            bVal = new Date(bVal).getTime();
+        }
+        
+        if (currentSort.order === 'asc') {
+            return aVal > bVal ? 1 : -1;
+        } else {
+            return aVal < bVal ? 1 : -1;
+        }
+    });
+}
+
+function sortTable(column) {
+    if (currentSort.column === column) {
+        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.column = column;
+        currentSort.order = 'desc';
+    }
+    
+    sortData();
+    renderCurrentView();
+}
+
+function changeView(view) {
+    currentView = view;
+    
+    // Update button states
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Show/hide views
+    document.querySelectorAll('.view-container').forEach(container => {
+        container.style.display = 'none';
+    });
+    document.getElementById(view + '-view').style.display = 'block';
+    
+    renderCurrentView();
+}
+
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    currentPage = Math.max(1, Math.min(totalPages, currentPage + direction));
+    renderCurrentView();
+}
+
+function refreshPage() {
+    location.reload();
+}
+
+function initializeWorkflowChain() {
+    const workflowContainer = document.getElementById('workflowChain');
+    if (!workflowContainer) return;
+    
+    // Clear existing content except connection line
+    workflowContainer.innerHTML = '<div class="chain-connection" style="--progress: 0%;"></div>';
+    
+    // Add Project Start
+    const startStep = createWorkflowStep('step-started', 'Project Start', 'fa-play');
+    workflowContainer.appendChild(startStep);
+    
+    // Add user steps
+    configuredUsers.forEach(user => {
+        const stepId = 'step-' + user.toLowerCase().replace(/ /g, '-');
+        const userStep = createWorkflowStep(stepId, user, 'fa-user');
+        workflowContainer.appendChild(userStep);
+    });
+    
+    // Add completion step
+    const completeStep = createWorkflowStep('step-completed', 'Voltooid', 'fa-check');
+    workflowContainer.appendChild(completeStep);
+}
+
+function createWorkflowStep(id, title, iconClass) {
+    const step = document.createElement('div');
+    step.className = 'chain-step';
+    step.id = id;
+    
+    step.innerHTML = `
+        <div class="chain-step-indicator">
+            <i class="fas ${iconClass}"></i>
+        </div>
+        <div class="chain-step-content">
+            <div class="chain-step-title">${title}</div>
+            <div class="chain-step-user">-</div>
+            <div class="chain-step-time">-</div>
+        </div>
+    `;
+    
+    return step;
+}
+
+function updateWorkflowStatus() {
+    const workflowOrder = configuredUsers || [];
+    const project = '{{ project }}';
+    
+    // Get the most recent event for each user (much simpler!)
+    const userLatestEvents = {};
+    
+    // Process all log entries - keep only the most recent event per user
+    logData.forEach(log => {
+        if (!log.user || !log.event) return;
+        
+        const userKey = `${log.user}_${log.project || project}`;
+        const existing = userLatestEvents[userKey];
+        
+        // Keep the most recent event for each user (using ID for proper ordering)
+        if (!existing || log.id > existing.id) {
+            userLatestEvents[userKey] = log;
+        }
+    });
+    
+    // Debug logging
+    console.log('User latest events:', userLatestEvents);
+    
+    // Also track specific event types for project start detection
+    const projectStartEvents = logData.filter(log => 
+        log.event && ['OPEN', 'PROJECT_START', 'SESSION_START'].includes(log.event.toUpperCase())
+    );
+    
+    // Determine project start
+    const hasStarted = projectStartEvents.length > 0;
+    
+    if (hasStarted) {
+        const startStep = document.getElementById('step-started');
+        if (startStep) {
+            startStep.classList.add('completed');
+            
+            // Find earliest start event
+            if (projectStartEvents.length > 0) {
+                projectStartEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                const firstEvent = projectStartEvents[0];
+                const timeEl = startStep.querySelector('.chain-step-time');
+                if (timeEl) {
+                    timeEl.textContent = formatTimestamp(firstEvent.timestamp).split(' ')[1];
+                }
+            }
+        }
+    }
+    
+    // Update user steps
+    let completedCount = 0;
+    let currentActiveUser = null;
+    
+    workflowOrder.forEach((user, index) => {
+        const stepId = 'step-' + user.toLowerCase().replace(/ /g, '-');
+        const stepElement = document.getElementById(stepId);
+        if (!stepElement) return;
+        
+        const userKey = `${user}_${project}`;
+        const latestEvent = userLatestEvents[userKey];
+        
+        // Clear previous states
+        stepElement.classList.remove('completed', 'active', 'processing', 'pending');
+        
+        if (!latestEvent) {
+            // No events for this user - they didn't receive work
+            stepElement.classList.add('pending');
+            stepElement.querySelector('.chain-step-user').textContent = 'Niet van toepassing';
+            stepElement.querySelector('.chain-step-time').textContent = '-';
+        } else {
+            // Determine status based on latest event and status
+            const isCompleted = latestEvent.event === 'AFGEMELD' || 
+                               latestEvent.event === 'SESSION_END' || 
+                               latestEvent.status === 'AFGEMELD' ||
+                               latestEvent.status === 'COMPLETED';
+            
+            if (isCompleted) {
+                // User completed - show dynamic completion info
+                stepElement.classList.add('completed');
+
+                // Get total items processed by this user for this project (using consolidated count)
+                // Only count from work assignment events (OPEN, PROJECT_START) to avoid double-counting
+                const userItems = logData
+                    .filter(log =>
+                        log.user === user &&
+                        log.project === project &&
+                        (log.event === 'OPEN' || log.event === 'PROJECT_START' || log.event === 'WORK_ASSIGNED')
+                    )
+                    .reduce((total, log) => total + getItemCountForLog(log), 0);
+                
+                const processingType = userProcessingTypes[user] || 'DEFAULT';
+                const shortType = processingType.replace('_PROCESSING', '');
+                
+                if (userItems > 0) {
+                    stepElement.querySelector('.chain-step-user').textContent = `Voltooid (${userItems} items)`;
+                } else {
+                    stepElement.querySelector('.chain-step-user').textContent = 'Voltooid';
+                }
+                completedCount++;
+            } else {
+                // Check if user has any OPEN events that haven't been closed
+                const userEvents = logData.filter(log => log.user === user);
+                const hasOpenEvent = userEvents.some(event => 
+                    event.event === 'OPEN' || event.status === 'OPEN'
+                );
+                
+                if (latestEvent.status === 'BEZIG' || latestEvent.event === 'PROJECT_START' || latestEvent.event === 'SESSION_START') {
+                    // Check if user has an active batch session
+                    const hasActiveBatchSession = sessionsData.some(session => 
+                        session.user === user && 
+                        session.status === 'active' &&
+                        session.session_type === 'SCANNER'
+                    );
+                    
+                    // User active (has started work - BEZIG, PROJECT_START, etc.)
+                    stepElement.classList.add('active');
+                    
+                    if (hasActiveBatchSession) {
+                        stepElement.querySelector('.chain-step-user').textContent = 'Batch actief';
+                    } else {
+                        stepElement.querySelector('.chain-step-user').textContent = 'Bezig';
+                    }
+                    
+                    if (!currentActiveUser) {
+                        currentActiveUser = user;
+                    }
+                } else if (hasOpenEvent) {
+                    // User has OPEN status - work received but not started
+                    stepElement.classList.add('processing');
+                    stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
+                } else {
+                    // Check if user has an active session to determine if they're actually working
+                    const hasActiveSession = sessionsData.some(session => 
+                        session.user === user && session.status === 'active'
+                    );
+                    
+                    if (hasActiveSession) {
+                        // User has active session - show as working
+                        stepElement.classList.add('active');
+                        stepElement.querySelector('.chain-step-user').textContent = 'In behandeling';
+                    } else {
+                        // Default: show as work received
+                        stepElement.classList.add('processing');
+                        stepElement.querySelector('.chain-step-user').textContent = 'Werk ontvangen';
+                    }
+                }
+            }
+            
+            // Show timestamp from latest event
+            stepElement.querySelector('.chain-step-time').textContent = 
+                formatTimestamp(latestEvent.timestamp).split(' ')[1];
+        }
+    });
+    
+    // Check if project completed - only count users who actually worked on the project
+    // A user is considered to have worked on the project if they have any log entries
+    const usersWhoWorked = workflowOrder.filter(user => {
+        const userKey = `${user}_${project}`;
+        return userLatestEvents[userKey] !== undefined;
+    });
+    
+    const isProjectCompleted = usersWhoWorked.length > 0 && completedCount === usersWhoWorked.length;
+    if (isProjectCompleted) {
+        const completeStep = document.getElementById('step-completed');
+        if (completeStep) {
+            completeStep.classList.add('completed');
+        }
+    }
+    
+    // Update progress bar
+    const totalSteps = workflowOrder.length + 2; // Start + Users + Complete
+    const completedSteps = (hasStarted ? 1 : 0) + completedCount + (isProjectCompleted ? 1 : 0);
+    const progress = Math.min(100, (completedSteps / totalSteps) * 100);
+    
+    const progressBar = document.querySelector('.chain-connection');
+    if (progressBar) {
+        progressBar.style.setProperty('--progress', progress + '%');
+    }
+    
+    // Update status badge
+    const statusElement = document.getElementById('overall-status');
+    if (statusElement) {
+        if (isProjectCompleted) {
+            statusElement.className = 'badge bg-success';
+            statusElement.textContent = '✅ Afgerond';
+        } else if (currentActiveUser) {
+            statusElement.className = 'badge bg-warning';
+            statusElement.textContent = `⚡ ${currentActiveUser} bezig`;
+        } else if (hasStarted) {
+            statusElement.className = 'badge bg-info';
+            statusElement.textContent = '🚀 Gestart';
+        } else {
+            statusElement.className = 'badge bg-secondary';
+            statusElement.textContent = '⏳ Wachtend';
+        }
+    }
+}
+
+async function updatePerformanceMetrics() {
+    const userStats = {};
+    
+    // Calculate from sessions data for accuracy
+    const totalItems = sessionsData.reduce((sum, session) => sum + (session.item_count || 0), 0);
+    // Only include users who actually worked on this project (have logs)
+    const logUsers = [...new Set(logData.map(log => log.user).filter(Boolean))];
+    const uniqueUsers = logUsers; // Don't include configured users who didn't work
+    
+    // Bereken totale projecttijd (eerste event van eerste user tot laatste AFGEMELD event van alle users binnen werktijden)
+    let projectStartTime = null;
+    let projectEndTime = null;
+    
+    // Calculate project time using EVENT LOGS (not session times) as per user requirements
+    const sortedLogs = [...logData].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    if (sortedLogs.length > 0) {
+        // Project start: first event from any user
+        projectStartTime = new Date(sortedLogs[0].timestamp);
+        
+        // Project end: find the last AFGEMELD event from all users
+        let lastAfgemeldTime = null;
+        let hasActiveWork = false;
+        
+        // Look for the latest AFGEMELD event from any user
+        const afgemeldLogs = sortedLogs.filter(log => 
+            log.event === 'AFGEMELD' || log.event === 'CLOSED'
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        if (afgemeldLogs.length > 0) {
+            lastAfgemeldTime = new Date(afgemeldLogs[0].timestamp);
+        }
+        
+        // Check if there are any active sessions or recent activity after the last AFGEMELD
+        const hasActiveSessions = sessionsData.some(session => 
+            session.status === 'active' || !session.end_time
+        );
+        
+        // Check for recent activity (logs after last AFGEMELD)
+        const recentActivityAfterAfgemeld = lastAfgemeldTime ? 
+            sortedLogs.some(log => new Date(log.timestamp) > lastAfgemeldTime && 
+                           log.event !== 'AFGEMELD' && log.event !== 'CLOSED') : false;
+        
+        if (hasActiveSessions || recentActivityAfterAfgemeld || !lastAfgemeldTime) {
+            // Project still in progress - use current time
+            projectEndTime = new Date();
+        } else {
+            // All users have AFGEMELD - use last AFGEMELD time
+            projectEndTime = lastAfgemeldTime;
+        }
+    } else {
+        // No logs - fallback to current time
+        projectStartTime = new Date();
+        projectEndTime = new Date();
+    }
+    
+    // Get accurate project time from server using event logs and work hours
+    let actualProjectMinutes = 0;
+    v2MetricsData = null; // Reset v2 data for this calculation
+    console.log('Starting project time calculation...');
+    console.log('Project start time:', projectStartTime);
+    console.log('Project end time:', projectEndTime);
+    
+    // Try the new v2 endpoint first for correct calculation
+    try {
+        const projectName = '{{ project }}';
+        console.log('Fetching v2 time metrics for project:', projectName);
+        
+        // Try v2 endpoint first (correct calculation)
+        let timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics-v2`);
+        let isV2 = true;
+        
+        // Fallback to v1 if v2 not available
+        if (!timeResponse.ok && timeResponse.status === 404) {
+            console.log('V2 endpoint not found, falling back to v1');
+            timeResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/time-metrics`);
+            isV2 = false;
+        }
+        
+        if (!timeResponse.ok) {
+            throw new Error(`API returned status ${timeResponse.status}`);
+        }
+        
+        const timeData = await timeResponse.json();
+        console.log(`API response data (${isV2 ? 'v2' : 'v1'}):`, timeData);
+        
+        if (timeData.success && typeof timeData.total_project_minutes === 'number') {
+            actualProjectMinutes = timeData.total_project_minutes;
+            console.log(`Server-calculated project time (${isV2 ? 'v2 CORRECT' : 'v1 LEGACY'}):`, actualProjectMinutes, 'minutes');
+            
+            // Store v2 data for idle calculation
+            if (isV2) {
+                v2MetricsData = timeData;
+                console.log('Calculation breakdown:', {
+                    batch: timeData.components?.batch_proportional,
+                    elapsed: timeData.components?.elapsed_after_batch,
+                    timeline: timeData.components?.timeline
+                });
+            }
+        } else {
+            console.log('API did not return valid project time, using fallback');
+            // Fallback to client-side calculation
+            if (projectStartTime && projectEndTime) {
+                actualProjectMinutes = calculateWorkMinutes(projectStartTime, projectEndTime);
+                console.log('Fallback client-calculated project time:', actualProjectMinutes, 'minutes');
+            } else {
+                console.warn('No valid project times available, using 0');
+                actualProjectMinutes = 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching server project time:', error);
+        if (projectStartTime && projectEndTime) {
+            actualProjectMinutes = calculateWorkMinutes(projectStartTime, projectEndTime);
+            console.log('Exception fallback calculated time:', actualProjectMinutes, 'minutes');
+        } else {
+            console.warn('No fallback times available, using 0');
+            actualProjectMinutes = 0;
+        }
+    }
+    
+    // Ensure actualProjectMinutes is a valid number
+    if (isNaN(actualProjectMinutes) || actualProjectMinutes < 0) {
+        console.warn('Invalid project minutes calculated, setting to 0');
+        actualProjectMinutes = 0;
+    }
+    
+    // Display initial project time with safety checks
+    const projectHours = Math.floor(actualProjectMinutes / 60) || 0;
+    const projectMins = Math.round(actualProjectMinutes % 60) || 0;
+    document.getElementById('total-project-time').textContent = `${projectHours}h ${projectMins}m`;
+    
+    // Initial display - will be updated after API call
+    document.getElementById('total-work-time').textContent = '0h 0m';
+    document.getElementById('total-idle-time').textContent = `${projectHours}h ${projectMins}m`;
+    
+    // Idle time will be calculated and updated after API call
+    
+    // Idle time info will be updated after API call
+    
+    // Debug: Log sessions data to console for verification
+    console.log('Sessions data for debugging:', sessionsData);
+    
+    // Use project-specific productivity metrics API for accurate batch time allocation
+    try {
+        const projectName = '{{ project }}';
+        const response = await fetch(`/api/project/${encodeURIComponent(projectName)}/productivity-metrics`);
+        const data = await response.json();
+        
+        if (data.success && data.user_productivity) {
+            console.log('API Response:', data.user_productivity);
+            console.log('Unique users:', uniqueUsers);
+            
+            // Filter productivity data for users in this project
+            const projectUsers = data.user_productivity.filter(userMetric => 
+                uniqueUsers.includes(userMetric.user)
+            );
+            
+            console.log('Filtered project users:', projectUsers);
+            
+            // Calculate user stats using proportional time allocation from API
+            uniqueUsers.forEach(user => {
+                const userMetric = projectUsers.find(u => u.user === user);
+                
+                if (userMetric) {
+                    // Use API data with proportional time allocation
+                    let nestingCount = 0;
+                    let opdeelzaagCount = 0;
+                    if (user === 'NESTING') {
+                        const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                        const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+
+                        nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                        opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+                    }
+
+                    // For ACCURA users, get sides count
+                    let sidesCount = 0;
+                    if (user === 'ACCURA') {
+                        const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                        const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                        sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+                    }
+
+                    userStats[user] = {
+                        items: userMetric.total_items || 0,
+                        sides: sidesCount,
+                        sessionMinutes: userMetric.session_hours === 'IN_PROGRESS' ? 'IN_PROGRESS' : Math.round((userMetric.session_hours || 0) * 60),
+                        itemsPerHour: userMetric.items_per_hour === 'IN_PROGRESS' ? 'IN_PROGRESS' : (userMetric.items_per_hour || 0),
+                        status: userMetric.status || 'COMPLETED',
+                        nestingCount: nestingCount,
+                        opdeelzaagCount: opdeelzaagCount
+                    };
+                } else {
+                    // Fallback to raw session data for users not in API response
+                    // Only use sessions that are linked to THIS project (sessionsData is already filtered)
+                    const userSessions = sessionsData.filter(session => session.user === user);
+                    console.log(`Sessions for ${user} on project ${project}:`, userSessions);
+                    
+                    // Get project items from logs - include ALL items regardless of status
+                    const userProjectLogs = logData.filter(log => log.user === user);
+                    const allItemCounts = userProjectLogs.map(log => getItemCountForLog(log)).filter(count => count > 0);
+                    const projectItems = allItemCounts.length > 0 ? Math.max(...allItemCounts) : 0;
+                    
+                    let userSessionMinutes = 0;
+                    
+                    userSessions.forEach(session => {
+                        // Calculate work duration for active sessions
+                        let workMinutes = session.work_duration_minutes;
+                        if (session.status === 'active' && session.start_time) {
+                            // For active sessions, calculate duration from start to now
+                            const start = new Date(session.start_time);
+                            const now = new Date();
+                            workMinutes = (now - start) / 60000; // Convert to minutes
+                        }
+                        
+                        if (workMinutes > 0) {
+                            // Check if this is a batch session with multiple projects
+                            if (session.total_projects_in_session > 1) {
+                                // Batch session - need proportional allocation
+                                const projectItemsInSession = session.item_count || 0;
+                                const totalItemsInSession = session.total_items_in_session || 0;
+                                
+                                if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                                    const proportion = projectItemsInSession / totalItemsInSession;
+                                    userSessionMinutes += workMinutes * proportion;
+                                }
+                            } else {
+                                // Individual session - use full time
+                                userSessionMinutes += workMinutes;
+                            }
+                        }
+                    });
+                    
+                    const itemsPerHour = userSessionMinutes > 0 ? Math.round((projectItems / userSessionMinutes) * 60 * 100) / 100 : 0;
+                    
+                    // For NESTING users, also get the breakdown of nesting vs opdeelzaag counts
+                    let nestingCount = 0;
+                    let opdeelzaagCount = 0;
+                    if (user === 'NESTING') {
+                        const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                        const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+
+                        nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                        opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+                    }
+
+                    // For ACCURA users, get sides count
+                    let sidesCount = 0;
+                    if (user === 'ACCURA') {
+                        const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                        const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                        sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+                    }
+
+                    userStats[user] = {
+                        items: projectItems,
+                        sides: sidesCount,
+                        sessionMinutes: Math.round(userSessionMinutes),
+                        itemsPerHour: itemsPerHour,
+                        nestingCount: nestingCount,
+                        opdeelzaagCount: opdeelzaagCount
+                    };
+                }
+            });
+        } else {
+            throw new Error('API response invalid');
+        }
+    } catch (error) {
+        console.warn('Could not fetch productivity metrics, falling back to raw session data:', error);
+        
+        // Fallback: calculate from raw sessions data
+        // IMPORTANT: sessionsData already contains ONLY sessions linked to this project
+        uniqueUsers.forEach(user => {
+            const userSessions = sessionsData.filter(session => session.user === user);
+            console.log(`Fallback calculation for ${user}:`, userSessions);
+            
+            // Get project items from logs - include ALL items regardless of status
+            const userProjectLogs = logData.filter(log => log.user === user);
+            const allItemCounts = userProjectLogs.map(log => getItemCountForLog(log)).filter(count => count > 0);
+            const projectItems = allItemCounts.length > 0 ? Math.max(...allItemCounts) : 0;
+            
+            let userSessionMinutes = 0;
+            
+            userSessions.forEach(session => {
+                // Calculate work duration for active sessions
+                let workMinutes = session.work_duration_minutes;
+                if (session.status === 'active' && session.start_time) {
+                    // For active sessions, calculate duration from start to now
+                    const start = new Date(session.start_time);
+                    const now = new Date();
+                    workMinutes = (now - start) / 60000; // Convert to minutes
+                    console.log(`  Active session ${session.session_id}: calculated ${workMinutes.toFixed(1)}min from start`);
+                }
+                
+                if ((session.status === 'completed' || session.status === 'active') && workMinutes > 0) {
+                    // Check if this is a batch session with multiple projects
+                    if (session.total_projects_in_session > 1) {
+                        // Batch session - need proportional allocation based on items
+                        // Use the item count from this specific project in the session
+                        const projectItemsInSession = session.item_count || 0;
+                        const totalItemsInSession = session.total_items_in_session || 0;
+                        
+                        if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                            const proportion = projectItemsInSession / totalItemsInSession;
+                            const allocatedMinutes = workMinutes * proportion;
+                            userSessionMinutes += allocatedMinutes;
+                            console.log(`  Batch allocation for ${session.session_id}: ${allocatedMinutes.toFixed(1)}min (${projectItemsInSession}/${totalItemsInSession} items = ${(proportion * 100).toFixed(1)}% of ${workMinutes.toFixed(1)}min)`);
+                        }
+                    } else {
+                        // Individual session - use full session time
+                        userSessionMinutes += workMinutes;
+                        console.log(`  Using full session time: ${workMinutes.toFixed(1)}min from session ${session.session_id}`);
+                    }
+                }
+            });
+            
+            const itemsPerHour = userSessionMinutes > 0 && projectItems > 0 ? 
+                Math.round((projectItems * 60.0) / userSessionMinutes * 100) / 100 : 0;
+            
+            // For NESTING users, also get the breakdown of nesting vs opdeelzaag counts
+            let nestingCount = 0;
+            let opdeelzaagCount = 0;
+            if (user === 'NESTING') {
+                const nestingProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.nesting_count > 0);
+                const opdeelzaagProjectLogs = logData.filter(log => log.user === user && log.event === 'OPEN' && log.opdeelzaag_count > 0);
+
+                nestingCount = nestingProjectLogs.reduce((sum, log) => sum + (log.nesting_count || 0), 0);
+                opdeelzaagCount = opdeelzaagProjectLogs.reduce((sum, log) => sum + (log.opdeelzaag_count || 0), 0);
+            }
+
+            // For ACCURA users, get sides count
+            let sidesCount = 0;
+            if (user === 'ACCURA') {
+                const accuraSidesLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+                const allSidesCounts = accuraSidesLogs.map(log => log.aantal_sides || 0).filter(count => count > 0);
+                sidesCount = allSidesCounts.length > 0 ? Math.max(...allSidesCounts) : 0;
+            }
+
+            userStats[user] = {
+                items: projectItems,
+                sides: sidesCount,
+                sessionMinutes: Math.round(userSessionMinutes),
+                itemsPerHour: itemsPerHour,
+                nestingCount: nestingCount,
+                opdeelzaagCount: opdeelzaagCount
+            };
+            
+            console.log(`  Final stats: ${projectItems} items, ${userSessionMinutes.toFixed(1)}min, ${itemsPerHour} items/hour`);
+        });
+    }
+    
+    // Calculate total session minutes for PROJECT METRICS
+    let totalSessionMinutes = 0;
+    console.log('Calculating total session minutes from linked sessions...');
+    console.log('Sessions linked to this project:', sessionsData);
+    
+    // Sum up work duration from ALL sessions linked to this project
+    // Apply proportional allocation for batch sessions
+    sessionsData.forEach(session => {
+        // Calculate work duration for active sessions
+        let workMinutes = session.work_duration_minutes;
+        if (session.status === 'active' && session.start_time) {
+            // For active sessions, calculate duration from start to now
+            const start = new Date(session.start_time);
+            const now = new Date();
+            workMinutes = (now - start) / 60000; // Convert to minutes
+            console.log(`  Active session ${session.session_id}: calculated ${workMinutes.toFixed(1)}min from start`);
+        }
+        
+        if (workMinutes > 0) {
+            if (session.total_projects_in_session > 1) {
+                // Batch session - use proportional allocation
+                const projectItemsInSession = session.item_count || 0;
+                const totalItemsInSession = session.total_items_in_session || 0;
+                
+                if (totalItemsInSession > 0 && projectItemsInSession > 0) {
+                    const proportion = projectItemsInSession / totalItemsInSession;
+                    const allocatedMinutes = workMinutes * proportion;
+                    totalSessionMinutes += allocatedMinutes;
+                    console.log(`  Batch allocation: ${allocatedMinutes.toFixed(1)} minutes (${projectItemsInSession}/${totalItemsInSession} items = ${(proportion * 100).toFixed(1)}%) from session ${session.session_id} (${session.user})`);
+                }
+            } else {
+                // Single project session - use full time
+                totalSessionMinutes += workMinutes;
+                console.log(`  Adding ${workMinutes.toFixed(1)} minutes from session ${session.session_id} (${session.user})`);
+            }
+        }
+    });
+    
+    console.log('Total session minutes (with proportional allocation):', totalSessionMinutes);
+    
+    // Keep userStats calculation unchanged for Gebruiker Performance Analyse
+    // The proportional allocation in userStats is correct for per-user performance metrics
+    
+    // Ensure totalSessionMinutes is a valid number
+    if (isNaN(totalSessionMinutes) || totalSessionMinutes < 0) {
+        console.warn('Invalid totalSessionMinutes calculated, setting to 0:', totalSessionMinutes);
+        totalSessionMinutes = 0;
+    }
+    
+    console.log('Final totalSessionMinutes:', totalSessionMinutes);
+    
+    // Display total work time with safety checks
+    const sessionHours = Math.floor(totalSessionMinutes / 60) || 0;
+    const sessionMins = Math.round(totalSessionMinutes % 60) || 0;
+    document.getElementById('total-work-time').textContent = `${sessionHours}h ${sessionMins}m`;
+    console.log('Displaying work time:', `${sessionHours}h ${sessionMins}m`);
+    
+    // Ensure totalSessionMinutes is valid
+    if (isNaN(totalSessionMinutes) || totalSessionMinutes < 0) {
+        console.warn('Invalid session minutes, setting to 0');
+        totalSessionMinutes = 0;
+    }
+    
+    // Calculate detailed idle time components
+    let idleMinutes = 0;
+    let pauseMinutes = 0;
+    let handoffMinutes = 0;
+    
+    // Check if we have v2 metrics data with correct idle calculation
+    if (v2MetricsData && v2MetricsData.total_idle_minutes !== undefined) {
+        console.log('Using v2 idle time calculation');
+        idleMinutes = v2MetricsData.total_idle_minutes;
+        
+        // Use v2 breakdown if available
+        if (v2MetricsData.components && v2MetricsData.components.idle_breakdown) {
+            pauseMinutes = v2MetricsData.components.idle_breakdown.pause_minutes || 0;
+            handoffMinutes = v2MetricsData.components.idle_breakdown.handoff_minutes || 0;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                handoffMinutes: handoffMinutes,
+                pausesByUser: v2MetricsData.components.idle_breakdown.pauses_by_user || {},
+                handoffDetails: v2MetricsData.components.idle_breakdown.handoff_details || {},
+                otherGaps: Math.max(0, idleMinutes - pauseMinutes - handoffMinutes),
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            
+            console.log('V2 idle breakdown:', idleTimeBreakdown);
+        } else {
+            // If v2 doesn't have idle breakdown, calculate it from logs
+            const pauseData = calculatePausesFromSessions();
+            const handoffData = calculateHandoffDelaysFromLogs();
+            
+            pauseMinutes = pauseData.totalPauseMinutes || 0;
+            handoffMinutes = handoffData.totalHandoffMinutes || 0;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
+                handoffMinutes: handoffMinutes,
+                handoffDetails: handoffData.handoffDetails || {},
+                otherGaps: Math.max(0, idleMinutes - pauseMinutes - handoffMinutes),
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            
+            console.log('V2 with calculated idle breakdown:', idleTimeBreakdown);
+        }
+    } else {
+        // Fallback to old calculation method
+        console.log('Using legacy idle time calculation');
+        
+        // Try to get detailed idle time breakdown from API
+        try {
+        const projectName = '{{ project }}';
+        const sessionsResponse = await fetch(`/api/project/${encodeURIComponent(projectName)}/linked_sessions`);
+        
+        if (sessionsResponse.ok) {
+            const sessionsDetail = await sessionsResponse.json();
+            
+            if (sessionsDetail.metrics) {
+                // Get pause and handoff times
+                // Always calculate from logs since events might be added after session close
+                const pauseData = calculatePauseTimeFromLogs();
+                const handoffData = calculateHandoffDelaysFromLogs();
+                pauseMinutes = pauseData.totalPauseMinutes || sessionsDetail.metrics.total_pause_minutes || 0;
+                handoffMinutes = handoffData.totalHandoffMinutes || sessionsDetail.metrics.total_handoff_minutes || 0;
+                
+                // Calculate idle time correctly
+                // Total idle = project time - work time (work time already excludes pauses)
+                // Calculate total idle from project time minus work time
+                const baseIdleMinutes = Math.max(0, actualProjectMinutes - totalSessionMinutes);
+                
+                // If we have pause/handoff data but baseIdle is 0, use pause+handoff as minimum
+                // This handles cases where session tracking might be incomplete
+                idleMinutes = Math.max(baseIdleMinutes, pauseMinutes + handoffMinutes);
+                
+                // Other gaps = Total idle - pause time - handoff time
+                const otherGaps = Math.max(0, idleMinutes - pauseMinutes - handoffMinutes);
+                
+                // Extract handoff details from workflow or use calculated ones
+                let handoffDetails = handoffData.handoffDetails || {};
+                if (sessionsDetail.workflow && Object.keys(handoffDetails).length === 0) {
+                    sessionsDetail.workflow.forEach(session => {
+                        if (session.handoff_from && session.handoff_delay > 0) {
+                            const transition = `${session.handoff_from} → ${session.user}`;
+                            handoffDetails[transition] = (handoffDetails[transition] || 0) + session.handoff_delay;
+                        }
+                    });
+                }
+                
+                // Store breakdown for modal
+                idleTimeBreakdown = {
+                    pauseMinutes: pauseMinutes,
+                    pausesByUser: pauseData.pausesByUser || {},
+                    handoffMinutes: handoffMinutes,
+                    handoffDetails: handoffDetails,
+                    otherGaps: otherGaps,
+                    totalIdleMinutes: idleMinutes,
+                    projectMinutes: actualProjectMinutes,
+                    workMinutes: totalSessionMinutes
+                };
+                
+                console.log('Detailed idle time breakdown:', {
+                    pauseMinutes: pauseMinutes.toFixed(1),
+                    handoffMinutes: handoffMinutes.toFixed(1),
+                    otherGaps: otherGaps.toFixed(1),
+                    totalIdleMinutes: idleMinutes.toFixed(1),
+                    handoffDetails: handoffDetails,
+                    metrics: sessionsDetail.metrics,
+                    hasBreakdownData: (pauseMinutes > 0 || handoffMinutes > 0 || Object.keys(handoffDetails).length > 0 || otherGaps > 0)
+                });
+                
+                // Update idle time info with details
+                const idleTimeInfo = document.getElementById('idle-time-info');
+                if (idleTimeInfo) {
+                    const idlePercentage = actualProjectMinutes > 0 ? 
+                        Math.round((idleMinutes / actualProjectMinutes) * 100) : 0;
+                    if (handoffMinutes > 0 || pauseMinutes > 0) {
+                        idleTimeInfo.innerHTML = `${idlePercentage}% van totale tijd<br>
+                            <small>Handoff: ${Math.round(handoffMinutes)}m, Pauze: ${Math.round(pauseMinutes)}m</small>`;
+                    } else {
+                        idleTimeInfo.innerHTML = `${idlePercentage}% van totale tijd`;
+                    }
+                }
+            } else {
+                // Fallback: calculate handoff delays from logs directly
+                console.log('API metrics not available, calculating handoffs from logs');
+                const handoffData = calculateHandoffDelaysFromLogs();
+                
+                // Try to extract pause data from logs as well
+                const pauseData = calculatePauseTimeFromLogs();
+                
+                handoffMinutes = handoffData.totalHandoffMinutes;
+                pauseMinutes = pauseData.totalPauseMinutes;
+                // Idle time is ONLY pause + handoff
+                idleMinutes = pauseMinutes + handoffMinutes;
+                
+                idleTimeBreakdown = {
+                    pauseMinutes: pauseMinutes,
+                    pausesByUser: pauseData.pausesByUser || {},
+                    handoffMinutes: handoffMinutes,
+                    handoffDetails: handoffData.handoffDetails,
+                    totalIdleMinutes: idleMinutes,
+                    projectMinutes: actualProjectMinutes,
+                    workMinutes: totalSessionMinutes
+                };
+                console.log('Calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
+            }
+        } else {
+            // API call failed, calculate from logs instead
+            console.log('API call failed, calculating handoffs from logs');
+            const handoffData = calculateHandoffDelaysFromLogs();
+            const pauseData = calculatePauseTimeFromLogs();
+            
+            handoffMinutes = handoffData.totalHandoffMinutes;
+            pauseMinutes = pauseData.totalPauseMinutes;
+            // Idle time is ONLY pause + handoff
+            idleMinutes = pauseMinutes + handoffMinutes;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
+                handoffMinutes: handoffMinutes,
+                handoffDetails: handoffData.handoffDetails,
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            console.log('API failed - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
+            }
+        } catch (error) {
+            console.warn('Could not fetch detailed session metrics:', error);
+            // Fallback: calculate from logs
+            const handoffData = calculateHandoffDelaysFromLogs();
+            const pauseData = calculatePauseTimeFromLogs();
+            
+            handoffMinutes = handoffData.totalHandoffMinutes;
+            pauseMinutes = pauseData.totalPauseMinutes;
+            // Idle time is ONLY pause + handoff
+            idleMinutes = pauseMinutes + handoffMinutes;
+            
+            idleTimeBreakdown = {
+                pauseMinutes: pauseMinutes,
+                pausesByUser: pauseData.pausesByUser || {},
+                handoffMinutes: handoffMinutes,
+                handoffDetails: handoffData.handoffDetails,
+                totalIdleMinutes: idleMinutes,
+                projectMinutes: actualProjectMinutes,
+                workMinutes: totalSessionMinutes
+            };
+            console.log('Exception fallback - calculated breakdown from logs:', {handoffData, pauseData, idleTimeBreakdown});
+        }
+    } // End of else block for v2 metrics fallback
+    
+    // Display idle time
+    const idleHours = Math.floor(idleMinutes / 60) || 0;
+    const idleMins = Math.round(idleMinutes % 60) || 0;
+    document.getElementById('total-idle-time').textContent = `${idleHours}h ${idleMins}m`;
+    
+    console.log('Idle time calculation:', {
+        actualProjectMinutes,
+        totalSessionMinutes,
+        idleMinutes,
+        displayedAs: `${idleHours}h ${idleMins}m`
+    });
+    
+    // Update idle time info percentage - use consistent logic
+    const idleTimeInfo = document.getElementById('idle-time-info');
+    if (idleTimeInfo) {
+        // If displayed idle time is 0h 0m, then percentage should also be 0%
+        let idlePercentage = 0;
+        if (idleHours > 0 || idleMins > 0) {
+            // Only calculate percentage if there's actually displayed idle time
+            idlePercentage = actualProjectMinutes > 0 ? Math.round((idleMinutes / actualProjectMinutes) * 100) : 0;
+        }
+        
+        console.log('Idle percentage calculation:', {
+            idleHours,
+            idleMins,
+            idleMinutes,
+            actualProjectMinutes,
+            calculatedPercentage: idlePercentage
+        });
+        
+        idleTimeInfo.innerHTML = `${idlePercentage}% van totale project tijd`;
+    }
+    
+    // Update total project time display (already set above, but ensure consistency)
+    const finalProjectHours = Math.floor(actualProjectMinutes / 60) || 0;
+    const finalProjectMins = Math.round(actualProjectMinutes % 60) || 0;
+    document.getElementById('total-project-time').textContent = `${finalProjectHours}h ${finalProjectMins}m`;
+    
+    console.log('Project time calculation:', {
+        actualProjectMinutes,
+        totalWorkMinutes: totalSessionMinutes,
+        idleMinutes: idleMinutes,
+        calculationMethod: 'server-side event-based'
+    });
+    
+    // Aantal bewerkingen - sum up all user items from userStats
+    const actualTotalItems = Object.values(userStats).reduce((sum, user) => sum + (user.items || 0), 0);
+    document.getElementById('total-items-completed').textContent = actualTotalItems.toString();
+    const itemsBreakdown = Object.entries(userStats)
+        .filter(([user, stats]) => stats !== undefined)
+        .sort(([,a], [,b]) => (b.items || 0) - (a.items || 0))
+        .map(([user, stats]) => {
+            // For ACCURA, show sides instead of items
+            if (user === 'ACCURA' && stats.sides > 0) {
+                return `${user}: ${stats.sides}`;
+            }
+            return `${user}: ${stats.items || 0}`;
+        })
+        .join(' | ');
+    document.getElementById('items-breakdown').textContent = itemsBreakdown || 'Geen bewerkingen voltooid';
+    
+    // Items - calculate final items count from the ACTUAL last user in the processing chain
+    // The chain is defined in config: ["NESTING", "ACCURA", "OPUS", "KL GANNOMAT", "BOERE"]
+    let finalItemCount = 0;
+    let finalItemUser = null;
+    
+    // Check each configured user in reverse order (last to first in processing chain)
+    for (let i = configuredUsers.length - 1; i >= 0; i--) {
+        const user = configuredUsers[i];
+        
+        // First check userStats (from API)
+        if (userStats[user] && userStats[user].items > 0) {
+            finalItemCount = userStats[user].items;
+            finalItemUser = user;
+            break; // Found the last user with items
+        }
+        
+        // Fallback: check logData directly for this user
+        const userLogs = logData.filter(log => log.user === user && log.event === 'OPEN');
+        if (userLogs.length > 0) {
+            const latestLog = userLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+            const itemCount = getItemCountForLog(latestLog);
+            
+            if (itemCount > 0) {
+                finalItemCount = itemCount;
+                finalItemUser = user;
+                break; // Found the last user with items
+            }
+        }
+    }
+    
+    document.getElementById('final-items-count').textContent = finalItemCount.toString();
+    document.getElementById('final-items-info').textContent = '';
+    
+    
+    // Update gebruiker performance kaarten
+    updateUserPerformanceCards(userStats).catch(error => {
+        console.error('Error updating user performance cards:', error);
+    });
+    
+    // Update laatste update tijd
+    document.getElementById('last-update').textContent = new Date().toLocaleString('nl-NL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function calculateWorkMinutes(startTime, endTime) {
+    if (!startTime || !endTime) return 0;
+    
+    let totalMinutes = 0;
+    let current = new Date(startTime);
+    const end = new Date(endTime);
+    
+    // Per-day work hours configuration
+    const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const breakStartHour = workHours.break_start || 12;
+    const breakEndHour = workHours.break_end || 12.5;
+    const workDays = workHours.work_days || [0, 1, 2, 3, 4]; // Ma-Vr
+    
+    while (current < end) {
+        const dayOfWeek = current.getDay();
+        const jsWeekdayToMomentWeekday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert Sunday=0 to Monday=0
+        
+        // Skip dagen die niet in workDays zitten
+        if (!workDays.includes(jsWeekdayToMomentWeekday)) {
+            // Move to next day at midnight
+            current = new Date(current);
+            current.setDate(current.getDate() + 1);
+            current.setHours(0, 0, 0, 0);
+            continue;
+        }
+        
+        // Get day-specific work hours
+        const dayName = dayNames[jsWeekdayToMomentWeekday];
+        const dayConfig = workHours[dayName];
+        
+        // If no day config, use fallback and skip
+        if (!dayConfig || typeof dayConfig !== 'object') {
+            current = new Date(current);
+            current.setDate(current.getDate() + 1);
+            current.setHours(0, 0, 0, 0);
+            continue;
+        }
+        
+        const workStartHour = dayConfig.start || 7.5;  // Default 07:30
+        const workEndHour = dayConfig.end || 16;       // Default 16:00
+        
+        // Bereken werktijden voor deze dag
+        const dayStart = new Date(current);
+        dayStart.setHours(Math.floor(workStartHour), Math.round((workStartHour % 1) * 60), 0, 0);
+        
+        const dayEnd = new Date(current);
+        dayEnd.setHours(Math.floor(workEndHour), Math.round((workEndHour % 1) * 60), 0, 0);
+        
+        const breakStart = new Date(current);
+        breakStart.setHours(Math.floor(breakStartHour), Math.round((breakStartHour % 1) * 60), 0, 0);
+        
+        const breakEnd = new Date(current);
+        breakEnd.setHours(Math.floor(breakEndHour), Math.round((breakEndHour % 1) * 60), 0, 0);
+        
+        const actualStart = new Date(Math.max(current, dayStart));
+        const actualEnd = new Date(Math.min(end, dayEnd));
+        
+        if (actualStart < actualEnd) {
+            // Ochtend sessie (voor pauze)
+            if (actualStart < breakStart) {
+                const morningEnd = new Date(Math.min(actualEnd, breakStart));
+                totalMinutes += (morningEnd - actualStart) / 60000;
+            }
+            
+            // Middag sessie (na pauze)
+            if (actualEnd > breakEnd) {
+                const afternoonStart = new Date(Math.max(actualStart, breakEnd));
+                totalMinutes += (actualEnd - afternoonStart) / 60000;
+            }
+        }
+        
+        // Move to start of next day
+        current = new Date(current);
+        current.setDate(current.getDate() + 1);
+        current.setHours(0, 0, 0, 0);
+    }
+    
+    // Return rounded value to 2 decimal places to match server
+    return Math.round(totalMinutes * 100) / 100;
+}
+
+async function updateUserPerformanceCards(userStats) {
+    const container = document.getElementById('user-performance-grid');
+    
+    // Load efficiency targets once (into global variable)
+    try {
+        const response = await fetch('/api/settings/efficiency-targets');
+        const data = await response.json();
+        if (data.targets) {
+            efficiencyTargets = data.targets;
+        }
+    } catch (error) {
+        console.warn('Could not load efficiency targets:', error);
+    }
+    
+    let html = '';
+    
+    // Sort users by configured order
+    const orderedUsers = Object.keys(userStats).sort((a, b) => {
+        const indexA = configuredUsers.indexOf(a);
+        const indexB = configuredUsers.indexOf(b);
+        // If both are in config, use that order
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        // If only one is in config, it comes first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        // Otherwise alphabetical
+        return a.localeCompare(b);
+    });
+    
+    orderedUsers.forEach(user => {
+        const stats = userStats[user];
+        // Handle WAITING status (OPEN event but no work sessions yet)
+        const isWaiting = stats.status === 'WAITING' || stats.itemsPerHour === '--';
+        
+        if (isWaiting) {
+            // Show waiting state - user has OPEN event but no work sessions
+            const processingType = userProcessingTypes[user] || 'DEFAULT';
+            const shortType = processingType.replace('_PROCESSING', '');
+            const typeIcon = {
+                'NESTING': 'fas fa-layer-group',
+                'ACCURA': 'fas fa-clipboard-check', 
+                'BOERE': 'fas fa-drill',
+                'HOPS': 'fas fa-database',
+                'MDB': 'fas fa-table',
+                'DEFAULT': 'fas fa-cog'
+            }[shortType] || 'fas fa-cog';
+            
+            html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="enterprise-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-0">${user}</h5>
+                                <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                            </div>
+                            <span class="badge bg-secondary">Wachten op start</span>
+                        </div>
+                        <div class="text-center mb-3">
+                            <div class="performance-score text-muted" style="font-size: 1.8rem; font-weight: 700;">
+                                <i class="fas fa-pause"></i>
+                            </div>
+                            <div class="text-muted small">Werk ontvangen</div>
+                        </div>
+                        <hr>
+                        <div class="metric-row">
+                            <span class="metric-label">Items</span>
+                            <span class="metric-value text-muted">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Sessietijd</span>
+                            <span class="metric-value text-muted">--</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return; // Skip normal calculation
+        }
+        
+        // Handle IN_PROGRESS status for batch processing
+        const isInProgress = stats.status === 'IN_PROGRESS' || stats.itemsPerHour === 'IN_PROGRESS';
+        
+        if (isInProgress) {
+            // Show pending calculation for batch in progress
+            const processingType = userProcessingTypes[user] || 'DEFAULT';
+            const shortType = processingType.replace('_PROCESSING', '');
+            const typeIcon = {
+                'NESTING': 'fas fa-layer-group',
+                'ACCURA': 'fas fa-clipboard-check', 
+                'BOERE': 'fas fa-drill',
+                'HOPS': 'fas fa-database',
+                'MDB': 'fas fa-table',
+                'DEFAULT': 'fas fa-cog'
+            }[shortType] || 'fas fa-cog';
+            
+            const performanceColor = 'warning';
+            const performanceLabel = 'Berekening in behandeling';
+            const currentEfficiency = 'Wachten...';
+            // Calculate session time for IN_PROGRESS sessions
+            let sessionMinutesCalc = 0;
+            if (stats.sessionMinutes === 'IN_PROGRESS') {
+                // Calculate elapsed time from first log for this user
+                const now = new Date();
+                const userLogs = logData.filter(log => log.user === user).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                if (userLogs.length > 0) {
+                    const startTime = new Date(userLogs[0].timestamp);
+                    sessionMinutesCalc = Math.floor((now - startTime) / (1000 * 60));
+                }
+            } else {
+                sessionMinutesCalc = stats.sessionMinutes || 0;
+            }
+            const sessionHours = Math.floor(sessionMinutesCalc / 60);
+            const sessionMins = sessionMinutesCalc % 60;
+            
+            html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="enterprise-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-0">${user}</h5>
+                                <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                            </div>
+                            <span class="badge bg-warning text-dark">${performanceLabel}</span>
+                        </div>
+                        <div class="text-center mb-3">
+                            <div class="performance-score text-warning" style="font-size: 1.8rem; font-weight: 700;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="text-muted small">${shortType === 'NESTING' ? 'Batch sessie actief' : 'BEZIG'}</div>
+                        </div>
+                        <hr>
+                        <div class="metric-row">
+                            <span class="metric-label">Items</span>
+                            <span class="metric-value">${stats.items}</span>
+                            ${user === 'NESTING' && stats.nestingCount !== undefined && stats.opdeelzaagCount !== undefined ? `
+                                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                    ${stats.nestingCount} Nesting, ${stats.opdeelzaagCount} Opdeelzaag
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Sessietijd</span>
+                            <span class="metric-value text-warning">Bezig...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return; // Skip normal calculation
+        }
+        
+        // Normal calculation for completed batches
+        const currentEfficiency = stats.itemsPerHour;
+        const targetEfficiency = efficiencyTargets[user] ? efficiencyTargets[user].target_items_per_hour : currentEfficiency;
+        
+        // Bereken trend percentage t.o.v. efficiency target
+        const trendPercentage = targetEfficiency > 0 
+            ? Math.round(((currentEfficiency - targetEfficiency) / targetEfficiency) * 100)
+            : 0;
+        
+        const trendIcon = trendPercentage >= 0 ? '↑' : '↓';
+        const trendColor = trendPercentage >= 0 ? 'text-success' : 'text-danger';
+        
+        // Performance kleur gebaseerd op trend t.o.v. efficiency target
+        let performanceColor = 'secondary';
+        let performanceLabel = '';
+        
+        if (trendPercentage >= 10) {
+            performanceColor = 'success';
+            performanceLabel = 'Uitstekend';
+        } else if (trendPercentage >= 0) {
+            performanceColor = 'info';
+            performanceLabel = 'Op schema';
+        } else if (trendPercentage >= -10) {
+            performanceColor = 'warning';
+            performanceLabel = 'Onder doel';
+        } else {
+            performanceColor = 'danger';
+            performanceLabel = 'Aandacht nodig';
+        }
+        
+        // Get processing type for dynamic display
+        const processingType = userProcessingTypes[user] || 'DEFAULT';
+        const shortType = processingType.replace('_PROCESSING', '');
+        const typeIcon = {
+            'NESTING': 'fas fa-layer-group',
+            'ACCURA': 'fas fa-clipboard-check', 
+            'BOERE': 'fas fa-drill',
+            'HOPS': 'fas fa-database',
+            'MDB': 'fas fa-table',
+            'DEFAULT': 'fas fa-cog'
+        }[shortType] || 'fas fa-cog';
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="enterprise-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="mb-0">${user}</h5>
+                            <small class="text-muted"><i class="${typeIcon}"></i> ${shortType}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${performanceColor} mb-1">${performanceLabel}</span>
+                            <div class="fw-bold">${currentEfficiency.toFixed(1)} items/uur</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-4 fw-bold text-dark">${stats.items}</div>
+                                <div class="text-muted small">Items</div>
+                                ${user === 'NESTING' && stats.nestingCount !== undefined && stats.opdeelzaagCount !== undefined ? `
+                                    <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                                        ${stats.nestingCount} Nesting<br>
+                                        ${stats.opdeelzaagCount} Opdeelzaag
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-4 fw-bold text-dark">${Math.floor(stats.sessionMinutes / 60)}h ${Math.round(stats.sessionMinutes % 60)}m</div>
+                                <div class="text-muted small">Sessietijd</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Trend t.o.v. doel</span>
+                            <span class="${trendColor} fw-bold">${trendIcon} ${Math.abs(trendPercentage)}%</span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            ${efficiencyTargets[user] ? `Doel: ${targetEfficiency.toFixed(1)} items/uur` : 'Geen doel ingesteld'}
+                        </div>
+                    </div>
+                    
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-${performanceColor}" 
+                             role="progressbar" 
+                             style="width: ${Math.min(100, Math.max(0, 50 + trendPercentage))}%"
+                             aria-valuenow="${50 + trendPercentage}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    if (Object.keys(userStats).length === 0) {
+        html = '<div class="col-12 text-center text-muted py-4">Geen gebruikerdata beschikbaar</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+function updateActivityTimeline() {
+    const timeline = document.getElementById('activityTimeline');
+    if (!timeline) return;
+    
+    // Sort logs by timestamp (most recent first)
+    const sortedLogs = [...logData].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const recentLogs = sortedLogs.slice(0, 15);
+    
+    if (recentLogs.length === 0) {
+        timeline.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-2x mb-3" style="opacity: 0.3;"></i>
+                <p class="mb-0">Geen recente activiteit</p>
+                <small>Events verschijnen hier real-time</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let timelineHTML = '';
+    recentLogs.forEach((log, index) => {
+        const timeAgo = getTimeAgo(log.timestamp);
+        const icon = getEventIcon(log.event);
+        const statusClass = getStatusClass(log.status);
+        const isRecent = index < 3;
+        
+        timelineHTML += `
+            <div class="timeline-item ${isRecent ? 'border-start border-3 border-primary' : ''}" 
+                 style="${isRecent ? 'background-color: rgba(26, 115, 232, 0.02);' : ''}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-2">
+                            ${icon}
+                            <strong class="ms-2 text-dark">${log.event || 'Event'}</strong>
+                            ${isRecent ? '<span class="badge bg-primary ms-2" style="font-size: 0.6rem;">NIEUW</span>' : ''}
+                        </div>
+                        
+                        ${log.user ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user text-muted" style="font-size: 0.8rem;"></i>
+                                <span class="ms-2 fw-medium text-secondary">${log.user}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${log.details ? `<p class="mb-2 text-muted small">${log.details}</p>` : ''}
+                        
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            ${log.status ? `<span class="status-badge status-${statusClass}">${log.status}</span>` : ''}
+                            ${log.item_count ? `<span class="badge bg-info" style="font-size: 0.7rem;">${log.item_count} items</span>` : ''}
+                            <small class="text-muted">
+                                <i class="far fa-clock"></i> ${timeAgo}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    timeline.innerHTML = timelineHTML;
+}
+
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMinutes = Math.round((now - then) / 60000);
+    
+    if (diffMinutes < 1) return 'Zojuist';
+    if (diffMinutes < 60) return `${diffMinutes}m geleden`;
+    if (diffMinutes < 1440) {
+        const hours = Math.round(diffMinutes / 60);
+        return `${hours}u geleden`;
+    }
+    const days = Math.round(diffMinutes / 1440);
+    return `${days}d geleden`;
+}
+
+// Removed handoff calculation functions - using simple idle time calculation instead
+
+function findLastUserInChain(userStats, configuredUsers) {
+    // Find the last user in the configured chain who has actually processed items
+    for (let i = configuredUsers.length - 1; i >= 0; i--) {
+        const user = configuredUsers[i];
+        if (userStats[user] && userStats[user].items > 0) {
+            return user;
+        }
+    }
+    return null;
+}
+</script>
+{% endblock %}

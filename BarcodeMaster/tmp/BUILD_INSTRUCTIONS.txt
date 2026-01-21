@@ -1,0 +1,33 @@
+Project Datalog - Build Instructions for Windows
+
+IMPORTANT: The executable must be built on Windows, not in WSL/Linux.
+
+Prerequisites:
+1. Install Python 3.8+ for Windows from python.org
+2. Install required dependencies:
+   pip install pyinstaller tkinter flask werkzeug jinja2 waitress pandas openpyxl xlrd xlwt xlsxwriter PyPDF2 pdfplumber pyserial requests psutil pyodbc pillow
+
+Building the Executable:
+
+1. Open Windows Command Prompt or PowerShell
+2. Navigate to the project directory:
+   cd C:\Users\Rob_v\Desktop\Test-thuis\BarcodeMaster
+
+3. Build with console output (for debugging):
+   python build_exe.py --console
+
+4. Build without console (for production):
+   python build_exe.py
+
+The executable will be created in the dist/ folder as ProjectDatalog.exe
+
+Database Schema Fix Applied:
+- Added missing columns: mo_number, so_number, color, customer_name
+- Fixed INSERT statements to include all columns
+- Schema migrations will now run properly on fresh database creation
+
+Testing After Build:
+1. Delete any existing database files in the dist folder
+2. Run ProjectDatalog.exe --console
+3. The database should initialize without column errors
+4. Test Excel processing functionality to verify metadata extraction

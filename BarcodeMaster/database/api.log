@@ -1,0 +1,937 @@
+2025-08-18 17:36:09,052 INFO Work hours loaded from config: {'monday': {'start': 7.5, 'end': 23.983333333333334}, 'tuesday': {'start': 7.5, 'end': 23.983333333333334}, 'wednesday': {'start': 6.5, 'end': 23.983333333333334}, 'thursday': {'start': 6.5, 'end': 23.983333333333334}, 'friday': {'start': 7.5, 'end': 23.983333333333334}, 'break_start': 12.0, 'break_end': 12.5, 'work_days': [0, 1, 2, 3, 4, 5, 6], 'saturday': {'start': 0.0, 'end': 23.983333333333334}, 'sunday': {'start': 0.0, 'end': 23.983333333333334}}
+2025-08-18 17:36:09,059 INFO Initializing database at /mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/central_logging.sqlite
+2025-08-18 17:36:09,081 INFO Database initialization complete.
+2025-08-18 17:36:09,092 INFO Starting database API server with Waitress on http://0.0.0.0:5001
+2025-08-18 17:42:50,511 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:44:11,699 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:44:41,764 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:45:11,828 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:45:41,894 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:46:12,279 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:46:42,346 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:47:12,720 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:47:42,785 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:48:12,842 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:48:42,903 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:49:12,966 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:49:43,033 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:50:13,101 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:50:43,168 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:51:13,235 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:51:43,302 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:52:11,587 INFO XLSX_UPDATED session started for ACCURA on project MO07455_IT-Room_(A)_(9-19) - Status changed to BEZIG
+2025-08-18 17:52:13,362 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:52:43,857 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:52:58,742 INFO XLSX_UPDATED session started for ACCURA on project MO07455_IT-Room_(A)_(9-19)_20250817_220054 - Status changed to BEZIG
+2025-08-18 17:53:13,921 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:53:44,000 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:54:14,070 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:54:44,139 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:55:14,206 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:55:44,277 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:56:14,349 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:56:44,426 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:57:14,500 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:57:44,574 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:58:14,651 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:58:44,723 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:59:14,794 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 17:59:44,864 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:00:14,932 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:00:45,000 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:01:15,068 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:01:45,137 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:02:15,503 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:02:45,567 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:03:15,638 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:03:45,710 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:04:15,781 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:04:45,856 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:05:15,924 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:05:45,999 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:06:16,069 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:06:46,139 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:07:16,209 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:07:46,273 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:08:16,343 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:08:46,412 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:09:16,481 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:09:46,553 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:10:16,621 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:10:46,691 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:11:16,760 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:11:46,847 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:12:16,915 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:12:47,289 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:13:17,358 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:13:47,428 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:14:17,498 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:14:47,570 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:15:17,639 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:15:47,713 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:16:17,782 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:16:47,854 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:17:17,924 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:17:47,997 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:18:18,066 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:18:48,138 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:19:18,206 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:19:48,273 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:20:18,345 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:20:48,414 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:21:18,486 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:21:48,558 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:22:18,927 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:22:48,999 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:23:19,375 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:23:49,448 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:24:19,823 WARNING Task queue depth is 1
+2025-08-18 18:24:19,837 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:24:49,908 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:25:20,279 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:25:50,349 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:26:20,726 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:26:50,796 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:27:21,172 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:27:51,244 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:28:21,621 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:28:51,692 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:29:22,071 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:29:52,144 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:30:22,521 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:30:52,585 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:31:22,958 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:31:53,027 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:32:23,098 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:32:53,167 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:33:23,238 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:33:53,302 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:34:23,372 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:34:53,441 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:35:23,508 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:35:53,875 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:36:23,948 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:36:54,326 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:37:24,404 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:37:54,471 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:38:24,536 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:38:54,600 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:39:24,664 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:39:54,729 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:40:24,798 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:40:54,863 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:41:24,933 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:41:55,000 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:42:25,066 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:42:55,432 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:43:25,497 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:43:55,874 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:44:25,940 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:44:56,008 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:45:26,381 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:45:56,448 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:46:26,515 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:46:56,585 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:47:26,651 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:47:56,718 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:48:26,790 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:48:56,858 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:49:26,928 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:49:56,999 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:50:27,066 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:50:57,135 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:51:27,200 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:51:57,269 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:52:27,340 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:52:57,412 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:53:27,487 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:53:57,559 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:54:27,631 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:54:57,705 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:55:27,774 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:55:57,840 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:56:27,912 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:56:57,978 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:57:28,042 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:57:58,105 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:58:28,169 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:58:58,236 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:59:28,607 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 18:59:58,678 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:00:29,055 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:00:59,128 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:01:29,506 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:01:59,576 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:02:29,646 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:02:59,718 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:03:29,790 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:03:59,863 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:03:59,917 WARNING Task queue depth is 1
+2025-08-18 19:03:59,918 WARNING Task queue depth is 1
+2025-08-18 19:04:30,371 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:05:00,441 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:05:30,821 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:06:00,891 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:06:31,268 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:07:01,338 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:07:31,716 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:08:01,795 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:08:32,166 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:09:02,237 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:09:32,613 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:10:02,685 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:10:33,062 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:11:03,132 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:11:33,507 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:12:03,577 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:12:33,953 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:13:04,026 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:13:34,404 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:14:04,476 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:14:34,855 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:15:04,933 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:15:35,001 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:16:05,077 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:16:35,146 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:17:05,216 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:17:35,295 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:18:05,373 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:18:35,448 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:19:05,522 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:19:35,591 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:20:05,679 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:20:19,863 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:20:35,750 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:21:05,823 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:21:35,898 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:22:06,271 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:22:36,340 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:23:06,721 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:23:36,792 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:24:07,172 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:24:37,244 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:25:07,615 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:25:37,684 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:26:08,064 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:26:38,135 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:27:08,512 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:27:38,583 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:28:08,962 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:28:39,030 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:29:09,410 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:29:39,481 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:30:09,861 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:30:39,931 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:30:49,922 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:31:10,007 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:31:40,377 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:32:10,442 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:32:40,519 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:33:10,589 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-18 19:35:59,955 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:00,007 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:00,009 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:00,010 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:00,013 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:02,825 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:05,827 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:36:09,836 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:29,972 ERROR Database error on GET /logs/count: disk I/O error
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: disk I/O error
+2025-08-18 19:38:30,006 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:30,006 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:30,015 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:30,017 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:34,968 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:35,850 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:40,006 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:40,008 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:40,008 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:40,009 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:40,866 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:41,980 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:45,876 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:48,991 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:50,006 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:50,007 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:50,009 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:50,010 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:50,896 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:55,907 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:38:56,000 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:39:00,008 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:39:00,008 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:39:00,011 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:39:00,017 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:39:00,926 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:41:10,028 WARNING Task queue depth is 1
+2025-08-18 19:43:40,009 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:20,031 ERROR Database error on GET /logs: disk I/O error
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: disk I/O error
+2025-08-18 19:44:20,037 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:20,038 ERROR Database error on GET /logs: disk I/O error
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: disk I/O error
+2025-08-18 19:44:20,039 ERROR Database error on GET /logs: disk I/O error
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: disk I/O error
+2025-08-18 19:44:21,907 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:25,922 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:26,927 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:30,021 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:30,024 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:44:30,025 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:00,025 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:00,026 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:00,028 ERROR Database error on GET /logs: disk I/O error
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: disk I/O error
+2025-08-18 19:45:00,031 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:01,044 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:02,951 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:07,963 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:08,063 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:10,026 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:10,030 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:10,031 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:10,034 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:12,981 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:15,071 ERROR Database error on GET /logs/count: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3249, in get_logs_count
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-18 19:45:50,036 ERROR Database error on GET /logs: unable to open database file
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 3188, in get_logs
+    conn = get_db()
+           ^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 338, in get_db
+    db = g._database = create_db_connection()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/Users/Rob_v/Desktop/PP/BarcodeMaster/database/db_log_api.py", line 304, in create_db_connection
+    conn.execute('PRAGMA journal_mode=WAL;')
+sqlite3.OperationalError: unable to open database file
+2025-08-22 16:28:04,537 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:28:34,625 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:04,693 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:29:34,754 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:04,822 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:06,199 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:10,807 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,395 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,669 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:11,878 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,085 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,298 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:12,496 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:30:42,691 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']
+2025-08-22 16:31:13,075 INFO Dashboard display users: ['NESTING', 'ACCURA', 'OPUS', 'KL GANNOMAT', 'BOERE']

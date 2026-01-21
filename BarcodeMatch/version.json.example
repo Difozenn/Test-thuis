@@ -1,0 +1,7 @@
+{
+    "version": "v3",
+    "exe_name": "BarcodeMatch_32bit.exe",
+    "sha256": "",
+    "changelog": "- Nieuwe functie toegevoegd\n- Bugs opgelost",
+    "mandatory": false
+}

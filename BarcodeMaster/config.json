@@ -1,0 +1,121 @@
+{
+    "database_enabled": true,
+    "api_url": "http://localhost:5001/log",
+    "user": "NESTING",
+    "admin_db_init_enabled": true,
+    "scanner_panel_com_port": "COM3",
+    "scanner_panel_type": "USB",
+    "admin_terminate_db_on_exit": true,
+    "scanner_panel_open_event_users": [
+        "NESTING",
+        "ACCURA",
+        "OPUS",
+        "KL GANNOMAT",
+        "HANDWERK",
+        "GR GANNOMAT",
+        "BOERE",
+        "AFWERKING",
+        "OPZET"
+    ],
+    "scanner_user_to_processing_type_map": {
+        "NESTING": "NESTING_PROCESSING",
+        "OPUS": "HOPS_PROCESSING",
+        "KL GANNOMAT": "MDB_PROCESSING",
+        "ACCURA": "ACCURA_PROCESSING",
+        "BOERE": "BOERE_PROCESSING",
+        "AFWERKING": "AFWERKING_PROCESSING",
+        "HANDWERK": "HANDWERK_PROCESSING",
+        "GR GANNOMAT": "MASSIEF_PROCESSING",
+        "OPZET": "BOERE_PROCESSING"
+    },
+    "scanner_panel_event_type": "OPEN",
+    "scanner_panel_event_type_locked": true,
+    "database_panel_api_config_locked": false,
+    "scanner_panel_open_event_user_logic_active": {
+        "NESTING": true,
+        "OPUS": true,
+        "KL GANNOMAT": true,
+        "ACCURA": true,
+        "BOERE": true,
+        "AFWERKING": true,
+        "HANDWERK": true,
+        "GR GANNOMAT": true,
+        "OPZET": true
+    },
+    "scanner_panel_baud_rate": "9600",
+    "scanner_panel_com_connected": false,
+    "scanner_panel_open_event_user_paths": {
+        "NESTING": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "OPUS": "//WIN-D62BRA7BHMI/Server/OPUS/KORPUS",
+        "KL GANNOMAT": "//WIN-D62BRA7BHMI/Server/GANNOMAT",
+        "ACCURA": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "BOERE": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "AFWERKING": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "HANDWERK": "//WIN-D62BRA7BHMI/Server/Rapporten",
+        "GR GANNOMAT": "//WIN-D62BRA7BHMI/Server/Rapporten"
+    },
+    "master_background_service_active": true,
+    "backup_enabled": true,
+    "backup_directory": "C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups",
+    "backup_interval_minutes": 1440,
+    "last_backup_status": "Fout: Backup map 'C:/Users/Rob_v/Desktop/test-werk-main/BarcodeMaster/database/backups' niet gevonden of is geen map. (2026-01-11 18:43:52)",
+    "work_hours": {
+        "monday": {
+            "start": 7.5,
+            "end": 16.0
+        },
+        "tuesday": {
+            "start": 7.5,
+            "end": 23.0
+        },
+        "wednesday": {
+            "start": 7.5,
+            "end": 16.0
+        },
+        "thursday": {
+            "start": 7.5,
+            "end": 16.0
+        },
+        "friday": {
+            "start": 7.5,
+            "end": 23.0
+        },
+        "break_start": 12.0,
+        "break_end": 12.5,
+        "work_days": [
+            0,
+            1,
+            2,
+            3,
+            4
+        ],
+        "saturday": {
+            "start": 0.0,
+            "end": 23.983333333333334
+        },
+        "sunday": {
+            "start": 0.0,
+            "end": 23.983333333333334
+        }
+    },
+    "efficiency_targets": {
+        "NESTING": 25,
+        "ACCURA": 20,
+        "OPUS": 15,
+        "KL GANNOMAT": 15,
+        "BOERE": 20,
+        "AFWERKING": 20
+    },
+    "efficiency_targets_updated": "2025-07-19T22:14:03.443231",
+    "efficiency_targets_created": "2025-07-06T14:34:24.492524",
+    "accura_output_dir": "//WIN-D62BRA7BHMI/Server/ACCURA",
+    "boere_output_dir": "//WIN-D62BRA7BHMI/Server/BOERE",
+    "afwerking_output_dir": "//WIN-D62BRA7BHMI/Server/AFWERKING",
+    "scanner_panel_com_auto_connect": true,
+    "nesting_archive_enabled": true,
+    "nesting_archive_directory": "C:/Users/Rob/Desktop/Test-thuis",
+    "nesting_archive_mode": "move",
+    "massief_output_dir": "C:/GR_GANNOMAT",
+    "archief_scanner_type": "COM",
+    "archief_com_port": ""
+}

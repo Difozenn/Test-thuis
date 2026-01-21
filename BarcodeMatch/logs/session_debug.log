@@ -1,0 +1,1246 @@
+2026-01-12 11:54:05.585 | INFO | ================================================================================
+2026-01-12 11:54:05.585 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 11:54:05.585 | INFO | ================================================================================
+2026-01-12 11:54:06.264 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 11:55:50.804 | INFO | ============================================================
+2026-01-12 11:55:50.804 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 11:55:50.804 | INFO |   excel_file_path: C:\ACCURA\MO08588_Dressing_(3-7)_20260112_115516.xlsx
+2026-01-12 11:55:50.807 | INFO |   existing current_session_id: None
+2026-01-12 11:55:50.807 | INFO |   existing api_session_id: None
+2026-01-12 11:55:50.807 | INFO |   existing active_project: None
+2026-01-12 11:55:50.807 | INFO |   existing active_user: ACCURA
+2026-01-12 11:55:50.807 | INFO |   User source: active_user = ACCURA
+2026-01-12 11:55:50.813 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-12 11:55:50.813 | INFO |   Checking for existing session: user=ACCURA, project=MO08588_Dressing_(3-7)
+2026-01-12 11:55:52.829 | INFO |   No existing session found - creating NEW session
+2026-01-12 11:55:52.829 | INFO |   NEW session created: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:55:52.829 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 11:55:52.829 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 11:55:52.829 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "file_path": "C:\\ACCURA\\MO08588_Dressing_(3-7)_20260112_115516.xlsx", "item_count": 31, "timestamp": "2026-01-12T11:55:52.829149", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115552"}
+2026-01-12 11:55:54.879 | INFO |   API RESPONSE: session_id=ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:55:54.880 | INFO |   SESSION IDs NOW: api=ACCURA_MO08588_Dressing_(3-7)_20260112_115554, local=ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:03.564 | INFO | ============================================================
+2026-01-12 11:56:03.564 | INFO | _pause_session CALLED
+2026-01-12 11:56:03.564 | INFO |   blocking: False
+2026-01-12 11:56:03.564 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:03.571 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:03.571 | INFO |   session_paused: False
+2026-01-12 11:56:03.571 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:03.571 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:03.571 | INFO |   Session marked as paused at 2026-01-12 11:56:03.571367
+2026-01-12 11:56:03.571 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:03.571 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:03.573 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:03.573 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:03.571367", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:03.573 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 11:56:05.617 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 11:56:05.620 | INFO |   Session pause SUCCESSFUL
+2026-01-12 11:56:06.647 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T11:56:03.571367"}
+2026-01-12 11:56:08.723 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 11:56:08.723 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 11:56:31.197 | INFO | ============================================================
+2026-01-12 11:56:31.198 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 11:56:31.198 | INFO |   excel_file_path: C:\ACCURA\MO08588_Dressing_(3-7)_20260112_115516.xlsx
+2026-01-12 11:56:31.198 | INFO |   existing current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:31.198 | INFO |   existing api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.198 | INFO |   existing active_project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.198 | INFO |   existing active_user: ACCURA
+2026-01-12 11:56:31.198 | INFO |   User source: active_user = ACCURA
+2026-01-12 11:56:31.206 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.206 | INFO | ============================================================
+2026-01-12 11:56:31.206 | INFO | _resume_session CALLED
+2026-01-12 11:56:31.206 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:31.206 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.206 | INFO |   session_paused: True
+2026-01-12 11:56:31.206 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.206 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:31.206 | INFO |   Session marked as resumed
+2026-01-12 11:56:31.207 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:31.207 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:31.207 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:31.207 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:31.207516", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:31.208 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 11:56:32.239 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 11:56:33.261 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session resumed - pause duration: 0.5 minutes", "status": "BEZIG", "timestamp": "2026-01-12T11:56:33.261490"}
+2026-01-12 11:56:34.283 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 11:56:41.346 | INFO | ============================================================
+2026-01-12 11:56:41.346 | INFO | _pause_session CALLED
+2026-01-12 11:56:41.346 | INFO |   blocking: False
+2026-01-12 11:56:41.346 | INFO |   current_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115552
+2026-01-12 11:56:41.346 | INFO |   api_session_id: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:41.346 | INFO |   session_paused: False
+2026-01-12 11:56:41.346 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-12 11:56:41.346 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 11:56:41.346 | INFO |   Session marked as paused at 2026-01-12 11:56:41.346267
+2026-01-12 11:56:41.346 | INFO |   Using CACHED user: ACCURA
+2026-01-12 11:56:41.346 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-12 11:56:41.346 | INFO |   Using session_id for API: ACCURA_MO08588_Dressing_(3-7)_20260112_115554
+2026-01-12 11:56:41.346 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "timestamp": "2026-01-12T11:56:41.346267", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)"}
+2026-01-12 11:56:41.346 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 11:56:43.424 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 11:56:43.426 | INFO |   Session pause SUCCESSFUL
+2026-01-12 11:56:44.446 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08588_Dressing_(3-7)", "session_id": "ACCURA_MO08588_Dressing_(3-7)_20260112_115554", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T11:56:41.346267"}
+2026-01-12 11:56:46.498 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 11:56:46.498 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 12:45:36.310 | INFO | ================================================================================
+2026-01-12 12:45:36.310 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 12:45:36.310 | INFO | ================================================================================
+2026-01-12 12:45:36.887 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 12:55:24.190 | INFO | ============================================================
+2026-01-12 12:55:24.190 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 12:55:24.190 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_125326.xlsx
+2026-01-12 12:55:24.190 | INFO |   existing current_session_id: None
+2026-01-12 12:55:24.190 | INFO |   existing api_session_id: None
+2026-01-12 12:55:24.190 | INFO |   existing active_project: None
+2026-01-12 12:55:24.190 | INFO |   existing active_user: ACCURA
+2026-01-12 12:55:24.190 | INFO |   User source: active_user = ACCURA
+2026-01-12 12:55:24.200 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:24.200 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.206 | INFO |   FOUND existing session from API:
+2026-01-12 12:55:26.206 | INFO |     session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |     is_paused: True
+2026-01-12 12:55:26.206 | INFO |   Session IDs synchronized: api=ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450, local=ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 12:55:26.206 | INFO | ============================================================
+2026-01-12 12:55:26.206 | INFO | _resume_session CALLED
+2026-01-12 12:55:26.206 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.206 | INFO |   session_paused: True
+2026-01-12 12:55:26.206 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.206 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 12:55:26.206 | INFO |   Session marked as resumed
+2026-01-12 12:55:26.206 | INFO |   Using CACHED user: ACCURA
+2026-01-12 12:55:26.206 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 12:55:26.208 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:55:26.208 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "timestamp": "2026-01-12T12:55:26.208061", "total_pause_duration": 2.92, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 12:55:26.208 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 12:55:27.237 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 12:55:28.258 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T12:55:28.258554"}
+2026-01-12 12:55:29.285 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 12:56:24.823 | INFO | ============================================================
+2026-01-12 12:56:24.823 | INFO | _pause_session CALLED
+2026-01-12 12:56:24.823 | INFO |   blocking: False
+2026-01-12 12:56:24.823 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   session_paused: False
+2026-01-12 12:56:24.823 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 12:56:24.823 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 12:56:24.823 | INFO |   Session marked as paused at 2026-01-12 12:56:24.823937
+2026-01-12 12:56:24.823 | INFO |   Using CACHED user: ACCURA
+2026-01-12 12:56:24.823 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 12:56:24.823 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450
+2026-01-12 12:56:24.823 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "timestamp": "2026-01-12T12:56:24.823937", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 12:56:24.823 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 12:56:26.885 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 12:56:26.885 | INFO |   Session pause SUCCESSFUL
+2026-01-12 12:56:27.918 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260109_205450", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T12:56:24.823937"}
+2026-01-12 12:56:29.983 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 12:56:29.984 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:01:22.282 | INFO | ================================================================================
+2026-01-12 13:01:22.283 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 13:01:22.283 | INFO | ================================================================================
+2026-01-12 13:01:22.807 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 13:08:26.935 | INFO | ============================================================
+2026-01-12 13:08:26.935 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:08:26.935 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:08:26.935 | INFO |   existing current_session_id: None
+2026-01-12 13:08:26.935 | INFO |   existing api_session_id: None
+2026-01-12 13:08:26.935 | INFO |   existing active_project: None
+2026-01-12 13:08:26.935 | INFO |   existing active_user: ACCURA
+2026-01-12 13:08:26.936 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:08:26.942 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:26.942 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:28.975 | INFO |   No existing session found - creating NEW session
+2026-01-12 13:08:28.975 | INFO |   NEW session created: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:28.975 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 13:08:28.975 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 13:08:28.975 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:\\ACCURA\\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx", "item_count": 19, "timestamp": "2026-01-12T13:08:28.975406", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828"}
+2026-01-12 13:08:31.058 | INFO |   API RESPONSE: session_id=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:31.058 | INFO |   SESSION IDs NOW: api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831, local=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:52.510 | INFO | ============================================================
+2026-01-12 13:08:52.510 | INFO | _pause_session CALLED
+2026-01-12 13:08:52.511 | INFO |   blocking: False
+2026-01-12 13:08:52.511 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:08:52.511 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:52.511 | INFO |   session_paused: False
+2026-01-12 13:08:52.511 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:52.511 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:08:52.511 | INFO |   Session marked as paused at 2026-01-12 13:08:52.511862
+2026-01-12 13:08:52.511 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:08:52.511 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:08:52.513 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:08:52.513 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:08:52.511862", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:08:52.513 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:08:54.561 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:08:54.561 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:08:55.626 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:08:52.511862"}
+2026-01-12 13:08:57.666 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:08:57.666 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:10:13.542 | INFO | ============================================================
+2026-01-12 13:10:13.542 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:10:13.542 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:10:13.542 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:13.542 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.542 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.542 | INFO |   existing active_user: ACCURA
+2026-01-12 13:10:13.542 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:10:13.547 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.547 | INFO | ============================================================
+2026-01-12 13:10:13.547 | INFO | _resume_session CALLED
+2026-01-12 13:10:13.547 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:13.547 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.547 | INFO |   session_paused: True
+2026-01-12 13:10:13.547 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.547 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:13.547 | INFO |   Session marked as resumed
+2026-01-12 13:10:13.547 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:13.550 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:13.550 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:13.550 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:13.550474", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:13.550 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:10:14.579 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:10:15.600 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 1.4 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:10:15.600972"}
+2026-01-12 13:10:16.644 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 13:10:24.552 | INFO | _save_updated_excel: Session already exists (api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831), skipping XLSX_UPDATED
+2026-01-12 13:10:30.818 | INFO | ============================================================
+2026-01-12 13:10:30.818 | INFO | _pause_session CALLED
+2026-01-12 13:10:30.818 | INFO |   blocking: False
+2026-01-12 13:10:30.818 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:30.818 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:30.820 | INFO |   session_paused: False
+2026-01-12 13:10:30.820 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:30.820 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:30.820 | INFO |   Session marked as paused at 2026-01-12 13:10:30.820183
+2026-01-12 13:10:30.820 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:30.820 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:30.821 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:30.821 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:30.820183", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:30.821 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:10:32.904 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:10:32.904 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:10:33.917 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:10:30.820183"}
+2026-01-12 13:10:35.995 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:10:35.995 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:10:46.606 | INFO | ============================================================
+2026-01-12 13:10:46.606 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:10:46.606 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:10:46.606 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:46.606 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.606 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.606 | INFO |   existing active_user: ACCURA
+2026-01-12 13:10:46.606 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:10:46.613 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO | ============================================================
+2026-01-12 13:10:46.613 | INFO | _resume_session CALLED
+2026-01-12 13:10:46.613 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:10:46.613 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.613 | INFO |   session_paused: True
+2026-01-12 13:10:46.613 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:10:46.613 | INFO |   Session marked as resumed
+2026-01-12 13:10:46.613 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:10:46.613 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:10:46.613 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:10:46.613 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:10:46.613545", "total_pause_duration": 0, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:10:46.613 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:10:47.639 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:10:48.651 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 0.3 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:10:48.651665"}
+2026-01-12 13:10:49.672 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 13:12:00.420 | INFO | ============================================================
+2026-01-12 13:12:00.420 | INFO | _pause_session CALLED
+2026-01-12 13:12:00.420 | INFO |   blocking: False
+2026-01-12 13:12:00.420 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:12:00.420 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:12:00.420 | INFO |   session_paused: False
+2026-01-12 13:12:00.420 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:12:00.420 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:12:00.420 | INFO |   Session marked as paused at 2026-01-12 13:12:00.420019
+2026-01-12 13:12:00.420 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:12:00.420 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:12:00.420 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:12:00.420 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:12:00.420019", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:12:00.420 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:12:02.484 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:12:02.484 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:12:03.507 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:12:00.420019"}
+2026-01-12 13:12:05.564 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:12:05.564 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:17:30.134 | INFO | ============================================================
+2026-01-12 13:17:30.134 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:17:30.134 | INFO |   excel_file_path: C:\ACCURA\MO08587_TV-wand_(2-7)_20260112_131438.xlsx
+2026-01-12 13:17:30.134 | INFO |   existing current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130828
+2026-01-12 13:17:30.134 | INFO |   existing api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:17:30.134 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:17:30.134 | INFO |   existing active_user: ACCURA
+2026-01-12 13:17:30.134 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:17:30.145 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-01-12 13:17:30.145 | INFO |   Checking for existing session: user=ACCURA, project=MO08587_TV-wand_(2-7)
+2026-01-12 13:17:32.157 | INFO |   No existing session found - creating NEW session
+2026-01-12 13:17:32.157 | INFO |   NEW session created: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:32.157 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 13:17:32.158 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 13:17:32.158 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\ACCURA\\MO08587_TV-wand_(2-7)_20260112_131438.xlsx", "item_count": 53, "timestamp": "2026-01-12T13:17:32.157621", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131732"}
+2026-01-12 13:17:34.193 | INFO |   API RESPONSE: session_id=ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:34.193 | INFO |   SESSION IDs NOW: api=ACCURA_MO08587_TV-wand_(2-7)_20260112_131734, local=ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:38.970 | INFO | ============================================================
+2026-01-12 13:17:38.970 | INFO | _pause_session CALLED
+2026-01-12 13:17:38.970 | INFO |   blocking: False
+2026-01-12 13:17:38.970 | INFO |   current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:17:38.970 | INFO |   api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:38.970 | INFO |   session_paused: False
+2026-01-12 13:17:38.970 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-01-12 13:17:38.970 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:17:38.970 | INFO |   Session marked as paused at 2026-01-12 13:17:38.970915
+2026-01-12 13:17:38.970 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:17:38.970 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-01-12 13:17:38.970 | INFO |   Using session_id for API: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:17:38.970 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131734", "timestamp": "2026-01-12T13:17:38.970915", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)"}
+2026-01-12 13:17:38.970 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 13:17:41.030 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 13:17:41.032 | INFO |   Session pause SUCCESSFUL
+2026-01-12 13:17:42.054 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260112_131734", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T13:17:38.970915"}
+2026-01-12 13:17:44.100 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 13:17:44.100 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 13:18:32.802 | INFO | ============================================================
+2026-01-12 13:18:32.802 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 13:18:32.802 | INFO |   excel_file_path: C:\ACCURA\MO08586_Lage_kast_(1-7)_20260112_130249.xlsx
+2026-01-12 13:18:32.802 | INFO |   existing current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131732
+2026-01-12 13:18:32.802 | INFO |   existing api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260112_131734
+2026-01-12 13:18:32.802 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-01-12 13:18:32.802 | INFO |   existing active_user: ACCURA
+2026-01-12 13:18:32.802 | INFO |   User source: active_user = ACCURA
+2026-01-12 13:18:32.808 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:32.808 | INFO |   Checking for existing session: user=ACCURA, project=MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   FOUND existing session from API:
+2026-01-12 13:18:34.822 | INFO |     session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |     is_paused: True
+2026-01-12 13:18:34.822 | INFO |   Session IDs synchronized: api=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831, local=ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 13:18:34.822 | INFO | ============================================================
+2026-01-12 13:18:34.822 | INFO | _resume_session CALLED
+2026-01-12 13:18:34.822 | INFO |   current_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   api_session_id: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   session_paused: True
+2026-01-12 13:18:34.822 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   active_user (CACHED): ACCURA
+2026-01-12 13:18:34.822 | INFO |   Session marked as resumed
+2026-01-12 13:18:34.822 | INFO |   Using CACHED user: ACCURA
+2026-01-12 13:18:34.822 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 13:18:34.822 | INFO |   Using session_id for API: ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831
+2026-01-12 13:18:34.822 | INFO |   RESUME API data: {"session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "timestamp": "2026-01-12T13:18:34.822869", "total_pause_duration": 1.61, "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 13:18:34.822 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 13:18:35.857 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 13:18:36.881 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "ACCURA", "project": "MO08586_Lage_kast_(1-7)", "session_id": "ACCURA_MO08586_Lage_kast_(1-7)_20260112_130831", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T13:18:36.881645"}
+2026-01-12 13:18:37.919 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 14:06:04.647 | INFO | ============================================================
+2026-01-12 14:06:04.647 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 14:06:04.647 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 14:06:04.647 | INFO |   existing current_session_id: None
+2026-01-12 14:06:04.647 | INFO |   existing api_session_id: None
+2026-01-12 14:06:04.647 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:04.647 | INFO |   existing active_user: BOERE
+2026-01-12 14:06:04.647 | INFO |   User source: active_user = BOERE
+2026-01-12 14:06:04.656 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:04.656 | INFO |   Checking for existing session: user=BOERE, project=MO08586_Lage_kast_(1-7)
+2026-01-12 14:06:06.679 | INFO |   No existing session found - creating NEW session
+2026-01-12 14:06:06.680 | INFO |   NEW session created: BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:06:06.680 | INFO |   (api_session_id will be set when API responds)
+2026-01-12 14:06:06.681 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-01-12 14:06:06.681 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:\\BOERE\\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-01-12T14:06:06.680266", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140606"}
+2026-01-12 14:06:08.753 | INFO |   API RESPONSE: session_id=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:06:08.753 | INFO |   SESSION IDs NOW: api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608, local=BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:30:34.345 | INFO | ============================================================
+2026-01-12 14:30:34.345 | INFO | _pause_session CALLED
+2026-01-12 14:30:34.345 | INFO |   blocking: True
+2026-01-12 14:30:34.345 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140606
+2026-01-12 14:30:34.345 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:30:34.345 | INFO |   session_paused: False
+2026-01-12 14:30:34.345 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 14:30:34.345 | INFO |   active_user (CACHED): BOERE
+2026-01-12 14:30:34.345 | INFO |   Session marked as paused at 2026-01-12 14:30:34.345841
+2026-01-12 14:30:34.345 | INFO |   Using CACHED user: BOERE
+2026-01-12 14:30:34.345 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:30:34.348 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:30:34.348 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T14:30:34.345841", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 14:30:34.348 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 14:30:36.399 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 14:30:36.399 | INFO |   Session pause SUCCESSFUL
+2026-01-12 14:31:46.250 | INFO | ================================================================================
+2026-01-12 14:31:46.250 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-12 14:31:46.251 | INFO | ================================================================================
+2026-01-12 14:31:46.802 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-12 14:32:12.397 | INFO | ============================================================
+2026-01-12 14:32:12.397 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 14:32:12.397 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 14:32:12.397 | INFO |   existing current_session_id: None
+2026-01-12 14:32:12.399 | INFO |   existing api_session_id: None
+2026-01-12 14:32:12.399 | INFO |   existing active_project: None
+2026-01-12 14:32:12.399 | INFO |   existing active_user: BOERE
+2026-01-12 14:32:12.399 | INFO |   User source: active_user = BOERE
+2026-01-12 14:32:12.407 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:12.407 | INFO |   Checking for existing session: user=BOERE, project=MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.426 | INFO |   FOUND existing session from API:
+2026-01-12 14:32:14.426 | INFO |     session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |     is_paused: True
+2026-01-12 14:32:14.426 | INFO |   Session IDs synchronized: api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608, local=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   Session IS paused - will call _resume_session()
+2026-01-12 14:32:14.426 | INFO | ============================================================
+2026-01-12 14:32:14.426 | INFO | _resume_session CALLED
+2026-01-12 14:32:14.426 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.426 | INFO |   session_paused: True
+2026-01-12 14:32:14.426 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.426 | INFO |   active_user (CACHED): BOERE
+2026-01-12 14:32:14.426 | INFO |   Session marked as resumed
+2026-01-12 14:32:14.426 | INFO |   Using CACHED user: BOERE
+2026-01-12 14:32:14.426 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 14:32:14.427 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 14:32:14.427 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T14:32:14.427154", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 14:32:14.427 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 14:32:15.450 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 14:32:16.471 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-12T14:32:16.471255"}
+2026-01-12 14:32:17.496 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 19:22:48.733 | INFO | ============================================================
+2026-01-12 19:22:48.733 | INFO | _pause_session CALLED
+2026-01-12 19:22:48.733 | INFO |   blocking: False
+2026-01-12 19:22:48.733 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.733 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.733 | INFO |   session_paused: False
+2026-01-12 19:22:48.733 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:48.733 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:22:48.733 | INFO |   Session marked as paused at 2026-01-12 19:22:48.733054
+2026-01-12 19:22:48.733 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:22:48.733 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:48.735 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:48.735 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:22:48.733054", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:22:48.735 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 19:22:50.817 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 19:22:50.817 | INFO |   Session pause SUCCESSFUL
+2026-01-12 19:22:51.863 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T19:22:48.733054"}
+2026-01-12 19:22:53.941 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 19:22:53.941 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 19:22:59.713 | INFO | ============================================================
+2026-01-12 19:22:59.715 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 19:22:59.715 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 19:22:59.715 | INFO |   existing current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.715 | INFO |   existing api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.715 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.715 | INFO |   existing active_user: BOERE
+2026-01-12 19:22:59.716 | INFO |   User source: active_user = BOERE
+2026-01-12 19:22:59.720 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.720 | INFO | ============================================================
+2026-01-12 19:22:59.720 | INFO | _resume_session CALLED
+2026-01-12 19:22:59.720 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.720 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.720 | INFO |   session_paused: True
+2026-01-12 19:22:59.720 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.720 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:22:59.720 | INFO |   Session marked as resumed
+2026-01-12 19:22:59.720 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:22:59.720 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:22:59.726 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:22:59.726 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:22:59.726083", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:22:59.726 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 19:23:00.768 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 19:23:01.786 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.2 minutes", "status": "BEZIG", "timestamp": "2026-01-12T19:23:01.786171"}
+2026-01-12 19:23:02.805 | INFO |   SESSION_RESUME log response: 201
+2026-01-12 19:23:03.930 | INFO | _save_updated_excel: Session already exists (api=BOERE_MO08586_Lage_kast_(1-7)_20260112_140608), skipping XLSX_UPDATED
+2026-01-12 19:23:05.754 | INFO | ============================================================
+2026-01-12 19:23:05.754 | INFO | _pause_session CALLED
+2026-01-12 19:23:05.754 | INFO |   blocking: False
+2026-01-12 19:23:05.754 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.754 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.754 | INFO |   session_paused: False
+2026-01-12 19:23:05.754 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:05.754 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:23:05.754 | INFO |   Session marked as paused at 2026-01-12 19:23:05.754928
+2026-01-12 19:23:05.754 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:23:05.754 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:05.754 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:05.758 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:23:05.754928", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:23:05.758 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-01-12 19:23:07.831 | INFO |   PAUSE API RESPONSE: 200
+2026-01-12 19:23:07.832 | INFO |   Session pause SUCCESSFUL
+2026-01-12 19:23:08.843 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-12T19:23:05.754928"}
+2026-01-12 19:23:10.919 | INFO |   SESSION_PAUSE log response: 201
+2026-01-12 19:23:10.919 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-12 19:23:14.998 | INFO | ============================================================
+2026-01-12 19:23:15.002 | INFO | _start_session_for_excel_work CALLED
+2026-01-12 19:23:15.002 | INFO |   excel_file_path: C:\BOERE\MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-01-12 19:23:15.002 | INFO |   existing current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.002 | INFO |   existing api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.002 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.002 | INFO |   existing active_user: BOERE
+2026-01-12 19:23:15.002 | INFO |   User source: active_user = BOERE
+2026-01-12 19:23:15.008 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO | ============================================================
+2026-01-12 19:23:15.008 | INFO | _resume_session CALLED
+2026-01-12 19:23:15.008 | INFO |   current_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   api_session_id: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   session_paused: True
+2026-01-12 19:23:15.008 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO |   active_user (CACHED): BOERE
+2026-01-12 19:23:15.008 | INFO |   Session marked as resumed
+2026-01-12 19:23:15.008 | INFO |   Using CACHED user: BOERE
+2026-01-12 19:23:15.008 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-01-12 19:23:15.008 | INFO |   Using session_id for API: BOERE_MO08586_Lage_kast_(1-7)_20260112_140608
+2026-01-12 19:23:15.008 | INFO |   RESUME API data: {"session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "timestamp": "2026-01-12T19:23:15.008172", "total_pause_duration": 0, "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)"}
+2026-01-12 19:23:15.008 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-01-12 19:23:16.053 | INFO |   RESUME API RESPONSE: 200
+2026-01-12 19:23:17.063 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08586_Lage_kast_(1-7)", "session_id": "BOERE_MO08586_Lage_kast_(1-7)_20260112_140608", "details": "Session resumed - pause duration: 0.2 minutes", "status": "BEZIG", "timestamp": "2026-01-12T19:23:17.063429"}
+2026-01-12 19:23:18.098 | INFO |   SESSION_RESUME log response: 201
+2026-01-13 09:17:46.526 | INFO | ================================================================================
+2026-01-13 09:17:46.526 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-13 09:17:46.527 | INFO | ================================================================================
+2026-01-13 09:17:47.879 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-13 09:37:32.356 | INFO | ============================================================
+2026-01-13 09:37:32.356 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 09:37:32.356 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09121_NT19_(1-2)\1120_MO09121_NT19_(1-2).xlsx
+2026-01-13 09:37:32.356 | INFO |   existing current_session_id: None
+2026-01-13 09:37:32.356 | INFO |   existing api_session_id: None
+2026-01-13 09:37:32.356 | INFO |   existing active_project: None
+2026-01-13 09:37:32.356 | INFO |   existing active_user: OPUS
+2026-01-13 09:37:32.357 | INFO |   User source: active_user = OPUS
+2026-01-13 09:37:32.397 | INFO |   Project extracted and CACHED: MO09121_NT19_(1-2)
+2026-01-13 09:37:32.397 | INFO |   Checking for existing session: user=OPUS, project=MO09121_NT19_(1-2)
+2026-01-13 09:37:32.416 | INFO |   FOUND existing session from API:
+2026-01-13 09:37:32.417 | INFO |     session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:37:32.417 | INFO |     is_paused: True
+2026-01-13 09:37:32.417 | INFO |   Session IDs synchronized: api=OPUS_MO09121_NT19_(1-2)_20260109_123152, local=OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:37:32.417 | INFO |   Session IS paused - will call _resume_session()
+2026-01-13 09:37:32.417 | INFO | ============================================================
+2026-01-13 09:37:32.417 | INFO | _resume_session CALLED
+2026-01-13 09:37:32.417 | INFO |   current_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:37:32.417 | INFO |   api_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:37:32.417 | INFO |   session_paused: True
+2026-01-13 09:37:32.417 | INFO |   active_project (CACHED): MO09121_NT19_(1-2)
+2026-01-13 09:37:32.417 | INFO |   active_user (CACHED): OPUS
+2026-01-13 09:37:32.417 | INFO |   Session marked as resumed
+2026-01-13 09:37:32.417 | INFO |   Using CACHED user: OPUS
+2026-01-13 09:37:32.417 | INFO |   Using CACHED project: MO09121_NT19_(1-2)
+2026-01-13 09:37:32.418 | INFO |   Using session_id for API: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:37:32.418 | INFO |   RESUME API data: {"session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "timestamp": "2026-01-13T09:37:32.418219", "total_pause_duration": 0, "user": "OPUS", "project": "MO09121_NT19_(1-2)"}
+2026-01-13 09:37:32.418 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-13 09:37:32.459 | INFO |   RESUME API RESPONSE: 200
+2026-01-13 09:37:32.525 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO09121_NT19_(1-2)", "session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-13T09:37:32.525066"}
+2026-01-13 09:37:32.558 | INFO |   SESSION_RESUME log response: 201
+2026-01-13 09:44:29.529 | INFO | ============================================================
+2026-01-13 09:44:29.529 | INFO | _pause_session CALLED
+2026-01-13 09:44:29.529 | INFO |   blocking: False
+2026-01-13 09:44:29.529 | INFO |   current_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:29.529 | INFO |   api_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:29.529 | INFO |   session_paused: False
+2026-01-13 09:44:29.529 | INFO |   active_project (CACHED): MO09121_NT19_(1-2)
+2026-01-13 09:44:29.529 | INFO |   active_user (CACHED): OPUS
+2026-01-13 09:44:29.530 | INFO |   Session marked as paused at 2026-01-13 09:44:29.530000
+2026-01-13 09:44:29.530 | INFO |   Using CACHED user: OPUS
+2026-01-13 09:44:29.530 | INFO |   Using CACHED project: MO09121_NT19_(1-2)
+2026-01-13 09:44:29.532 | INFO |   Using session_id for API: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:29.532 | INFO |   PAUSE API data: {"session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "timestamp": "2026-01-13T09:44:29.530000", "user": "OPUS", "project": "MO09121_NT19_(1-2)"}
+2026-01-13 09:44:29.532 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-13 09:44:29.570 | INFO |   PAUSE API RESPONSE: 200
+2026-01-13 09:44:29.571 | INFO |   Session pause SUCCESSFUL
+2026-01-13 09:44:29.615 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO09121_NT19_(1-2)", "session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-13T09:44:29.530000"}
+2026-01-13 09:44:29.650 | INFO |   SESSION_PAUSE log response: 201
+2026-01-13 09:44:29.650 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-13 09:44:52.258 | INFO | ============================================================
+2026-01-13 09:44:52.258 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 09:44:52.258 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09121_NT19_(1-2)\1120_MO09121_NT19_(1-2).xlsx
+2026-01-13 09:44:52.258 | INFO |   existing current_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:52.258 | INFO |   existing api_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:52.258 | INFO |   existing active_project: MO09121_NT19_(1-2)
+2026-01-13 09:44:52.258 | INFO |   existing active_user: OPUS
+2026-01-13 09:44:52.273 | INFO |   User source: active_user = OPUS
+2026-01-13 09:44:52.297 | INFO |   Project extracted and CACHED: MO09121_NT19_(1-2)
+2026-01-13 09:44:52.297 | INFO | ============================================================
+2026-01-13 09:44:52.298 | INFO | _resume_session CALLED
+2026-01-13 09:44:52.298 | INFO |   current_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:52.298 | INFO |   api_session_id: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:52.298 | INFO |   session_paused: True
+2026-01-13 09:44:52.298 | INFO |   active_project (CACHED): MO09121_NT19_(1-2)
+2026-01-13 09:44:52.298 | INFO |   active_user (CACHED): OPUS
+2026-01-13 09:44:52.298 | INFO |   Session marked as resumed
+2026-01-13 09:44:52.298 | INFO |   Using CACHED user: OPUS
+2026-01-13 09:44:52.298 | INFO |   Using CACHED project: MO09121_NT19_(1-2)
+2026-01-13 09:44:52.299 | INFO |   Using session_id for API: OPUS_MO09121_NT19_(1-2)_20260109_123152
+2026-01-13 09:44:52.299 | INFO |   RESUME API data: {"session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "timestamp": "2026-01-13T09:44:52.299626", "total_pause_duration": 0, "user": "OPUS", "project": "MO09121_NT19_(1-2)"}
+2026-01-13 09:44:52.301 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-13 09:44:52.344 | INFO |   RESUME API RESPONSE: 200
+2026-01-13 09:44:52.373 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO09121_NT19_(1-2)", "session_id": "OPUS_MO09121_NT19_(1-2)_20260109_123152", "details": "Session resumed - pause duration: 0.4 minutes", "status": "BEZIG", "timestamp": "2026-01-13T09:44:52.373275"}
+2026-01-13 09:44:52.399 | INFO |   SESSION_RESUME log response: 201
+2026-01-13 10:45:34.783 | INFO | ============================================================
+2026-01-13 10:45:34.784 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 10:45:34.784 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09128_nachtkastje_(2-3)\1120_MO09128_nachtkastje_(2-3).xlsx
+2026-01-13 10:45:34.784 | INFO |   existing current_session_id: None
+2026-01-13 10:45:34.784 | INFO |   existing api_session_id: None
+2026-01-13 10:45:34.784 | INFO |   existing active_project: MO09121_NT19_(1-2)
+2026-01-13 10:45:34.784 | INFO |   existing active_user: OPUS
+2026-01-13 10:45:34.784 | INFO |   User source: active_user = OPUS
+2026-01-13 10:45:34.794 | INFO |   Project extracted and CACHED: MO09128_nachtkastje_(2-3)
+2026-01-13 10:45:34.794 | INFO |   Checking for existing session: user=OPUS, project=MO09128_nachtkastje_(2-3)
+2026-01-13 10:45:34.807 | INFO |   No existing session found - creating NEW session
+2026-01-13 10:45:34.807 | INFO |   NEW session created: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 10:45:34.807 | INFO |   (api_session_id will be set when API responds)
+2026-01-13 10:45:34.811 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-13 10:45:34.811 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO09128_nachtkastje_(2-3)", "file_path": "Y:\\OPUS\\KORPUS\\1120_MO09128_nachtkastje_(2-3)\\1120_MO09128_nachtkastje_(2-3).xlsx", "item_count": 7, "timestamp": "2026-01-13T10:45:34.807916", "session_id": "OPUS_MO09128_nachtkastje_(2-3)_20260113_104534"}
+2026-01-13 10:45:34.837 | INFO |   API RESPONSE: session_id=OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 10:45:34.837 | INFO |   SESSION IDs NOW: api=OPUS_MO09128_nachtkastje_(2-3)_20260113_104534, local=OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 10:46:14.129 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO09128_nachtkastje_(2-3)_20260113_104534), skipping XLSX_UPDATED
+2026-01-13 11:27:18.714 | INFO | ============================================================
+2026-01-13 11:27:18.714 | INFO | _pause_session CALLED
+2026-01-13 11:27:18.714 | INFO |   blocking: False
+2026-01-13 11:27:18.714 | INFO |   current_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:27:18.714 | INFO |   api_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:27:18.714 | INFO |   session_paused: False
+2026-01-13 11:27:18.714 | INFO |   active_project (CACHED): MO09128_nachtkastje_(2-3)
+2026-01-13 11:27:18.714 | INFO |   active_user (CACHED): OPUS
+2026-01-13 11:27:18.715 | INFO |   Session marked as paused at 2026-01-13 11:27:18.714997
+2026-01-13 11:27:18.715 | INFO |   Using CACHED user: OPUS
+2026-01-13 11:27:18.715 | INFO |   Using CACHED project: MO09128_nachtkastje_(2-3)
+2026-01-13 11:27:18.716 | INFO |   Using session_id for API: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:27:18.716 | INFO |   PAUSE API data: {"session_id": "OPUS_MO09128_nachtkastje_(2-3)_20260113_104534", "timestamp": "2026-01-13T11:27:18.714997", "user": "OPUS", "project": "MO09128_nachtkastje_(2-3)"}
+2026-01-13 11:27:18.717 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-13 11:27:18.739 | INFO |   PAUSE API RESPONSE: 200
+2026-01-13 11:27:18.740 | INFO |   Session pause SUCCESSFUL
+2026-01-13 11:27:18.796 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO09128_nachtkastje_(2-3)", "session_id": "OPUS_MO09128_nachtkastje_(2-3)_20260113_104534", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-13T11:27:18.714997"}
+2026-01-13 11:27:18.828 | INFO |   SESSION_PAUSE log response: 201
+2026-01-13 11:27:18.828 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-13 11:48:55.584 | INFO | ============================================================
+2026-01-13 11:48:55.584 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 11:48:55.584 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09128_nachtkastje_(2-3)\1120_MO09128_nachtkastje_(2-3).xlsx
+2026-01-13 11:48:55.584 | INFO |   existing current_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:48:55.584 | INFO |   existing api_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:48:55.585 | INFO |   existing active_project: MO09128_nachtkastje_(2-3)
+2026-01-13 11:48:55.585 | INFO |   existing active_user: OPUS
+2026-01-13 11:48:55.585 | INFO |   User source: active_user = OPUS
+2026-01-13 11:48:55.607 | INFO |   Project extracted and CACHED: MO09128_nachtkastje_(2-3)
+2026-01-13 11:48:55.608 | INFO | ============================================================
+2026-01-13 11:48:55.608 | INFO | _resume_session CALLED
+2026-01-13 11:48:55.608 | INFO |   current_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:48:55.608 | INFO |   api_session_id: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:48:55.608 | INFO |   session_paused: True
+2026-01-13 11:48:55.608 | INFO |   active_project (CACHED): MO09128_nachtkastje_(2-3)
+2026-01-13 11:48:55.608 | INFO |   active_user (CACHED): OPUS
+2026-01-13 11:48:55.608 | INFO |   Session marked as resumed
+2026-01-13 11:48:55.608 | INFO |   Using CACHED user: OPUS
+2026-01-13 11:48:55.608 | INFO |   Using CACHED project: MO09128_nachtkastje_(2-3)
+2026-01-13 11:48:55.608 | INFO |   Using session_id for API: OPUS_MO09128_nachtkastje_(2-3)_20260113_104534
+2026-01-13 11:48:55.609 | INFO |   RESUME API data: {"session_id": "OPUS_MO09128_nachtkastje_(2-3)_20260113_104534", "timestamp": "2026-01-13T11:48:55.608987", "total_pause_duration": 0, "user": "OPUS", "project": "MO09128_nachtkastje_(2-3)"}
+2026-01-13 11:48:55.609 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-13 11:48:55.641 | INFO |   RESUME API RESPONSE: 200
+2026-01-13 11:48:55.682 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO09128_nachtkastje_(2-3)", "session_id": "OPUS_MO09128_nachtkastje_(2-3)_20260113_104534", "details": "Session resumed - pause duration: 21.6 minutes", "status": "BEZIG", "timestamp": "2026-01-13T11:48:55.682068"}
+2026-01-13 11:48:55.711 | INFO |   SESSION_RESUME log response: 201
+2026-01-13 12:53:33.661 | INFO | ============================================================
+2026-01-13 12:53:33.661 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 12:53:33.661 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09129_nachtkastje_(3-3)\1120_MO09129_nachtkastje_(3-3).xlsx
+2026-01-13 12:53:33.661 | INFO |   existing current_session_id: None
+2026-01-13 12:53:33.661 | INFO |   existing api_session_id: None
+2026-01-13 12:53:33.661 | INFO |   existing active_project: MO09128_nachtkastje_(2-3)
+2026-01-13 12:53:33.661 | INFO |   existing active_user: OPUS
+2026-01-13 12:53:33.661 | INFO |   User source: active_user = OPUS
+2026-01-13 12:53:33.675 | INFO |   Project extracted and CACHED: MO09129_nachtkastje_(3-3)
+2026-01-13 12:53:33.675 | INFO |   Checking for existing session: user=OPUS, project=MO09129_nachtkastje_(3-3)
+2026-01-13 12:53:33.693 | INFO |   No existing session found - creating NEW session
+2026-01-13 12:53:33.693 | INFO |   NEW session created: OPUS_MO09129_nachtkastje_(3-3)_20260113_125333
+2026-01-13 12:53:33.693 | INFO |   (api_session_id will be set when API responds)
+2026-01-13 12:53:33.697 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-13 12:53:33.697 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO09129_nachtkastje_(3-3)", "file_path": "Y:\\OPUS\\KORPUS\\1120_MO09129_nachtkastje_(3-3)\\1120_MO09129_nachtkastje_(3-3).xlsx", "item_count": 7, "timestamp": "2026-01-13T12:53:33.693740", "session_id": "OPUS_MO09129_nachtkastje_(3-3)_20260113_125333"}
+2026-01-13 12:53:33.739 | INFO |   API RESPONSE: session_id=OPUS_MO09129_nachtkastje_(3-3)_20260113_125333
+2026-01-13 12:53:33.740 | INFO |   SESSION IDs NOW: api=OPUS_MO09129_nachtkastje_(3-3)_20260113_125333, local=OPUS_MO09129_nachtkastje_(3-3)_20260113_125333
+2026-01-13 12:53:58.422 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO09129_nachtkastje_(3-3)_20260113_125333), skipping XLSX_UPDATED
+2026-01-13 13:18:56.459 | INFO | ============================================================
+2026-01-13 13:18:56.459 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 13:18:56.459 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1120_MO09122_Maatwerk_(2-2)\1120_MO09122_Maatwerk_(2-2).xlsx
+2026-01-13 13:18:56.459 | INFO |   existing current_session_id: None
+2026-01-13 13:18:56.459 | INFO |   existing api_session_id: None
+2026-01-13 13:18:56.459 | INFO |   existing active_project: MO09129_nachtkastje_(3-3)
+2026-01-13 13:18:56.459 | INFO |   existing active_user: OPUS
+2026-01-13 13:18:56.459 | INFO |   User source: active_user = OPUS
+2026-01-13 13:18:56.467 | INFO |   Project extracted and CACHED: MO09122_Maatwerk_(2-2)
+2026-01-13 13:18:56.467 | INFO |   Checking for existing session: user=OPUS, project=MO09122_Maatwerk_(2-2)
+2026-01-13 13:18:56.486 | INFO |   No existing session found - creating NEW session
+2026-01-13 13:18:56.487 | INFO |   NEW session created: OPUS_MO09122_Maatwerk_(2-2)_20260113_131856
+2026-01-13 13:18:56.487 | INFO |   (api_session_id will be set when API responds)
+2026-01-13 13:18:56.488 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-13 13:18:56.489 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO09122_Maatwerk_(2-2)", "file_path": "Y:\\OPUS\\KORPUS\\1120_MO09122_Maatwerk_(2-2)\\1120_MO09122_Maatwerk_(2-2).xlsx", "item_count": 8, "timestamp": "2026-01-13T13:18:56.486998", "session_id": "OPUS_MO09122_Maatwerk_(2-2)_20260113_131856"}
+2026-01-13 13:18:56.540 | INFO |   API RESPONSE: session_id=OPUS_MO09122_Maatwerk_(2-2)_20260113_131856
+2026-01-13 13:18:56.540 | INFO |   SESSION IDs NOW: api=OPUS_MO09122_Maatwerk_(2-2)_20260113_131856, local=OPUS_MO09122_Maatwerk_(2-2)_20260113_131856
+2026-01-13 13:19:15.933 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO09122_Maatwerk_(2-2)_20260113_131856), skipping XLSX_UPDATED
+2026-01-13 15:47:05.164 | INFO | ============================================================
+2026-01-13 15:47:05.164 | INFO | _start_session_for_excel_work CALLED
+2026-01-13 15:47:05.164 | INFO |   excel_file_path: Y:/OPUS/KORPUS/1105_MO08919_Nachtkastje_R (3-3)/1105_MO08919_Nachtkastje_R (3-3).xlsx
+2026-01-13 15:47:05.164 | INFO |   existing current_session_id: None
+2026-01-13 15:47:05.164 | INFO |   existing api_session_id: None
+2026-01-13 15:47:05.164 | INFO |   existing active_project: MO09122_Maatwerk_(2-2)
+2026-01-13 15:47:05.164 | INFO |   existing active_user: OPUS
+2026-01-13 15:47:05.165 | INFO |   User source: active_user = OPUS
+2026-01-13 15:47:05.173 | INFO |   Project extracted and CACHED: MO08919_Nachtkastje_R (3-3)
+2026-01-13 15:47:05.173 | INFO |   Checking for existing session: user=OPUS, project=MO08919_Nachtkastje_R (3-3)
+2026-01-13 15:47:05.193 | INFO |   No existing session found - creating NEW session
+2026-01-13 15:47:05.193 | INFO |   NEW session created: OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154705
+2026-01-13 15:47:05.193 | INFO |   (api_session_id will be set when API responds)
+2026-01-13 15:47:05.194 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-13 15:47:05.194 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08919_Nachtkastje_R (3-3)", "file_path": "Y:/OPUS/KORPUS/1105_MO08919_Nachtkastje_R (3-3)/1105_MO08919_Nachtkastje_R (3-3).xlsx", "item_count": 9, "timestamp": "2026-01-13T15:47:05.193098", "session_id": "OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154705"}
+2026-01-13 15:47:05.258 | INFO |   API RESPONSE: session_id=OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704
+2026-01-13 15:47:05.258 | INFO |   SESSION IDs NOW: api=OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704, local=OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154705
+2026-01-13 15:51:25.643 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704), skipping XLSX_UPDATED
+2026-01-13 16:00:22.423 | INFO | ============================================================
+2026-01-13 16:00:22.423 | INFO | _pause_session CALLED
+2026-01-13 16:00:22.423 | INFO |   blocking: True
+2026-01-13 16:00:22.423 | INFO |   current_session_id: OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154705
+2026-01-13 16:00:22.423 | INFO |   api_session_id: OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704
+2026-01-13 16:00:22.423 | INFO |   session_paused: False
+2026-01-13 16:00:22.424 | INFO |   active_project (CACHED): MO08919_Nachtkastje_R (3-3)
+2026-01-13 16:00:22.424 | INFO |   active_user (CACHED): OPUS
+2026-01-13 16:00:22.424 | INFO |   Session marked as paused at 2026-01-13 16:00:22.424298
+2026-01-13 16:00:22.424 | INFO |   Using CACHED user: OPUS
+2026-01-13 16:00:22.424 | INFO |   Using CACHED project: MO08919_Nachtkastje_R (3-3)
+2026-01-13 16:00:22.426 | INFO |   Using session_id for API: OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704
+2026-01-13 16:00:22.426 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08919_Nachtkastje_R (3-3)_20260113_154704", "timestamp": "2026-01-13T16:00:22.424298", "user": "OPUS", "project": "MO08919_Nachtkastje_R (3-3)"}
+2026-01-13 16:00:22.426 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-13 16:00:22.470 | INFO |   PAUSE API RESPONSE: 200
+2026-01-13 16:00:22.471 | INFO |   Session pause SUCCESSFUL
+2026-01-14 07:39:43.795 | INFO | ================================================================================
+2026-01-14 07:39:43.795 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 07:39:43.795 | INFO | ================================================================================
+2026-01-14 07:39:44.472 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 07:41:22.990 | INFO | ============================================================
+2026-01-14 07:41:22.990 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 07:41:22.990 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1105_MO08918_Nachtkastje_L (2-3)\1105_MO08918_Nachtkastje_L (2-3).xlsx
+2026-01-14 07:41:22.990 | INFO |   existing current_session_id: None
+2026-01-14 07:41:22.990 | INFO |   existing api_session_id: None
+2026-01-14 07:41:22.990 | INFO |   existing active_project: None
+2026-01-14 07:41:22.991 | INFO |   existing active_user: OPUS
+2026-01-14 07:41:22.991 | INFO |   User source: active_user = OPUS
+2026-01-14 07:41:22.999 | INFO |   Project extracted and CACHED: MO08918_Nachtkastje_L (2-3)
+2026-01-14 07:41:22.999 | INFO |   Checking for existing session: user=OPUS, project=MO08918_Nachtkastje_L (2-3)
+2026-01-14 07:41:23.027 | INFO |   No existing session found - creating NEW session
+2026-01-14 07:41:23.028 | INFO |   NEW session created: OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074123
+2026-01-14 07:41:23.028 | INFO |   (api_session_id will be set when API responds)
+2026-01-14 07:41:23.030 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-14 07:41:23.030 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08918_Nachtkastje_L (2-3)", "file_path": "Y:\\OPUS\\KORPUS\\1105_MO08918_Nachtkastje_L (2-3)\\1105_MO08918_Nachtkastje_L (2-3).xlsx", "item_count": 9, "timestamp": "2026-01-14T07:41:23.028076", "session_id": "OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074123"}
+2026-01-14 07:41:23.071 | INFO |   API RESPONSE: session_id=OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074122
+2026-01-14 07:41:23.072 | INFO |   SESSION IDs NOW: api=OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074122, local=OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074123
+2026-01-14 07:42:01.034 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08918_Nachtkastje_L (2-3)_20260114_074122), skipping XLSX_UPDATED
+2026-01-14 08:39:32.266 | INFO | ============================================================
+2026-01-14 08:39:32.267 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 08:39:32.267 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1105_MO08781_Dressing (1-3)\1105_MO08781_Dressing (1-3).xlsx
+2026-01-14 08:39:32.267 | INFO |   existing current_session_id: None
+2026-01-14 08:39:32.267 | INFO |   existing api_session_id: None
+2026-01-14 08:39:32.267 | INFO |   existing active_project: MO08918_Nachtkastje_L (2-3)
+2026-01-14 08:39:32.267 | INFO |   existing active_user: OPUS
+2026-01-14 08:39:32.268 | INFO |   User source: active_user = OPUS
+2026-01-14 08:39:32.276 | INFO |   Project extracted and CACHED: MO08781_Dressing (1-3)
+2026-01-14 08:39:32.276 | INFO |   Checking for existing session: user=OPUS, project=MO08781_Dressing (1-3)
+2026-01-14 08:39:32.285 | INFO |   No existing session found - creating NEW session
+2026-01-14 08:39:32.285 | INFO |   NEW session created: OPUS_MO08781_Dressing (1-3)_20260114_083932
+2026-01-14 08:39:32.285 | INFO |   (api_session_id will be set when API responds)
+2026-01-14 08:39:32.288 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-14 08:39:32.288 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08781_Dressing (1-3)", "file_path": "Y:\\OPUS\\KORPUS\\1105_MO08781_Dressing (1-3)\\1105_MO08781_Dressing (1-3).xlsx", "item_count": 22, "timestamp": "2026-01-14T08:39:32.285230", "session_id": "OPUS_MO08781_Dressing (1-3)_20260114_083932"}
+2026-01-14 08:39:32.318 | INFO |   API RESPONSE: session_id=OPUS_MO08781_Dressing (1-3)_20260114_083931
+2026-01-14 08:39:32.318 | INFO |   SESSION IDs NOW: api=OPUS_MO08781_Dressing (1-3)_20260114_083931, local=OPUS_MO08781_Dressing (1-3)_20260114_083932
+2026-01-14 08:40:30.319 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08781_Dressing (1-3)_20260114_083931), skipping XLSX_UPDATED
+2026-01-14 10:24:46.201 | INFO | ============================================================
+2026-01-14 10:24:46.202 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:24:46.202 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:24:46.202 | INFO |   existing current_session_id: None
+2026-01-14 10:24:46.202 | INFO |   existing api_session_id: None
+2026-01-14 10:24:46.202 | INFO |   existing active_project: MO08781_Dressing (1-3)
+2026-01-14 10:24:46.202 | INFO |   existing active_user: OPUS
+2026-01-14 10:24:46.202 | INFO |   User source: active_user = OPUS
+2026-01-14 10:24:46.211 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:24:46.211 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:24:46.235 | INFO |   No existing session found - creating NEW session
+2026-01-14 10:24:46.235 | INFO |   NEW session created: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:24:46.235 | INFO |   (api_session_id will be set when API responds)
+2026-01-14 10:24:46.238 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-14 10:24:46.238 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "file_path": "Y:\\OPUS\\KORPUS\\1114_MO08588_Dressing_(3-7)\\1114_MO08588_Dressing_(3-7).xlsx", "item_count": 19, "timestamp": "2026-01-14T10:24:46.235610", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446"}
+2026-01-14 10:24:46.287 | INFO |   API RESPONSE: session_id=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:24:46.287 | INFO |   SESSION IDs NOW: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:26:29.209 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08588_Dressing_(3-7)_20260114_102446), skipping XLSX_UPDATED
+2026-01-14 10:26:53.062 | INFO | ============================================================
+2026-01-14 10:26:53.062 | INFO | _pause_session CALLED
+2026-01-14 10:26:53.062 | INFO |   blocking: False
+2026-01-14 10:26:53.062 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:26:53.062 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:26:53.062 | INFO |   session_paused: False
+2026-01-14 10:26:53.062 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:26:53.063 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:26:53.063 | INFO |   Session marked as paused at 2026-01-14 10:26:53.063163
+2026-01-14 10:26:53.063 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:26:53.063 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:26:53.065 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:26:53.065 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:26:53.063163", "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:26:53.066 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-14 10:26:53.095 | INFO |   PAUSE API RESPONSE: 200
+2026-01-14 10:26:53.095 | INFO |   Session pause SUCCESSFUL
+2026-01-14 10:26:53.138 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-14T10:26:53.063163"}
+2026-01-14 10:26:53.175 | INFO |   SESSION_PAUSE log response: 201
+2026-01-14 10:26:53.175 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-14 10:27:19.236 | INFO | ================================================================================
+2026-01-14 10:27:19.236 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 10:27:19.236 | INFO | ================================================================================
+2026-01-14 10:27:20.578 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 10:27:36.399 | INFO | ============================================================
+2026-01-14 10:27:36.399 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:27:36.399 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:27:36.399 | INFO |   existing current_session_id: None
+2026-01-14 10:27:36.399 | INFO |   existing api_session_id: None
+2026-01-14 10:27:36.399 | INFO |   existing active_project: None
+2026-01-14 10:27:36.399 | INFO |   existing active_user: OPUS
+2026-01-14 10:27:36.400 | INFO |   User source: active_user = OPUS
+2026-01-14 10:27:36.414 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:27:36.414 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:27:36.438 | INFO |   FOUND existing session from API:
+2026-01-14 10:27:36.438 | INFO |     session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:36.438 | INFO |     is_paused: True
+2026-01-14 10:27:36.438 | INFO |   Session IDs synchronized: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:36.438 | INFO |   Session IS paused - will call _resume_session()
+2026-01-14 10:27:36.438 | INFO | ============================================================
+2026-01-14 10:27:36.438 | INFO | _resume_session CALLED
+2026-01-14 10:27:36.438 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:36.438 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:36.438 | INFO |   session_paused: True
+2026-01-14 10:27:36.438 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:27:36.438 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:27:36.438 | INFO |   Session marked as resumed
+2026-01-14 10:27:36.438 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:27:36.438 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:27:36.439 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:36.439 | INFO |   RESUME API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:27:36.439470", "total_pause_duration": 0, "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:27:36.440 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-14 10:27:36.484 | INFO |   RESUME API RESPONSE: 200
+2026-01-14 10:27:36.520 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-14T10:27:36.520885"}
+2026-01-14 10:27:36.544 | INFO |   SESSION_RESUME log response: 201
+2026-01-14 10:27:47.454 | INFO | ============================================================
+2026-01-14 10:27:47.454 | INFO | _pause_session CALLED
+2026-01-14 10:27:47.454 | INFO |   blocking: True
+2026-01-14 10:27:47.454 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:47.455 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:47.455 | INFO |   session_paused: False
+2026-01-14 10:27:47.455 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:27:47.455 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:27:47.455 | INFO |   Session marked as paused at 2026-01-14 10:27:47.455348
+2026-01-14 10:27:47.455 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:27:47.455 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:27:47.458 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:27:47.458 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:27:47.455348", "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:27:47.458 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-14 10:27:47.495 | INFO |   PAUSE API RESPONSE: 200
+2026-01-14 10:27:47.496 | INFO |   Session pause SUCCESSFUL
+2026-01-14 10:29:58.851 | INFO | ================================================================================
+2026-01-14 10:29:58.851 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 10:29:58.851 | INFO | ================================================================================
+2026-01-14 10:29:59.497 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 10:30:14.837 | INFO | ============================================================
+2026-01-14 10:30:14.837 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:30:14.837 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:30:14.837 | INFO |   existing current_session_id: None
+2026-01-14 10:30:14.837 | INFO |   existing api_session_id: None
+2026-01-14 10:30:14.837 | INFO |   existing active_project: None
+2026-01-14 10:30:14.837 | INFO |   existing active_user: OPUS
+2026-01-14 10:30:14.837 | INFO |   User source: active_user = OPUS
+2026-01-14 10:30:14.851 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:30:14.851 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:30:14.867 | INFO |   FOUND existing session from API:
+2026-01-14 10:30:14.868 | INFO |     session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:14.868 | INFO |     is_paused: True
+2026-01-14 10:30:14.868 | INFO |   Session IDs synchronized: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:14.868 | INFO |   Session IS paused - will call _resume_session()
+2026-01-14 10:30:14.868 | INFO | ============================================================
+2026-01-14 10:30:14.868 | INFO | _resume_session CALLED
+2026-01-14 10:30:14.868 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:14.868 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:14.868 | INFO |   session_paused: True
+2026-01-14 10:30:14.868 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:30:14.868 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:30:14.868 | INFO |   Session marked as resumed
+2026-01-14 10:30:14.868 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:30:14.868 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:30:14.869 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:14.869 | INFO |   RESUME API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:30:14.869325", "total_pause_duration": 0.72, "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:30:14.869 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-14 10:30:14.898 | INFO |   RESUME API RESPONSE: 200
+2026-01-14 10:30:14.922 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-14T10:30:14.922026"}
+2026-01-14 10:30:14.948 | INFO |   SESSION_RESUME log response: 201
+2026-01-14 10:30:33.565 | INFO | ============================================================
+2026-01-14 10:30:33.565 | INFO | _pause_session CALLED
+2026-01-14 10:30:33.565 | INFO |   blocking: False
+2026-01-14 10:30:33.565 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:33.565 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:33.565 | INFO |   session_paused: False
+2026-01-14 10:30:33.565 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:30:33.565 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:30:33.566 | INFO |   Session marked as paused at 2026-01-14 10:30:33.566004
+2026-01-14 10:30:33.566 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:30:33.566 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:30:33.569 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:30:33.569 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:30:33.566004", "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:30:33.569 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-14 10:30:33.588 | INFO |   PAUSE API RESPONSE: 200
+2026-01-14 10:30:33.589 | INFO |   Session pause SUCCESSFUL
+2026-01-14 10:30:33.618 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-14T10:30:33.566004"}
+2026-01-14 10:30:33.662 | INFO |   SESSION_PAUSE log response: 201
+2026-01-14 10:30:33.663 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-14 10:30:57.900 | INFO | ================================================================================
+2026-01-14 10:30:57.900 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 10:30:57.901 | INFO | ================================================================================
+2026-01-14 10:30:58.488 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 10:31:07.173 | INFO | ============================================================
+2026-01-14 10:31:07.173 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:31:07.173 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:31:07.173 | INFO |   existing current_session_id: None
+2026-01-14 10:31:07.173 | INFO |   existing api_session_id: None
+2026-01-14 10:31:07.174 | INFO |   existing active_project: None
+2026-01-14 10:31:07.174 | INFO |   existing active_user: OPUS
+2026-01-14 10:31:07.174 | INFO |   User source: active_user = OPUS
+2026-01-14 10:31:07.187 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:31:07.187 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:31:07.209 | INFO |   FOUND existing session from API:
+2026-01-14 10:31:07.209 | INFO |     session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:07.209 | INFO |     is_paused: True
+2026-01-14 10:31:07.209 | INFO |   Session IDs synchronized: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:07.209 | INFO |   Session IS paused - will call _resume_session()
+2026-01-14 10:31:07.209 | INFO | ============================================================
+2026-01-14 10:31:07.209 | INFO | _resume_session CALLED
+2026-01-14 10:31:07.209 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:07.209 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:07.209 | INFO |   session_paused: True
+2026-01-14 10:31:07.209 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:31:07.209 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:31:07.209 | INFO |   Session marked as resumed
+2026-01-14 10:31:07.209 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:31:07.209 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:31:07.210 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:07.210 | INFO |   RESUME API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:31:07.210486", "total_pause_duration": 3.1799999999999997, "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:31:07.211 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-14 10:31:07.246 | INFO |   RESUME API RESPONSE: 200
+2026-01-14 10:31:07.259 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-14T10:31:07.259282"}
+2026-01-14 10:31:07.276 | INFO |   SESSION_RESUME log response: 201
+2026-01-14 10:31:43.772 | INFO | ============================================================
+2026-01-14 10:31:43.772 | INFO | _pause_session CALLED
+2026-01-14 10:31:43.773 | INFO |   blocking: False
+2026-01-14 10:31:43.773 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:43.773 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:43.773 | INFO |   session_paused: False
+2026-01-14 10:31:43.773 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:31:43.773 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:31:43.773 | INFO |   Session marked as paused at 2026-01-14 10:31:43.773393
+2026-01-14 10:31:43.773 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:31:43.773 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:31:43.775 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:31:43.775 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:31:43.773393", "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:31:43.776 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-14 10:31:43.808 | INFO |   PAUSE API RESPONSE: 200
+2026-01-14 10:31:43.808 | INFO |   Session pause SUCCESSFUL
+2026-01-14 10:31:43.863 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-14T10:31:43.773393"}
+2026-01-14 10:31:43.898 | INFO |   SESSION_PAUSE log response: 201
+2026-01-14 10:31:43.899 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-14 10:46:54.076 | INFO | ================================================================================
+2026-01-14 10:46:54.076 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 10:46:54.076 | INFO | ================================================================================
+2026-01-14 10:46:54.720 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 10:47:02.852 | INFO | ============================================================
+2026-01-14 10:47:02.853 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:47:02.853 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:47:02.853 | INFO |   existing current_session_id: None
+2026-01-14 10:47:02.853 | INFO |   existing api_session_id: None
+2026-01-14 10:47:02.853 | INFO |   existing active_project: None
+2026-01-14 10:47:02.853 | INFO |   existing active_user: OPUS
+2026-01-14 10:47:02.853 | INFO |   User source: active_user = OPUS
+2026-01-14 10:47:02.866 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:47:02.866 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:47:02.881 | INFO |   FOUND existing session from API:
+2026-01-14 10:47:02.881 | INFO |     session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:47:02.881 | INFO |     is_paused: True
+2026-01-14 10:47:02.881 | INFO |   Session IDs synchronized: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:47:02.882 | INFO |   Session IS paused - will call _resume_session()
+2026-01-14 10:47:02.882 | INFO | ============================================================
+2026-01-14 10:47:02.882 | INFO | _resume_session CALLED
+2026-01-14 10:47:02.882 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:47:02.882 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:47:02.882 | INFO |   session_paused: True
+2026-01-14 10:47:02.882 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:47:02.882 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:47:02.882 | INFO |   Session marked as resumed
+2026-01-14 10:47:02.882 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:47:02.882 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:47:02.882 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:47:02.883 | INFO |   RESUME API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:47:02.883098", "total_pause_duration": 3.7399999999999998, "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:47:02.883 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-14 10:47:02.927 | INFO |   RESUME API RESPONSE: 200
+2026-01-14 10:47:02.966 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-14T10:47:02.966765"}
+2026-01-14 10:47:02.998 | INFO |   SESSION_RESUME log response: 201
+2026-01-14 10:48:50.006 | INFO | ============================================================
+2026-01-14 10:48:50.006 | INFO | _pause_session CALLED
+2026-01-14 10:48:50.006 | INFO |   blocking: False
+2026-01-14 10:48:50.006 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:48:50.006 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:48:50.006 | INFO |   session_paused: False
+2026-01-14 10:48:50.006 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:48:50.006 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:48:50.006 | INFO |   Session marked as paused at 2026-01-14 10:48:50.006657
+2026-01-14 10:48:50.006 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:48:50.006 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:48:50.008 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:48:50.008 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:48:50.006657", "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:48:50.008 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-14 10:48:50.049 | INFO |   PAUSE API RESPONSE: 200
+2026-01-14 10:48:50.050 | INFO |   Session pause SUCCESSFUL
+2026-01-14 10:48:50.082 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session paused - panel hidden", "status": "PAUZE", "timestamp": "2026-01-14T10:48:50.006657"}
+2026-01-14 10:48:50.115 | INFO |   SESSION_PAUSE log response: 201
+2026-01-14 10:48:50.115 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-14 10:48:59.190 | INFO | ================================================================================
+2026-01-14 10:48:59.190 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-14 10:48:59.190 | INFO | ================================================================================
+2026-01-14 10:48:59.790 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-14 10:49:07.028 | INFO | ============================================================
+2026-01-14 10:49:07.028 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 10:49:07.028 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08588_Dressing_(3-7)\1114_MO08588_Dressing_(3-7).xlsx
+2026-01-14 10:49:07.029 | INFO |   existing current_session_id: None
+2026-01-14 10:49:07.029 | INFO |   existing api_session_id: None
+2026-01-14 10:49:07.029 | INFO |   existing active_project: None
+2026-01-14 10:49:07.029 | INFO |   existing active_user: OPUS
+2026-01-14 10:49:07.029 | INFO |   User source: active_user = OPUS
+2026-01-14 10:49:07.043 | INFO |   Project extracted and CACHED: MO08588_Dressing_(3-7)
+2026-01-14 10:49:07.043 | INFO |   Checking for existing session: user=OPUS, project=MO08588_Dressing_(3-7)
+2026-01-14 10:49:07.061 | INFO |   FOUND existing session from API:
+2026-01-14 10:49:07.061 | INFO |     session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:49:07.061 | INFO |     is_paused: True
+2026-01-14 10:49:07.061 | INFO |   Session IDs synchronized: api=OPUS_MO08588_Dressing_(3-7)_20260114_102446, local=OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:49:07.061 | INFO |   Session IS paused - will call _resume_session()
+2026-01-14 10:49:07.061 | INFO | ============================================================
+2026-01-14 10:49:07.061 | INFO | _resume_session CALLED
+2026-01-14 10:49:07.061 | INFO |   current_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:49:07.062 | INFO |   api_session_id: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:49:07.062 | INFO |   session_paused: True
+2026-01-14 10:49:07.062 | INFO |   active_project (CACHED): MO08588_Dressing_(3-7)
+2026-01-14 10:49:07.062 | INFO |   active_user (CACHED): OPUS
+2026-01-14 10:49:07.062 | INFO |   Session marked as resumed
+2026-01-14 10:49:07.062 | INFO |   Using CACHED user: OPUS
+2026-01-14 10:49:07.062 | INFO |   Using CACHED project: MO08588_Dressing_(3-7)
+2026-01-14 10:49:07.062 | INFO |   Using session_id for API: OPUS_MO08588_Dressing_(3-7)_20260114_102446
+2026-01-14 10:49:07.062 | INFO |   RESUME API data: {"session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "timestamp": "2026-01-14T10:49:07.062958", "total_pause_duration": 19.06, "user": "OPUS", "project": "MO08588_Dressing_(3-7)"}
+2026-01-14 10:49:07.063 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-14 10:49:07.093 | INFO |   RESUME API RESPONSE: 200
+2026-01-14 10:49:07.131 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08588_Dressing_(3-7)", "session_id": "OPUS_MO08588_Dressing_(3-7)_20260114_102446", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "timestamp": "2026-01-14T10:49:07.131396"}
+2026-01-14 10:49:07.167 | INFO |   SESSION_RESUME log response: 201
+2026-01-14 14:35:16.085 | INFO | ============================================================
+2026-01-14 14:35:16.086 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 14:35:16.086 | INFO |   excel_file_path: Y:\OPUS\KORPUS\0109_MO08843_Hoekdressing_REP_VL\0109_MO08843_Hoekdressing_REP_VL.xlsx
+2026-01-14 14:35:16.086 | INFO |   existing current_session_id: None
+2026-01-14 14:35:16.086 | INFO |   existing api_session_id: None
+2026-01-14 14:35:16.086 | INFO |   existing active_project: MO08588_Dressing_(3-7)
+2026-01-14 14:35:16.086 | INFO |   existing active_user: OPUS
+2026-01-14 14:35:16.087 | INFO |   User source: active_user = OPUS
+2026-01-14 14:35:16.095 | INFO |   Project extracted and CACHED: MO08843_Hoekdressing_REP_VL
+2026-01-14 14:35:16.095 | INFO |   Checking for existing session: user=OPUS, project=MO08843_Hoekdressing_REP_VL
+2026-01-14 14:35:16.113 | INFO |   No existing session found - creating NEW session
+2026-01-14 14:35:16.113 | INFO |   NEW session created: OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516
+2026-01-14 14:35:16.113 | INFO |   (api_session_id will be set when API responds)
+2026-01-14 14:35:16.116 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-14 14:35:16.116 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08843_Hoekdressing_REP_VL", "file_path": "Y:\\OPUS\\KORPUS\\0109_MO08843_Hoekdressing_REP_VL\\0109_MO08843_Hoekdressing_REP_VL.xlsx", "item_count": 1, "timestamp": "2026-01-14T14:35:16.113489", "session_id": "OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516"}
+2026-01-14 14:35:16.164 | INFO |   API RESPONSE: session_id=OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516
+2026-01-14 14:35:16.164 | INFO |   SESSION IDs NOW: api=OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516, local=OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516
+2026-01-14 14:36:07.068 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08843_Hoekdressing_REP_VL_20260114_143516), skipping XLSX_UPDATED
+2026-01-14 14:37:46.395 | INFO | ============================================================
+2026-01-14 14:37:46.395 | INFO | _start_session_for_excel_work CALLED
+2026-01-14 14:37:46.395 | INFO |   excel_file_path: Y:\OPUS\KORPUS\0114_MO08843_Hoekdressing_(3-4)_REP_BC-TZ\0114_MO08843_Hoekdressing_(3-4)_REP_BC-TZ.xlsx
+2026-01-14 14:37:46.395 | INFO |   existing current_session_id: None
+2026-01-14 14:37:46.395 | INFO |   existing api_session_id: None
+2026-01-14 14:37:46.395 | INFO |   existing active_project: MO08843_Hoekdressing_REP_VL
+2026-01-14 14:37:46.395 | INFO |   existing active_user: OPUS
+2026-01-14 14:37:46.396 | INFO |   User source: active_user = OPUS
+2026-01-14 14:37:46.403 | INFO |   Project extracted and CACHED: MO08843_Hoekdressing_(3-4)_REP_BC-TZ
+2026-01-14 14:37:46.403 | INFO |   Checking for existing session: user=OPUS, project=MO08843_Hoekdressing_(3-4)_REP_BC-TZ
+2026-01-14 14:37:46.421 | INFO |   No existing session found - creating NEW session
+2026-01-14 14:37:46.421 | INFO |   NEW session created: OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746
+2026-01-14 14:37:46.421 | INFO |   (api_session_id will be set when API responds)
+2026-01-14 14:37:46.423 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-14 14:37:46.423 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08843_Hoekdressing_(3-4)_REP_BC-TZ", "file_path": "Y:\\OPUS\\KORPUS\\0114_MO08843_Hoekdressing_(3-4)_REP_BC-TZ\\0114_MO08843_Hoekdressing_(3-4)_REP_BC-TZ.xlsx", "item_count": 3, "timestamp": "2026-01-14T14:37:46.421876", "session_id": "OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746"}
+2026-01-14 14:37:46.446 | INFO |   API RESPONSE: session_id=OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746
+2026-01-14 14:37:46.446 | INFO |   SESSION IDs NOW: api=OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746, local=OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746
+2026-01-14 14:39:39.541 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08843_Hoekdressing_(3-4)_REP_BC-TZ_20260114_143746), skipping XLSX_UPDATED
+2026-01-15 11:33:28.952 | INFO | ================================================================================
+2026-01-15 11:33:28.952 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-15 11:33:28.952 | INFO | ================================================================================
+2026-01-15 11:33:30.213 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-15 11:33:48.006 | INFO | ============================================================
+2026-01-15 11:33:48.007 | INFO | _start_session_for_excel_work CALLED
+2026-01-15 11:33:48.007 | INFO |   excel_file_path: Y:\OPUS\KORPUS\0115_MO00000_Wandkast_SPOED_Magneet\0115_MO00000_Wandkast_SPOED_Magneet.xlsx
+2026-01-15 11:33:48.007 | INFO |   existing current_session_id: None
+2026-01-15 11:33:48.007 | INFO |   existing api_session_id: None
+2026-01-15 11:33:48.007 | INFO |   existing active_project: None
+2026-01-15 11:33:48.007 | INFO |   existing active_user: OPUS
+2026-01-15 11:33:48.007 | INFO |   User source: active_user = OPUS
+2026-01-15 11:33:48.015 | INFO |   Project extracted and CACHED: MO00000_Wandkast_SPOED_Magneet
+2026-01-15 11:33:48.016 | INFO |   Checking for existing session: user=OPUS, project=MO00000_Wandkast_SPOED_Magneet
+2026-01-15 11:33:48.028 | INFO |   No existing session found - creating NEW session
+2026-01-15 11:33:48.028 | INFO |   NEW session created: OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113348
+2026-01-15 11:33:48.028 | INFO |   (api_session_id will be set when API responds)
+2026-01-15 11:33:48.031 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-15 11:33:48.031 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO00000_Wandkast_SPOED_Magneet", "file_path": "Y:\\OPUS\\KORPUS\\0115_MO00000_Wandkast_SPOED_Magneet\\0115_MO00000_Wandkast_SPOED_Magneet.xlsx", "item_count": 2, "timestamp": "2026-01-15T11:33:48.028624", "session_id": "OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113348"}
+2026-01-15 11:33:48.053 | INFO |   API RESPONSE: session_id=OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113347
+2026-01-15 11:33:48.053 | INFO |   SESSION IDs NOW: api=OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113347, local=OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113348
+2026-01-15 11:34:18.782 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO00000_Wandkast_SPOED_Magneet_20260115_113347), skipping XLSX_UPDATED
+2026-01-15 13:57:14.617 | INFO | ============================================================
+2026-01-15 13:57:14.617 | INFO | _start_session_for_excel_work CALLED
+2026-01-15 13:57:14.617 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08586_Lage_kast_(1-7)\1114_MO08586_Lage_kast_(1-7).xlsx
+2026-01-15 13:57:14.617 | INFO |   existing current_session_id: None
+2026-01-15 13:57:14.617 | INFO |   existing api_session_id: None
+2026-01-15 13:57:14.617 | INFO |   existing active_project: MO00000_Wandkast_SPOED_Magneet
+2026-01-15 13:57:14.617 | INFO |   existing active_user: OPUS
+2026-01-15 13:57:14.618 | INFO |   User source: active_user = OPUS
+2026-01-15 13:57:14.626 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-01-15 13:57:14.627 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-01-15 13:57:14.645 | INFO |   No existing session found - creating NEW session
+2026-01-15 13:57:14.645 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260115_135714
+2026-01-15 13:57:14.645 | INFO |   (api_session_id will be set when API responds)
+2026-01-15 13:57:14.647 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-15 13:57:14.647 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "Y:\\OPUS\\KORPUS\\1114_MO08586_Lage_kast_(1-7)\\1114_MO08586_Lage_kast_(1-7).xlsx", "item_count": 14, "timestamp": "2026-01-15T13:57:14.645165", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260115_135714"}
+2026-01-15 13:57:14.690 | INFO |   API RESPONSE: session_id=OPUS_MO08586_Lage_kast_(1-7)_20260115_135714
+2026-01-15 13:57:14.690 | INFO |   SESSION IDs NOW: api=OPUS_MO08586_Lage_kast_(1-7)_20260115_135714, local=OPUS_MO08586_Lage_kast_(1-7)_20260115_135714
+2026-01-15 13:58:16.966 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08586_Lage_kast_(1-7)_20260115_135714), skipping XLSX_UPDATED
+2026-01-15 14:54:55.733 | INFO | ============================================================
+2026-01-15 14:54:55.734 | INFO | _start_session_for_excel_work CALLED
+2026-01-15 14:54:55.734 | INFO |   excel_file_path: Y:\OPUS\KORPUS\1114_MO08592_Tablet_L_vorm_(7-7)\1114_MO08592_Tablet_L_vorm_(7-7).xlsx
+2026-01-15 14:54:55.734 | INFO |   existing current_session_id: None
+2026-01-15 14:54:55.734 | INFO |   existing api_session_id: None
+2026-01-15 14:54:55.734 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-01-15 14:54:55.734 | INFO |   existing active_user: OPUS
+2026-01-15 14:54:55.734 | INFO |   User source: active_user = OPUS
+2026-01-15 14:54:55.742 | INFO |   Project extracted and CACHED: MO08592_Tablet_L_vorm_(7-7)
+2026-01-15 14:54:55.743 | INFO |   Checking for existing session: user=OPUS, project=MO08592_Tablet_L_vorm_(7-7)
+2026-01-15 14:54:55.755 | INFO |   No existing session found - creating NEW session
+2026-01-15 14:54:55.755 | INFO |   NEW session created: OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455
+2026-01-15 14:54:55.755 | INFO |   (api_session_id will be set when API responds)
+2026-01-15 14:54:55.757 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-15 14:54:55.757 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08592_Tablet_L_vorm_(7-7)", "file_path": "Y:\\OPUS\\KORPUS\\1114_MO08592_Tablet_L_vorm_(7-7)\\1114_MO08592_Tablet_L_vorm_(7-7).xlsx", "item_count": 9, "timestamp": "2026-01-15T14:54:55.755380", "session_id": "OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455"}
+2026-01-15 14:54:55.790 | INFO |   API RESPONSE: session_id=OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455
+2026-01-15 14:54:55.790 | INFO |   SESSION IDs NOW: api=OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455, local=OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455
+2026-01-15 14:55:06.082 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08592_Tablet_L_vorm_(7-7)_20260115_145455), skipping XLSX_UPDATED
+2026-01-16 17:02:41.430 | INFO | ================================================================================
+2026-01-16 17:02:41.430 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-16 17:02:41.430 | INFO | ================================================================================
+2026-01-16 17:02:43.289 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-16 17:39:54.395 | INFO | ============================================================
+2026-01-16 17:39:54.395 | INFO | _start_session_for_excel_work CALLED
+2026-01-16 17:39:54.395 | INFO |   excel_file_path: C:/OPUS/KORPUS/1121_MO00000_Wandkast_(1-2)/1121_MO00000_Wandkast_(1-2).xlsx
+2026-01-16 17:39:54.398 | INFO |   existing current_session_id: None
+2026-01-16 17:39:54.398 | INFO |   existing api_session_id: None
+2026-01-16 17:39:54.398 | INFO |   existing active_project: None
+2026-01-16 17:39:54.398 | INFO |   existing active_user: None
+2026-01-16 17:39:54.398 | INFO |   User source: file_path = OPUS
+2026-01-16 17:39:54.427 | INFO |   Project extracted and CACHED: MO00000_Wandkast_(1-2)
+2026-01-16 17:39:54.427 | INFO |   Checking for existing session: user=OPUS, project=MO00000_Wandkast_(1-2)
+2026-01-16 17:39:56.439 | INFO |   No existing session found - creating NEW session
+2026-01-16 17:39:56.439 | INFO |   NEW session created: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 17:39:56.439 | INFO |   (api_session_id will be set when API responds)
+2026-01-16 17:39:56.441 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-16 17:39:56.441 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)", "file_path": "C:/OPUS/KORPUS/1121_MO00000_Wandkast_(1-2)/1121_MO00000_Wandkast_(1-2).xlsx", "item_count": 97, "timestamp": "2026-01-16T17:39:56.439266", "session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_173956"}
+2026-01-16 17:39:59.454 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001C79AC0C590>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-16 17:46:05.068 | INFO | ============================================================
+2026-01-16 17:46:05.068 | INFO | _pause_session CALLED
+2026-01-16 17:46:05.068 | INFO |   blocking: False
+2026-01-16 17:46:05.068 | INFO |   current_session_id: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 17:46:05.068 | INFO |   api_session_id: None
+2026-01-16 17:46:05.068 | INFO |   session_paused: False
+2026-01-16 17:46:05.068 | INFO |   active_project (CACHED): MO00000_Wandkast_(1-2)
+2026-01-16 17:46:05.068 | INFO |   active_user (CACHED): OPUS
+2026-01-16 17:46:05.068 | INFO |   Session marked as paused at 2026-01-16 17:46:05.068148
+2026-01-16 17:46:05.068 | INFO |   Using CACHED user: OPUS
+2026-01-16 17:46:05.068 | INFO |   Using CACHED project: MO00000_Wandkast_(1-2)
+2026-01-16 17:46:05.071 | INFO |   Using session_id for API: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 17:46:05.071 | INFO |   PAUSE API data: {"session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_173956", "timestamp": "2026-01-16T17:46:05.068148", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)"}
+2026-01-16 17:46:05.071 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-16 17:46:07.621 | INFO | ============================================================
+2026-01-16 17:46:07.621 | INFO | _resume_session CALLED
+2026-01-16 17:46:07.621 | INFO |   current_session_id: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 17:46:07.621 | INFO |   api_session_id: None
+2026-01-16 17:46:07.621 | INFO |   session_paused: True
+2026-01-16 17:46:07.621 | INFO |   active_project (CACHED): MO00000_Wandkast_(1-2)
+2026-01-16 17:46:07.621 | INFO |   active_user (CACHED): OPUS
+2026-01-16 17:46:08.073 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001C7961BA490>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-16 17:46:10.641 | WARNING |   Timeout waiting for pause to complete - proceeding anyway
+2026-01-16 17:46:10.641 | INFO |   Session marked as resumed
+2026-01-16 17:46:10.641 | INFO |   Using CACHED user: OPUS
+2026-01-16 17:46:10.642 | INFO |   Using CACHED project: MO00000_Wandkast_(1-2)
+2026-01-16 17:46:10.642 | INFO |   Using session_id for API: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 17:46:10.642 | INFO |   RESUME API data: {"session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_173956", "timestamp": "2026-01-16T17:46:10.642217", "total_pause_duration": 0, "user": "OPUS", "project": "MO00000_Wandkast_(1-2)"}
+2026-01-16 17:46:10.642 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-01-16 17:46:10.642 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-16 17:46:11.658 | ERROR |   RESUME API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/resume (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001C7967DFE10>, 'Connection to 192.168.244.160 timed out. (connect timeout=1)'))
+2026-01-16 18:37:46.680 | INFO | ============================================================
+2026-01-16 18:37:46.680 | INFO | _pause_session CALLED
+2026-01-16 18:37:46.680 | INFO |   blocking: True
+2026-01-16 18:37:46.680 | INFO |   current_session_id: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 18:37:46.680 | INFO |   api_session_id: None
+2026-01-16 18:37:46.680 | INFO |   session_paused: False
+2026-01-16 18:37:46.680 | INFO |   active_project (CACHED): MO00000_Wandkast_(1-2)
+2026-01-16 18:37:46.680 | INFO |   active_user (CACHED): OPUS
+2026-01-16 18:37:46.680 | INFO |   Session marked as paused at 2026-01-16 18:37:46.680903
+2026-01-16 18:37:46.680 | INFO |   Using CACHED user: OPUS
+2026-01-16 18:37:46.680 | INFO |   Using CACHED project: MO00000_Wandkast_(1-2)
+2026-01-16 18:37:46.686 | INFO |   Using session_id for API: OPUS_MO00000_Wandkast_(1-2)_20260116_173956
+2026-01-16 18:37:46.686 | INFO |   PAUSE API data: {"session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_173956", "timestamp": "2026-01-16T18:37:46.680903", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)"}
+2026-01-16 18:37:46.686 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-16 18:37:49.704 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001C79AE67F50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-16 18:38:42.936 | INFO | ================================================================================
+2026-01-16 18:38:42.936 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-16 18:38:42.936 | INFO | ================================================================================
+2026-01-16 18:38:43.586 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-16 18:38:57.231 | INFO | ============================================================
+2026-01-16 18:38:57.231 | INFO | _start_session_for_excel_work CALLED
+2026-01-16 18:38:57.244 | INFO |   excel_file_path: C:/OPUS/KORPUS/1121_MO00000_Wandkast_(1-2)/1121_MO00000_Wandkast_(1-2).xlsx
+2026-01-16 18:38:57.244 | INFO |   existing current_session_id: None
+2026-01-16 18:38:57.244 | INFO |   existing api_session_id: None
+2026-01-16 18:38:57.244 | INFO |   existing active_project: None
+2026-01-16 18:38:57.244 | INFO |   existing active_user: None
+2026-01-16 18:38:57.247 | INFO |   User source: file_path = OPUS
+2026-01-16 18:38:57.308 | INFO |   Project extracted and CACHED: MO00000_Wandkast_(1-2)
+2026-01-16 18:38:57.308 | INFO |   Checking for existing session: user=OPUS, project=MO00000_Wandkast_(1-2)
+2026-01-16 18:38:59.324 | INFO |   No existing session found - creating NEW session
+2026-01-16 18:38:59.324 | INFO |   NEW session created: OPUS_MO00000_Wandkast_(1-2)_20260116_183859
+2026-01-16 18:38:59.324 | INFO |   (api_session_id will be set when API responds)
+2026-01-16 18:38:59.324 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-01-16 18:38:59.324 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)", "file_path": "C:/OPUS/KORPUS/1121_MO00000_Wandkast_(1-2)/1121_MO00000_Wandkast_(1-2).xlsx", "item_count": 97, "timestamp": "2026-01-16T18:38:59.324046", "session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_183859"}
+2026-01-16 18:39:02.325 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000020B5EC4C650>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-16 18:48:04.140 | INFO | ============================================================
+2026-01-16 18:48:04.140 | INFO | _pause_session CALLED
+2026-01-16 18:48:04.140 | INFO |   blocking: False
+2026-01-16 18:48:04.140 | INFO |   current_session_id: OPUS_MO00000_Wandkast_(1-2)_20260116_183859
+2026-01-16 18:48:04.140 | INFO |   api_session_id: None
+2026-01-16 18:48:04.140 | INFO |   session_paused: False
+2026-01-16 18:48:04.140 | INFO |   active_project (CACHED): MO00000_Wandkast_(1-2)
+2026-01-16 18:48:04.140 | INFO |   active_user (CACHED): OPUS
+2026-01-16 18:48:04.140 | INFO |   Session marked as paused at 2026-01-16 18:48:04.140860
+2026-01-16 18:48:04.140 | INFO |   Using CACHED user: OPUS
+2026-01-16 18:48:04.140 | INFO |   Using CACHED project: MO00000_Wandkast_(1-2)
+2026-01-16 18:48:04.153 | INFO |   Using session_id for API: OPUS_MO00000_Wandkast_(1-2)_20260116_183859
+2026-01-16 18:48:04.153 | INFO |   PAUSE API data: {"session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_183859", "timestamp": "2026-01-16T18:48:04.140860", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)"}
+2026-01-16 18:48:04.153 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-16 18:48:07.170 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000020B5EE80610>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-16 18:48:07.170 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-01-16 18:50:12.587 | INFO | ============================================================
+2026-01-16 18:50:12.587 | INFO | _pause_session CALLED
+2026-01-16 18:50:12.587 | INFO |   blocking: True
+2026-01-16 18:50:12.587 | INFO |   current_session_id: OPUS_MO00000_Wandkast_(1-2)_20260116_183859
+2026-01-16 18:50:12.587 | INFO |   api_session_id: None
+2026-01-16 18:50:12.587 | INFO |   session_paused: False
+2026-01-16 18:50:12.587 | INFO |   active_project (CACHED): MO00000_Wandkast_(1-2)
+2026-01-16 18:50:12.587 | INFO |   active_user (CACHED): OPUS
+2026-01-16 18:50:12.587 | INFO |   Session marked as paused at 2026-01-16 18:48:04.140860
+2026-01-16 18:50:12.587 | INFO |   Using CACHED user: OPUS
+2026-01-16 18:50:12.587 | INFO |   Using CACHED project: MO00000_Wandkast_(1-2)
+2026-01-16 18:50:12.587 | INFO |   Using session_id for API: OPUS_MO00000_Wandkast_(1-2)_20260116_183859
+2026-01-16 18:50:12.587 | INFO |   PAUSE API data: {"session_id": "OPUS_MO00000_Wandkast_(1-2)_20260116_183859", "timestamp": "2026-01-16T18:48:04.140860", "user": "OPUS", "project": "MO00000_Wandkast_(1-2)"}
+2026-01-16 18:50:12.587 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-01-16 18:50:15.610 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000020B5EEC7410>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-01-18 20:57:19.024 | INFO | ================================================================================
+2026-01-18 20:57:19.024 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-18 20:57:19.024 | INFO | ================================================================================
+2026-01-18 20:57:20.516 | INFO | ScannerPanel initialized - thread sync enabled
+2026-01-18 21:36:40.764 | INFO | ================================================================================
+2026-01-18 21:36:40.764 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-01-18 21:36:40.767 | INFO | ================================================================================
+2026-01-18 21:36:41.681 | INFO | ScannerPanel initialized - thread sync enabled

@@ -1,0 +1,1294 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Production Flow Dashboard{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* Odoo-style Production Flow Dashboard */
+.production-container {
+    padding: 20px;
+    background: #f5f5f7;
+}
+
+/* Control Panel */
+.control-panel {
+    background: white;
+    padding: 15px 20px;
+    margin: -20px -20px 20px -20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.breadcrumb-nav .active {
+    color: var(--secondary-blue);
+    font-weight: 500;
+}
+
+.view-options {
+    display: flex;
+    gap: 10px;
+}
+
+.view-btn {
+    padding: 6px 14px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    border-color: var(--secondary-blue);
+    color: var(--secondary-blue);
+}
+
+.view-btn.active {
+    background: var(--secondary-blue);
+    border-color: var(--secondary-blue);
+    color: white;
+}
+
+/* Bottleneck Alert */
+.bottleneck-alert {
+    background: linear-gradient(135deg, #fff5f5, #ffebeb);
+    border: 1px solid #f5c6cb;
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bottleneck-icon {
+    width: 40px;
+    height: 40px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    animation: pulse-alert 2s infinite;
+}
+
+@keyframes pulse-alert {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.bottleneck-content {
+    flex: 1;
+}
+
+.bottleneck-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #721c24;
+    margin-bottom: 4px;
+}
+
+.bottleneck-details {
+    font-size: 13px;
+    color: #721c24;
+    opacity: 0.9;
+}
+
+.bottleneck-action {
+    padding: 8px 16px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bottleneck-action:hover {
+    background: #c82333;
+}
+
+/* Pipeline Section */
+.pipeline-section {
+    background: white;
+    border-radius: 15px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+
+.pipeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.pipeline-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.pipeline-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.pipeline-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pipeline-stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--secondary-blue);
+}
+
+.pipeline-stat-label {
+    font-size: 11px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Pipeline Flow */
+.pipeline-flow {
+    position: relative;
+    padding: 40px 0;
+    background: #f8f9fa;
+    border-radius: 15px;
+    margin-bottom: 24px;
+}
+
+.flow-line {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.flow-progress {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    z-index: 2;
+    animation: flow-animation 3s linear infinite;
+}
+
+@keyframes flow-animation {
+    0% { width: 0%; }
+    100% { width: 90%; }
+}
+
+.department-nodes {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: relative;
+    z-index: 3;
+}
+
+.dept-node {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 15px;
+    padding: 15px;
+    width: 160px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    min-height: 180px;
+}
+
+.dept-node:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border-color: var(--secondary-blue);
+}
+
+/* .dept-node.active {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f0fff4, #e6f4ea);
+} */
+
+/* .dept-node.bottleneck {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff5f5, #ffebeb);
+} */
+
+.dept-node-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dept-node-count {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.dept-node-label {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.dept-node-time {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+    font-size: 11px;
+}
+
+.dept-node-items {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.dept-node-items i {
+    color: var(--secondary-blue);
+}
+
+.time-estimates {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+}
+
+.time-label {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.time-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--secondary-blue);
+}
+
+.time-value.goal {
+    color: #28a745;
+}
+
+.time-value.warning {
+    color: #ff6b6b;
+}
+
+.time-value.no-data {
+    color: #999;
+    font-weight: normal;
+}
+
+.dept-node-queue {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+}
+
+.queue-indicator {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.queue-fill {
+    height: 100%;
+    background: #ffc107;
+    border-radius: 2px;
+    transition: width 0.5s;
+}
+
+.queue-fill.critical {
+    background: #dc3545;
+}
+
+.bottleneck-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #dc3545;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* User Tabs Section */
+.users-section {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+
+.users-tabs {
+    display: flex;
+    gap: 5px;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.user-tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 14px;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    position: relative;
+}
+
+.user-tab:hover {
+    color: var(--secondary-blue);
+    background: #f8f9fa;
+}
+
+.user-tab.active {
+    color: var(--secondary-blue);
+    border-bottom-color: var(--secondary-blue);
+    font-weight: 500;
+}
+
+.user-status-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+}
+
+.user-status-dot.idle {
+    background: #ffc107;
+}
+
+.user-status-dot.offline {
+    background: #6c757d;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+/* Production Time Estimates Section */
+.production-time-section {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-refresh {
+    padding: 6px 12px;
+    background: var(--secondary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-refresh:hover {
+    opacity: 0.8;
+}
+
+.production-estimates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.estimate-card {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.estimate-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.estimate-user {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estimate-items {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.estimate-time {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 6px;
+}
+
+.time-label {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.time-value {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.time-actual {
+    color: var(--secondary-blue);
+}
+
+.time-goal {
+    color: #28a745;
+}
+
+.efficiency-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.efficiency-good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.efficiency-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.efficiency-poor {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.user-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+}
+
+.project-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.project-card:hover {
+    background: white;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.project-id {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.project-dept {
+    padding: 3px 8px;
+    background: var(--secondary-blue);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.project-details {
+    display: grid;
+    gap: 10px;
+}
+
+.project-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.project-detail-label {
+    color: #6c757d;
+}
+
+.project-detail-value {
+    color: #495057;
+    font-weight: 500;
+}
+
+.project-progress {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    border-radius: 3px;
+}
+
+/* Metrics Row */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border-top: 3px solid var(--secondary-blue);
+}
+
+.metric-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 20px;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-change {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 8px;
+}
+
+.metric-change.negative {
+    color: #dc3545;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.empty-text {
+    font-size: 14px;
+}
+
+/* Workflow Filter Toggle */
+.workflow-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.workflow-toggle input {
+    display: none;
+}
+
+.toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+}
+
+.workflow-toggle input:checked + .toggle-slider {
+    background: var(--secondary-blue);
+}
+
+.workflow-toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .department-nodes {
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .dept-node {
+        width: 150px;
+    }
+}
+
+@media (max-width: 992px) {
+    .dept-node {
+        width: 140px;
+        min-height: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .control-panel {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .pipeline-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .users-tabs {
+        flex-wrap: wrap;
+    }
+
+    .user-projects-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Project Management Dashboard</h1>
+    <p>Real-time production flow monitoring</p>
+</div>
+
+<div class="production-container">
+
+    <!-- Pipeline Flow -->
+    <div class="pipeline-section">
+        <div class="pipeline-header">
+            <h2 class="pipeline-title">Production Pipeline & Tijdschattingen</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label class="workflow-toggle" title="Toon alleen projecten die klaar zijn voor deze afdeling (vorige afdeling heeft afgemeld)">
+                    <input type="checkbox" id="workflowFilterToggle" onchange="toggleWorkflowFilter()">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Workflow Filter</span>
+                </label>
+                <button class="btn-refresh" onclick="refreshProductionEstimates()" title="Vernieuw tijdschattingen">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="pipeline-flow">
+            <div class="flow-line"></div>
+            <div class="flow-progress"></div>
+
+            <div class="department-nodes">
+                {% for user in dashboard_users %}
+                    {% set user_data = users_projects.get(user, []) %}
+                    {% set active_count = user_data|length %}
+
+                    <div class="dept-node {% if active_count > 0 %}active{% endif %}"
+                         onclick="showDepartment('{{ user }}')"
+                         data-user="{{ user }}">
+                        <div class="dept-node-name">{{ user }}</div>
+                        <div class="dept-node-count">{{ active_count }}</div>
+                        <div class="dept-node-label">{% if active_count == 1 %}project{% elif active_count > 1 %}projects{% else %}idle{% endif %}</div>
+                        <div class="dept-node-time" id="time-{{ user|replace(' ', '_') }}">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 10px;"></i>
+                            <span style="font-size: 11px;">laden...</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- User Tabs Section -->
+    <div class="users-section">
+        <div class="users-tabs">
+            {% for user in dashboard_users %}
+                {% set user_data = users_projects.get(user, []) %}
+                {% set has_active = user_data|length > 0 %}
+                <button class="user-tab {% if loop.first %}active{% endif %}" onclick="showUserProjects('{{ user }}', this)">
+                    {{ user }}
+                    <span class="user-status-dot {% if not has_active %}offline{% endif %}"></span>
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="tab-content">
+            <div id="userProjects" class="user-projects-grid">
+                <!-- Will be populated by JavaScript with actual user data -->
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Store user projects data from server
+const usersProjectsData = {{ users_projects | tojson }};
+const deptStats = {{ dept_stats | tojson }};
+const dashboardUsers = {{ dashboard_users | tojson }};
+
+// Workflow filter state
+let workflowFilterEnabled = false;
+let workflowCompletionData = {};
+
+// Fetch workflow completion data
+async function fetchWorkflowCompletion() {
+    try {
+        const response = await fetch('/api/workflow-completion');
+        const data = await response.json();
+        if (data.success) {
+            workflowCompletionData = data.workflow_completion;
+        }
+    } catch (error) {
+        console.error('Error fetching workflow completion:', error);
+    }
+}
+
+// Check if a project is ready for a user based on workflow
+function isProjectReadyForUser(project, userIndex) {
+    // First user in workflow sees all projects
+    if (userIndex === 0) {
+        return true;
+    }
+
+    // For other users, check if previous user has AFGEMELD this project
+    const previousUser = dashboardUsers[userIndex - 1];
+    const completedBy = workflowCompletionData[project.project] || [];
+
+    return completedBy.includes(previousUser);
+}
+
+// Filter projects for a user based on workflow
+function getFilteredProjectsForUser(user) {
+    const userIndex = dashboardUsers.indexOf(user);
+    const userProjects = usersProjectsData[user] || [];
+
+    if (!workflowFilterEnabled || userIndex === -1) {
+        return userProjects;
+    }
+
+    return userProjects.filter(project => {
+        // Also filter out projects where status is BEZIG for another user
+        // (but we don't have that data here, so just check workflow completion)
+        return isProjectReadyForUser(project, userIndex);
+    });
+}
+
+// Toggle workflow filter
+async function toggleWorkflowFilter() {
+    workflowFilterEnabled = document.getElementById('workflowFilterToggle').checked;
+
+    if (workflowFilterEnabled && Object.keys(workflowCompletionData).length === 0) {
+        // Fetch workflow data if not already loaded
+        await fetchWorkflowCompletion();
+    }
+
+    // Update the department node counts
+    updateDepartmentCounts();
+
+    // Refresh the current user's projects view
+    const activeTab = document.querySelector('.user-tab.active');
+    if (activeTab) {
+        const user = activeTab.textContent.trim();
+        showUserProjects(user, activeTab);
+    }
+}
+
+// Update department node counts based on filter
+function updateDepartmentCounts() {
+    dashboardUsers.forEach((user, index) => {
+        const filteredProjects = getFilteredProjectsForUser(user);
+        const count = filteredProjects.length;
+
+        // Update pipeline node
+        const node = document.querySelector(`.dept-node[data-user="${user}"]`);
+        if (node) {
+            const countElement = node.querySelector('.dept-node-count');
+            const labelElement = node.querySelector('.dept-node-label');
+
+            if (countElement) {
+                countElement.textContent = count;
+            }
+            if (labelElement) {
+                if (count === 1) {
+                    labelElement.textContent = 'project';
+                } else if (count > 1) {
+                    labelElement.textContent = 'projects';
+                } else {
+                    labelElement.textContent = 'idle';
+                }
+            }
+
+            // Update active class
+            if (count > 0) {
+                node.classList.add('active');
+            } else {
+                node.classList.remove('active');
+            }
+        }
+
+        // Update status dot in user tab
+        const tabs = document.querySelectorAll('.user-tab');
+        tabs.forEach(tab => {
+            if (tab.textContent.trim() === user) {
+                const statusDot = tab.querySelector('.user-status-dot');
+                if (statusDot) {
+                    if (count > 0) {
+                        statusDot.classList.remove('offline');
+                    } else {
+                        statusDot.classList.add('offline');
+                    }
+                }
+            }
+        });
+    });
+}
+
+// Bottleneck Detection - DISABLED FOR NOW
+// function detectBottlenecks() {
+//     const thresholds = {
+//         'NESTING': 10,
+//         'ACCURA': 12,
+//         'OPUS': 10,
+//         'KL GANNOMAT': 8,
+//         'HANDWERK': 8,
+//         'GR GANNOMAT': 10,
+//         'BOERE': 5
+//     };
+
+//     let bottlenecks = [];
+//     for (const [dept, data] of Object.entries(deptStats)) {
+//         const threshold = thresholds[dept] || 10;
+//         if (data.queue > threshold) {
+//             bottlenecks.push({
+//                 name: dept,
+//                 queue: data.queue,
+//                 threshold: threshold
+//             });
+//         }
+//     }
+
+//     if (bottlenecks.length > 0) {
+//         const worst = bottlenecks.reduce((prev, current) =>
+//             (current.queue / current.threshold) > (prev.queue / prev.threshold) ? current : prev
+//         );
+
+//         document.getElementById('bottleneckAlert').style.display = 'flex';
+//         document.getElementById('bottleneckDetails').textContent =
+//             `${worst.name.replace('_PROCESSING', '')} department has ${worst.queue} items in queue (threshold: ${worst.threshold}). Consider reallocating resources.`;
+//     }
+// }
+
+// Run bottleneck detection on load - DISABLED
+// detectBottlenecks();
+// setInterval(detectBottlenecks, 30000); // Check every 30 seconds
+
+// Show department details and switch to user tab
+function showDepartment(dept) {
+    // Find the corresponding user tab and click it
+    const userTabs = document.querySelectorAll('.user-tab');
+    userTabs.forEach(tab => {
+        if (tab.textContent.trim().includes(dept)) {
+            tab.click();
+            // Scroll to the user tabs section
+            document.querySelector('.users-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
+// Show user projects with real data
+function showUserProjects(user, tabElement) {
+    // Update active tab
+    document.querySelectorAll('.user-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    tabElement.classList.add('active');
+
+    const projectsContainer = document.getElementById('userProjects');
+    // Use filtered projects if workflow filter is enabled
+    const userProjects = getFilteredProjectsForUser(user);
+
+    if (userProjects.length === 0) {
+        projectsContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <div class="empty-icon">📭</div>
+                <div class="empty-text">Geen actieve projecten voor ${user}</div>
+            </div>
+        `;
+    } else {
+        let projectsHTML = '';
+        userProjects.forEach(project => {
+            projectsHTML += `
+                <div class="project-card" onclick="window.location.href='/logs_project?project=${encodeURIComponent(project.project)}'">
+                    <div class="project-header">
+                        <span class="project-id">${project.project}</span>
+                    </div>
+                    <div class="project-details">
+                        ${project.mo_number ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">MO:</span>
+                            <span class="project-detail-value">${project.mo_number}</span>
+                        </div>` : ''}
+                        ${project.so_number ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">SO:</span>
+                            <span class="project-detail-value">${project.so_number}</span>
+                        </div>` : ''}
+                        ${project.customer_name ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">Klant:</span>
+                            <span class="project-detail-value">${project.customer_name}</span>
+                        </div>` : ''}
+                        ${project.color ? `
+                        <div class="project-detail">
+                            <span class="project-detail-label">Kleur:</span>
+                            <span class="project-detail-value">${project.color}</span>
+                        </div>` : ''}
+                        <div class="project-detail">
+                            <span class="project-detail-label">Status:</span>
+                            <span class="status-badge status-${project.status.toLowerCase()}">${project.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        projectsContainer.innerHTML = projectsHTML;
+    }
+}
+
+// Handle bottleneck action - DISABLED FOR NOW
+// function handleBottleneck() {
+//     console.log('Handling bottleneck...');
+//     alert('Opening resource allocation panel...');
+// }
+
+// Function to load production time estimates
+async function loadProductionEstimates() {
+    try {
+        const response = await fetch('/api/production-time-estimates');
+        const data = await response.json();
+
+        if (data.success) {
+            // Update department nodes with time estimates
+            data.estimates.forEach(estimate => {
+                const userId = estimate.user.replace(/ /g, '_');
+                const timeElement = document.getElementById(`time-${userId}`);
+
+                if (timeElement) {
+                    // Build the enhanced display with items and both time estimates
+                    let html = '';
+
+                    // Add items count
+                    html += `<div class="dept-node-items">
+                        <i class="fas fa-box"></i> ${estimate.total_items} items
+                    </div>`;
+
+                    // Add time estimates section
+                    html += '<div class="time-estimates">';
+
+                    // Estimated time row
+                    const estimatedClass = (estimate.estimated_time_str === 'Geen data') ? 'no-data' : '';
+                    html += `
+                        <div class="time-row">
+                            <span class="time-label">Geschat:</span>
+                            <span class="time-value ${estimatedClass}">${estimate.estimated_time_str}</span>
+                        </div>
+                    `;
+
+                    // Goal time row
+                    const goalClass = (estimate.goal_time_str === 'Geen data') ? 'no-data' : 'goal';
+                    html += `
+                        <div class="time-row">
+                            <span class="time-label">Doel:</span>
+                            <span class="time-value ${goalClass}">${estimate.goal_time_str}</span>
+                        </div>
+                    `;
+
+                    // Performance indicators
+                    if (estimate.avg_items_per_hour !== null || estimate.target_items_per_hour !== null) {
+                        html += '<div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #f0f0f0;">';
+
+                        // Average performance
+                        if (estimate.avg_items_per_hour !== null) {
+                            html += `<div class="time-row">
+                                <span class="time-label">Gem:</span>
+                                <span class="time-value" style="font-size: 10px;">${estimate.avg_items_per_hour}/uur</span>
+                            </div>`;
+                        }
+
+                        // Target performance
+                        if (estimate.target_items_per_hour !== null) {
+                            html += `<div class="time-row">
+                                <span class="time-label">Target:</span>
+                                <span class="time-value goal" style="font-size: 10px;">${estimate.target_items_per_hour}/uur</span>
+                            </div>`;
+                        }
+
+                        html += '</div>';
+                    }
+
+                    html += '</div>';
+
+                    timeElement.innerHTML = html;
+
+                    // Visual efficiency indicators disabled
+                    // const node = timeElement.closest('.dept-node');
+                    // if (node && estimate.efficiency_ratio !== null && estimate.efficiency_ratio !== undefined) {
+                    //     if (estimate.efficiency_ratio >= 90) {
+                    //         node.style.borderColor = '#51cf66';
+                    //     } else if (estimate.efficiency_ratio < 70) {
+                    //         node.style.borderColor = '#ff6b6b';
+                    //     } else {
+                    //         node.style.borderColor = '#ffd43b';
+                    //     }
+                    // }
+                }
+            });
+
+            // For users without estimates, show idle or no data
+            const allUsers = document.querySelectorAll('.dept-node');
+            allUsers.forEach(node => {
+                const user = node.getAttribute('data-user');
+                const hasEstimate = data.estimates.some(e => e.user === user);
+                if (!hasEstimate) {
+                    const userId = user.replace(/ /g, '_');
+                    const timeElement = document.getElementById(`time-${userId}`);
+                    if (timeElement) {
+                        const projectCount = parseInt(node.querySelector('.dept-node-count').textContent) || 0;
+                        if (projectCount === 0) {
+                            timeElement.innerHTML = `
+                                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                                    <div style="text-align: center;">
+                                        <i class="fas fa-pause" style="font-size: 16px; color: #999;"></i>
+                                        <div style="font-size: 11px; color: #999; margin-top: 4px;">Inactief</div>
+                                    </div>
+                                </div>
+                            `;
+                            node.style.borderColor = '#dee2e6';
+                        } else {
+                            timeElement.innerHTML = `
+                                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                                    <div style="text-align: center;">
+                                        <i class="fas fa-question-circle" style="font-size: 16px; color: #999;"></i>
+                                        <div style="font-size: 11px; color: #999; margin-top: 4px;">Geen data</div>
+                                    </div>
+                                </div>
+                            `;
+                            node.style.borderColor = '#dee2e6';
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading production estimates:', error);
+        // On error, show error state in all time elements
+        const timeElements = document.querySelectorAll('.dept-node-time');
+        timeElements.forEach(el => {
+            el.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 60px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 16px; color: #dc3545;"></i>
+                        <div style="font-size: 11px; color: #dc3545; margin-top: 4px;">Fout bij laden</div>
+                    </div>
+                </div>
+            `;
+            const node = el.closest('.dept-node');
+            if (node) {
+                node.style.borderColor = '#dee2e6';
+            }
+        });
+    }
+}
+
+// Refresh function
+function refreshProductionEstimates() {
+    const btn = document.querySelector('.btn-refresh');
+    const icon = btn.querySelector('i');
+
+    // Add spinning animation
+    icon.classList.add('fa-spin');
+
+    // Load estimates
+    loadProductionEstimates().then(() => {
+        // Remove spinning after loading
+        setTimeout(() => {
+            icon.classList.remove('fa-spin');
+        }, 500);
+    });
+}
+
+// Load first user's projects on page load
+window.addEventListener('DOMContentLoaded', function() {
+    // Load production estimates
+    loadProductionEstimates();
+
+    // Refresh estimates every 60 seconds
+    setInterval(loadProductionEstimates, 60000);
+
+    const firstTab = document.querySelector('.user-tab.active');
+    if (firstTab) {
+        const firstUser = firstTab.textContent.trim();
+        showUserProjects(firstUser, firstTab);
+    }
+});
+
+</script>
+{% endblock %}

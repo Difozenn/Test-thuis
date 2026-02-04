@@ -6,6 +6,7 @@ import time
 import keyboard
 import serial
 import serial.tools.list_ports
+import socket
 import os
 import re
 import requests
@@ -78,6 +79,12 @@ class ScannerPanel(ttk.Frame):
         self.com_read_thread = None
         self._usb_listener_thread = None
         self._stop_usb_listener_event = threading.Event()
+
+        # --- TCP Scanner State ---
+        self.tcp_server = None
+        self.tcp_port_var = tk.StringVar(value="58627")
+        self.is_reading_tcp = False
+        self.tcp_listen_thread = None
 
         # --- USB Keyboard Scanner State ---
         self.barcode_buffer = []
@@ -179,6 +186,7 @@ class ScannerPanel(ttk.Frame):
         radio_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         ttk.Radiobutton(radio_frame, text="USB-toetsenbord", variable=self.scanner_type_var, value="USB", command=self._on_scanner_type_change).pack(side="left", padx=10)
         ttk.Radiobutton(radio_frame, text="COM-poort", variable=self.scanner_type_var, value="COM", command=self._on_scanner_type_change).pack(side="left", padx=10)
+        ttk.Radiobutton(radio_frame, text="TCP (DataWedge)", variable=self.scanner_type_var, value="TCP", command=self._on_scanner_type_change).pack(side="left", padx=10)
 
         # Scanner-specific controls (inside scanner_type_frame)
         scanner_controls_frame = ttk.Frame(scanner_type_frame)
@@ -243,6 +251,18 @@ class ScannerPanel(ttk.Frame):
 
         # --- Inhoud USB Frame ---
         ttk.Label(self.usb_frame, text="USB-scanner is actief indien geselecteerd. Scans worden globaal vastgelegd.").pack(padx=5, pady=5, fill="x")
+
+        # --- TCP Frame ---
+        self.tcp_frame = ttk.Frame(scanner_controls_frame)
+        self.tcp_frame.grid(row=0, column=0, sticky="ew")
+        self.tcp_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(self.tcp_frame, text="Poort:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Entry(self.tcp_frame, textvariable=self.tcp_port_var, width=10).grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        self.tcp_connect_button = ttk.Button(self.tcp_frame, text="Verbinden", command=self._connect_tcp)
+        self.tcp_connect_button.grid(row=0, column=2, padx=5, pady=5)
+        self.tcp_ip_label = ttk.Label(self.tcp_frame, text=f"IP: {self._get_local_ip()}")
+        self.tcp_ip_label.grid(row=0, column=3, padx=10, pady=5, sticky="w")
 
         # --- Treeview ---
         # Initialize with base columns - additional columns will be added dynamically when Excel loads
@@ -328,6 +348,7 @@ class ScannerPanel(ttk.Frame):
         self.scanner_type_var.set(self._get_config_setting('Scanner', 'type', 'USB'))
         self.com_port_var.set(self._get_config_setting('Scanner', 'com_port', ''))
         self.baud_rate_var.set(self._get_config_setting('Scanner', 'baud_rate', '9600'))
+        self.tcp_port_var.set(self._get_config_setting('Scanner', 'tcp_port', '58627'))
         # COMMENTED OUT: Don't auto-load last Excel file to prevent unintended sessions
         # last_file = self._get_config_setting('Paths', 'last_excel_file', '')
         # if last_file and os.path.exists(last_file):
@@ -343,6 +364,7 @@ class ScannerPanel(ttk.Frame):
         self._set_config_setting('Scanner', 'type', self.scanner_type_var.get())
         self._set_config_setting('Scanner', 'com_port', self.com_port_var.get())
         self._set_config_setting('Scanner', 'baud_rate', self.baud_rate_var.get())
+        self._set_config_setting('Scanner', 'tcp_port', self.tcp_port_var.get())
         # COMMENTED OUT: Don't save last Excel file to prevent auto-loading on startup
         # self._set_config_setting('Paths', 'last_excel_file', self.excel_file_path_var.get()) # Already handled by _load_excel_data
 
@@ -453,16 +475,27 @@ class ScannerPanel(ttk.Frame):
         if scanner_type == "COM":
             self.com_frame.grid(row=0, column=0, sticky="ew")
             self.usb_frame.grid_remove()
+            self.tcp_frame.grid_remove()
             self._stop_usb_listener()
+            self._disconnect_tcp()
             self._update_com_ports()
         elif scanner_type == "USB":
             self.usb_frame.grid(row=0, column=0, sticky="ew")
             self.com_frame.grid_remove()
+            self.tcp_frame.grid_remove()
             self._disconnect_com_port()
+            self._disconnect_tcp()
             self._start_usb_listener()
+        elif scanner_type == "TCP":
+            self.tcp_frame.grid(row=0, column=0, sticky="ew")
+            self.com_frame.grid_remove()
+            self.usb_frame.grid_remove()
+            self._stop_usb_listener()
+            self._disconnect_com_port()
         else:
             self.com_frame.grid_remove()
             self.usb_frame.grid_remove()
+            self.tcp_frame.grid_remove()
 
     def load_project_excel(self, excel_file_path, user=None):
         """Public method to load a project's Excel file into the scanner panel.
@@ -3070,6 +3103,109 @@ class ScannerPanel(ttk.Frame):
                 self._log(f"[FOUT] Fout bij lezen van COM-poort: {e}")
                 break
 
+    # --- TCP Scanner Methods ---
+
+    def _get_local_ip(self):
+        """Returns the local IP address of this machine."""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+
+    def _connect_tcp(self):
+        """Start TCP server to receive barcode data from DataWedge."""
+        if self.tcp_server is not None:
+            self._log("TCP-server is al actief.")
+            return
+
+        try:
+            port = int(self.tcp_port_var.get())
+        except ValueError:
+            messagebox.showerror("Ongeldige poort", "Voer een geldig poortnummer in.")
+            return
+
+        try:
+            self.tcp_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.tcp_server.settimeout(1.0)
+            self.tcp_server.bind(("0.0.0.0", port))
+            self.tcp_server.listen(5)
+            self.is_reading_tcp = True
+            self.tcp_listen_thread = threading.Thread(target=self._tcp_listener_worker, daemon=True)
+            self.tcp_listen_thread.start()
+            local_ip = self._get_local_ip()
+            self._log(f"TCP-server gestart op {local_ip}:{port}")
+            self.tcp_connect_button.config(text="Verbreken", command=self._disconnect_tcp)
+        except Exception as e:
+            messagebox.showerror("TCP-fout", f"Kon TCP-server niet starten op poort {port}:\n{e}")
+            self._log(f"[FOUT] Kon TCP-server niet starten: {e}")
+            self.tcp_server = None
+
+    def _disconnect_tcp(self):
+        """Stop the TCP server."""
+        self.is_reading_tcp = False
+        if self.tcp_listen_thread and self.tcp_listen_thread.is_alive():
+            self.tcp_listen_thread.join(timeout=3)
+            self.tcp_listen_thread = None
+
+        if self.tcp_server is not None:
+            try:
+                self.tcp_server.close()
+            except Exception:
+                pass
+            self.tcp_server = None
+            self._log("TCP-server gestopt.")
+
+        try:
+            self.tcp_connect_button.config(text="Verbinden", command=self._connect_tcp)
+        except Exception:
+            pass
+
+    def _tcp_listener_worker(self):
+        """Worker thread: accepts TCP connections and reads barcode data."""
+        while self.is_reading_tcp and self.tcp_server is not None:
+            try:
+                conn, addr = self.tcp_server.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+
+            try:
+                conn.settimeout(5.0)
+                data = b""
+                while True:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            except socket.timeout:
+                pass
+            except Exception:
+                pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+            if data:
+                try:
+                    text = data.decode("utf-8", errors="ignore")
+                except Exception:
+                    text = data.decode("latin-1", errors="ignore")
+                # Strip null characters and whitespace
+                text = text.replace("\x00", "").strip()
+                # Process each line as a separate barcode
+                for line in text.splitlines():
+                    line = line.strip()
+                    if line:
+                        self.after(0, self._check_barcode, line)
+
     def _on_tree_double_click(self, event):
         """Handles double-click events on the treeview to open .HOP/.HOPS files."""
         try:
@@ -3155,6 +3291,7 @@ class ScannerPanel(ttk.Frame):
 
         self._stop_usb_listener()
         self._disconnect_com_port()
+        self._disconnect_tcp()
         # Do NOT end session - sessions should persist across application restarts
         # Session will be resumed on next startup if needed
         self._log("Scannerpaneel afgesloten.")

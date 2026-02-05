@@ -70,6 +70,13 @@ class SettingsPanel(ttk.Frame):
                 'directory_default': ''
             },
             {
+                'id': 'scan_highlight_viewer',
+                'type': 'checkbox',
+                'label': 'Scan Highlight Viewer',
+                'description': 'Toont een groot pop-up venster met alle beschikbare informatie van het gescande item (Item, Omschrijving, Lengte, Breedte, Dikte, etc.).',
+                'default': False
+            },
+            {
                 'id': 'auto_update_enabled',
                 'type': 'checkbox_with_directory',
                 'label': 'Automatisch controleren op updates',

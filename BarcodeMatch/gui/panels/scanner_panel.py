@@ -11,6 +11,7 @@ import os
 import re
 import requests
 import json
+import math
 import logging
 from datetime import datetime
 from PIL import Image, ImageTk
@@ -274,6 +275,7 @@ class ScannerPanel(ttk.Frame):
 
         # Store current dynamic columns for reference
         self.dynamic_columns = []  # Will be populated when Excel is loaded
+        self.scan_highlight_window = None  # Reusable popup for scan highlight viewer
         # Define a bold font for the 'OK' status
         self.bold_ok_font = None # Initialize
         try:
@@ -1844,7 +1846,361 @@ class ScannerPanel(ttk.Frame):
             # Open PDF stuktekening if setting is enabled
             self._try_open_stuktekening(log_barcode)
 
+            # Show scan highlight popup if setting is enabled
+            self._try_show_scan_highlight(log_barcode)
+
             self._all_items_ok_check()
+
+    def _try_show_scan_highlight(self, scanned_barcode):
+        """Shows a large popup with all available data for the scanned item."""
+        try:
+            config = _load_full_config()
+            if not config.get('scan_highlight_viewer', False):
+                return
+
+            item = self.barcode_data.get(scanned_barcode)
+            if not item:
+                return
+
+            item_id = item['id']
+            tree_values = self.tree.item(item_id)['values']
+            tree_columns = list(self.tree['columns'])
+
+            # Build field list: skip Status column
+            fields = []
+            dims = {}  # Track dimension values for 3D drawing
+            dim_keys = {'lengte', 'breedte', 'dikte', 'hoogte', 'length', 'width', 'height', 'thickness'}
+            for col, val in zip(tree_columns, tree_values):
+                if col == 'Status':
+                    continue
+                str_val = str(val) if val else ''
+                fields.append((col, str_val))
+                if col.lower() in dim_keys and str_val:
+                    try:
+                        dims[col.lower()] = float(str_val)
+                    except ValueError:
+                        pass
+
+            # Add Omschrijving if not already in columns
+            if 'Omschrijving' not in tree_columns and item.get('description'):
+                fields.insert(1, ('Omschrijving', item['description']))
+
+            # Create or reuse the popup window
+            bg_color = '#f5f5f5'
+            has_dims = len(dims) >= 2
+            if self.scan_highlight_window and self.scan_highlight_window.winfo_exists():
+                for widget in self.scan_highlight_window.winfo_children():
+                    widget.destroy()
+                window = self.scan_highlight_window
+            else:
+                window = tk.Toplevel(self)
+                window.title("Scan Highlight Viewer")
+                window.configure(bg=bg_color)
+                window.minsize(500, 300)
+                self.scan_highlight_window = window
+
+                # Only set initial size/position on first open
+                win_width = 800 if has_dims else 700
+                win_height = 700
+                screen_w = window.winfo_screenwidth()
+                screen_h = window.winfo_screenheight()
+                x = (screen_w - win_width) // 2
+                y = (screen_h - win_height) // 2
+                window.geometry(f"{win_width}x{win_height}+{x}+{y}")
+
+            # Title bar
+            title_frame = tk.Frame(window, bg='#333333', pady=10)
+            title_frame.pack(fill='x')
+            tk.Label(
+                title_frame, text='Gescand Item', font=('Segoe UI', 18, 'bold'),
+                bg='#333333', fg='#ffffff'
+            ).pack()
+
+            # Separator
+            tk.Frame(window, bg='#cccccc', height=1).pack(fill='x')
+
+            # Text fields area (top portion, doesn't expand)
+            fields_frame = tk.Frame(window, bg=bg_color, pady=10)
+            fields_frame.pack(fill='x')
+
+            for label_text, value_text in fields:
+                row = tk.Frame(fields_frame, bg=bg_color)
+                row.pack(pady=3)
+
+                tk.Label(
+                    row, text=f"{label_text}:", font=('Segoe UI', 13),
+                    bg=bg_color, fg='#666666'
+                ).pack()
+
+                val_font_size = 24 if label_text == 'Item' else 18
+                tk.Label(
+                    row, text=value_text, font=('Segoe UI', val_font_size, 'bold'),
+                    bg=bg_color, fg='#1a1a1a'
+                ).pack()
+
+            # Draw 3D isometric box filling remaining space
+            if has_dims:
+                tk.Frame(window, bg='#cccccc', height=1).pack(fill='x')
+                box_canvas = tk.Canvas(window, bg=bg_color, highlightthickness=0)
+                box_canvas.pack(fill='both', expand=True, padx=10, pady=10)
+
+                def _redraw_box(event=None):
+                    self._draw_3d_box(box_canvas, dims, bg_color)
+
+                box_canvas.bind('<Configure>', _redraw_box)
+
+            window.lift()
+            window.focus_force()
+
+        except Exception as e:
+            self._log(f"[WARN] Fout bij scan highlight viewer: {e}")
+
+    def _draw_3d_box(self, canvas, dims, bg_color):
+        """Draws a proportional isometric 3D box scaled to fit the canvas."""
+        canvas.delete('all')
+
+        # Resolve dimensions: lengte=length, breedte=width, dikte/hoogte=height
+        length = dims.get('lengte', dims.get('length', 0))
+        width = dims.get('breedte', dims.get('width', 0))
+        height = dims.get('dikte', dims.get('hoogte', dims.get('thickness', dims.get('height', 0))))
+
+        if length == 0 and width == 0 and height == 0:
+            return
+
+        canvas_w = canvas.winfo_width()
+        canvas_h = canvas.winfo_height()
+        if canvas_w < 50 or canvas_h < 50:
+            return
+
+        # Margins for labels/arrows
+        margin_left = 60
+        margin_right = 90
+        margin_bottom = 40
+        margin_top = 35  # extra room for grain arrow above box
+
+        avail_w = canvas_w - margin_left - margin_right
+        avail_h = canvas_h - margin_top - margin_bottom
+
+        if avail_w < 30 or avail_h < 30:
+            return
+
+        # Use true proportions with a minimum pixel floor applied after scaling.
+        # This ensures e.g. 5mm vs 31mm dikte are visibly different.
+        max_dim = max(length, width, height, 1)
+        raw_dl = length / max_dim if length > 0 else 0
+        raw_dw = width / max_dim if width > 0 else 0
+        raw_dh = height / max_dim if height > 0 else 0
+
+        # Total proportional extents including isometric offsets
+        total_w = max(raw_dl, 0.01) + max(raw_dw, 0.01) * 0.5
+        total_h = max(raw_dh, 0.01) + max(raw_dw, 0.01) * 0.3
+
+        scale = min(avail_w / total_w, avail_h / total_h)
+
+        # Apply scale, then enforce a small minimum pixel size so zero-dims still show as a thin edge
+        min_px = 6
+        dl = max(raw_dl * scale, min_px) if length > 0 else min_px
+        dw = max(raw_dw * scale, min_px) if width > 0 else min_px
+        dh = max(raw_dh * scale, min_px) if height > 0 else min_px
+
+        iso_x = dw * 0.5
+        iso_y = dw * 0.3
+
+        # Center the box in available area
+        box_w = dl + iso_x
+        box_h = dh + iso_y
+        offset_x = margin_left + (avail_w - box_w) / 2
+        offset_y = margin_top + (avail_h - box_h) / 2
+
+        # Origin: bottom-left of front face
+        ox = offset_x
+        oy = offset_y + box_h
+
+        # Front face corners
+        f_bl = (ox, oy)
+        f_br = (ox + dl, oy)
+        f_tr = (ox + dl, oy - dh)
+        f_tl = (ox, oy - dh)
+
+        # Back face corners
+        b_bl = (ox + iso_x, oy - iso_y)
+        b_br = (ox + dl + iso_x, oy - iso_y)
+        b_tr = (ox + dl + iso_x, oy - dh - iso_y)
+        b_tl = (ox + iso_x, oy - dh - iso_y)
+
+        # Draw back edges (dashed)
+        canvas.create_line(*b_bl, *b_br, fill='#aaaaaa', width=2, dash=(3, 3))
+        canvas.create_line(*b_bl, *b_tl, fill='#aaaaaa', width=2, dash=(3, 3))
+
+        # Draw top face
+        canvas.create_polygon(
+            *f_tl, *f_tr, *b_tr, *b_tl,
+            fill='#e0e0e0', outline='#555555', width=2
+        )
+
+        # Draw right side face
+        canvas.create_polygon(
+            *f_br, *b_br, *b_tr, *f_tr,
+            fill='#d0d0d0', outline='#555555', width=2
+        )
+
+        # Draw front face
+        canvas.create_polygon(
+            *f_bl, *f_br, *f_tr, *f_tl,
+            fill='#eeeeee', outline='#555555', width=2
+        )
+
+        # Natural grain lines on top face (flowing curves along lengte direction)
+        if length > 0 and dl > 20:
+            num_lines = max(int(dw / 12), 2)
+            num_lines = min(num_lines, 15)
+            num_points = max(int(dl / 15), 5)
+            num_points = min(num_points, 25)
+
+            # Inset fraction to keep grain lines away from the top face outline
+            inset = 0.04
+            for i in range(1, num_lines + 1):
+                t = i / (num_lines + 1)
+                # Start and end inset from the left/right edges of the top face
+                sx = f_tl[0] + t * (b_tl[0] - f_tl[0])
+                sy = f_tl[1] + t * (b_tl[1] - f_tl[1])
+                ex = f_tr[0] + t * (b_tr[0] - f_tr[0])
+                ey = f_tr[1] + t * (b_tr[1] - f_tr[1])
+                # Inset start and end points
+                sx = sx + inset * (ex - sx)
+                sy = sy + inset * (ey - sy)
+                ex = ex - inset * (ex - sx)
+                ey = ey - inset * (ey - sy)
+
+                # Build control points with sine-wave displacement for organic flow
+                # Use deterministic variation per line so it doesn't jitter on resize
+                amplitude = dw * 0.04
+                freq = 1.5 + (i % 3) * 0.7  # vary frequency per line
+                phase = i * 2.3  # offset per line
+
+                points = []
+                for p in range(num_points + 1):
+                    frac = p / num_points
+                    # Base position: linear interpolation along the line
+                    bx = sx + frac * (ex - sx)
+                    by = sy + frac * (ey - sy)
+                    # Perpendicular displacement (in the isometric depth direction)
+                    wave = math.sin(frac * math.pi * freq + phase) * amplitude
+                    # Perpendicular to lengte on the top face is the depth direction
+                    bx += wave * 0.5  # iso_x component
+                    by -= wave * 0.3  # iso_y component
+                    points.extend([bx, by])
+
+                canvas.create_line(*points, fill='#c8c8c8', width=1, smooth=True)
+
+            # Grain direction arrow on top face: 4/5 length, centered at 1/2 depth
+            # Arrow width = 1/3 of iso box depth
+            gt = 1 / 2  # center of depth
+            # Center line of the top face
+            cl_x = f_tl[0] + gt * (b_tl[0] - f_tl[0])
+            cl_y = f_tl[1] + gt * (b_tl[1] - f_tl[1])
+            cr_x = f_tr[0] + gt * (b_tr[0] - f_tr[0])
+            cr_y = f_tr[1] + gt * (b_tr[1] - f_tr[1])
+
+            # Direction along lengte (unit vector)
+            dir_dx = cr_x - cl_x
+            dir_dy = cr_y - cl_y
+            dir_len = math.sqrt(dir_dx ** 2 + dir_dy ** 2) or 1
+            dir_ux = dir_dx / dir_len
+            dir_uy = dir_dy / dir_len
+
+            # Perpendicular direction on top face (depth direction, unit vector)
+            perp_dx = (b_tl[0] - f_tl[0])
+            perp_dy = (b_tl[1] - f_tl[1])
+            perp_len = math.sqrt(perp_dx ** 2 + perp_dy ** 2) or 1
+            perp_ux = perp_dx / perp_len
+            perp_uy = perp_dy / perp_len
+
+            # Half-width of arrow = 1/6 of actual iso top face span (1/3 total, halved)
+            hw = perp_len / 6
+            # Triangle depth along lengte direction
+            tri_depth = hw * 1.5
+
+            # Inset to 4/5 of lengte (centered)
+            inset_frac = (1 - 4 / 5) / 2
+            # Tip points (triangle tips)
+            tip_l_x = cl_x + inset_frac * (cr_x - cl_x)
+            tip_l_y = cl_y + inset_frac * (cr_y - cl_y)
+            tip_r_x = cr_x - inset_frac * (cr_x - cl_x)
+            tip_r_y = cr_y - inset_frac * (cr_y - cl_y)
+
+            # Triangle base points (where shaft meets triangle)
+            # Left triangle base
+            lb_x = tip_l_x + dir_ux * tri_depth
+            lb_y = tip_l_y + dir_uy * tri_depth
+            lb_top_x = lb_x + perp_ux * hw
+            lb_top_y = lb_y + perp_uy * hw
+            lb_bot_x = lb_x - perp_ux * hw
+            lb_bot_y = lb_y - perp_uy * hw
+
+            # Right triangle base
+            rb_x = tip_r_x - dir_ux * tri_depth
+            rb_y = tip_r_y - dir_uy * tri_depth
+            rb_top_x = rb_x + perp_ux * hw
+            rb_top_y = rb_y + perp_uy * hw
+            rb_bot_x = rb_x - perp_ux * hw
+            rb_bot_y = rb_y - perp_uy * hw
+
+            # Draw as a single closed hexagon: <=====>
+            canvas.create_polygon(
+                tip_l_x, tip_l_y,        # left tip
+                lb_top_x, lb_top_y,      # top-left shoulder
+                rb_top_x, rb_top_y,      # top-right shoulder
+                tip_r_x, tip_r_y,        # right tip
+                rb_bot_x, rb_bot_y,      # bottom-right shoulder
+                lb_bot_x, lb_bot_y,      # bottom-left shoulder
+                outline='#888888', fill='', width=2
+            )
+
+        # Dimension labels
+        label_font = ('Segoe UI', 10, 'bold')
+        label_color = '#333333'
+        arrow_color = '#555555'
+        arrow_gap = 14
+
+        # Lengte label (bottom arrow, under front face)
+        if length > 0:
+            mid_x = ox + dl / 2
+            ay = oy + arrow_gap
+            canvas.create_line(ox, ay, ox + dl, ay, fill=arrow_color, width=2,
+                               arrow=tk.BOTH, arrowshape=(6, 8, 3))
+            canvas.create_text(mid_x, ay + 14, text=f"{length:g} mm",
+                               font=label_font, fill=label_color)
+
+        # Dikte/Hoogte label (left arrow, beside front face)
+        if height > 0:
+            ax = ox - arrow_gap
+            canvas.create_line(ax, oy, ax, oy - dh, fill=arrow_color, width=2,
+                               arrow=tk.BOTH, arrowshape=(6, 8, 3))
+            canvas.create_text(ax - 22, oy - dh / 2, text=f"{height:g}",
+                               font=label_font, fill=label_color)
+
+        # Breedte label (right side arrow, from front-bottom-right to back-bottom-right)
+        if width > 0:
+            # Offset perpendicular to the right edge to match lengte/dikte arrow distance
+            # Right edge direction unit vector
+            re_dx = b_br[0] - f_br[0]
+            re_dy = b_br[1] - f_br[1]
+            re_len = math.sqrt(re_dx ** 2 + re_dy ** 2) or 1
+            # Perpendicular to right edge (pointing outward/right)
+            rp_ux = -re_dy / re_len
+            rp_uy = re_dx / re_len
+            offset = arrow_gap
+            ax = f_br[0] + rp_ux * offset
+            ay_start = f_br[1] + rp_uy * offset
+            ax_end = b_br[0] + rp_ux * offset
+            ay_end = b_br[1] + rp_uy * offset
+            canvas.create_line(ax, ay_start, ax_end, ay_end, fill=arrow_color, width=2,
+                               arrow=tk.BOTH, arrowshape=(6, 8, 3))
+            mid_x = (ax + ax_end) / 2 + rp_ux * 14
+            mid_y = (ay_start + ay_end) / 2 + rp_uy * 14
+            canvas.create_text(mid_x + 10, mid_y, text=f"{width:g} mm",
+                               font=label_font, fill=label_color)
 
     def _try_open_opus_image(self, scanned_item):
         """Opens the corresponding PNG image for an OPUS scan if the setting is enabled."""
@@ -2810,6 +3166,7 @@ class ScannerPanel(ttk.Frame):
                 # Re-apply tag configuration to ensure colors are shown
                 if tag == 'OK':
                     self.tree.tag_configure('OK', background='#90EE90', foreground='#000000')
+                self.tree.selection_set(item_id)  # Select the last scanned item
                 self.tree.see(item_id)  # Ensure the item is visible
             except Exception:
                 pass  # Silently ignore any update errors
@@ -2971,6 +3328,9 @@ class ScannerPanel(ttk.Frame):
 
                 # Open PNG image if setting is enabled and it's an OPUS item
                 self._try_open_opus_image(barcode)
+
+                # Show scan highlight popup if setting is enabled
+                self._try_show_scan_highlight(barcode)
 
                 self._all_items_ok_check()
 

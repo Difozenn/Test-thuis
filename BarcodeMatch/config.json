@@ -27,5 +27,6 @@
     "boere_output_dir": "\\\\WIN-D62BRA7BHMI\\Server\\BOERE",
     "open_image_on_opus_scan": true,
     "stuktekening_directory": "Y:/Stuktekeningen",
-    "open_stuktekening_on_scan": true
+    "open_stuktekening_on_scan": true,
+    "scan_highlight_viewer": true
 }

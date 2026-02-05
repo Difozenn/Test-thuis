@@ -1248,3 +1248,669 @@
 2026-02-03 20:12:29.508 | INFO | SESSION DEBUG LOGGER INITIALIZED
 2026-02-03 20:12:29.508 | INFO | ================================================================================
 2026-02-03 20:12:31.409 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:07:04.102 | INFO | ================================================================================
+2026-02-04 20:07:04.102 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 20:07:04.102 | INFO | ================================================================================
+2026-02-04 20:07:05.775 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:07:33.444 | INFO | ============================================================
+2026-02-04 20:07:33.444 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 20:07:33.444 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254_updated.xlsx
+2026-02-04 20:07:33.444 | INFO |   existing current_session_id: None
+2026-02-04 20:07:33.444 | INFO |   existing api_session_id: None
+2026-02-04 20:07:33.444 | INFO |   existing active_project: None
+2026-02-04 20:07:33.444 | INFO |   existing active_user: None
+2026-02-04 20:07:33.444 | INFO |   User source: config fallback = OPUS
+2026-02-04 20:07:33.451 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 20:07:33.451 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 20:07:35.459 | INFO |   No existing session found - creating NEW session
+2026-02-04 20:07:35.459 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_200735
+2026-02-04 20:07:35.459 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 20:07:35.461 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 20:07:35.461 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)_20260112_130254", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254_updated.xlsx", "item_count": 33, "timestamp": "2026-02-04T20:07:35.459136", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_200735"}
+2026-02-04 20:07:38.474 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000014E5FAA31D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:10:03.353 | INFO | ============================================================
+2026-02-04 20:10:03.353 | INFO | _pause_session CALLED
+2026-02-04 20:10:03.355 | INFO |   blocking: True
+2026-02-04 20:10:03.355 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_200735
+2026-02-04 20:10:03.355 | INFO |   api_session_id: None
+2026-02-04 20:10:03.355 | INFO |   session_paused: False
+2026-02-04 20:10:03.355 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 20:10:03.355 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:10:03.355 | INFO |   Session marked as paused at 2026-02-04 20:10:03.355178
+2026-02-04 20:10:03.355 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:10:03.355 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 20:10:03.359 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_200735
+2026-02-04 20:10:03.360 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_200735", "timestamp": "2026-02-04T20:10:03.355178", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)_20260112_130254"}
+2026-02-04 20:10:03.360 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:10:06.374 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000014E5FA7F310>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:10:35.535 | INFO | ================================================================================
+2026-02-04 20:10:35.535 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 20:10:35.535 | INFO | ================================================================================
+2026-02-04 20:10:36.500 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:10:54.161 | INFO | ============================================================
+2026-02-04 20:10:54.161 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 20:10:54.161 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 20:10:54.161 | INFO |   existing current_session_id: None
+2026-02-04 20:10:54.161 | INFO |   existing api_session_id: None
+2026-02-04 20:10:54.161 | INFO |   existing active_project: None
+2026-02-04 20:10:54.161 | INFO |   existing active_user: None
+2026-02-04 20:10:54.161 | INFO |   User source: config fallback = OPUS
+2026-02-04 20:10:54.205 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 20:10:54.205 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 20:10:56.214 | INFO |   No existing session found - creating NEW session
+2026-02-04 20:10:56.215 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:10:56.215 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 20:10:56.215 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 20:10:56.215 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T20:10:56.215421", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056"}
+2026-02-04 20:10:58.439 | INFO | ============================================================
+2026-02-04 20:10:58.439 | INFO | _pause_session CALLED
+2026-02-04 20:10:58.439 | INFO |   blocking: False
+2026-02-04 20:10:58.439 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:10:58.439 | INFO |   api_session_id: None
+2026-02-04 20:10:58.439 | INFO |   session_paused: False
+2026-02-04 20:10:58.439 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:10:58.439 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:10:58.439 | INFO |   Session marked as paused at 2026-02-04 20:10:58.439367
+2026-02-04 20:10:58.439 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:10:58.439 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:10:58.443 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:10:58.443 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:10:58.439367", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:10:58.444 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:10:59.219 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA29CF10>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:11:00.536 | INFO | ============================================================
+2026-02-04 20:11:00.538 | INFO | _resume_session CALLED
+2026-02-04 20:11:00.538 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:00.538 | INFO |   api_session_id: None
+2026-02-04 20:11:00.538 | INFO |   session_paused: True
+2026-02-04 20:11:00.538 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:00.538 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:11:01.460 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA2A4E10>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:11:03.556 | WARNING |   Timeout waiting for pause to complete - proceeding anyway
+2026-02-04 20:11:03.556 | INFO |   Session marked as resumed
+2026-02-04 20:11:03.557 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:11:03.557 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:03.564 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:03.564 | INFO |   RESUME API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:11:03.564055", "total_pause_duration": 0, "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:11:03.564 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-02-04 20:11:03.576 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-04 20:11:03.584 | INFO | ============================================================
+2026-02-04 20:11:03.584 | INFO | _pause_session CALLED
+2026-02-04 20:11:03.584 | INFO |   blocking: False
+2026-02-04 20:11:03.585 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:03.585 | INFO |   api_session_id: None
+2026-02-04 20:11:03.585 | INFO |   session_paused: False
+2026-02-04 20:11:03.585 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:03.585 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:11:03.587 | INFO |   Session marked as paused at 2026-02-04 20:11:03.587005
+2026-02-04 20:11:03.587 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:11:03.587 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:03.592 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:03.592 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:11:03.587005", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:11:03.592 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:11:03.592 | INFO | ============================================================
+2026-02-04 20:11:03.592 | INFO | _resume_session CALLED
+2026-02-04 20:11:03.592 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:03.592 | INFO |   api_session_id: None
+2026-02-04 20:11:03.592 | INFO |   session_paused: True
+2026-02-04 20:11:03.592 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:03.592 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:11:04.582 | ERROR |   RESUME API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/resume (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA2A6D10>, 'Connection to 192.168.244.160 timed out. (connect timeout=1)'))
+2026-02-04 20:11:06.601 | WARNING |   Timeout waiting for pause to complete - proceeding anyway
+2026-02-04 20:11:06.602 | INFO |   Session marked as resumed
+2026-02-04 20:11:06.602 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA2B8A90>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:11:06.602 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:11:06.602 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:06.602 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:06.604 | INFO |   RESUME API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:11:06.602743", "total_pause_duration": 0, "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:11:06.604 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-02-04 20:11:06.611 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-04 20:11:06.615 | INFO | ============================================================
+2026-02-04 20:11:06.615 | INFO | _pause_session CALLED
+2026-02-04 20:11:06.621 | INFO |   blocking: False
+2026-02-04 20:11:06.621 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:06.621 | INFO |   api_session_id: None
+2026-02-04 20:11:06.621 | INFO |   session_paused: False
+2026-02-04 20:11:06.621 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:06.621 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:11:06.621 | INFO |   Session marked as paused at 2026-02-04 20:11:06.621365
+2026-02-04 20:11:06.621 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:11:06.621 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:06.626 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:06.626 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:11:06.621365", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:11:06.626 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:11:06.626 | INFO | ============================================================
+2026-02-04 20:11:06.626 | INFO | _resume_session CALLED
+2026-02-04 20:11:06.626 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:06.626 | INFO |   api_session_id: None
+2026-02-04 20:11:06.629 | INFO |   session_paused: True
+2026-02-04 20:11:06.629 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:06.629 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:11:07.619 | ERROR |   RESUME API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/resume (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA2A4FD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=1)'))
+2026-02-04 20:11:09.635 | WARNING |   Timeout waiting for pause to complete - proceeding anyway
+2026-02-04 20:11:09.635 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA29F810>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:11:09.635 | INFO |   Session marked as resumed
+2026-02-04 20:11:09.636 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:11:09.636 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:11:09.636 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:11:09.636 | INFO |   RESUME API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:11:09.636321", "total_pause_duration": 0, "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:11:09.636 | INFO |   RESUME API CALL: POST http://192.168.244.160:5001/session/resume
+2026-02-04 20:11:09.636 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-04 20:11:10.646 | ERROR |   RESUME API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/resume (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA293E50>, 'Connection to 192.168.244.160 timed out. (connect timeout=1)'))
+2026-02-04 20:27:55.981 | INFO | ============================================================
+2026-02-04 20:27:55.981 | INFO | _pause_session CALLED
+2026-02-04 20:27:55.981 | INFO |   blocking: True
+2026-02-04 20:27:55.981 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:27:55.981 | INFO |   api_session_id: None
+2026-02-04 20:27:55.981 | INFO |   session_paused: False
+2026-02-04 20:27:55.981 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:27:55.981 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:27:55.981 | INFO |   Session marked as paused at 2026-02-04 20:27:55.981551
+2026-02-04 20:27:55.981 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:27:55.981 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:27:55.981 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_201056
+2026-02-04 20:27:55.981 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_201056", "timestamp": "2026-02-04T20:27:55.981551", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:27:55.981 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:27:58.997 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018ECA416950>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:28:21.639 | INFO | ================================================================================
+2026-02-04 20:28:21.639 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 20:28:21.639 | INFO | ================================================================================
+2026-02-04 20:28:22.110 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:28:34.864 | INFO | ============================================================
+2026-02-04 20:28:34.864 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 20:28:34.864 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 20:28:34.864 | INFO |   existing current_session_id: None
+2026-02-04 20:28:34.864 | INFO |   existing api_session_id: None
+2026-02-04 20:28:34.864 | INFO |   existing active_project: None
+2026-02-04 20:28:34.864 | INFO |   existing active_user: None
+2026-02-04 20:28:34.864 | INFO |   User source: config fallback = OPUS
+2026-02-04 20:28:34.875 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 20:28:34.875 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 20:28:36.886 | INFO |   No existing session found - creating NEW session
+2026-02-04 20:28:36.886 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_202836
+2026-02-04 20:28:36.886 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 20:28:36.889 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 20:28:36.889 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T20:28:36.886991", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_202836"}
+2026-02-04 20:28:39.891 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002014F603F50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:38:16.742 | INFO | ============================================================
+2026-02-04 20:38:16.742 | INFO | _pause_session CALLED
+2026-02-04 20:38:16.742 | INFO |   blocking: True
+2026-02-04 20:38:16.742 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_202836
+2026-02-04 20:38:16.742 | INFO |   api_session_id: None
+2026-02-04 20:38:16.742 | INFO |   session_paused: False
+2026-02-04 20:38:16.742 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:38:16.743 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:38:16.743 | INFO |   Session marked as paused at 2026-02-04 20:38:16.743624
+2026-02-04 20:38:16.743 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:38:16.743 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:38:16.744 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_202836
+2026-02-04 20:38:16.744 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_202836", "timestamp": "2026-02-04T20:38:16.743624", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:38:16.746 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:38:19.755 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002014F619F50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:39:01.109 | INFO | ================================================================================
+2026-02-04 20:39:01.109 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 20:39:01.109 | INFO | ================================================================================
+2026-02-04 20:39:01.596 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:39:12.959 | INFO | ============================================================
+2026-02-04 20:39:12.959 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 20:39:12.959 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 20:39:12.959 | INFO |   existing current_session_id: None
+2026-02-04 20:39:12.959 | INFO |   existing api_session_id: None
+2026-02-04 20:39:12.959 | INFO |   existing active_project: None
+2026-02-04 20:39:12.959 | INFO |   existing active_user: None
+2026-02-04 20:39:12.960 | INFO |   User source: config fallback = OPUS
+2026-02-04 20:39:12.970 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 20:39:12.970 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 20:39:14.971 | INFO |   No existing session found - creating NEW session
+2026-02-04 20:39:14.971 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_203914
+2026-02-04 20:39:14.971 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 20:39:14.972 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 20:39:14.973 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T20:39:14.971457", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_203914"}
+2026-02-04 20:39:17.976 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001987F236310>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:53:01.783 | INFO | ============================================================
+2026-02-04 20:53:01.783 | INFO | _pause_session CALLED
+2026-02-04 20:53:01.783 | INFO |   blocking: True
+2026-02-04 20:53:01.783 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_203914
+2026-02-04 20:53:01.783 | INFO |   api_session_id: None
+2026-02-04 20:53:01.783 | INFO |   session_paused: False
+2026-02-04 20:53:01.783 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:53:01.783 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:53:01.783 | INFO |   Session marked as paused at 2026-02-04 20:53:01.783728
+2026-02-04 20:53:01.783 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:53:01.784 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:53:01.785 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_203914
+2026-02-04 20:53:01.785 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_203914", "timestamp": "2026-02-04T20:53:01.783728", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:53:01.785 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:53:04.798 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001987F237BD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:53:36.223 | INFO | ================================================================================
+2026-02-04 20:53:36.223 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 20:53:36.223 | INFO | ================================================================================
+2026-02-04 20:53:36.704 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 20:53:57.406 | INFO | ============================================================
+2026-02-04 20:53:57.406 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 20:53:57.406 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 20:53:57.406 | INFO |   existing current_session_id: None
+2026-02-04 20:53:57.406 | INFO |   existing api_session_id: None
+2026-02-04 20:53:57.406 | INFO |   existing active_project: None
+2026-02-04 20:53:57.406 | INFO |   existing active_user: None
+2026-02-04 20:53:57.406 | INFO |   User source: config fallback = OPUS
+2026-02-04 20:53:57.409 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 20:53:57.409 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 20:53:59.420 | INFO |   No existing session found - creating NEW session
+2026-02-04 20:53:59.420 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_205359
+2026-02-04 20:53:59.420 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 20:53:59.423 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 20:53:59.423 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T20:53:59.420911", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_205359"}
+2026-02-04 20:54:02.425 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000026AE31CA9D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 20:59:38.341 | INFO | ============================================================
+2026-02-04 20:59:38.341 | INFO | _pause_session CALLED
+2026-02-04 20:59:38.341 | INFO |   blocking: True
+2026-02-04 20:59:38.341 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_205359
+2026-02-04 20:59:38.341 | INFO |   api_session_id: None
+2026-02-04 20:59:38.341 | INFO |   session_paused: False
+2026-02-04 20:59:38.341 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 20:59:38.341 | INFO |   active_user (CACHED): OPUS
+2026-02-04 20:59:38.342 | INFO |   Session marked as paused at 2026-02-04 20:59:38.342561
+2026-02-04 20:59:38.342 | INFO |   Using CACHED user: OPUS
+2026-02-04 20:59:38.342 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 20:59:38.342 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_205359
+2026-02-04 20:59:38.342 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_205359", "timestamp": "2026-02-04T20:59:38.342561", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 20:59:38.342 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 20:59:41.346 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000026AE337F6D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:01:06.160 | INFO | ================================================================================
+2026-02-04 21:01:06.160 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:01:06.160 | INFO | ================================================================================
+2026-02-04 21:01:06.678 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:01:10.900 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:01:22.478 | INFO | ============================================================
+2026-02-04 21:01:22.478 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:01:22.479 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 21:01:22.479 | INFO |   existing current_session_id: None
+2026-02-04 21:01:22.479 | INFO |   existing api_session_id: None
+2026-02-04 21:01:22.479 | INFO |   existing active_project: None
+2026-02-04 21:01:22.479 | INFO |   existing active_user: None
+2026-02-04 21:01:22.479 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:01:22.488 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 21:01:22.488 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 21:01:24.502 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:01:24.503 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_210124
+2026-02-04 21:01:24.503 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:01:24.504 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:01:24.504 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T21:01:24.503077", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_210124"}
+2026-02-04 21:01:27.506 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000280D51BED50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:01:46.495 | INFO | _save_updated_excel: Session already exists (api=None), skipping XLSX_UPDATED
+2026-02-04 21:07:29.011 | INFO | ============================================================
+2026-02-04 21:07:29.011 | INFO | _pause_session CALLED
+2026-02-04 21:07:29.011 | INFO |   blocking: True
+2026-02-04 21:07:29.011 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260204_210124
+2026-02-04 21:07:29.011 | INFO |   api_session_id: None
+2026-02-04 21:07:29.013 | INFO |   session_paused: False
+2026-02-04 21:07:29.013 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-04 21:07:29.013 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:07:29.013 | INFO |   Session marked as paused at 2026-02-04 21:07:29.013274
+2026-02-04 21:07:29.013 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:07:29.013 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-04 21:07:29.016 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260204_210124
+2026-02-04 21:07:29.016 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_210124", "timestamp": "2026-02-04T21:07:29.013274", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-04 21:07:29.016 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:07:32.024 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000280D5411450>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:08:00.143 | INFO | ================================================================================
+2026-02-04 21:08:00.143 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:08:00.143 | INFO | ================================================================================
+2026-02-04 21:08:00.621 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:08:12.013 | INFO | ============================================================
+2026-02-04 21:08:12.013 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:08:12.013 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254_updated.xlsx
+2026-02-04 21:08:12.013 | INFO |   existing current_session_id: None
+2026-02-04 21:08:12.013 | INFO |   existing api_session_id: None
+2026-02-04 21:08:12.013 | INFO |   existing active_project: None
+2026-02-04 21:08:12.013 | INFO |   existing active_user: None
+2026-02-04 21:08:12.013 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:08:12.019 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 21:08:12.019 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 21:08:14.030 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:08:14.030 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_210814
+2026-02-04 21:08:14.030 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:08:14.031 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:08:14.031 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)_20260112_130254", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254_updated.xlsx", "item_count": 33, "timestamp": "2026-02-04T21:08:14.030225", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_210814"}
+2026-02-04 21:08:17.034 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000022E64A9C7D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:14:53.941 | INFO | ============================================================
+2026-02-04 21:14:53.941 | INFO | _pause_session CALLED
+2026-02-04 21:14:53.941 | INFO |   blocking: True
+2026-02-04 21:14:53.941 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_210814
+2026-02-04 21:14:53.941 | INFO |   api_session_id: None
+2026-02-04 21:14:53.941 | INFO |   session_paused: False
+2026-02-04 21:14:53.941 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 21:14:53.941 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:14:53.941 | INFO |   Session marked as paused at 2026-02-04 21:14:53.941084
+2026-02-04 21:14:53.941 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:14:53.941 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)_20260112_130254
+2026-02-04 21:14:53.950 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_210814
+2026-02-04 21:14:53.950 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260112_130254_20260204_210814", "timestamp": "2026-02-04T21:14:53.941084", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)_20260112_130254"}
+2026-02-04 21:14:53.950 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:14:56.952 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000022E64C8CA50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:15:06.870 | INFO | ================================================================================
+2026-02-04 21:15:06.870 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:15:06.870 | INFO | ================================================================================
+2026-02-04 21:15:07.391 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:18:11.490 | INFO | ================================================================================
+2026-02-04 21:18:11.490 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:18:11.490 | INFO | ================================================================================
+2026-02-04 21:18:11.979 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:18:16.774 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:18:32.429 | INFO | ============================================================
+2026-02-04 21:18:32.429 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:18:32.429 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 21:18:32.429 | INFO |   existing current_session_id: None
+2026-02-04 21:18:32.429 | INFO |   existing api_session_id: None
+2026-02-04 21:18:32.429 | INFO |   existing active_project: None
+2026-02-04 21:18:32.429 | INFO |   existing active_user: None
+2026-02-04 21:18:32.429 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:18:32.435 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 21:18:32.435 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 21:18:34.435 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:18:34.435 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_211834
+2026-02-04 21:18:34.435 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:18:34.437 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:18:34.437 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T21:18:34.435822", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_211834"}
+2026-02-04 21:18:37.455 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002428D734D50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:25:40.549 | INFO | ============================================================
+2026-02-04 21:25:40.549 | INFO | _pause_session CALLED
+2026-02-04 21:25:40.549 | INFO |   blocking: True
+2026-02-04 21:25:40.549 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_211834
+2026-02-04 21:25:40.549 | INFO |   api_session_id: None
+2026-02-04 21:25:40.549 | INFO |   session_paused: False
+2026-02-04 21:25:40.552 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 21:25:40.552 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:25:40.552 | INFO |   Session marked as paused at 2026-02-04 21:25:40.552612
+2026-02-04 21:25:40.552 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:25:40.552 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 21:25:40.552 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_211834
+2026-02-04 21:25:40.554 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_211834", "timestamp": "2026-02-04T21:25:40.552612", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 21:25:40.554 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:25:43.567 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002428D2419D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:25:55.553 | INFO | ================================================================================
+2026-02-04 21:25:55.553 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:25:55.553 | INFO | ================================================================================
+2026-02-04 21:25:56.034 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:26:00.611 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:26:14.227 | INFO | ============================================================
+2026-02-04 21:26:14.227 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:26:14.227 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 21:26:14.227 | INFO |   existing current_session_id: None
+2026-02-04 21:26:14.227 | INFO |   existing api_session_id: None
+2026-02-04 21:26:14.227 | INFO |   existing active_project: None
+2026-02-04 21:26:14.227 | INFO |   existing active_user: None
+2026-02-04 21:26:14.227 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:26:14.238 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 21:26:14.239 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 21:26:16.241 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:26:16.241 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_212616
+2026-02-04 21:26:16.241 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:26:16.242 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:26:16.242 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T21:26:16.241560", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_212616"}
+2026-02-04 21:26:19.246 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000014C0E1CCFD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:30:03.701 | INFO | ============================================================
+2026-02-04 21:30:03.701 | INFO | _pause_session CALLED
+2026-02-04 21:30:03.701 | INFO |   blocking: True
+2026-02-04 21:30:03.701 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260204_212616
+2026-02-04 21:30:03.701 | INFO |   api_session_id: None
+2026-02-04 21:30:03.701 | INFO |   session_paused: False
+2026-02-04 21:30:03.701 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-04 21:30:03.701 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:30:03.702 | INFO |   Session marked as paused at 2026-02-04 21:30:03.701915
+2026-02-04 21:30:03.702 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:30:03.702 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-04 21:30:03.705 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260204_212616
+2026-02-04 21:30:03.705 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_212616", "timestamp": "2026-02-04T21:30:03.701915", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-04 21:30:03.705 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:30:06.719 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000014C0E4F9B90>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:30:25.050 | INFO | ================================================================================
+2026-02-04 21:30:25.050 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:30:25.050 | INFO | ================================================================================
+2026-02-04 21:30:25.537 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:30:30.050 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:30:40.860 | INFO | ============================================================
+2026-02-04 21:30:40.860 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:30:40.860 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 21:30:40.860 | INFO |   existing current_session_id: None
+2026-02-04 21:30:40.861 | INFO |   existing api_session_id: None
+2026-02-04 21:30:40.861 | INFO |   existing active_project: None
+2026-02-04 21:30:40.861 | INFO |   existing active_user: None
+2026-02-04 21:30:40.862 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:30:40.872 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 21:30:40.873 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 21:30:42.882 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:30:42.882 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_213042
+2026-02-04 21:30:42.882 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:30:42.884 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:30:42.884 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T21:30:42.882342", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_213042"}
+2026-02-04 21:30:45.888 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001EF9F7B8BD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:38:52.747 | INFO | ============================================================
+2026-02-04 21:38:52.748 | INFO | _pause_session CALLED
+2026-02-04 21:38:52.748 | INFO |   blocking: True
+2026-02-04 21:38:52.748 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_213042
+2026-02-04 21:38:52.748 | INFO |   api_session_id: None
+2026-02-04 21:38:52.748 | INFO |   session_paused: False
+2026-02-04 21:38:52.748 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 21:38:52.748 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:38:52.748 | INFO |   Session marked as paused at 2026-02-04 21:38:52.748543
+2026-02-04 21:38:52.748 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:38:52.749 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 21:38:52.751 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_213042
+2026-02-04 21:38:52.751 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_213042", "timestamp": "2026-02-04T21:38:52.748543", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 21:38:52.752 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:38:55.758 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001EF9F94DDD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:40:48.060 | INFO | ================================================================================
+2026-02-04 21:40:48.060 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:40:48.060 | INFO | ================================================================================
+2026-02-04 21:40:48.531 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:41:00.644 | INFO | ============================================================
+2026-02-04 21:41:00.644 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:41:00.644 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 21:41:00.644 | INFO |   existing current_session_id: None
+2026-02-04 21:41:00.644 | INFO |   existing api_session_id: None
+2026-02-04 21:41:00.644 | INFO |   existing active_project: None
+2026-02-04 21:41:00.644 | INFO |   existing active_user: None
+2026-02-04 21:41:00.646 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:41:00.655 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 21:41:00.655 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 21:41:02.666 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:41:02.666 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_214102
+2026-02-04 21:41:02.666 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:41:02.668 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:41:02.668 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T21:41:02.666348", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_214102"}
+2026-02-04 21:41:05.671 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001258E632C90>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:49:51.147 | INFO | ============================================================
+2026-02-04 21:49:51.147 | INFO | _pause_session CALLED
+2026-02-04 21:49:51.147 | INFO |   blocking: True
+2026-02-04 21:49:51.147 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260204_214102
+2026-02-04 21:49:51.147 | INFO |   api_session_id: None
+2026-02-04 21:49:51.147 | INFO |   session_paused: False
+2026-02-04 21:49:51.147 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-04 21:49:51.147 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:49:51.147 | INFO |   Session marked as paused at 2026-02-04 21:49:51.147057
+2026-02-04 21:49:51.147 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:49:51.147 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-04 21:49:51.150 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260204_214102
+2026-02-04 21:49:51.150 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_214102", "timestamp": "2026-02-04T21:49:51.147057", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-04 21:49:51.150 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:49:54.159 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000012588329910>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:50:01.902 | INFO | ================================================================================
+2026-02-04 21:50:01.902 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:50:01.909 | INFO | ================================================================================
+2026-02-04 21:50:02.392 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:50:22.122 | INFO | ============================================================
+2026-02-04 21:50:22.122 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:50:22.122 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 21:50:22.122 | INFO |   existing current_session_id: None
+2026-02-04 21:50:22.122 | INFO |   existing api_session_id: None
+2026-02-04 21:50:22.122 | INFO |   existing active_project: None
+2026-02-04 21:50:22.122 | INFO |   existing active_user: None
+2026-02-04 21:50:22.122 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:50:22.133 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 21:50:22.133 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 21:50:24.145 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:50:24.145 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_215024
+2026-02-04 21:50:24.146 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:50:24.147 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:50:24.147 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T21:50:24.145312", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_215024"}
+2026-02-04 21:50:27.154 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001F0D86E9A50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:52:49.093 | INFO | ============================================================
+2026-02-04 21:52:49.093 | INFO | _pause_session CALLED
+2026-02-04 21:52:49.093 | INFO |   blocking: True
+2026-02-04 21:52:49.093 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_215024
+2026-02-04 21:52:49.093 | INFO |   api_session_id: None
+2026-02-04 21:52:49.093 | INFO |   session_paused: False
+2026-02-04 21:52:49.093 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 21:52:49.096 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:52:49.096 | INFO |   Session marked as paused at 2026-02-04 21:52:49.096700
+2026-02-04 21:52:49.096 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:52:49.096 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 21:52:49.096 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_215024
+2026-02-04 21:52:49.096 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_215024", "timestamp": "2026-02-04T21:52:49.096700", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 21:52:49.099 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:52:52.104 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000001F0D86DEF10>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:52:59.282 | INFO | ================================================================================
+2026-02-04 21:52:59.282 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:52:59.282 | INFO | ================================================================================
+2026-02-04 21:52:59.795 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:53:48.973 | INFO | ============================================================
+2026-02-04 21:53:48.974 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:53:48.974 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 21:53:48.974 | INFO |   existing current_session_id: None
+2026-02-04 21:53:48.974 | INFO |   existing api_session_id: None
+2026-02-04 21:53:48.974 | INFO |   existing active_project: None
+2026-02-04 21:53:48.974 | INFO |   existing active_user: None
+2026-02-04 21:53:48.974 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:53:48.982 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 21:53:48.982 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 21:53:50.993 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:53:50.993 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_215350
+2026-02-04 21:53:50.993 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:53:50.996 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:53:50.996 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T21:53:50.993139", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_215350"}
+2026-02-04 21:53:54.013 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018C69A86810>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:55:52.547 | INFO | ============================================================
+2026-02-04 21:55:52.547 | INFO | _pause_session CALLED
+2026-02-04 21:55:52.547 | INFO |   blocking: True
+2026-02-04 21:55:52.547 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260204_215350
+2026-02-04 21:55:52.547 | INFO |   api_session_id: None
+2026-02-04 21:55:52.547 | INFO |   session_paused: False
+2026-02-04 21:55:52.547 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-04 21:55:52.547 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:55:52.547 | INFO |   Session marked as paused at 2026-02-04 21:55:52.547247
+2026-02-04 21:55:52.547 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:55:52.547 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-04 21:55:52.549 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260204_215350
+2026-02-04 21:55:52.549 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_215350", "timestamp": "2026-02-04T21:55:52.547247", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-04 21:55:52.549 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:55:55.564 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x0000018C69A35810>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:56:13.318 | INFO | ================================================================================
+2026-02-04 21:56:13.318 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:56:13.318 | INFO | ================================================================================
+2026-02-04 21:56:14.225 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:56:17.518 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:56:27.563 | INFO | ============================================================
+2026-02-04 21:56:27.564 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:56:27.564 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 21:56:27.564 | INFO |   existing current_session_id: None
+2026-02-04 21:56:27.564 | INFO |   existing api_session_id: None
+2026-02-04 21:56:27.564 | INFO |   existing active_project: None
+2026-02-04 21:56:27.564 | INFO |   existing active_user: None
+2026-02-04 21:56:27.564 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:56:27.582 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 21:56:27.582 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 21:56:29.588 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:56:29.588 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_215629
+2026-02-04 21:56:29.588 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:56:29.592 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:56:29.593 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T21:56:29.588091", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_215629"}
+2026-02-04 21:56:32.610 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002411A12B510>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:58:41.469 | INFO | ============================================================
+2026-02-04 21:58:41.469 | INFO | _pause_session CALLED
+2026-02-04 21:58:41.469 | INFO |   blocking: True
+2026-02-04 21:58:41.469 | INFO |   current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_215629
+2026-02-04 21:58:41.469 | INFO |   api_session_id: None
+2026-02-04 21:58:41.469 | INFO |   session_paused: False
+2026-02-04 21:58:41.469 | INFO |   active_project (CACHED): MO08586_Lage_kast_(1-7)
+2026-02-04 21:58:41.470 | INFO |   active_user (CACHED): OPUS
+2026-02-04 21:58:41.471 | INFO |   Session marked as paused at 2026-02-04 21:58:41.470363
+2026-02-04 21:58:41.471 | INFO |   Using CACHED user: OPUS
+2026-02-04 21:58:41.471 | INFO |   Using CACHED project: MO08586_Lage_kast_(1-7)
+2026-02-04 21:58:41.474 | INFO |   Using session_id for API: OPUS_MO08586_Lage_kast_(1-7)_20260204_215629
+2026-02-04 21:58:41.474 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_215629", "timestamp": "2026-02-04T21:58:41.470363", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)"}
+2026-02-04 21:58:41.474 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 21:58:44.475 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000241139C0790>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 21:59:13.002 | INFO | ================================================================================
+2026-02-04 21:59:13.002 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 21:59:13.002 | INFO | ================================================================================
+2026-02-04 21:59:13.809 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:59:17.851 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 21:59:28.393 | INFO | ============================================================
+2026-02-04 21:59:28.393 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 21:59:28.393 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 21:59:28.393 | INFO |   existing current_session_id: None
+2026-02-04 21:59:28.393 | INFO |   existing api_session_id: None
+2026-02-04 21:59:28.393 | INFO |   existing active_project: None
+2026-02-04 21:59:28.393 | INFO |   existing active_user: None
+2026-02-04 21:59:28.395 | INFO |   User source: config fallback = OPUS
+2026-02-04 21:59:28.409 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 21:59:28.411 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 21:59:30.424 | INFO |   No existing session found - creating NEW session
+2026-02-04 21:59:30.424 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_215930
+2026-02-04 21:59:30.425 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 21:59:30.427 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 21:59:30.428 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T21:59:30.424528", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_215930"}
+2026-02-04 21:59:33.442 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000257833163D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 22:02:12.947 | INFO | ============================================================
+2026-02-04 22:02:12.947 | INFO | _pause_session CALLED
+2026-02-04 22:02:12.947 | INFO |   blocking: True
+2026-02-04 22:02:12.947 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260204_215930
+2026-02-04 22:02:12.947 | INFO |   api_session_id: None
+2026-02-04 22:02:12.947 | INFO |   session_paused: False
+2026-02-04 22:02:12.947 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-04 22:02:12.947 | INFO |   active_user (CACHED): OPUS
+2026-02-04 22:02:12.947 | INFO |   Session marked as paused at 2026-02-04 22:02:12.947564
+2026-02-04 22:02:12.947 | INFO |   Using CACHED user: OPUS
+2026-02-04 22:02:12.947 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-04 22:02:12.950 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260204_215930
+2026-02-04 22:02:12.951 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_215930", "timestamp": "2026-02-04T22:02:12.947564", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-04 22:02:12.951 | INFO |   PAUSE API CALL: POST http://192.168.244.160:5001/session/pause
+2026-02-04 22:02:15.957 | ERROR |   PAUSE API CONNECTION ERROR: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/pause (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000257832BDB50>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 22:02:26.155 | INFO | ================================================================================
+2026-02-04 22:02:26.155 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-04 22:02:26.155 | INFO | ================================================================================
+2026-02-04 22:02:26.939 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 22:02:30.491 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-04 22:02:40.689 | INFO | ============================================================
+2026-02-04 22:02:40.689 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 22:02:40.689 | INFO |   excel_file_path: C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx
+2026-02-04 22:02:40.689 | INFO |   existing current_session_id: None
+2026-02-04 22:02:40.689 | INFO |   existing api_session_id: None
+2026-02-04 22:02:40.689 | INFO |   existing active_project: None
+2026-02-04 22:02:40.689 | INFO |   existing active_user: None
+2026-02-04 22:02:40.689 | INFO |   User source: config fallback = OPUS
+2026-02-04 22:02:40.708 | INFO |   Project extracted and CACHED: MO08586_Lage_kast_(1-7)
+2026-02-04 22:02:40.709 | INFO |   Checking for existing session: user=OPUS, project=MO08586_Lage_kast_(1-7)
+2026-02-04 22:02:42.722 | INFO |   No existing session found - creating NEW session
+2026-02-04 22:02:42.722 | INFO |   NEW session created: OPUS_MO08586_Lage_kast_(1-7)_20260204_220242
+2026-02-04 22:02:42.722 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 22:02:42.725 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 22:02:42.725 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08586_Lage_kast_(1-7)", "file_path": "C:/BOERE/MO08586_Lage_kast_(1-7)_20260112_130254.xlsx", "item_count": 33, "timestamp": "2026-02-04T22:02:42.722063", "session_id": "OPUS_MO08586_Lage_kast_(1-7)_20260204_220242"}
+2026-02-04 22:02:45.728 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002642D1E6CD0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-04 22:06:49.512 | INFO | ============================================================
+2026-02-04 22:06:49.512 | INFO | _start_session_for_excel_work CALLED
+2026-02-04 22:06:49.512 | INFO |   excel_file_path: C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx
+2026-02-04 22:06:49.513 | INFO |   existing current_session_id: OPUS_MO08586_Lage_kast_(1-7)_20260204_220242
+2026-02-04 22:06:49.513 | INFO |   existing api_session_id: None
+2026-02-04 22:06:49.513 | INFO |   existing active_project: MO08586_Lage_kast_(1-7)
+2026-02-04 22:06:49.513 | INFO |   existing active_user: OPUS
+2026-02-04 22:06:49.513 | INFO |   User source: active_user = OPUS
+2026-02-04 22:06:49.538 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-04 22:06:49.538 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-04 22:06:51.553 | INFO |   No existing session found - creating NEW session
+2026-02-04 22:06:51.553 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260204_220651
+2026-02-04 22:06:51.553 | INFO |   (api_session_id will be set when API responds)
+2026-02-04 22:06:51.553 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
+2026-02-04 22:06:51.556 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T22:06:51.553596", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_220651"}
+2026-02-04 22:06:54.561 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002642D6DC0D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))

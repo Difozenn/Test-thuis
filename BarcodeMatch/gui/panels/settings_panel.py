@@ -85,6 +85,13 @@ class SettingsPanel(ttk.Frame):
                 'directory_id': 'update_server_path',
                 'directory_default': ''
             },
+            {
+                'id': 'opus_macros_enabled',
+                'type': 'checkbox',
+                'label': "Opus Macro's",
+                'description': "Voegt een extra tabblad 'Opus Macro\u2019s' toe naast Opmerkingen en Logboek met CNC macro snelkoppelingen.",
+                'default': False
+            },
         ]
 
         self._setup_ui()

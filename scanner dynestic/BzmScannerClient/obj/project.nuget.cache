@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "86wfKcccNGnVioHJ5OLRJ3+c3SYhXgDBF2ToqAnd68mw24SwoIK3SwJi2x3cWhY0kYXRVd5xXePtVUGpQwscIA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Rob\\Desktop\\Test-thuis\\scanner dynestic\\BzmScannerClient\\BzmScannerClient.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Rob\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\6.0.36\\microsoft.netcore.app.runtime.win-x64.6.0.36.nupkg.sha512",
+    "C:\\Users\\Rob\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\6.0.36\\microsoft.windowsdesktop.app.runtime.win-x64.6.0.36.nupkg.sha512",
+    "C:\\Users\\Rob\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\6.0.36\\microsoft.aspnetcore.app.runtime.win-x64.6.0.36.nupkg.sha512"
+  ],
+  "logs": []
+}

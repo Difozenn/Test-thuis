@@ -394,7 +394,7 @@ def create_menu(root, main_app):
     root.show_update_notification = show_update_notification
     root.hide_update_notification = hide_update_notification
 
-    # Open the first panel by default
-    open_panel_idx(0)
+    # Open the Database panel by default
+    open_panel_idx(3)
     # Ensure frame backgrounds are set correctly at startup
     update_tabs()

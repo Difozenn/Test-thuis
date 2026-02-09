@@ -1914,3 +1914,1030 @@
 2026-02-04 22:06:51.553 | INFO |   API CALL: POST http://192.168.244.160:5001/session/xlsx_updated
 2026-02-04 22:06:51.556 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:/BOERE/MO08587_TV-wand_(2-7)_20260112_131442.xlsx", "item_count": 108, "timestamp": "2026-02-04T22:06:51.553596", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260204_220651"}
 2026-02-04 22:06:54.561 | ERROR |   API EXCEPTION: HTTPConnectionPool(host='192.168.244.160', port=5001): Max retries exceeded with url: /session/xlsx_updated (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002642D6DC0D0>, 'Connection to 192.168.244.160 timed out. (connect timeout=3)'))
+2026-02-07 08:13:48.516 | INFO | ================================================================================
+2026-02-07 08:13:48.516 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 08:13:48.516 | INFO | ================================================================================
+2026-02-07 08:13:49.334 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 08:26:12.338 | INFO | ============================================================
+2026-02-07 08:26:12.338 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:26:12.338 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:26:12.338 | INFO |   existing current_session_id: None
+2026-02-07 08:26:12.338 | INFO |   existing api_session_id: None
+2026-02-07 08:26:12.338 | INFO |   existing active_project: None
+2026-02-07 08:26:12.338 | INFO |   existing active_user: OPUS
+2026-02-07 08:26:12.338 | INFO |   User source: active_user = OPUS
+2026-02-07 08:26:12.347 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:26:12.347 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 08:26:14.373 | INFO |   No existing session found - creating NEW session
+2026-02-07 08:26:14.373 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:26:14.373 | INFO |   (api_session_id will be set when API responds)
+2026-02-07 08:26:14.373 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-07 08:26:14.373 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "item_count": 98, "timestamp": "2026-02-07T08:26:14.373069", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082614"}
+2026-02-07 08:26:16.457 | INFO |   API RESPONSE: session_id=OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:26:16.457 | INFO |   SESSION IDs NOW: api=OPUS_MO08587_TV-wand_(2-7)_20260207_082616, local=OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:26:45.951 | INFO | ============================================================
+2026-02-07 08:26:45.951 | INFO | _pause_session CALLED
+2026-02-07 08:26:45.951 | INFO |   blocking: False
+2026-02-07 08:26:45.951 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:26:45.951 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:26:45.951 | INFO |   session_paused: False
+2026-02-07 08:26:45.951 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:26:45.951 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:26:45.951 | INFO |   Session marked as paused at 2026-02-07 08:26:45.951608
+2026-02-07 08:26:45.951 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:26:45.951 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:26:45.955 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:26:45.955 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:26:45.951608", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:26:45.955 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:26:48.029 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:26:48.029 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:26:49.068 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:26:45.951608"}
+2026-02-07 08:26:51.155 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 08:26:51.155 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 08:27:23.651 | INFO | ============================================================
+2026-02-07 08:27:23.651 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:27:23.651 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:27:23.651 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:27:23.651 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:27:23.651 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 08:27:23.651 | INFO |   existing active_user: OPUS
+2026-02-07 08:27:23.651 | INFO |   User source: active_user = OPUS
+2026-02-07 08:27:23.659 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:27:23.659 | INFO | ============================================================
+2026-02-07 08:27:23.659 | INFO | _resume_session CALLED
+2026-02-07 08:27:23.659 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:27:23.659 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:27:23.659 | INFO |   session_paused: True
+2026-02-07 08:27:23.659 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:27:23.659 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:27:23.659 | INFO |   Session marked as resumed
+2026-02-07 08:27:23.659 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:27:23.659 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:27:23.662 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:27:23.662 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:27:23.662660", "total_pause_duration": 0, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:27:23.662 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 08:27:24.720 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 08:27:25.764 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.6 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:27:25.763426"}
+2026-02-07 08:27:26.804 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 08:27:45.427 | INFO | ============================================================
+2026-02-07 08:27:45.427 | INFO | _pause_session CALLED
+2026-02-07 08:27:45.427 | INFO |   blocking: False
+2026-02-07 08:27:45.427 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:27:45.427 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:27:45.427 | INFO |   session_paused: False
+2026-02-07 08:27:45.427 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:27:45.427 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:27:45.427 | INFO |   Session marked as paused at 2026-02-07 08:27:45.427110
+2026-02-07 08:27:45.427 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:27:45.427 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:27:45.427 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:27:45.427 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:27:45.427110", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:27:45.427 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:27:47.497 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:27:47.497 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:27:48.511 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:27:45.427110"}
+2026-02-07 08:27:50.591 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 08:27:50.591 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 08:28:03.205 | INFO | ============================================================
+2026-02-07 08:28:03.205 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:28:03.205 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:28:03.205 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:28:03.205 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:28:03.205 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 08:28:03.205 | INFO |   existing active_user: OPUS
+2026-02-07 08:28:03.205 | INFO |   User source: active_user = OPUS
+2026-02-07 08:28:03.216 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:28:03.216 | INFO | ============================================================
+2026-02-07 08:28:03.216 | INFO | _resume_session CALLED
+2026-02-07 08:28:03.216 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:28:03.216 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:28:03.216 | INFO |   session_paused: True
+2026-02-07 08:28:03.216 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:28:03.216 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:28:03.216 | INFO |   Session marked as resumed
+2026-02-07 08:28:03.216 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:28:03.216 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:28:03.216 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:28:03.216 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:28:03.216186", "total_pause_duration": 0, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:28:03.216 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 08:28:04.246 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 08:28:05.267 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.3 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:28:05.267762"}
+2026-02-07 08:28:06.292 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 08:28:58.268 | INFO | ============================================================
+2026-02-07 08:28:58.268 | INFO | _pause_session CALLED
+2026-02-07 08:28:58.268 | INFO |   blocking: False
+2026-02-07 08:28:58.268 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:28:58.268 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:28:58.268 | INFO |   session_paused: False
+2026-02-07 08:28:58.268 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:28:58.268 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:28:58.268 | INFO |   Session marked as paused at 2026-02-07 08:28:58.268973
+2026-02-07 08:28:58.268 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:28:58.268 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:28:58.275 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:28:58.275 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:28:58.268973", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:28:58.275 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:29:00.350 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:29:00.350 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:29:01.396 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:28:58.268973"}
+2026-02-07 08:29:03.488 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 08:29:03.488 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 08:29:41.201 | INFO | ============================================================
+2026-02-07 08:29:41.201 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:29:41.201 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:29:41.202 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:29:41.202 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:29:41.202 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 08:29:41.202 | INFO |   existing active_user: OPUS
+2026-02-07 08:29:41.203 | INFO |   User source: active_user = OPUS
+2026-02-07 08:29:41.209 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:29:41.209 | INFO | ============================================================
+2026-02-07 08:29:41.209 | INFO | _resume_session CALLED
+2026-02-07 08:29:41.209 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:29:41.209 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:29:41.209 | INFO |   session_paused: True
+2026-02-07 08:29:41.209 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:29:41.209 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:29:41.209 | INFO |   Session marked as resumed
+2026-02-07 08:29:41.209 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:29:41.209 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:29:41.211 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:29:41.211 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:29:41.211730", "total_pause_duration": 0, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:29:41.212 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 08:29:42.256 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 08:29:43.285 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.7 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:29:43.285169"}
+2026-02-07 08:29:44.312 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 08:29:48.071 | INFO | ============================================================
+2026-02-07 08:29:48.071 | INFO | _pause_session CALLED
+2026-02-07 08:29:48.071 | INFO |   blocking: False
+2026-02-07 08:29:48.071 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:29:48.071 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:29:48.071 | INFO |   session_paused: False
+2026-02-07 08:29:48.071 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:29:48.071 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:29:48.071 | INFO |   Session marked as paused at 2026-02-07 08:29:48.071947
+2026-02-07 08:29:48.071 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:29:48.071 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:29:48.075 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:29:48.075 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:29:48.071947", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:29:48.075 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:29:50.175 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:29:50.175 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:29:51.194 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:29:48.071947"}
+2026-02-07 08:29:53.275 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 08:29:53.275 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 08:30:31.082 | INFO | ============================================================
+2026-02-07 08:30:31.082 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:30:31.082 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:30:31.082 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:30:31.082 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:30:31.082 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 08:30:31.082 | INFO |   existing active_user: OPUS
+2026-02-07 08:30:31.082 | INFO |   User source: active_user = OPUS
+2026-02-07 08:30:31.093 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:30:31.093 | INFO | ============================================================
+2026-02-07 08:30:31.093 | INFO | _resume_session CALLED
+2026-02-07 08:30:31.093 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:30:31.093 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:30:31.093 | INFO |   session_paused: True
+2026-02-07 08:30:31.093 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:30:31.093 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:30:31.093 | INFO |   Session marked as resumed
+2026-02-07 08:30:31.100 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:30:31.100 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:30:31.100 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:30:31.100 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:30:31.100122", "total_pause_duration": 0, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:30:31.100 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 08:30:32.139 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 08:30:33.155 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.7 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:30:33.155783"}
+2026-02-07 08:30:34.186 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 08:30:41.797 | INFO | ============================================================
+2026-02-07 08:30:41.797 | INFO | _pause_session CALLED
+2026-02-07 08:30:41.797 | INFO |   blocking: True
+2026-02-07 08:30:41.797 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082614
+2026-02-07 08:30:41.797 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:30:41.797 | INFO |   session_paused: False
+2026-02-07 08:30:41.797 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:30:41.797 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:30:41.797 | INFO |   Session marked as paused at 2026-02-07 08:30:41.797448
+2026-02-07 08:30:41.797 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:30:41.797 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:30:41.797 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:30:41.797 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:30:41.797448", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:30:41.803 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:30:43.833 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:30:43.841 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:47:27.787 | INFO | ================================================================================
+2026-02-07 08:47:27.787 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 08:47:27.787 | INFO | ================================================================================
+2026-02-07 08:47:28.517 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 08:47:45.466 | INFO | ============================================================
+2026-02-07 08:47:45.466 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 08:47:45.466 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 08:47:45.466 | INFO |   existing current_session_id: None
+2026-02-07 08:47:45.466 | INFO |   existing api_session_id: None
+2026-02-07 08:47:45.466 | INFO |   existing active_project: None
+2026-02-07 08:47:45.466 | INFO |   existing active_user: OPUS
+2026-02-07 08:47:45.466 | INFO |   User source: active_user = OPUS
+2026-02-07 08:47:45.474 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 08:47:45.474 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 08:47:47.484 | INFO |   FOUND existing session from API:
+2026-02-07 08:47:47.484 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:47.484 | INFO |     is_paused: True
+2026-02-07 08:47:47.484 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_082616, local=OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:47.484 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 08:47:47.484 | INFO | ============================================================
+2026-02-07 08:47:47.484 | INFO | _resume_session CALLED
+2026-02-07 08:47:47.484 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:47.484 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:47.484 | INFO |   session_paused: True
+2026-02-07 08:47:47.484 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:47:47.484 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:47:47.484 | INFO |   Session marked as resumed
+2026-02-07 08:47:47.484 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:47:47.484 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:47:47.488 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:47.488 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:47:47.488610", "total_pause_duration": 2.37, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:47:47.488 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 08:47:48.524 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 08:47:49.542 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:47:49.542857"}
+2026-02-07 08:47:50.565 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 08:47:54.914 | INFO | ============================================================
+2026-02-07 08:47:54.914 | INFO | _pause_session CALLED
+2026-02-07 08:47:54.914 | INFO |   blocking: True
+2026-02-07 08:47:54.914 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:54.914 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:54.914 | INFO |   session_paused: False
+2026-02-07 08:47:54.914 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 08:47:54.914 | INFO |   active_user (CACHED): OPUS
+2026-02-07 08:47:54.914 | INFO |   Session marked as paused at 2026-02-07 08:47:54.914017
+2026-02-07 08:47:54.914 | INFO |   Using CACHED user: OPUS
+2026-02-07 08:47:54.914 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 08:47:54.914 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 08:47:54.914 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T08:47:54.914017", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 08:47:54.914 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 08:47:56.961 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 08:47:56.961 | INFO |   Session pause SUCCESSFUL
+2026-02-07 08:47:57.980 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T08:47:54.914017"}
+2026-02-07 08:48:00.075 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 08:48:00.075 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 09:00:41.806 | INFO | ================================================================================
+2026-02-07 09:00:41.808 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 09:00:41.808 | INFO | ================================================================================
+2026-02-07 09:00:42.580 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 09:00:52.663 | INFO | ============================================================
+2026-02-07 09:00:52.663 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 09:00:52.663 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 09:00:52.663 | INFO |   existing current_session_id: None
+2026-02-07 09:00:52.663 | INFO |   existing api_session_id: None
+2026-02-07 09:00:52.663 | INFO |   existing active_project: None
+2026-02-07 09:00:52.663 | INFO |   existing active_user: OPUS
+2026-02-07 09:00:52.663 | INFO |   User source: active_user = OPUS
+2026-02-07 09:00:52.671 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 09:00:52.671 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 09:00:54.691 | INFO |   FOUND existing session from API:
+2026-02-07 09:00:54.691 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 09:00:54.691 | INFO |     is_paused: True
+2026-02-07 09:00:54.691 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_082616, local=OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 09:00:54.691 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 09:00:54.691 | INFO | ============================================================
+2026-02-07 09:00:54.693 | INFO | _resume_session CALLED
+2026-02-07 09:00:54.693 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 09:00:54.693 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 09:00:54.693 | INFO |   session_paused: True
+2026-02-07 09:00:54.693 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 09:00:54.693 | INFO |   active_user (CACHED): OPUS
+2026-02-07 09:00:54.693 | INFO |   Session marked as resumed
+2026-02-07 09:00:54.693 | INFO |   Using CACHED user: OPUS
+2026-02-07 09:00:54.693 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 09:00:54.694 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_082616
+2026-02-07 09:00:54.694 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "timestamp": "2026-02-07T09:00:54.694698", "total_pause_duration": 19.46, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 09:00:54.695 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 09:00:55.736 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 09:00:56.757 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_082616", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T09:00:56.757742"}
+2026-02-07 09:00:57.803 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 14:47:59.446 | INFO | ================================================================================
+2026-02-07 14:47:59.446 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 14:47:59.446 | INFO | ================================================================================
+2026-02-07 14:47:59.997 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 14:53:51.488 | INFO | ============================================================
+2026-02-07 14:53:51.488 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 14:53:51.488 | INFO |   excel_file_path: C:\ACCURA\MO08587_TV-wand_(2-7)_20260207_145122.xlsx
+2026-02-07 14:53:51.488 | INFO |   existing current_session_id: None
+2026-02-07 14:53:51.488 | INFO |   existing api_session_id: None
+2026-02-07 14:53:51.488 | INFO |   existing active_project: None
+2026-02-07 14:53:51.488 | INFO |   existing active_user: ACCURA
+2026-02-07 14:53:51.488 | INFO |   User source: active_user = ACCURA
+2026-02-07 14:53:51.495 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 14:53:51.495 | INFO |   Checking for existing session: user=ACCURA, project=MO08587_TV-wand_(2-7)
+2026-02-07 14:53:53.517 | INFO |   No existing session found - creating NEW session
+2026-02-07 14:53:53.517 | INFO |   NEW session created: ACCURA_MO08587_TV-wand_(2-7)_20260207_145353
+2026-02-07 14:53:53.517 | INFO |   (api_session_id will be set when API responds)
+2026-02-07 14:53:53.523 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-07 14:53:53.523 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\ACCURA\\MO08587_TV-wand_(2-7)_20260207_145122.xlsx", "item_count": 53, "timestamp": "2026-02-07T14:53:53.517540", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260207_145353"}
+2026-02-07 14:53:55.576 | INFO |   API RESPONSE: session_id=ACCURA_MO08587_TV-wand_(2-7)_20260207_145355
+2026-02-07 14:53:55.576 | INFO |   SESSION IDs NOW: api=ACCURA_MO08587_TV-wand_(2-7)_20260207_145355, local=ACCURA_MO08587_TV-wand_(2-7)_20260207_145353
+2026-02-07 14:54:48.980 | INFO | ============================================================
+2026-02-07 14:54:48.980 | INFO | _pause_session CALLED
+2026-02-07 14:54:48.980 | INFO |   blocking: False
+2026-02-07 14:54:48.980 | INFO |   current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260207_145353
+2026-02-07 14:54:48.980 | INFO |   api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260207_145355
+2026-02-07 14:54:48.980 | INFO |   session_paused: False
+2026-02-07 14:54:48.980 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 14:54:48.980 | INFO |   active_user (CACHED): ACCURA
+2026-02-07 14:54:48.980 | INFO |   Session marked as paused at 2026-02-07 14:54:48.980159
+2026-02-07 14:54:48.980 | INFO |   Using CACHED user: ACCURA
+2026-02-07 14:54:48.980 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 14:54:48.985 | INFO |   Using session_id for API: ACCURA_MO08587_TV-wand_(2-7)_20260207_145355
+2026-02-07 14:54:48.985 | INFO |   PAUSE API data: {"session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260207_145355", "timestamp": "2026-02-07T14:54:48.980159", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 14:54:48.986 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 14:54:51.042 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 14:54:51.042 | INFO |   Session pause SUCCESSFUL
+2026-02-07 14:54:52.053 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "ACCURA", "project": "MO08587_TV-wand_(2-7)", "session_id": "ACCURA_MO08587_TV-wand_(2-7)_20260207_145355", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\ACCURA\\MO08587_TV-wand_(2-7)_20260207_145122.xlsx", "timestamp": "2026-02-07T14:54:48.980159"}
+2026-02-07 14:54:54.139 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 14:54:54.139 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 14:56:34.064 | INFO | ============================================================
+2026-02-07 14:56:34.064 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 14:56:34.064 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 14:56:34.064 | INFO |   existing current_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260207_145353
+2026-02-07 14:56:34.064 | INFO |   existing api_session_id: ACCURA_MO08587_TV-wand_(2-7)_20260207_145355
+2026-02-07 14:56:34.064 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 14:56:34.064 | INFO |   existing active_user: OPUS
+2026-02-07 14:56:34.064 | INFO |   User source: active_user = OPUS
+2026-02-07 14:56:34.074 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 14:56:34.074 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 14:56:36.095 | INFO |   No existing session found - creating NEW session
+2026-02-07 14:56:36.095 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260207_145636
+2026-02-07 14:56:36.095 | INFO |   (api_session_id will be set when API responds)
+2026-02-07 14:56:36.097 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-07 14:56:36.097 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "item_count": 98, "timestamp": "2026-02-07T14:56:36.095876", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_145636"}
+2026-02-07 14:56:38.172 | INFO |   API RESPONSE: session_id=OPUS_MO08587_TV-wand_(2-7)_20260207_145638
+2026-02-07 14:56:38.172 | INFO |   SESSION IDs NOW: api=OPUS_MO08587_TV-wand_(2-7)_20260207_145638, local=OPUS_MO08587_TV-wand_(2-7)_20260207_145636
+2026-02-07 15:08:31.495 | INFO | ============================================================
+2026-02-07 15:08:31.495 | INFO | _pause_session CALLED
+2026-02-07 15:08:31.495 | INFO |   blocking: True
+2026-02-07 15:08:31.495 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_145636
+2026-02-07 15:08:31.495 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_145638
+2026-02-07 15:08:31.495 | INFO |   session_paused: False
+2026-02-07 15:08:31.495 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:08:31.495 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:08:31.495 | INFO |   Session marked as paused at 2026-02-07 15:08:31.495213
+2026-02-07 15:08:31.495 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:08:31.495 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:08:31.499 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_145638
+2026-02-07 15:08:31.499 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_145638", "timestamp": "2026-02-07T15:08:31.495213", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:08:31.499 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:08:33.551 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:08:33.551 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:08:34.574 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_145638", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:08:31.495213"}
+2026-02-07 15:08:36.664 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:08:36.664 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:10:42.677 | INFO | ================================================================================
+2026-02-07 15:10:42.677 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 15:10:42.677 | INFO | ================================================================================
+2026-02-07 15:10:43.150 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 15:15:49.025 | INFO | ============================================================
+2026-02-07 15:15:49.025 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:15:49.025 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 15:15:49.025 | INFO |   existing current_session_id: None
+2026-02-07 15:15:49.025 | INFO |   existing api_session_id: None
+2026-02-07 15:15:49.025 | INFO |   existing active_project: None
+2026-02-07 15:15:49.025 | INFO |   existing active_user: OPUS
+2026-02-07 15:15:49.025 | INFO |   User source: active_user = OPUS
+2026-02-07 15:15:49.030 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:15:49.030 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:15:51.052 | INFO |   No existing session found - creating NEW session
+2026-02-07 15:15:51.052 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260207_151551
+2026-02-07 15:15:51.052 | INFO |   (api_session_id will be set when API responds)
+2026-02-07 15:15:51.054 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-07 15:15:51.054 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "item_count": 98, "timestamp": "2026-02-07T15:15:51.052579", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151551"}
+2026-02-07 15:15:53.131 | INFO |   API RESPONSE: session_id=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:15:53.131 | INFO |   SESSION IDs NOW: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151551
+2026-02-07 15:22:42.182 | INFO | ============================================================
+2026-02-07 15:22:42.182 | INFO | _pause_session CALLED
+2026-02-07 15:22:42.182 | INFO |   blocking: False
+2026-02-07 15:22:42.182 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151551
+2026-02-07 15:22:42.182 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:22:42.182 | INFO |   session_paused: False
+2026-02-07 15:22:42.182 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:22:42.182 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:22:42.182 | INFO |   Session marked as paused at 2026-02-07 15:22:42.182641
+2026-02-07 15:22:42.183 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:22:42.183 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:22:42.184 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:22:42.184 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:22:42.182641", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:22:42.185 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:22:44.255 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:22:44.255 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:22:50.273 | INFO | ================================================================================
+2026-02-07 15:22:50.273 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 15:22:50.273 | INFO | ================================================================================
+2026-02-07 15:22:50.737 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 15:23:16.370 | INFO | ============================================================
+2026-02-07 15:23:16.370 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:23:16.370 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 15:23:16.370 | INFO |   existing current_session_id: None
+2026-02-07 15:23:16.370 | INFO |   existing api_session_id: None
+2026-02-07 15:23:16.370 | INFO |   existing active_project: None
+2026-02-07 15:23:16.370 | INFO |   existing active_user: OPUS
+2026-02-07 15:23:16.370 | INFO |   User source: active_user = OPUS
+2026-02-07 15:23:16.374 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:23:16.374 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:23:18.401 | INFO |   FOUND existing session from API:
+2026-02-07 15:23:18.401 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:23:18.401 | INFO |     is_paused: True
+2026-02-07 15:23:18.401 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:23:18.401 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 15:23:18.401 | INFO | ============================================================
+2026-02-07 15:23:18.401 | INFO | _resume_session CALLED
+2026-02-07 15:23:18.401 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:23:18.401 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:23:18.401 | INFO |   session_paused: True
+2026-02-07 15:23:18.401 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:23:18.401 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:23:18.401 | INFO |   Session marked as resumed
+2026-02-07 15:23:18.401 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:23:18.401 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:23:18.401 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:23:18.401 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:23:18.401462", "total_pause_duration": 0, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:23:18.401 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:23:19.435 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:23:20.451 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:23:20.451115"}
+2026-02-07 15:23:21.470 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 15:24:40.093 | INFO | ============================================================
+2026-02-07 15:24:40.093 | INFO | _pause_session CALLED
+2026-02-07 15:24:40.093 | INFO |   blocking: False
+2026-02-07 15:24:40.101 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:24:40.101 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:24:40.101 | INFO |   session_paused: False
+2026-02-07 15:24:40.101 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:24:40.101 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:24:40.101 | INFO |   Session marked as paused at 2026-02-07 15:24:40.101039
+2026-02-07 15:24:40.101 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:24:40.101 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:24:40.101 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:24:40.101 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:24:40.101039", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:24:40.101 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:24:42.177 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:24:42.177 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:24:43.190 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:24:40.101039"}
+2026-02-07 15:24:45.290 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:24:45.290 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:24:59.719 | INFO | ============================================================
+2026-02-07 15:24:59.719 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:24:59.719 | INFO |   excel_file_path: C:\BOERE\MO08587_TV-wand_(2-7)_20260207_151231.xlsx
+2026-02-07 15:24:59.719 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:24:59.719 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:24:59.719 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 15:24:59.719 | INFO |   existing active_user: BOERE
+2026-02-07 15:24:59.719 | INFO |   User source: active_user = BOERE
+2026-02-07 15:24:59.729 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:24:59.729 | INFO |   Checking for existing session: user=BOERE, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:25:01.764 | INFO |   No existing session found - creating NEW session
+2026-02-07 15:25:01.764 | INFO |   NEW session created: BOERE_MO08587_TV-wand_(2-7)_20260207_152501
+2026-02-07 15:25:01.764 | INFO |   (api_session_id will be set when API responds)
+2026-02-07 15:25:01.764 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-07 15:25:01.764 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "item_count": 108, "timestamp": "2026-02-07T15:25:01.764240", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152501"}
+2026-02-07 15:25:03.813 | INFO |   API RESPONSE: session_id=BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:25:03.813 | INFO |   SESSION IDs NOW: api=BOERE_MO08587_TV-wand_(2-7)_20260207_152503, local=BOERE_MO08587_TV-wand_(2-7)_20260207_152501
+2026-02-07 15:39:26.704 | INFO | ============================================================
+2026-02-07 15:39:26.704 | INFO | _pause_session CALLED
+2026-02-07 15:39:26.704 | INFO |   blocking: True
+2026-02-07 15:39:26.704 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152501
+2026-02-07 15:39:26.704 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:39:26.704 | INFO |   session_paused: False
+2026-02-07 15:39:26.704 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:39:26.704 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:39:26.704 | INFO |   Session marked as paused at 2026-02-07 15:39:26.704113
+2026-02-07 15:39:26.704 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:39:26.704 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:39:26.712 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:39:26.712 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:39:26.704113", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:39:26.713 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:39:28.777 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:39:28.779 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:39:29.810 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:39:26.704113"}
+2026-02-07 15:39:31.904 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:39:31.904 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:39:38.399 | INFO | ================================================================================
+2026-02-07 15:39:38.399 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 15:39:38.399 | INFO | ================================================================================
+2026-02-07 15:39:38.880 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 15:39:51.638 | INFO | ============================================================
+2026-02-07 15:39:51.638 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:39:51.640 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 15:39:51.640 | INFO |   existing current_session_id: None
+2026-02-07 15:39:51.640 | INFO |   existing api_session_id: None
+2026-02-07 15:39:51.640 | INFO |   existing active_project: None
+2026-02-07 15:39:51.640 | INFO |   existing active_user: OPUS
+2026-02-07 15:39:51.640 | INFO |   User source: active_user = OPUS
+2026-02-07 15:39:51.640 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:39:51.640 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:39:53.667 | INFO |   FOUND existing session from API:
+2026-02-07 15:39:53.667 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:39:53.667 | INFO |     is_paused: True
+2026-02-07 15:39:53.672 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:39:53.672 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 15:39:53.672 | INFO | ============================================================
+2026-02-07 15:39:53.672 | INFO | _resume_session CALLED
+2026-02-07 15:39:53.672 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:39:53.672 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:39:53.672 | INFO |   session_paused: True
+2026-02-07 15:39:53.672 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:39:53.672 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:39:53.672 | INFO |   Session marked as resumed
+2026-02-07 15:39:53.672 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:39:53.672 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:39:53.672 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:39:53.672 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:39:53.672213", "total_pause_duration": 0.6, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:39:53.672 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:39:54.715 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:39:55.730 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:39:55.730190"}
+2026-02-07 15:39:56.747 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 15:40:33.139 | INFO | ============================================================
+2026-02-07 15:40:33.139 | INFO | _pause_session CALLED
+2026-02-07 15:40:33.139 | INFO |   blocking: False
+2026-02-07 15:40:33.139 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:40:33.139 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:40:33.139 | INFO |   session_paused: False
+2026-02-07 15:40:33.139 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:40:33.139 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:40:33.139 | INFO |   Session marked as paused at 2026-02-07 15:40:33.139875
+2026-02-07 15:40:33.139 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:40:33.139 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:40:33.142 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:40:33.143 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:40:33.139875", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:40:33.143 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:40:35.204 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:40:35.204 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:40:36.214 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:40:33.139875"}
+2026-02-07 15:40:38.296 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:40:38.296 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:41:11.759 | INFO | ============================================================
+2026-02-07 15:41:11.765 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:41:11.765 | INFO |   excel_file_path: C:\BOERE\MO08587_TV-wand_(2-7)_20260207_151231.xlsx
+2026-02-07 15:41:11.765 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:41:11.765 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:41:11.765 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 15:41:11.765 | INFO |   existing active_user: BOERE
+2026-02-07 15:41:11.766 | INFO |   User source: active_user = BOERE
+2026-02-07 15:41:11.773 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:41:11.773 | INFO |   Checking for existing session: user=BOERE, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:41:13.796 | INFO |   FOUND existing session from API:
+2026-02-07 15:41:13.799 | INFO |     session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:41:13.799 | INFO |     is_paused: True
+2026-02-07 15:41:13.799 | INFO |   Session IDs synchronized: api=BOERE_MO08587_TV-wand_(2-7)_20260207_152503, local=BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:41:13.799 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 15:41:13.799 | INFO | ============================================================
+2026-02-07 15:41:13.799 | INFO | _resume_session CALLED
+2026-02-07 15:41:13.799 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:41:13.799 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:41:13.799 | INFO |   session_paused: True
+2026-02-07 15:41:13.799 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:41:13.799 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:41:13.799 | INFO |   Session marked as resumed
+2026-02-07 15:41:13.799 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:41:13.799 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:41:13.800 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:41:13.800 | INFO |   RESUME API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:41:13.800739", "total_pause_duration": 0, "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:41:13.800 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:41:14.826 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:41:15.851 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:41:15.851808"}
+2026-02-07 15:41:16.872 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 15:41:22.940 | INFO | _save_updated_excel: Session already exists (api=BOERE_MO08587_TV-wand_(2-7)_20260207_152503), skipping XLSX_UPDATED
+2026-02-07 15:55:35.223 | INFO | ============================================================
+2026-02-07 15:55:35.223 | INFO | _pause_session CALLED
+2026-02-07 15:55:35.223 | INFO |   blocking: False
+2026-02-07 15:55:35.223 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:35.223 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:35.223 | INFO |   session_paused: False
+2026-02-07 15:55:35.223 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:55:35.223 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:55:35.223 | INFO |   Session marked as paused at 2026-02-07 15:55:35.223739
+2026-02-07 15:55:35.223 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:55:35.223 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:55:35.223 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:35.223 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:55:35.223739", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:55:35.228 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:55:37.375 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:55:37.383 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:55:38.419 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:55:35.223739"}
+2026-02-07 15:55:40.506 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:55:40.506 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:55:59.549 | INFO | ============================================================
+2026-02-07 15:55:59.549 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:55:59.549 | INFO |   excel_file_path: C:\BOERE\MO08587_TV-wand_(2-7)_20260207_151231.xlsx
+2026-02-07 15:55:59.549 | INFO |   existing current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:59.549 | INFO |   existing api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:59.549 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 15:55:59.549 | INFO |   existing active_user: BOERE
+2026-02-07 15:55:59.549 | INFO |   User source: active_user = BOERE
+2026-02-07 15:55:59.572 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:55:59.573 | INFO | ============================================================
+2026-02-07 15:55:59.573 | INFO | _resume_session CALLED
+2026-02-07 15:55:59.573 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:59.573 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:59.573 | INFO |   session_paused: True
+2026-02-07 15:55:59.573 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:55:59.573 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:55:59.573 | INFO |   Session marked as resumed
+2026-02-07 15:55:59.573 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:55:59.573 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:55:59.573 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:55:59.573 | INFO |   RESUME API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:55:59.573358", "total_pause_duration": 0, "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:55:59.573 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:56:00.598 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:56:01.624 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session resumed - pause duration: 0.4 minutes", "status": "BEZIG", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:56:01.624708"}
+2026-02-07 15:56:02.666 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 15:56:13.741 | INFO | ============================================================
+2026-02-07 15:56:13.741 | INFO | _pause_session CALLED
+2026-02-07 15:56:13.741 | INFO |   blocking: False
+2026-02-07 15:56:13.741 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:13.741 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:13.741 | INFO |   session_paused: False
+2026-02-07 15:56:13.741 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:56:13.741 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:56:13.741 | INFO |   Session marked as paused at 2026-02-07 15:56:13.741081
+2026-02-07 15:56:13.741 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:56:13.741 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:56:13.741 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:13.741 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:56:13.741081", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:56:13.741 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:56:15.806 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:56:15.806 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:56:16.840 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:56:13.741081"}
+2026-02-07 15:56:17.298 | INFO | ============================================================
+2026-02-07 15:56:17.298 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:56:17.298 | INFO |   excel_file_path: C:\BOERE\MO08587_TV-wand_(2-7)_20260207_151231.xlsx
+2026-02-07 15:56:17.298 | INFO |   existing current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:17.298 | INFO |   existing api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:17.298 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 15:56:17.298 | INFO |   existing active_user: BOERE
+2026-02-07 15:56:17.298 | INFO |   User source: active_user = BOERE
+2026-02-07 15:56:17.302 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:56:17.302 | INFO | ============================================================
+2026-02-07 15:56:17.302 | INFO | _resume_session CALLED
+2026-02-07 15:56:17.302 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:17.302 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:17.302 | INFO |   session_paused: True
+2026-02-07 15:56:17.302 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:56:17.302 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:56:18.928 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:56:18.928 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:56:18.928 | INFO |   Session marked as resumed
+2026-02-07 15:56:18.928 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:56:18.928 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:56:18.928 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:56:18.928 | INFO |   RESUME API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:56:18.928223", "total_pause_duration": 0, "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:56:18.930 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:56:19.952 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:56:20.974 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session resumed - pause duration: 0.1 minutes", "status": "BEZIG", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:56:20.974380"}
+2026-02-07 15:56:22.011 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 15:57:34.137 | INFO | ============================================================
+2026-02-07 15:57:34.137 | INFO | _pause_session CALLED
+2026-02-07 15:57:34.137 | INFO |   blocking: False
+2026-02-07 15:57:34.137 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:57:34.137 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:57:34.137 | INFO |   session_paused: False
+2026-02-07 15:57:34.137 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:57:34.137 | INFO |   active_user (CACHED): BOERE
+2026-02-07 15:57:34.137 | INFO |   Session marked as paused at 2026-02-07 15:57:34.137374
+2026-02-07 15:57:34.137 | INFO |   Using CACHED user: BOERE
+2026-02-07 15:57:34.137 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:57:34.137 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:57:34.137 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-07T15:57:34.137374", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:57:34.137 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 15:57:36.235 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 15:57:36.236 | INFO |   Session pause SUCCESSFUL
+2026-02-07 15:57:37.246 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-07T15:57:34.137374"}
+2026-02-07 15:57:39.310 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 15:57:39.310 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 15:57:49.866 | INFO | ============================================================
+2026-02-07 15:57:49.866 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 15:57:49.866 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 15:57:49.866 | INFO |   existing current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:57:49.866 | INFO |   existing api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-07 15:57:49.866 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 15:57:49.866 | INFO |   existing active_user: OPUS
+2026-02-07 15:57:49.866 | INFO |   User source: active_user = OPUS
+2026-02-07 15:57:49.870 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 15:57:49.870 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 15:57:51.899 | INFO |   FOUND existing session from API:
+2026-02-07 15:57:51.903 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:57:51.903 | INFO |     is_paused: True
+2026-02-07 15:57:51.903 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:57:51.903 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 15:57:51.903 | INFO | ============================================================
+2026-02-07 15:57:51.903 | INFO | _resume_session CALLED
+2026-02-07 15:57:51.903 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:57:51.903 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:57:51.903 | INFO |   session_paused: True
+2026-02-07 15:57:51.903 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 15:57:51.903 | INFO |   active_user (CACHED): OPUS
+2026-02-07 15:57:51.903 | INFO |   Session marked as resumed
+2026-02-07 15:57:51.904 | INFO |   Using CACHED user: OPUS
+2026-02-07 15:57:51.904 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 15:57:51.904 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 15:57:51.904 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T15:57:51.904353", "total_pause_duration": 15.83, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 15:57:51.904 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 15:57:52.937 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 15:57:53.970 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T15:57:53.970282"}
+2026-02-07 15:57:55.018 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 16:00:26.351 | INFO | ============================================================
+2026-02-07 16:00:26.351 | INFO | _pause_session CALLED
+2026-02-07 16:00:26.351 | INFO |   blocking: True
+2026-02-07 16:00:26.351 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:00:26.351 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:00:26.351 | INFO |   session_paused: False
+2026-02-07 16:00:26.351 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:00:26.351 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:00:26.351 | INFO |   Session marked as paused at 2026-02-07 16:00:26.351233
+2026-02-07 16:00:26.351 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:00:26.351 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:00:26.351 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:00:26.351 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:00:26.351233", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:00:26.351 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 16:00:28.419 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 16:00:28.419 | INFO |   Session pause SUCCESSFUL
+2026-02-07 16:00:29.444 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:00:26.351233"}
+2026-02-07 16:00:31.524 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 16:00:31.524 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 16:00:40.532 | INFO | ================================================================================
+2026-02-07 16:00:40.532 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 16:00:40.532 | INFO | ================================================================================
+2026-02-07 16:00:41.723 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 16:01:04.295 | INFO | ============================================================
+2026-02-07 16:01:04.295 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 16:01:04.295 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 16:01:04.295 | INFO |   existing current_session_id: None
+2026-02-07 16:01:04.295 | INFO |   existing api_session_id: None
+2026-02-07 16:01:04.295 | INFO |   existing active_project: None
+2026-02-07 16:01:04.295 | INFO |   existing active_user: OPUS
+2026-02-07 16:01:04.295 | INFO |   User source: active_user = OPUS
+2026-02-07 16:01:04.295 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:04.295 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 16:01:06.308 | INFO |   FOUND existing session from API:
+2026-02-07 16:01:06.308 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:06.308 | INFO |     is_paused: True
+2026-02-07 16:01:06.308 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:06.308 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 16:01:06.308 | INFO | ============================================================
+2026-02-07 16:01:06.308 | INFO | _resume_session CALLED
+2026-02-07 16:01:06.308 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:06.308 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:06.308 | INFO |   session_paused: True
+2026-02-07 16:01:06.308 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:01:06.308 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:01:06.308 | INFO |   Session marked as resumed
+2026-02-07 16:01:06.308 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:01:06.308 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:06.308 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:06.308 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:01:06.308499", "total_pause_duration": 33.14, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:01:06.308 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 16:01:07.340 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 16:01:08.357 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:01:08.357530"}
+2026-02-07 16:01:09.401 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 16:01:12.114 | INFO | _save_updated_excel: Session already exists (api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553), skipping XLSX_UPDATED
+2026-02-07 16:01:21.185 | INFO | ============================================================
+2026-02-07 16:01:21.185 | INFO | _pause_session CALLED
+2026-02-07 16:01:21.185 | INFO |   blocking: False
+2026-02-07 16:01:21.185 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:21.185 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:21.185 | INFO |   session_paused: False
+2026-02-07 16:01:21.185 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:01:21.185 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:01:21.185 | INFO |   Session marked as paused at 2026-02-07 16:01:21.185127
+2026-02-07 16:01:21.185 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:01:21.185 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:21.191 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:21.191 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:01:21.185127", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:01:21.191 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 16:01:23.257 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 16:01:23.257 | INFO |   Session pause SUCCESSFUL
+2026-02-07 16:01:24.291 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:01:21.185127"}
+2026-02-07 16:01:25.422 | INFO | ============================================================
+2026-02-07 16:01:25.422 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 16:01:25.422 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 16:01:25.422 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:25.422 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:25.422 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:25.422 | INFO |   existing active_user: OPUS
+2026-02-07 16:01:25.422 | INFO |   User source: active_user = OPUS
+2026-02-07 16:01:25.427 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:25.427 | INFO | ============================================================
+2026-02-07 16:01:25.427 | INFO | _resume_session CALLED
+2026-02-07 16:01:25.427 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:25.427 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:25.427 | INFO |   session_paused: True
+2026-02-07 16:01:25.427 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:01:25.427 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:01:26.373 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 16:01:26.373 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 16:01:26.373 | INFO |   Session marked as resumed
+2026-02-07 16:01:26.373 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:01:26.373 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:01:26.377 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:01:26.377 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:01:26.377856", "total_pause_duration": 33.14, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:01:26.377 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 16:01:27.410 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 16:01:28.418 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.1 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:01:28.418454"}
+2026-02-07 16:01:29.474 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 16:02:50.803 | INFO | ============================================================
+2026-02-07 16:02:50.803 | INFO | _pause_session CALLED
+2026-02-07 16:02:50.803 | INFO |   blocking: False
+2026-02-07 16:02:50.803 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:02:50.803 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:02:50.803 | INFO |   session_paused: False
+2026-02-07 16:02:50.803 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:02:50.803 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:02:50.803 | INFO |   Session marked as paused at 2026-02-07 16:02:50.803248
+2026-02-07 16:02:50.803 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:02:50.803 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:02:50.803 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:02:50.803 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:02:50.803248", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:02:50.803 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 16:02:52.877 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 16:02:52.877 | INFO |   Session pause SUCCESSFUL
+2026-02-07 16:03:00.528 | INFO | ================================================================================
+2026-02-07 16:03:00.528 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 16:03:00.528 | INFO | ================================================================================
+2026-02-07 16:03:00.985 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 16:04:16.641 | INFO | ============================================================
+2026-02-07 16:04:16.642 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 16:04:16.642 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 16:04:16.642 | INFO |   existing current_session_id: None
+2026-02-07 16:04:16.642 | INFO |   existing api_session_id: None
+2026-02-07 16:04:16.642 | INFO |   existing active_project: None
+2026-02-07 16:04:16.642 | INFO |   existing active_user: OPUS
+2026-02-07 16:04:16.642 | INFO |   User source: active_user = OPUS
+2026-02-07 16:04:16.642 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:16.642 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-07 16:04:18.672 | INFO |   FOUND existing session from API:
+2026-02-07 16:04:18.672 | INFO |     session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:18.672 | INFO |     is_paused: True
+2026-02-07 16:04:18.672 | INFO |   Session IDs synchronized: api=OPUS_MO08587_TV-wand_(2-7)_20260207_151553, local=OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:18.672 | INFO |   Session IS paused - will call _resume_session()
+2026-02-07 16:04:18.672 | INFO | ============================================================
+2026-02-07 16:04:18.672 | INFO | _resume_session CALLED
+2026-02-07 16:04:18.672 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:18.672 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:18.672 | INFO |   session_paused: True
+2026-02-07 16:04:18.672 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:04:18.672 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:04:18.672 | INFO |   Session marked as resumed
+2026-02-07 16:04:18.672 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:04:18.672 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:18.672 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:18.672 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:04:18.672457", "total_pause_duration": 33.900000000000006, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:04:18.672 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 16:04:19.698 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 16:04:20.714 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:04:20.714274"}
+2026-02-07 16:04:21.757 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 16:04:25.098 | INFO | ============================================================
+2026-02-07 16:04:25.098 | INFO | _pause_session CALLED
+2026-02-07 16:04:25.098 | INFO |   blocking: False
+2026-02-07 16:04:25.098 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:25.098 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:25.098 | INFO |   session_paused: False
+2026-02-07 16:04:25.098 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:04:25.098 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:04:25.098 | INFO |   Session marked as paused at 2026-02-07 16:04:25.098061
+2026-02-07 16:04:25.098 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:04:25.098 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:25.099 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:25.099 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:04:25.098061", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:04:25.100 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 16:04:27.199 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 16:04:27.199 | INFO |   Session pause SUCCESSFUL
+2026-02-07 16:04:28.231 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:04:25.098061"}
+2026-02-07 16:04:30.318 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 16:04:30.318 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 16:04:40.785 | INFO | ============================================================
+2026-02-07 16:04:40.785 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 16:04:40.785 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 16:04:40.785 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:40.785 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:40.785 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:40.785 | INFO |   existing active_user: OPUS
+2026-02-07 16:04:40.785 | INFO |   User source: active_user = OPUS
+2026-02-07 16:04:40.785 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:40.785 | INFO | ============================================================
+2026-02-07 16:04:40.785 | INFO | _resume_session CALLED
+2026-02-07 16:04:40.785 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:40.785 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:40.785 | INFO |   session_paused: True
+2026-02-07 16:04:40.785 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:04:40.785 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:04:40.785 | INFO |   Session marked as resumed
+2026-02-07 16:04:40.785 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:04:40.785 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:04:40.785 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:04:40.790 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:04:40.790888", "total_pause_duration": 33.900000000000006, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:04:40.790 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 16:04:41.822 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 16:04:42.853 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 0.3 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:04:42.853788"}
+2026-02-07 16:04:43.902 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 16:05:04.673 | INFO | ============================================================
+2026-02-07 16:05:04.673 | INFO | _pause_session CALLED
+2026-02-07 16:05:04.673 | INFO |   blocking: False
+2026-02-07 16:05:04.673 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:05:04.673 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:05:04.673 | INFO |   session_paused: False
+2026-02-07 16:05:04.673 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 16:05:04.673 | INFO |   active_user (CACHED): OPUS
+2026-02-07 16:05:04.673 | INFO |   Session marked as paused at 2026-02-07 16:05:04.673683
+2026-02-07 16:05:04.673 | INFO |   Using CACHED user: OPUS
+2026-02-07 16:05:04.674 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 16:05:04.674 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 16:05:04.674 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T16:05:04.673683", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 16:05:04.674 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 16:05:06.761 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 16:05:06.762 | INFO |   Session pause SUCCESSFUL
+2026-02-07 16:05:07.782 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T16:05:04.673683"}
+2026-02-07 16:05:09.846 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 16:05:09.848 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 19:54:28.841 | INFO | ============================================================
+2026-02-07 19:54:28.841 | INFO | _start_session_for_excel_work CALLED
+2026-02-07 19:54:28.841 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-07 19:54:28.841 | INFO |   existing current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:54:28.841 | INFO |   existing api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:54:28.841 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-07 19:54:28.841 | INFO |   existing active_user: OPUS
+2026-02-07 19:54:28.841 | INFO |   User source: active_user = OPUS
+2026-02-07 19:54:28.848 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-07 19:54:28.848 | INFO | ============================================================
+2026-02-07 19:54:28.848 | INFO | _resume_session CALLED
+2026-02-07 19:54:28.848 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:54:28.848 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:54:28.848 | INFO |   session_paused: True
+2026-02-07 19:54:28.848 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 19:54:28.848 | INFO |   active_user (CACHED): OPUS
+2026-02-07 19:54:28.848 | INFO |   Session marked as resumed
+2026-02-07 19:54:28.848 | INFO |   Using CACHED user: OPUS
+2026-02-07 19:54:28.848 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 19:54:28.858 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:54:28.858 | INFO |   RESUME API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T19:54:28.858992", "total_pause_duration": 33.900000000000006, "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 19:54:28.858 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-07 19:54:29.889 | INFO |   RESUME API RESPONSE: 200
+2026-02-07 19:54:30.896 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session resumed - pause duration: 229.4 minutes", "status": "BEZIG", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T19:54:30.896502"}
+2026-02-07 19:54:31.931 | INFO |   SESSION_RESUME log response: 201
+2026-02-07 19:57:45.088 | INFO | ============================================================
+2026-02-07 19:57:45.088 | INFO | _pause_session CALLED
+2026-02-07 19:57:45.098 | INFO |   blocking: True
+2026-02-07 19:57:45.098 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:57:45.098 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:57:45.098 | INFO |   session_paused: False
+2026-02-07 19:57:45.098 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-07 19:57:45.098 | INFO |   active_user (CACHED): OPUS
+2026-02-07 19:57:45.098 | INFO |   Session marked as paused at 2026-02-07 19:57:45.098203
+2026-02-07 19:57:45.098 | INFO |   Using CACHED user: OPUS
+2026-02-07 19:57:45.098 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-07 19:57:45.099 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260207_151553
+2026-02-07 19:57:45.099 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "timestamp": "2026-02-07T19:57:45.098203", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-07 19:57:45.099 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-07 19:57:47.166 | INFO |   PAUSE API RESPONSE: 200
+2026-02-07 19:57:47.166 | INFO |   Session pause SUCCESSFUL
+2026-02-07 19:57:48.199 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260207_151553", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-07T19:57:45.098203"}
+2026-02-07 19:57:50.262 | INFO |   SESSION_PAUSE log response: 201
+2026-02-07 19:57:50.262 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-07 20:14:15.440 | INFO | ================================================================================
+2026-02-07 20:14:15.440 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:14:15.440 | INFO | ================================================================================
+2026-02-07 20:14:16.915 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:32:05.212 | INFO | ================================================================================
+2026-02-07 20:32:05.212 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:32:05.212 | INFO | ================================================================================
+2026-02-07 20:32:05.657 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:32:36.504 | INFO | ================================================================================
+2026-02-07 20:32:36.504 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:32:36.504 | INFO | ================================================================================
+2026-02-07 20:32:36.945 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:32:40.615 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:37:38.235 | INFO | ================================================================================
+2026-02-07 20:37:38.235 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:37:38.235 | INFO | ================================================================================
+2026-02-07 20:37:38.695 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:42:29.845 | INFO | ================================================================================
+2026-02-07 20:42:29.845 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:42:29.845 | INFO | ================================================================================
+2026-02-07 20:42:30.310 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:48:29.396 | INFO | ================================================================================
+2026-02-07 20:48:29.396 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:48:29.396 | INFO | ================================================================================
+2026-02-07 20:48:29.849 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 20:57:46.564 | INFO | ================================================================================
+2026-02-07 20:57:46.564 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 20:57:46.564 | INFO | ================================================================================
+2026-02-07 20:57:47.016 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 21:19:33.318 | INFO | ================================================================================
+2026-02-07 21:19:33.320 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 21:19:33.320 | INFO | ================================================================================
+2026-02-07 21:19:33.774 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 21:31:54.231 | INFO | ================================================================================
+2026-02-07 21:31:54.231 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 21:31:54.231 | INFO | ================================================================================
+2026-02-07 21:31:54.691 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-07 21:38:06.411 | INFO | ================================================================================
+2026-02-07 21:38:06.411 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-07 21:38:06.411 | INFO | ================================================================================
+2026-02-07 21:38:06.861 | INFO | ScannerPanel initialized - thread sync enabled

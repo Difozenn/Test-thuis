@@ -35,7 +35,8 @@ from .excel_processing_functions import (
     generate_excel_for_boere,
     generate_excel_for_afwerking,
     generate_excel_for_massief,
-    generate_excel_for_handwerk
+    generate_excel_for_handwerk,
+    extract_opmerkingen_from_excel
 )
 
 class BackgroundImportService:
@@ -1107,7 +1108,8 @@ class BackgroundImportService:
                                     result['so_number'],
                                     result['customer_name'],
                                     project_code_to_log,
-                                    username=user
+                                    username=user,
+                                    opmerkingen=result.get('opmerkingen')
                                 )
                                 if excel_path:
                                     self._log(f"[ACCURA] Generated Excel file: {excel_path}")
@@ -1135,7 +1137,8 @@ class BackgroundImportService:
                                     result['so_number'],
                                     result['customer_name'],
                                     project_code_to_log,
-                                    username=user
+                                    username=user,
+                                    opmerkingen=result.get('opmerkingen')
                                 )
                                 if excel_path:
                                     self._log(f"[BOERE] Generated Excel file: {excel_path}")
@@ -1163,7 +1166,8 @@ class BackgroundImportService:
                                     result['so_number'],
                                     result['customer_name'],
                                     project_code_to_log,
-                                    username=user
+                                    username=user,
+                                    opmerkingen=result.get('opmerkingen')
                                 )
                                 if excel_path:
                                     self._log(f"[AFWERKING] Generated Excel file: {excel_path}")
@@ -1194,7 +1198,8 @@ class BackgroundImportService:
                                     result['so_number'],
                                     result['customer_name'],
                                     project_code_to_log,
-                                    username=user
+                                    username=user,
+                                    opmerkingen=result.get('opmerkingen')
                                 )
                                 self._log(f"[MASSIEF DEBUG] Excel generation returned: {excel_path}")
                                 if excel_path:
@@ -1229,7 +1234,8 @@ class BackgroundImportService:
                                     result['so_number'],
                                     result['customer_name'],
                                     project_code_to_log,
-                                    username=user
+                                    username=user,
+                                    opmerkingen=result.get('opmerkingen')
                                 )
                                 if excel_path:
                                     self._log(f"[HANDWERK] Generated Excel file: {excel_path}")
@@ -1650,6 +1656,24 @@ class BackgroundImportService:
         
         return False
 
+    def _find_source_excel_and_extract_opmerkingen(self, project_code):
+        """Find the source Excel for a project and extract opmerkingen."""
+        try:
+            config = self._load_settings_from_api()
+            user_paths = config.get('scanner_panel_open_event_user_paths', {})
+            user_types = config.get('scanner_user_to_processing_type_map', {})
+
+            for user, path in user_paths.items():
+                proc_type = user_types.get(user, '')
+                if proc_type in self.get_excel_processing_types() and path and os.path.isdir(path):
+                    excel_file = find_excel_file_for_project(path, project_code)
+                    if excel_file:
+                        return extract_opmerkingen_from_excel(excel_file)
+            return None
+        except Exception as e:
+            self._log(f"[OPMERKINGEN] Error finding source Excel: {e}")
+            return None
+
     def _trigger_hops_import(self, user_name, project_event_code, details, timestamp, hops_scan_path):
         """Trigger automatische HOPS import en Excel generatie voor .hop/.hops bestanden in de gespecificeerde map."""
         self._log(f"HOPS import gestart voor user '{user_name}', project context: {project_event_code} in map: {hops_scan_path}")
@@ -1664,7 +1688,8 @@ class BackgroundImportService:
 
             if collected_files:
                 self._log(f"{len(collected_files)} HOPS (.hop/.hops) bestanden gevonden in '{hops_scan_path}' voor Excel rapportage.")
-                self._create_hops_excel_report(user_name, collected_files, hops_scan_path, project_event_code)
+                opmerkingen = self._find_source_excel_and_extract_opmerkingen(project_event_code)
+                self._create_hops_excel_report(user_name, collected_files, hops_scan_path, project_event_code, opmerkingen=opmerkingen)
             else:
                 self._log(f"Geen .hop/.hops bestanden gevonden in HOPS map '{hops_scan_path}' voor Excel rapportage.")
 
@@ -1694,7 +1719,7 @@ class BackgroundImportService:
             self.logger.error(f"Error collecting HOPS files from '{hops_scan_path}': {e}")
         return found_files_data
 
-    def _create_hops_excel_report(self, user_name, collected_files, hops_scan_path, project_code):
+    def _create_hops_excel_report(self, user_name, collected_files, hops_scan_path, project_code, opmerkingen=None):
         """Genereert een Excel-rapport van de verzamelde HOPS-bestanden."""
         if not collected_files:
             self._log("Geen HOPS-bestanden verzameld om rapport te genereren.")
@@ -1714,7 +1739,13 @@ class BackgroundImportService:
             excel_path = os.path.join(hops_scan_path, f"{project_name_for_file}.xlsx")
 
             # Schrijf naar Excel
-            df.to_excel(excel_path, index=False)
+            with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Items', index=False)
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook = writer.book
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
             self._log(f"HOPS Excel rapport succesvol opgeslagen: {excel_path}")
             
             # Count items in the Excel file
@@ -1789,9 +1820,10 @@ class BackgroundImportService:
                     if match_condition_met:
                         match_found = True
                         extracted_data = self._extract_raw_mdb_data_from_db(db_file_path)
-                        
+
                         if extracted_data:
-                            self._create_mdb_excel_report(user_name, extracted_data, db_file_path, project_event_code)
+                            opmerkingen = self._find_source_excel_and_extract_opmerkingen(project_event_code)
+                            self._create_mdb_excel_report(user_name, extracted_data, db_file_path, project_event_code, opmerkingen=opmerkingen)
                             excel_reports_generated += 1
                             self._log(f"Excel rapport gegenereerd voor {filename}.")
                         else:
@@ -1873,7 +1905,7 @@ class BackgroundImportService:
             
         return results
 
-    def _create_mdb_excel_report(self, user_name, report_data, db_path, project_code):
+    def _create_mdb_excel_report(self, user_name, report_data, db_path, project_code, opmerkingen=None):
         """
         Creates an Excel file from the MDB data, similar to BarcodeMatch.
         report_data is a list of dicts, each with 'Item' and 'MDB File' keys.
@@ -1909,7 +1941,13 @@ class BackgroundImportService:
             base_name = os.path.splitext(mdb_basename)[0]
             excel_path = os.path.join(export_dir, f"{base_name}.xlsx")
 
-            df_export.to_excel(excel_path, index=False)
+            with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+                df_export.to_excel(writer, sheet_name='Items', index=False)
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook = writer.book
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
             self._log(f"MDB Excel rapport succesvol opgeslagen: {excel_path}")
             self.logger.info(f"MDB Excel report successfully saved: {excel_path}")
             

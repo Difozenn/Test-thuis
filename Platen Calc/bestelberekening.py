@@ -64,6 +64,7 @@ class BestelberekeningApp:
         }
         self.safety_margins = {}  # {material_id: safety_m2}
         self.material_rendement = {}  # {material_id: rendement_pct} - defaults to global if not set
+        self.artikel_nummers = {}  # {material_id: artikel_nummer}
         self.calculation_results = []
         self.in_bestelling = {}  # {material: m2_in_bestelling} - user-editable values
 
@@ -623,7 +624,7 @@ class BestelberekeningApp:
 
         self.safety_tree = ttk.Treeview(
             table_frame,
-            columns=["Mat.ID", "IDs", "Materiaal", "Veiligheidsvoorraad (m²)", "Rendement %"],
+            columns=["Mat.ID", "IDs", "Materiaal", "Artikel Nummer", "Veiligheidsvoorraad (m²)", "Rendement %"],
             show="headings",
             yscrollcommand=vsb.set,
             xscrollcommand=hsb.set,
@@ -636,12 +637,14 @@ class BestelberekeningApp:
         self.safety_tree.heading("Mat.ID", text="Mat.ID")
         self.safety_tree.heading("IDs", text="IDs")
         self.safety_tree.heading("Materiaal", text="Materiaal")
+        self.safety_tree.heading("Artikel Nummer", text="Artikel Nummer")
         self.safety_tree.heading("Veiligheidsvoorraad (m²)", text="Veiligheidsvoorraad (m²)")
         self.safety_tree.heading("Rendement %", text="Rendement %")
 
         self.safety_tree.column("Mat.ID", width=80, anchor=tk.CENTER)
         self.safety_tree.column("IDs", width=120, anchor=tk.W)
-        self.safety_tree.column("Materiaal", width=280, anchor=tk.W)
+        self.safety_tree.column("Materiaal", width=250, anchor=tk.W)
+        self.safety_tree.column("Artikel Nummer", width=130, anchor=tk.W)
         self.safety_tree.column("Veiligheidsvoorraad (m²)", width=180, anchor=tk.E)
         self.safety_tree.column("Rendement %", width=120, anchor=tk.E)
 
@@ -720,6 +723,7 @@ class BestelberekeningApp:
 
         columns = [
             "Materiaal",
+            "Artikel Nummer",
             "Netto (m²)",
             "R%",
             "Bruto (m²)",
@@ -745,7 +749,8 @@ class BestelberekeningApp:
         for col in columns:
             self.calc_tree.heading(col, text=col)
 
-        self.calc_tree.column("Materiaal", width=300, anchor=tk.W)
+        self.calc_tree.column("Materiaal", width=250, anchor=tk.W)
+        self.calc_tree.column("Artikel Nummer", width=130, anchor=tk.W)
         self.calc_tree.column("Netto (m²)", width=100, anchor=tk.E)
         self.calc_tree.column("R%", width=60, anchor=tk.E)
         self.calc_tree.column("Bruto (m²)", width=100, anchor=tk.E)
@@ -1124,10 +1129,15 @@ class BestelberekeningApp:
             for mid in orphaned_rendement:
                 del self.material_rendement[mid]
 
+            # Clean artikel nummers
+            orphaned_artikel = [mid for mid in self.artikel_nummers.keys() if mid not in current_materiaal_ids]
+            for mid in orphaned_artikel:
+                del self.artikel_nummers[mid]
+
             # Log cleanup if any entries were removed
-            total_orphaned = len(orphaned_safety) + len(orphaned_rendement)
+            total_orphaned = len(orphaned_safety) + len(orphaned_rendement) + len(orphaned_artikel)
             if total_orphaned > 0:
-                print(f"Config cleanup: Removed {len(orphaned_safety)} orphaned safety margins, {len(orphaned_rendement)} orphaned rendement entries")
+                print(f"Config cleanup: Removed {len(orphaned_safety)} orphaned safety margins, {len(orphaned_rendement)} orphaned rendement entries, {len(orphaned_artikel)} orphaned artikel nummers")
 
             # Update table with detailed view
             for item in self.magazijn_tree.get_children():
@@ -1170,6 +1180,7 @@ class BestelberekeningApp:
                     self.settings['rendement_pct'] = config.get('rendement_pct', 75.0)
                     self.safety_margins = config.get('safety_margins', {})
                     self.material_rendement = config.get('material_rendement', {})
+                    self.artikel_nummers = config.get('artikel_nummers', {})
             except Exception as e:
                 print(f"Fout bij laden config: {e}")
 
@@ -1181,7 +1192,8 @@ class BestelberekeningApp:
             config = {
                 'rendement_pct': self.settings['rendement_pct'],
                 'safety_margins': self.safety_margins,
-                'material_rendement': self.material_rendement
+                'material_rendement': self.material_rendement,
+                'artikel_nummers': self.artikel_nummers
             }
 
             with open("bestelberekening_config.json", 'w', encoding='utf-8') as f:
@@ -1253,6 +1265,7 @@ class BestelberekeningApp:
             item_count = mat['count']
             unique_ids = mat['ids']
             safety_m2 = self.safety_margins.get(materiaal_id, 0.0)
+            artikel_nummer = self.artikel_nummers.get(materiaal_id, "")
 
             # Get rendement % - use material-specific if set, otherwise use global
             rendement_pct = self.material_rendement.get(materiaal_id, self.settings['rendement_pct'])
@@ -1267,6 +1280,7 @@ class BestelberekeningApp:
                 materiaal_id,
                 ids_display,
                 display_name,
+                artikel_nummer,
                 f"{safety_m2:.2f}",
                 f"{rendement_pct:.1f}"
             ))
@@ -1284,13 +1298,14 @@ class BestelberekeningApp:
         material_id = values[0]
         ids_display = values[1]
         material_name = values[2]
-        current_safety = values[3]
-        current_rendement = values[4]
+        current_artikel = values[3]
+        current_safety = values[4]
+        current_rendement = values[5]
 
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
         dialog.title(f"Instellingen - {material_name}")
-        dialog.geometry("500x280")
+        dialog.geometry("500x350")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -1319,6 +1334,31 @@ class BestelberekeningApp:
             font=ModernTheme.FONT_HEADER
         ).pack(anchor=tk.W, pady=(0, 20))
 
+        # Artikel Nummer input
+        artikel_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
+        artikel_frame.pack(fill=tk.X, pady=(0, 15))
+
+        tk.Label(
+            artikel_frame,
+            text="Artikel Nummer:",
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        artikel_var = tk.StringVar(value=current_artikel)
+        artikel_entry = tk.Entry(
+            artikel_frame,
+            textvariable=artikel_var,
+            font=ModernTheme.FONT_NORMAL,
+            width=20,
+            relief="solid",
+            bd=1
+        )
+        artikel_entry.pack(side=tk.LEFT)
+        artikel_entry.focus()
+        artikel_entry.select_range(0, tk.END)
+
         # Safety margin input
         safety_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
         safety_frame.pack(fill=tk.X, pady=(0, 15))
@@ -1341,8 +1381,6 @@ class BestelberekeningApp:
             bd=1
         )
         safety_entry.pack(side=tk.LEFT)
-        safety_entry.focus()
-        safety_entry.select_range(0, tk.END)
 
         # Rendement % input
         rendement_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
@@ -1379,6 +1417,7 @@ class BestelberekeningApp:
             try:
                 new_safety = float(safety_var.get())
                 new_rendement = float(rendement_var.get())
+                new_artikel = artikel_var.get().strip()
 
                 if new_safety < 0:
                     messagebox.showerror("Fout", "Veiligheidsvoorraad kan niet negatief zijn!")
@@ -1391,12 +1430,14 @@ class BestelberekeningApp:
                 # Update dicts
                 self.safety_margins[material_id] = new_safety
                 self.material_rendement[material_id] = new_rendement
+                self.artikel_nummers[material_id] = new_artikel
 
                 # Update table
                 self.safety_tree.item(item, values=(
                     material_id,
                     ids_display,
                     material_name,
+                    new_artikel,
                     f"{new_safety:.2f}",
                     f"{new_rendement:.1f}"
                 ))
@@ -1437,6 +1478,7 @@ class BestelberekeningApp:
         ).pack(side=tk.LEFT)
 
         # Bind Enter key
+        artikel_entry.bind('<Return>', lambda e: save())
         safety_entry.bind('<Return>', lambda e: save())
         rendement_entry.bind('<Return>', lambda e: save())
 
@@ -1452,17 +1494,17 @@ class BestelberekeningApp:
         if not item:
             return
 
-        # Get column index (In Bestelling is column #7)
+        # Get column index (In Bestelling is column #8)
         col_idx = int(column[1:]) - 1
 
-        # Only allow editing the "In Bestelling (m²)" column (index 6)
-        if col_idx != 6:
+        # Only allow editing the "In Bestelling (m²)" column (index 7)
+        if col_idx != 7:
             return
 
         # Get current values
         values = self.calc_tree.item(item, 'values')
         material_name = values[0]
-        current_in_bestelling = values[6]
+        current_in_bestelling = values[7]
 
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
@@ -1570,11 +1612,11 @@ class BestelberekeningApp:
         values = list(self.calc_tree.item(item, 'values'))
 
         # Recalculate saldo with new in_bestelling value
-        netto_m2 = float(values[1])
-        rendement = float(values[2])
-        bruto_m2 = float(values[3])
-        safety_m2 = float(values[4])
-        stock_m2 = float(values[5])
+        netto_m2 = float(values[2])
+        rendement = float(values[3])
+        bruto_m2 = float(values[4])
+        safety_m2 = float(values[5])
+        stock_m2 = float(values[6])
         in_bestelling_m2 = self.in_bestelling.get(material_name, 0.0)
 
         # New saldo calculation
@@ -1582,8 +1624,8 @@ class BestelberekeningApp:
         saldo_m2 = stock_m2 + in_bestelling_m2 - needed_m2
 
         # Update values
-        values[6] = f"{in_bestelling_m2:.2f}"
-        values[7] = f"{saldo_m2:.2f}"
+        values[7] = f"{in_bestelling_m2:.2f}"
+        values[8] = f"{saldo_m2:.2f}"
 
         # Determine tag for color coding
         if saldo_m2 < 0:
@@ -1682,9 +1724,13 @@ class BestelberekeningApp:
                 needed_m2 = bruto_m2 + safety_m2
                 saldo_m2 = stock_m2 + in_bestelling_m2 - needed_m2  # Positive = surplus, Negative = need to order
 
+                # Get artikel nummer
+                artikel_nummer = self.artikel_nummers.get(materiaal_id, "") if materiaal_id else ""
+
                 # Store result
                 result = {
                     'material': material,
+                    'artikel_nummer': artikel_nummer,
                     'netto': netto_m2,
                     'rendement': rendement_decimal,
                     'bruto': bruto_m2,
@@ -1705,6 +1751,7 @@ class BestelberekeningApp:
 
                 self.calc_tree.insert("", "end", values=(
                     material,
+                    artikel_nummer,
                     f"{netto_m2:.2f}",
                     f"{rendement_decimal:.2f}",
                     f"{bruto_m2:.2f}",
@@ -1799,64 +1846,74 @@ class BestelberekeningApp:
                     'locked': False
                 })
 
-                # Write headers - exactly matching tab 4
-                headers = ['Materiaal', 'Netto (m²)', 'R%', 'Bruto (m²)', 'Veiligh. (m²)', 'Stock (m²)', 'In Bestelling (m²)', 'Saldo (m²)']
-                for col, header in enumerate(headers):
-                    worksheet.write(0, col, header, header_format)
-
                 # Set column widths
                 worksheet.set_column(0, 0, 30)  # Materiaal
-                worksheet.set_column(1, 7, 15)  # Numbers
+                worksheet.set_column(1, 1, 18)  # Artikel Nummer
+                worksheet.set_column(2, 8, 15)  # Numbers
 
-                # Write data with color coding and formulas
-                row = 1
+                # Prepare table data
+                table_data = []
                 for result in self.calculation_results:
-                    worksheet.write(row, 0, result['material'], text_format)
-                    worksheet.write(row, 1, result['netto'], normal_format)
-                    worksheet.write(row, 2, result['rendement'], percent_format)  # Use percent format for R%
-                    worksheet.write(row, 3, result['bruto'], normal_format)
-                    worksheet.write(row, 4, result['safety'], normal_format)
-                    worksheet.write(row, 5, result['stock'], normal_format)
+                    table_data.append([
+                        result['material'],
+                        result.get('artikel_nummer', ''),
+                        result['netto'],
+                        result['rendement'],
+                        result['bruto'],
+                        result['safety'],
+                        result['stock'],
+                        result.get('in_bestelling', 0.0),
+                        result['bestellen']
+                    ])
 
-                    # In Bestelling column with editable format
-                    worksheet.write(row, 6, result.get('in_bestelling', 0.0), editable_format)
+                # Define table columns with formats (no structured reference formula)
+                table_columns = [
+                    {'header': 'Materiaal', 'header_format': header_format, 'format': text_format},
+                    {'header': 'Artikel Nummer', 'header_format': header_format, 'format': workbook.add_format({'border': 1, 'align': 'right'})},
+                    {'header': 'Netto (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'R%', 'header_format': header_format, 'format': percent_format},
+                    {'header': 'Bruto (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Veiligh. (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Stock (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'In Bestelling (m²)', 'header_format': header_format, 'format': editable_format},
+                    {'header': 'Saldo (m²)', 'header_format': header_format, 'format': normal_format},
+                ]
 
-                    # Saldo column with FORMULA for automatic recalculation
-                    # Formula: Stock (F) + In Bestelling (G) - (Bruto (D) + Veiligh (E))
-                    excel_row = row + 1  # Excel rows are 1-based
-                    formula = f'=F{excel_row}+G{excel_row}-(D{excel_row}+E{excel_row})'
+                # Create Excel Table with sort/filter on header click
+                last_row = max(len(table_data), 1)  # At least 1 data row
+                worksheet.add_table(0, 0, last_row, len(table_columns) - 1, {
+                    'data': table_data,
+                    'columns': table_columns,
+                    'style': 'Table Style Medium 2',
+                    'name': 'Bestelberekening',
+                })
 
-                    # Calculate the initial value to display
-                    initial_value = result['bestellen']
+                # Overwrite Saldo column with regular cell formulas + cached value
+                # Formula: Stock (G) + In Bestelling (H) - (Bruto (E) + Veiligh (F))
+                for r in range(1, last_row + 1):
+                    formula = f'=G{r+1}+H{r+1}-(E{r+1}+F{r+1})'
+                    cached_value = table_data[r - 1][8]  # bestellen value
+                    worksheet.write_formula(r, 8, formula, normal_format, cached_value)
 
-                    # Write formula with initial value and normal format
-                    # The value parameter helps Excel show the correct result immediately
-                    worksheet.write_formula(row, 7, formula, normal_format, initial_value)
-
-                    row += 1
-
-                # Add conditional formatting for Saldo column (column H, index 7)
-                # This makes colors update automatically when values change
-                # Apply to data rows only (row 1 to last data row, which is row-1)
-                if row > 1:  # Only if there's data
-                    # Red format for negative values (deficit)
-                    worksheet.conditional_format(f'H2:H{row}', {
+                # Add conditional formatting for Saldo column (column I)
+                if table_data:
+                    row = last_row + 1  # For range reference (1-based)
+                    worksheet.conditional_format(f'I2:I{row}', {
                         'type': 'cell',
                         'criteria': '<',
                         'value': 0,
                         'format': red_format
                     })
-
-                    # Green format for positive values (surplus)
-                    worksheet.conditional_format(f'H2:H{row}', {
+                    worksheet.conditional_format(f'I2:I{row}', {
                         'type': 'cell',
                         'criteria': '>',
                         'value': 0,
                         'format': green_format
                     })
 
-                # Add note about In Bestelling column
-                worksheet.write(row + 1, 0,
+                # Add note below table
+                note_row = last_row + 2
+                worksheet.write(note_row, 0,
                     "Let op: Wijzig de 'In Bestelling (m²)' kolom om de Saldo automatisch te herberekenen.",
                     workbook.add_format({'italic': True, 'font_color': '#5f6368'}))
 

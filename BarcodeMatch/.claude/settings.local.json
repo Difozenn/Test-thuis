@@ -3,7 +3,10 @@
     "allow": [
       "Bash(python:*)",
       "Bash(ls:*)",
-      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/**)"
+      "Read(//mnt/c/Users/Rob_v/Desktop/Test-thuis/BarcodeMaster/**)",
+      "Bash(for func in \"generate_excel_for_accura\" \"generate_excel_for_boere\" \"generate_excel_for_afwerking\" \"generate_excel_for_massief\" \"generate_excel_for_handwerk\")",
+      "Bash(do)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

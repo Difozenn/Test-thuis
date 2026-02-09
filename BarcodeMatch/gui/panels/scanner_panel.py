@@ -175,11 +175,28 @@ class ScannerPanel(ttk.Frame):
         tree_frame.rowconfigure(0, weight=1)
         main_paned_window.add(tree_frame, weight=3) # Give more initial space to treeview
 
-        # --- Log Viewer Frame in Bottom Pane ---
-        log_frame = ttk.Labelframe(main_paned_window, text="Logboek")
+        # --- Bottom Pane: Notebook with Opmerkingen + Logboek tabs ---
+        self.bottom_notebook = ttk.Notebook(main_paned_window)
+        main_paned_window.add(self.bottom_notebook, weight=1)
+
+        # Tab 1: Opmerkingen (default, shown first)
+        opmerkingen_frame = ttk.Frame(self.bottom_notebook)
+        opmerkingen_frame.columnconfigure(0, weight=1)
+        opmerkingen_frame.rowconfigure(0, weight=1)
+        self.bottom_notebook.add(opmerkingen_frame, text="Opmerkingen")
+
+        self.opmerkingen_text = tk.Text(opmerkingen_frame, height=6, wrap=tk.WORD,
+                                         state='disabled', font=('TkDefaultFont', 10, 'bold'), bg='#FFFFFF')
+        opm_scroll = ttk.Scrollbar(opmerkingen_frame, orient="vertical", command=self.opmerkingen_text.yview)
+        self.opmerkingen_text.configure(yscrollcommand=opm_scroll.set)
+        self.opmerkingen_text.grid(row=0, column=0, sticky='nsew')
+        opm_scroll.grid(row=0, column=1, sticky='ns')
+
+        # Tab 2: Logboek
+        log_frame = ttk.Frame(self.bottom_notebook)
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
-        main_paned_window.add(log_frame, weight=1) # Give less initial space to log
+        self.bottom_notebook.add(log_frame, text="Logboek")
 
         # --- Inhoud Scannertype Frame ---
         # Radio buttons row
@@ -319,6 +336,12 @@ class ScannerPanel(ttk.Frame):
         self.log_text.configure(yscrollcommand=log_scroll.set)
         self.log_text.grid(row=0, column=0, sticky='nsew')
         log_scroll.grid(row=0, column=1, sticky='ns')
+
+        # Tab 3: Opus Macro's (conditional on setting)
+        self.macros_frame = None
+        config = _load_full_config()
+        if config.get('opus_macros_enabled', False):
+            self._create_macros_tab()
 
         # --- Context Menu ---
         self.context_menu = tk.Menu(self, tearoff=0)
@@ -831,6 +854,23 @@ class ScannerPanel(ttk.Frame):
             except Exception as e:
                 self._log(f"[WARN] Kon project code niet extraheren: {e}")
                 self.mo_code_var.set("")  # Clear on error
+
+            # Read opmerkingen from hidden sheet
+            try:
+                opm_df = pd.read_excel(path_to_load, sheet_name='_Opmerkingen')
+                opmerkingen_text = str(opm_df.iloc[0, 0]) if not opm_df.empty else ''
+                if opmerkingen_text and opmerkingen_text != 'nan':
+                    self.opmerkingen_text.config(state='normal')
+                    self.opmerkingen_text.delete('1.0', tk.END)
+                    self.opmerkingen_text.insert('1.0', opmerkingen_text)
+                    self.opmerkingen_text.config(state='disabled')
+                    self._auto_size_opmerkingen()
+                    self.bottom_notebook.select(0)  # Switch to Opmerkingen tab
+                else:
+                    self._clear_opmerkingen()
+            except (ValueError, KeyError):
+                # No _Opmerkingen sheet present
+                self._clear_opmerkingen()
 
             # Force refresh of all tag colors for compiled executables
             try:
@@ -1471,6 +1511,7 @@ class ScannerPanel(ttk.Frame):
                                             'session_id': session_id_for_api,  # Use authoritative session ID (Fix #2)
                                             'details': 'Session paused - panel hidden',
                                             'status': 'PAUZE',
+                                            'file_path': self.excel_file_path_var.get(),
                                             'timestamp': pause_timestamp
                                         }
                                         session_logger.info(f"  SESSION_PAUSE log event: {json.dumps(log_data, default=str)}")
@@ -1506,16 +1547,15 @@ class ScannerPanel(ttk.Frame):
                                 self._pause_complete_event.set()
                                 session_logger.info(f"  PAUSE COMPLETE - _pause_complete_event SET")
 
-                        # Start thread - if blocking mode, wait for completion
-                        pause_thread = threading.Thread(target=pause_session_api, daemon=not blocking)
-                        pause_thread.start()
-
                         if blocking:
-                            # Wait up to 5 seconds for pause to complete during shutdown
-                            pause_thread.join(timeout=5)
-                            if pause_thread.is_alive():
-                                self._log("Warning: Pause API call timed out during shutdown")
-                                print("[PAUSE_WARNING] Pause API call exceeded 5 second timeout during shutdown")
+                            # Shutdown mode: run directly on calling thread to avoid
+                            # tkinter-from-background-thread issues (self._log, self.excel_file_path_var)
+                            print("[PAUSE_API] Running pause synchronously (shutdown mode)")
+                            pause_session_api()
+                        else:
+                            # Normal panel switch: run in background daemon thread
+                            pause_thread = threading.Thread(target=pause_session_api, daemon=True)
+                            pause_thread.start()
                     else:
                         # No API URL - still signal completion
                         self._pause_complete_event.set()
@@ -1617,6 +1657,7 @@ class ScannerPanel(ttk.Frame):
                                         'session_id': session_id_for_api,  # Use authoritative session ID (Fix #2)
                                         'details': f'Session resumed - pause duration: {pause_minutes} minutes',
                                         'status': 'BEZIG',
+                                        'file_path': self.excel_file_path_var.get(),
                                         'timestamp': datetime.now().isoformat()
                                     }
                                     session_logger.info(f"  SESSION_RESUME log event: {json.dumps(log_data, default=str)}")
@@ -3209,8 +3250,23 @@ class ScannerPanel(ttk.Frame):
                     
                     df.loc[mask, 'Status'] = excel_status
 
-            # Save to the updated file
-            df.to_excel(updated_file_path, index=False)
+            # Save to the updated file, preserving hidden sheets from original
+            # Read hidden sheets from original file
+            hidden_sheets = {}
+            for sheet_name in ('_ProjectInfo', '_Opmerkingen'):
+                try:
+                    hidden_sheets[sheet_name] = pd.read_excel(original_file_path, sheet_name=sheet_name)
+                except (ValueError, KeyError):
+                    pass
+
+            if hidden_sheets:
+                with pd.ExcelWriter(updated_file_path, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Items', index=False)
+                    for sheet_name, sheet_df in hidden_sheets.items():
+                        sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        writer.book[sheet_name].sheet_state = 'hidden'
+            else:
+                df.to_excel(updated_file_path, index=False)
             self._log(f"Excel-bestand opgeslagen als: {os.path.basename(updated_file_path)}")
             
             save_successful = True
@@ -3333,6 +3389,80 @@ class ScannerPanel(ttk.Frame):
                 self._try_show_scan_highlight(barcode)
 
                 self._all_items_ok_check()
+
+    def _create_macros_tab(self):
+        """Create the Opus Macro's tab in the bottom notebook."""
+        self.macros_frame = ttk.Frame(self.bottom_notebook)
+        self.bottom_notebook.add(self.macros_frame, text="Opus Macro's")
+
+        # Keep references to prevent garbage collection
+        self._macro_icons = {}
+
+        macros = [
+            {'id': 'deursensor', 'label': 'Deursensor', 'icon': 'deursensor.png'},
+            {'id': 'spiegel', 'label': 'Spiegel', 'icon': 'spiegel.png'},
+            {'id': 'schuine_led', 'label': 'Schuine LED', 'icon': 'schuine_led.png'},
+        ]
+
+        # Resolve assets directory
+        assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'assets')
+        icon_size = 64
+
+        # Fixed 2-row layout: first half on row 0, second half on row 1
+        half = math.ceil(len(macros) / 2)
+        for i, macro in enumerate(macros):
+            icon_path = os.path.join(assets_dir, macro['icon'])
+            try:
+                icon_img = Image.open(icon_path).resize((icon_size, icon_size), Image.LANCZOS)
+            except Exception:
+                # Fallback: plain colored square with first letter
+                icon_img = Image.new('RGBA', (icon_size, icon_size), '#cccccc')
+            photo = ImageTk.PhotoImage(icon_img)
+            self._macro_icons[macro['id']] = photo
+
+            row = 0 if i < half else 1
+            col = i if i < half else i - half
+
+            btn = tk.Button(
+                self.macros_frame, image=photo, text=macro['label'],
+                compound='top', command=lambda m=macro: self._on_macro_click(m['id']),
+                relief='groove', bd=2, padx=8, pady=4, cursor='hand2'
+            )
+            btn.grid(row=row, column=col, padx=6, pady=6, sticky='n')
+
+    def _on_macro_click(self, macro_id):
+        """Handle macro button click. Placeholder for future CNC program modifications."""
+        self._log(f"Macro '{macro_id}' aangeklikt. (Functionaliteit wordt nog toegevoegd)")
+
+    def _clear_opmerkingen(self):
+        """Clear the opmerkingen text widget."""
+        self.opmerkingen_text.config(state='normal')
+        self.opmerkingen_text.delete('1.0', tk.END)
+        self.opmerkingen_text.insert('1.0', 'Geen opmerkingen voor dit project.')
+        self.opmerkingen_text.config(state='disabled')
+        self._auto_size_opmerkingen()
+
+    def _auto_size_opmerkingen(self):
+        """Auto-size the opmerkingen text widget height to fit content including wrapped lines."""
+        # Delay until widget is rendered so display line count is accurate
+        self.opmerkingen_text.after_idle(self._do_auto_size_opmerkingen)
+
+    def _do_auto_size_opmerkingen(self):
+        """Actual auto-size after widget has been laid out."""
+        try:
+            # count() returns actual display lines including word-wrap
+            result = self.opmerkingen_text.count('1.0', 'end', 'displaylines')
+            if result:
+                display_lines = result[0] if isinstance(result, tuple) else result
+            else:
+                # Fallback: count newlines
+                content = self.opmerkingen_text.get('1.0', 'end-1c')
+                display_lines = content.count('\n') + 1
+        except Exception:
+            content = self.opmerkingen_text.get('1.0', 'end-1c')
+            display_lines = content.count('\n') + 1
+        # Clamp between 2 and 20 lines
+        self.opmerkingen_text.config(height=max(2, min(display_lines + 1, 20)))
 
     def _clear_item_status(self):
         """Clears the status of the selected item (sets to NIET OK)."""

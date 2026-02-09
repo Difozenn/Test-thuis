@@ -309,14 +309,14 @@ class DatabasePanel(ttk.Frame):
         print(f"[DBLCLICK DEBUG] User: '{log_user}'")
         print(f"[DBLCLICK DEBUG] File path from DB: '{file_path_from_db}'")
 
-        if log_status in ['OPEN', 'EXCEL_GENERATED', 'BEZIG']:
+        if log_status in ['OPEN', 'EXCEL_GENERATED', 'BEZIG', 'PAUZE']:
             if not project_name:
                 print("[DBLCLICK DEBUG] No project name found")
                 messagebox.showwarning("Geen project", "Geen projectnaam gevonden voor deze log entry.")
                 return
             
             # Special handling for BEZIG status - session is already paused (we're on database panel)
-            if log_status == 'BEZIG':
+            if log_status in ('BEZIG', 'PAUZE'):
                 print(f"[DBLCLICK DEBUG] Handling BEZIG status for {log_user}")
                 
                 # The session is already paused because we're on the database panel
@@ -333,267 +333,64 @@ class DatabasePanel(ttk.Frame):
                 # If Yes clicked, continue to find and open the Excel file
                 # The session will automatically resume when switching to scanner panel
 
-            path_to_load = None
-
-            # If file_path is empty (like for SESSION_RESUME), look it up from the API
+            # Step 1: Get file_path from the row's hidden column (should be populated by _update_logs_ui backfill)
             if not file_path_from_db or file_path_from_db == 'None' or not file_path_from_db.strip():
-                print(f"[DBLCLICK DEBUG] No file path in event, looking up from OPEN event for project: {project_name}, user: {log_user}")
+                print(f"[DBLCLICK] No file_path in row, doing filtered API lookup for user={log_user}, project={project_name}")
+                # Step 2: Filtered API call as fallback — find any event with a file_path for this user+project
                 try:
-                    import requests
-                    # Use the API to get the file path
                     api_url = self.api_url_var.get()
                     logs_url = api_url.replace('/log', '/logs')
-                    
-                    # Query the API for OPEN events for this user/project
-                    # Bypass proxy for local API calls (important for computers with proxy configuration)
-                    response = requests.get(logs_url, timeout=2, proxies={"http": None, "https": None})
+                    response = requests.get(logs_url, params={'user': log_user, 'project': project_name},
+                                            timeout=2, proxies={"http": None, "https": None})
                     if response.status_code == 200:
-                        logs = response.json()
-                        # Find the most recent OPEN event for this user/project with a file path
-                        for log in logs:
-                            if (log.get('user') == log_user and 
-                                log.get('project') == project_name and 
-                                log.get('event') == 'OPEN' and 
-                                log.get('file_path') and 
-                                log.get('file_path') != 'None'):
-                                file_path_from_db = log.get('file_path')
-                                print(f"[DBLCLICK DEBUG] Found file path from OPEN event via API: {file_path_from_db}")
+                        for log in response.json():
+                            fp = log.get('file_path', '')
+                            if fp and fp != 'None' and fp.strip():
+                                file_path_from_db = fp
+                                print(f"[DBLCLICK] Found file_path via filtered API: {file_path_from_db}")
                                 break
                 except Exception as e:
-                    print(f"[DBLCLICK DEBUG] Error looking up OPEN event via API: {e}")
+                    print(f"[DBLCLICK] Filtered API lookup failed: {e}")
 
-            # Now use the file path (either from the event or looked up from OPEN)
-            if file_path_from_db and file_path_from_db.lower().endswith(('.xlsx', '.xls')):
-                # Normalize the path for network compatibility
-                normalized_path, path_exists = self._normalize_network_path(file_path_from_db)
-                
-                if path_exists:
-                    path_to_load = normalized_path
-                    print(f"[DBLCLICK] Using Excel file path from database: {path_to_load}")
-                    self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
-                    return
-                else:
-                    print(f"[DBLCLICK] Excel file from DB not accessible: {file_path_from_db}")
-                    
-                    # Provide detailed diagnostic information
-                    diagnostic_info = f"Origineel pad: {file_path_from_db}\n"
-                    if normalized_path != file_path_from_db:
-                        diagnostic_info += f"Genormaliseerd pad: {normalized_path}\n"
-                    
-                    # Check if it's a network path
-                    if file_path_from_db.startswith('\\\\') or (normalized_path and normalized_path.startswith('\\\\')):
-                        diagnostic_info += "\nType: UNC netwerkpad (\\\\server\\share\\...)"
-                    elif len(file_path_from_db) > 1 and file_path_from_db[1] == ':':
-                        drive = file_path_from_db[0]
-                        diagnostic_info += f"\nType: Gekoppelde netwerkschijf ({drive}:)"
-                    
-                    messagebox.showerror(
-                        "Netwerkpad niet toegankelijk",
-                        f"Het Excel-bestand kan niet worden geopend:\n\n{diagnostic_info}\n\n"
-                        f"Mogelijke oorzaken:\n"
-                        f"• Netwerkschijf is niet gekoppeld op deze computer\n"
-                        f"• Netwerklocatie is niet toegankelijk\n"
-                        f"• Pad gebruikt een andere schijfletter op deze computer\n"
-                        f"• Bestand is verplaatst of verwijderd\n\n"
-                        f"Controleer of de netwerklocatie toegankelijk is in Windows Verkenner."
-                    )
-                    return
-
-            # PRIORITY 2: If file_path_from_db is a directory, search for Excel files in it
-            print(f"[DBLCLICK DEBUG] PRIORITY 2: Checking if path is directory")
-            
-            # Normalize directory path for network compatibility
-            normalized_dir_path, dir_exists = self._normalize_network_path(file_path_from_db)
-            print(f"[DBLCLICK DEBUG] Is directory: {os.path.isdir(normalized_dir_path) if normalized_dir_path else False}")
-            
-            if normalized_dir_path and dir_exists and os.path.isdir(normalized_dir_path):
-                print(f"[DBLCLICK] Searching for Excel in directory from database: {normalized_dir_path}")
-                # Determine the base for the Excel filename based on the user type
-                excel_filename_base = ""
-                if log_user in ['GANNOMAT', 'KL GANNOMAT']:  # Handle both variants
-                    excel_filename_base = project_name
-                    print(f"[DBLCLICK] User is GANNOMAT-type, using project_name '{project_name}' for Excel filename.")
-                else: # Default behavior for OPUS and others
-                    excel_filename_base = os.path.basename(os.path.normpath(normalized_dir_path))
-                    print(f"[DBLCLICK] User is {log_user}, using directory base name '{excel_filename_base}' for Excel filename.")
-
-                excel_filename_updated = f"{excel_filename_base}_updated.xlsx"
-                excel_filename_original = f"{excel_filename_base}.xlsx"
-
-                potential_paths = [
-                    os.path.join(normalized_dir_path, excel_filename_updated),
-                    os.path.join(normalized_dir_path, excel_filename_original)
-                ]
-                
-                print(f"[DBLCLICK DEBUG] Potential paths to check:")
-                for i, p_path in enumerate(potential_paths):
-                    print(f"[DBLCLICK DEBUG]   {i+1}. {p_path} (exists: {os.path.exists(p_path)})")
-
-                for p_path in potential_paths:
-                    if os.path.exists(p_path):
-                        path_to_load = p_path
-                        print(f"[DBLCLICK] Found Excel using DB directory path: {path_to_load}")
-                        self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
-                        return
-
-                print(f"[DBLCLICK] Excel not found in DB directory '{normalized_dir_path}'. Proceeding to fallbacks.")
-
-            # PRIORITY 3: Check config for last Excel file (especially useful for ACCURA/BOERE)
-            print(f"[DBLCLICK DEBUG] PRIORITY 3: Checking config last_excel_file")
-            app_config = self.main_app.load_app_config()
-            last_excel_file = app_config.get('Paths', {}).get('last_excel_file', '')
-            print(f"[DBLCLICK DEBUG] last_excel_file from config: '{last_excel_file}'")
-            
-            if last_excel_file and os.path.exists(last_excel_file):
-                # Check if this file matches the current project by MO number
-                mo_match = project_name.split('_')[0] if '_' in project_name else project_name
-                if mo_match in os.path.basename(last_excel_file):
-                    print(f"[DBLCLICK] Found matching Excel from config: {last_excel_file}")
-                    self.main_app.switch_to_scanner_and_load(last_excel_file, user=log_user)
-                    return
-
-            # PRIORITY 4: Handle ACCURA/BOERE type users with dedicated directories
-            print(f"[DBLCLICK DEBUG] PRIORITY 4: Checking ACCURA/BOERE type directories")
-            if log_user in ['ACCURA', 'BOERE']:
-                # Get configured directory from BarcodeMatch config
-                accura_dir = app_config.get('accura_output_dir', 'C:/ACCURA')
-                boere_dir = app_config.get('boere_output_dir', 'C:/BOERE')
-                
-                # Use the appropriate directory based on user
-                user_directory = accura_dir if log_user == 'ACCURA' else boere_dir
-                print(f"[DBLCLICK DEBUG] Checking {log_user} directory: {user_directory}")
-                
-                if os.path.isdir(user_directory):
-                    # Look for files matching project pattern
-                    import glob
-                    mo_number = project_name.split('_')[0] if '_' in project_name else project_name
-                    
-                    # Try multiple patterns to find the Excel file
-                    patterns = [
-                        f"{user_directory}/*{mo_number}*.xlsx",  # Match by MO number anywhere in filename
-                        f"{user_directory}/{mo_number}_*.xlsx",  # Match starting with MO number
-                        f"{user_directory}/*_{mo_number}_*.xlsx" # Match with MO number in middle
-                    ]
-                    
-                    matching_files = []
-                    for pattern in patterns:
-                        print(f"[DBLCLICK DEBUG] Trying search pattern: {pattern}")
-                        files = glob.glob(pattern)
-                        if files:
-                            matching_files.extend(files)
-                            print(f"[DBLCLICK DEBUG] Found {len(files)} files with this pattern")
-                    
-                    # Remove duplicates while preserving order
-                    seen = set()
-                    unique_files = []
-                    for f in matching_files:
-                        if f not in seen:
-                            seen.add(f)
-                            unique_files.append(f)
-                    matching_files = unique_files
-                    
-                    print(f"[DBLCLICK DEBUG] Found {len(matching_files)} unique matching files total")
-                    
-                    if matching_files:
-                        # Sort by modification time (newest first)
-                        matching_files.sort(key=os.path.getmtime, reverse=True)
-                        path_to_load = matching_files[0]
-                        print(f"[DBLCLICK] Found {log_user} Excel file: {path_to_load}")
-                        self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
-                        return
-                    else:
-                        print(f"[DBLCLICK DEBUG] No Excel files found in {user_directory} for MO number {mo_number}")
-
-            # PRIORITY 5: Parse path from log_details (Fallback for older logs)
-            print(f"[DBLCLICK DEBUG] PRIORITY 5: Parsing path from log details")
-            parsed_path_used = False
-            # Updated regex to find any path-like string, matching new and old log formats.
-            path_match = re.search(r"([A-Za-z]:\\[\S]+|[A-Za-z]:/[\S]+|\\\\\\[\S]+)", log_details)
-            print(f"[DBLCLICK DEBUG] Path regex match: {path_match.group(1) if path_match else 'None'}")
-
-            if path_match:
-                parsed_base_path = path_match.group(1).strip()
-                print(f"[DBLCLICK] Parsed base path from details: '{parsed_base_path}' for user '{log_user}'")
-                
-                excel_filename_base = ""
-                if log_user == 'OPUS':
-                    # For OPUS, Excel filename is often the same as the containing folder's name
-                    excel_filename_base = os.path.basename(os.path.normpath(parsed_base_path))
-                elif log_user in ['GANNOMAT', 'KL GANNOMAT']:
-                    # For GANNOMAT, Excel filename is typically project_name.xlsx in the parsed_base_path
-                    excel_filename_base = project_name
-                else: # Fallback or unknown user type from log
-                    excel_filename_base = project_name 
-                    print(f"[DBLCLICK] Unknown or missing user ('{log_user}') in log for path parsing, defaulting to project_name for Excel filename.")
-
-                if excel_filename_base:
-                    excel_filename_updated = f"{excel_filename_base}_updated.xlsx"
-                    excel_filename_original = f"{excel_filename_base}.xlsx"
-
-                    potential_paths = [
-                        os.path.join(parsed_base_path, excel_filename_updated),
-                        os.path.join(parsed_base_path, excel_filename_original)
-                    ]
-                    
-                    print(f"[DBLCLICK DEBUG] Parsed path potential files:")
-                    for i, p_path in enumerate(potential_paths):
-                        print(f"[DBLCLICK DEBUG]   {i+1}. {p_path} (exists: {os.path.exists(p_path)})")
-                    
-                    for p_path in potential_paths:
-                        if os.path.exists(p_path):
-                            path_to_load = p_path
-                            parsed_path_used = True
-                            print(f"[DBLCLICK] Found Excel using parsed path: {path_to_load}")
-                            break
-                else:
-                    print(f"[DBLCLICK] Could not determine excel_filename_base from parsed path and user type.")
-
-            if path_to_load:
-                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
-                return
-            elif parsed_path_used and not path_to_load: # Parsed path but file not found there
-                messagebox.showwarning("Bestand niet gevonden (Log Pad)",
-                                       f"Excel-bestand niet gevonden op het pad vermeld in de log details:\n{parsed_base_path}")
-                return # Stop if we used parsed path and failed
-
-            # PRIORITY 6: Fallback to BarcodeMatch 'default_base_dir' (Basis map)
-            print(f"[DBLCLICK DEBUG] PRIORITY 6: Checking fallback 'default_base_dir'")
-            print(f"[DBLCLICK] Path not found in log details or file not at parsed path. Falling back to 'default_base_dir'.")
-            
-            default_bm_base_dir = app_config.get('default_base_dir', '')
-            print(f"[DBLCLICK DEBUG] default_base_dir: '{default_bm_base_dir}'")
-
-            if not default_bm_base_dir:
-                print(f"[DBLCLICK DEBUG] No default_base_dir configured")
-                messagebox.showwarning("Configuratie Fout",
-                                       "'Basis map' (default_base_dir) is niet ingesteld in de Import paneel configuratie (BarcodeMatch).\nKan het Excel-bestand niet vinden.")
+            # Step 3: If still no file_path, show error
+            if not file_path_from_db or file_path_from_db == 'None' or not file_path_from_db.strip():
+                print(f"[DBLCLICK] No file_path found for project {project_name}")
+                messagebox.showwarning(
+                    "Geen bestandspad gevonden",
+                    f"Er is geen Excel-bestandspad gevonden voor project '{project_name}'.\n\n"
+                    f"Dit kan voorkomen als het project alleen via de server is aangemaakt\n"
+                    f"zonder een lokaal Excel-bestand."
+                )
                 return
 
-            # Using project_name for fallback, as it's the most general case
-            excel_filename_original_fallback = f"{project_name}.xlsx"
-            excel_filename_updated_fallback = f"{project_name}_updated.xlsx"
+            # Step 4: Normalize the path (handles network drive resolution)
+            normalized_path, path_exists = self._normalize_network_path(file_path_from_db)
 
-            potential_fallback_paths = [
-                os.path.join(default_bm_base_dir, excel_filename_updated_fallback),
-                os.path.join(default_bm_base_dir, excel_filename_original_fallback)
-            ]
-            
-            print(f"[DBLCLICK DEBUG] Fallback potential paths:")
-            for i, p_path in enumerate(potential_fallback_paths):
-                print(f"[DBLCLICK DEBUG]   {i+1}. {p_path} (exists: {os.path.exists(p_path)})")
-
-            for p_path in potential_fallback_paths:
-                if os.path.exists(p_path):
-                    path_to_load = p_path
-                    print(f"[DBLCLICK] Found Excel using fallback 'default_base_dir': {path_to_load}")
-                    break
-            
-            if path_to_load:
-                self.main_app.switch_to_scanner_and_load(path_to_load, user=log_user)
+            if path_exists:
+                print(f"[DBLCLICK] Opening Excel file: {normalized_path}")
+                self.main_app.switch_to_scanner_and_load(normalized_path, user=log_user)
             else:
-                print(f"[DBLCLICK DEBUG] No Excel file found in any location")
-                messagebox.showwarning("Bestand niet gevonden (Fallback)",
-                                       f"Excel-bestand '{excel_filename_original_fallback}' of '{excel_filename_updated_fallback}'\nniet gevonden in de geconfigureerde 'Basis map':\n{default_bm_base_dir}")
+                print(f"[DBLCLICK] File not accessible: {file_path_from_db}")
+                # Build diagnostic info for the error message
+                diagnostic_info = f"Origineel pad: {file_path_from_db}\n"
+                if normalized_path and normalized_path != file_path_from_db:
+                    diagnostic_info += f"Genormaliseerd pad: {normalized_path}\n"
+
+                if file_path_from_db.startswith('\\\\') or (normalized_path and normalized_path.startswith('\\\\')):
+                    diagnostic_info += "\nType: UNC netwerkpad (\\\\server\\share\\...)"
+                elif len(file_path_from_db) > 1 and file_path_from_db[1] == ':':
+                    diagnostic_info += f"\nType: Gekoppelde netwerkschijf ({file_path_from_db[0]}:)"
+
+                messagebox.showerror(
+                    "Bestand niet toegankelijk",
+                    f"Het Excel-bestand kan niet worden geopend:\n\n{diagnostic_info}\n\n"
+                    f"Mogelijke oorzaken:\n"
+                    f"• Netwerkschijf is niet gekoppeld op deze computer\n"
+                    f"• Netwerklocatie is niet toegankelijk\n"
+                    f"• Pad gebruikt een andere schijfletter op deze computer\n"
+                    f"• Bestand is verplaatst of verwijderd\n\n"
+                    f"Controleer of de netwerklocatie toegankelijk is in Windows Verkenner."
+                )
         elif log_status == 'AFGEMELD':
             print(f"[DBLCLICK DEBUG] Project is AFGEMELD, showing confirmation dialog")
             # Show confirmation dialog for AFGEMELD projects
@@ -1270,7 +1067,8 @@ class DatabasePanel(ttk.Frame):
             
             # Second pass: build latest_events, excluding completed projects entirely
             latest_events = {}
-            
+            project_file_paths = {}  # Track file_path per project from ANY event
+
             for log_entry in logs:
                 # Process only logs for the current user
                 if log_entry.get('user') != user:
@@ -1294,8 +1092,14 @@ class DatabasePanel(ttk.Frame):
                     continue # Skip logs with invalid timestamp format
                 
                 # If status is not OPEN or AFGEMELD, skip (unless you want to include others)
-                if status not in ['OPEN', 'AFGEMELD', 'EXCEL_GENERATED', 'BEZIG']:
+                if status not in ['OPEN', 'AFGEMELD', 'EXCEL_GENERATED', 'BEZIG', 'PAUZE']:
                     continue
+
+                # Track file_path per project — keep the most recent non-empty one
+                log_file_path = log_entry.get('file_path', '')
+                if log_file_path and log_file_path != 'None' and log_file_path.strip():
+                    if project_name not in project_file_paths:
+                        project_file_paths[project_name] = log_file_path
 
                 # Logic to keep the most relevant log: latest OPEN, or today's latest AFGEMELD
                 current_latest = latest_events.get(project_name)
@@ -1318,6 +1122,12 @@ class DatabasePanel(ttk.Frame):
                         # The current logic prefers keeping an OPEN status visible over a more recent AFGEMELD one.
                         # For now, if current is OPEN, today's AFGEMELD does not replace it.
             
+            # Backfill missing file_path from older events for the same project
+            for project_name, log_entry in latest_events.items():
+                entry_fp = log_entry.get('file_path', '')
+                if (not entry_fp or entry_fp == 'None') and project_name in project_file_paths:
+                    log_entry['file_path'] = project_file_paths[project_name]
+
             # Sort by timestamp descending to show newest first
             sorted_log_items = sorted(latest_events.values(), key=lambda l: datetime.fromisoformat(l['timestamp']), reverse=True)
 

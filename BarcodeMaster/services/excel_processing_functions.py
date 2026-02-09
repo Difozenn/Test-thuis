@@ -325,6 +325,54 @@ def extract_color_from_excel(excel_path, sheet_name):
         return None
 
 
+def extract_opmerkingen_from_excel(excel_path):
+    """Extract 'opgelet' (warnings) text from the 8_info sheet.
+    Uses pd.read_excel (supports both .xls and .xlsx)."""
+    try:
+        # Find 8_info sheet name
+        xls = pd.ExcelFile(excel_path)
+        info_sheet_name = None
+        for name in xls.sheet_names:
+            if '8' in name and 'info' in name.lower():
+                info_sheet_name = name
+                break
+        if not info_sheet_name:
+            print(f"[OPMERKINGEN] No 8_info sheet found in {os.path.basename(excel_path)}")
+            return None
+
+        # Read entire sheet without header processing
+        df = pd.read_excel(excel_path, sheet_name=info_sheet_name, header=None)
+
+        # Search for "opgelet" in all cells
+        for i in range(len(df)):
+            for j in range(len(df.columns)):
+                cell_value = df.iloc[i, j]
+                if pd.notna(cell_value) and isinstance(cell_value, str) and 'opgelet' in cell_value.lower():
+                    text = str(cell_value).strip()
+                    if len(text) > 20:  # Cell itself has the content
+                        print(f"[OPMERKINGEN] Found in cell ({i},{j}): {text[:80]}...")
+                        return text
+                    # Check cell below
+                    if i + 1 < len(df):
+                        below = df.iloc[i + 1, j]
+                        if pd.notna(below) and str(below).strip():
+                            text = str(below).strip()
+                            print(f"[OPMERKINGEN] Found below ({i+1},{j}): {text[:80]}...")
+                            return text
+                    # Check cell to the right
+                    if j + 1 < len(df.columns):
+                        right = df.iloc[i, j + 1]
+                        if pd.notna(right) and str(right).strip():
+                            text = str(right).strip()
+                            print(f"[OPMERKINGEN] Found right ({i},{j+1}): {text[:80]}...")
+                            return text
+        print(f"[OPMERKINGEN] No 'opgelet' text found in sheet '{info_sheet_name}'")
+        return None
+    except Exception as e:
+        print(f"[OPMERKINGEN] Error extracting: {e}")
+        return None
+
+
 def find_excel_file_for_project(directory, project_code):
     """
     Find Excel file matching the project code.
@@ -1026,7 +1074,10 @@ def process_excel_for_all_types(excel_path, processor_types):
 
         # Extract color from Excel
         color = extract_color_from_excel(excel_path, sheet_name)
-        
+
+        # Extract opmerkingen (warnings) from Excel
+        opmerkingen = extract_opmerkingen_from_excel(excel_path)
+
         # Process for each type
         for proc_type in processor_types:
             if proc_type == 'NESTING_PROCESSING':
@@ -1046,9 +1097,10 @@ def process_excel_for_all_types(excel_path, processor_types):
                     result['opdeelzaag_count'] = parcours_col.str.startswith('Z', na=False).sum()
                     # Calculate total item count (consolidated)
                     result['item_count'] = result['nesting_count'] + result['opdeelzaag_count']
-                
+
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
-                
+
             elif proc_type == 'ACCURA_PROCESSING':
                 result = {
                     'item_count': 0,
@@ -1088,6 +1140,7 @@ def process_excel_for_all_types(excel_path, processor_types):
                             item_name = f"{positie}{wand_naam}"
                             result['items_list'].append(item_name)
 
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
 
             elif proc_type == 'BOERE_PROCESSING':
@@ -1151,6 +1204,7 @@ def process_excel_for_all_types(excel_path, processor_types):
                 if excluded_count > 0:
                     print(f"[BOERE] Excluded {excluded_count} items matching TE BESTELLEN section")
 
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
 
             elif proc_type == 'AFWERKING_PROCESSING':
@@ -1197,6 +1251,7 @@ def process_excel_for_all_types(excel_path, processor_types):
                 if excluded_count > 0:
                     print(f"[AFWERKING] Excluded {excluded_count} items matching TE BESTELLEN section")
 
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
 
             elif proc_type == 'MASSIEF_PROCESSING':
@@ -1227,9 +1282,10 @@ def process_excel_for_all_types(excel_path, processor_types):
                             else:
                                 # Fallback to material name if no Positie/Wand Naam
                                 result['items_list'].append(materiaal_value)
-                
+
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
-                
+
             elif proc_type == 'HANDWERK_PROCESSING':
                 result = {
                     'item_count': 0,
@@ -1258,9 +1314,10 @@ def process_excel_for_all_types(excel_path, processor_types):
                             else:
                                 # Fallback to row description if no Positie/Wand Naam
                                 result['items_list'].append(f"HAND item {result['item_count']}")
-                
+
+                result['opmerkingen'] = opmerkingen
                 results[proc_type] = result
-                
+
     except Exception as e:
         print(f"Error processing Excel for multiple types: {e}")
         traceback.print_exc()
@@ -1268,7 +1325,7 @@ def process_excel_for_all_types(excel_path, processor_types):
     return results
 
 
-def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, project_name=None, username=None):
+def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, project_name=None, username=None, opmerkingen=None):
     """
     Generate Excel file for ACCURA processing with item list.
 
@@ -1330,10 +1387,16 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
                 worksheet.sheet_state = 'hidden'
+
+                # Add opmerkingen sheet if available
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
-        
+
         print(f"[ACCURA] Excel file generated: {output_path}")
         return output_path
         
@@ -1343,7 +1406,7 @@ def generate_excel_for_accura(items_list, mo_number, so_number, customer_name, p
         return None
 
 
-def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, project_name=None, username=None):
+def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, project_name=None, username=None, opmerkingen=None):
     """
     Generate Excel file for BOERE processing with item list.
 
@@ -1440,6 +1503,12 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
                 worksheet.sheet_state = 'hidden'
+
+                # Add opmerkingen sheet if available
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
@@ -1453,7 +1522,7 @@ def generate_excel_for_boere(items_list, mo_number, so_number, customer_name, pr
         return None
 
 
-def generate_excel_for_afwerking(items_list, mo_number, so_number, customer_name, project_name=None, username=None):
+def generate_excel_for_afwerking(items_list, mo_number, so_number, customer_name, project_name=None, username=None, opmerkingen=None):
     """
     Generate Excel file for AFWERKING processing with item list.
 
@@ -1515,6 +1584,12 @@ def generate_excel_for_afwerking(items_list, mo_number, so_number, customer_name
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
                 worksheet.sheet_state = 'hidden'
+
+                # Add opmerkingen sheet if available
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
@@ -1635,7 +1710,7 @@ def parse_excel_for_massief(excel_path):
         }
 
 
-def generate_excel_for_massief(items_list, mo_number, so_number, customer_name, project_name=None, username=None):
+def generate_excel_for_massief(items_list, mo_number, so_number, customer_name, project_name=None, username=None, opmerkingen=None):
     """
     Generate Excel file for MASSIEF processing with item list.
 
@@ -1697,10 +1772,16 @@ def generate_excel_for_massief(items_list, mo_number, so_number, customer_name, 
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
                 worksheet.sheet_state = 'hidden'
+
+                # Add opmerkingen sheet if available
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
-        
+
         print(f"[MASSIEF] Excel file generated: {output_path}")
         return output_path
         
@@ -1817,7 +1898,7 @@ def parse_excel_for_handwerk(excel_path):
         }
 
 
-def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name, project_name=None, username=None):
+def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name, project_name=None, username=None, opmerkingen=None):
     """
     Generate Excel file for HANDWERK processing with item list.
 
@@ -1879,10 +1960,16 @@ def generate_excel_for_handwerk(items_list, mo_number, so_number, customer_name,
                 workbook = writer.book
                 worksheet = workbook['_ProjectInfo']
                 worksheet.sheet_state = 'hidden'
+
+                # Add opmerkingen sheet if available
+                if opmerkingen:
+                    opm_df = pd.DataFrame({'Opmerkingen': [opmerkingen]})
+                    opm_df.to_excel(writer, sheet_name='_Opmerkingen', index=False)
+                    workbook['_Opmerkingen'].sheet_state = 'hidden'
         else:
             # Fallback to simple Excel write
             df.to_excel(output_path, index=False, sheet_name='Items')
-        
+
         print(f"[HANDWERK] Excel file generated: {output_path}")
         return output_path
         

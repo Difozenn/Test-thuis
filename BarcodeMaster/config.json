@@ -3,7 +3,7 @@
     "api_url": "http://localhost:5001/log",
     "user": "NESTING",
     "admin_db_init_enabled": true,
-    "scanner_panel_com_port": "COM3",
+    "scanner_panel_com_port": "",
     "scanner_panel_type": "USB",
     "admin_terminate_db_on_exit": true,
     "scanner_panel_open_event_users": [
@@ -87,7 +87,8 @@
             1,
             2,
             3,
-            4
+            4,
+            5
         ],
         "saturday": {
             "start": 0.0,

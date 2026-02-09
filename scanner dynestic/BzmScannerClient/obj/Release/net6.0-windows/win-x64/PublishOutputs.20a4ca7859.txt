@@ -1,2 +1,0 @@
-C:\Users\Rob\Desktop\Test-thuis\scanner dynestic\BzmScannerClient\bin\Release\net6.0-windows\win-x64\publish\BzmScannerClient.pdb
-C:\Users\Rob\Desktop\Test-thuis\scanner dynestic\BzmScannerClient\bin\Release\net6.0-windows\win-x64\publish\BzmScannerClient.exe

@@ -2941,11 +2941,143 @@
 2026-02-07 21:38:06.411 | INFO | SESSION DEBUG LOGGER INITIALIZED
 2026-02-07 21:38:06.411 | INFO | ================================================================================
 2026-02-07 21:38:06.861 | INFO | ScannerPanel initialized - thread sync enabled
-2026-02-09 08:10:01.402 | INFO | ================================================================================
-2026-02-09 08:10:01.402 | INFO | SESSION DEBUG LOGGER INITIALIZED
-2026-02-09 08:10:01.402 | INFO | ================================================================================
-2026-02-09 08:10:02.095 | INFO | ScannerPanel initialized - thread sync enabled
-2026-02-09 08:19:11.587 | INFO | ================================================================================
-2026-02-09 08:19:11.587 | INFO | SESSION DEBUG LOGGER INITIALIZED
-2026-02-09 08:19:11.587 | INFO | ================================================================================
-2026-02-09 08:19:11.945 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-09 08:20:29.243 | INFO | ================================================================================
+2026-02-09 08:20:29.243 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-09 08:20:29.243 | INFO | ================================================================================
+2026-02-09 08:20:30.542 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-09 08:21:37.747 | INFO | ============================================================
+2026-02-09 08:21:37.747 | INFO | _start_session_for_excel_work CALLED
+2026-02-09 08:21:37.747 | INFO |   excel_file_path: C:\BOERE\MO08587_TV-wand_(2-7)_20260207_151231.xlsx
+2026-02-09 08:21:37.747 | INFO |   existing current_session_id: None
+2026-02-09 08:21:37.747 | INFO |   existing api_session_id: None
+2026-02-09 08:21:37.747 | INFO |   existing active_project: None
+2026-02-09 08:21:37.747 | INFO |   existing active_user: BOERE
+2026-02-09 08:21:37.747 | INFO |   User source: active_user = BOERE
+2026-02-09 08:21:37.773 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-09 08:21:37.773 | INFO |   Checking for existing session: user=BOERE, project=MO08587_TV-wand_(2-7)
+2026-02-09 08:21:39.800 | INFO |   FOUND existing session from API:
+2026-02-09 08:21:39.800 | INFO |     session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:21:39.800 | INFO |     is_paused: True
+2026-02-09 08:21:39.800 | INFO |   Session IDs synchronized: api=BOERE_MO08587_TV-wand_(2-7)_20260207_152503, local=BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:21:39.800 | INFO |   Session IS paused - will call _resume_session()
+2026-02-09 08:21:39.800 | INFO | ============================================================
+2026-02-09 08:21:39.800 | INFO | _resume_session CALLED
+2026-02-09 08:21:39.800 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:21:39.800 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:21:39.800 | INFO |   session_paused: True
+2026-02-09 08:21:39.800 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-09 08:21:39.800 | INFO |   active_user (CACHED): BOERE
+2026-02-09 08:21:39.800 | INFO |   Session marked as resumed
+2026-02-09 08:21:39.800 | INFO |   Using CACHED user: BOERE
+2026-02-09 08:21:39.800 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-09 08:21:39.800 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:21:39.800 | INFO |   RESUME API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-09T08:21:39.800253", "total_pause_duration": 2.28, "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-09 08:21:39.800 | INFO |   RESUME API CALL: POST http://localhost:5001/session/resume
+2026-02-09 08:21:40.854 | INFO |   RESUME API RESPONSE: 200
+2026-02-09 08:21:41.878 | INFO |   SESSION_RESUME log event: {"event": "SESSION_RESUME", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)", "session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "details": "Session resumed - pause duration: 0.0 minutes", "status": "BEZIG", "file_path": "C:\\BOERE\\MO08587_TV-wand_(2-7)_20260207_151231.xlsx", "timestamp": "2026-02-09T08:21:41.878864"}
+2026-02-09 08:21:42.909 | INFO |   SESSION_RESUME log response: 201
+2026-02-09 08:23:01.465 | INFO | ============================================================
+2026-02-09 08:23:01.465 | INFO | _pause_session CALLED
+2026-02-09 08:23:01.465 | INFO |   blocking: False
+2026-02-09 08:23:01.465 | INFO |   current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:23:01.465 | INFO |   api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:23:01.465 | INFO |   session_paused: False
+2026-02-09 08:23:01.465 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-09 08:23:01.465 | INFO |   active_user (CACHED): BOERE
+2026-02-09 08:23:01.465 | INFO |   Session marked as paused at 2026-02-09 08:23:01.465473
+2026-02-09 08:23:01.465 | INFO |   Using CACHED user: BOERE
+2026-02-09 08:23:01.465 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-09 08:23:01.465 | INFO |   Using session_id for API: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:23:01.465 | INFO |   PAUSE API data: {"session_id": "BOERE_MO08587_TV-wand_(2-7)_20260207_152503", "timestamp": "2026-02-09T08:23:01.465473", "user": "BOERE", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-09 08:23:01.465 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-09 08:23:03.514 | INFO |   PAUSE API RESPONSE: 404
+2026-02-09 08:23:03.514 | ERROR |   PAUSE API FAILED: 404 - {"error":"Session not found or already ended","success":false}
+
+2026-02-09 08:23:03.520 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-09 08:27:45.752 | INFO | ============================================================
+2026-02-09 08:27:45.752 | INFO | _start_session_for_excel_work CALLED
+2026-02-09 08:27:45.752 | INFO |   excel_file_path: C:\OPUS\KORPUS\1114_MO08587_TV-wand_(2-7)\1114_MO08587_TV-wand_(2-7).xlsx
+2026-02-09 08:27:45.752 | INFO |   existing current_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:27:45.752 | INFO |   existing api_session_id: BOERE_MO08587_TV-wand_(2-7)_20260207_152503
+2026-02-09 08:27:45.752 | INFO |   existing active_project: MO08587_TV-wand_(2-7)
+2026-02-09 08:27:45.752 | INFO |   existing active_user: OPUS
+2026-02-09 08:27:45.752 | INFO |   User source: active_user = OPUS
+2026-02-09 08:27:45.767 | INFO |   Project extracted and CACHED: MO08587_TV-wand_(2-7)
+2026-02-09 08:27:45.767 | INFO |   Checking for existing session: user=OPUS, project=MO08587_TV-wand_(2-7)
+2026-02-09 08:27:47.788 | INFO |   No existing session found - creating NEW session
+2026-02-09 08:27:47.788 | INFO |   NEW session created: OPUS_MO08587_TV-wand_(2-7)_20260209_082747
+2026-02-09 08:27:47.788 | INFO |   (api_session_id will be set when API responds)
+2026-02-09 08:27:47.788 | INFO |   API CALL: POST http://localhost:5001/session/xlsx_updated
+2026-02-09 08:27:47.788 | INFO |   API DATA: {"event": "XLSX_UPDATED", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "item_count": 98, "timestamp": "2026-02-09T08:27:47.788955", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260209_082747"}
+2026-02-09 08:27:49.860 | INFO |   API RESPONSE: session_id=OPUS_MO08587_TV-wand_(2-7)_20260209_082749
+2026-02-09 08:27:49.860 | INFO |   SESSION IDs NOW: api=OPUS_MO08587_TV-wand_(2-7)_20260209_082749, local=OPUS_MO08587_TV-wand_(2-7)_20260209_082747
+2026-02-09 08:27:55.227 | INFO | ============================================================
+2026-02-09 08:27:55.227 | INFO | _pause_session CALLED
+2026-02-09 08:27:55.227 | INFO |   blocking: False
+2026-02-09 08:27:55.227 | INFO |   current_session_id: OPUS_MO08587_TV-wand_(2-7)_20260209_082747
+2026-02-09 08:27:55.227 | INFO |   api_session_id: OPUS_MO08587_TV-wand_(2-7)_20260209_082749
+2026-02-09 08:27:55.227 | INFO |   session_paused: False
+2026-02-09 08:27:55.227 | INFO |   active_project (CACHED): MO08587_TV-wand_(2-7)
+2026-02-09 08:27:55.227 | INFO |   active_user (CACHED): OPUS
+2026-02-09 08:27:55.227 | INFO |   Session marked as paused at 2026-02-09 08:27:55.227325
+2026-02-09 08:27:55.227 | INFO |   Using CACHED user: OPUS
+2026-02-09 08:27:55.227 | INFO |   Using CACHED project: MO08587_TV-wand_(2-7)
+2026-02-09 08:27:55.228 | INFO |   Using session_id for API: OPUS_MO08587_TV-wand_(2-7)_20260209_082749
+2026-02-09 08:27:55.228 | INFO |   PAUSE API data: {"session_id": "OPUS_MO08587_TV-wand_(2-7)_20260209_082749", "timestamp": "2026-02-09T08:27:55.227325", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)"}
+2026-02-09 08:27:55.228 | INFO |   PAUSE API CALL: POST http://localhost:5001/session/pause
+2026-02-09 08:27:57.311 | INFO |   PAUSE API RESPONSE: 200
+2026-02-09 08:27:57.311 | INFO |   Session pause SUCCESSFUL
+2026-02-09 08:27:58.339 | INFO |   SESSION_PAUSE log event: {"event": "SESSION_PAUSE", "user": "OPUS", "project": "MO08587_TV-wand_(2-7)", "session_id": "OPUS_MO08587_TV-wand_(2-7)_20260209_082749", "details": "Session paused - panel hidden", "status": "PAUZE", "file_path": "C:\\OPUS\\KORPUS\\1114_MO08587_TV-wand_(2-7)\\1114_MO08587_TV-wand_(2-7).xlsx", "timestamp": "2026-02-09T08:27:55.227325"}
+2026-02-09 08:28:00.398 | INFO |   SESSION_PAUSE log response: 201
+2026-02-09 08:28:00.398 | INFO |   PAUSE COMPLETE - _pause_complete_event SET
+2026-02-09 08:45:37.591 | INFO | ================================================================================
+2026-02-09 08:45:37.591 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-09 08:45:37.591 | INFO | ================================================================================
+2026-02-09 08:45:38.857 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:07:12.887 | INFO | ================================================================================
+2026-02-10 19:07:12.887 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:07:12.887 | INFO | ================================================================================
+2026-02-10 19:07:14.176 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:07:19.032 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:13:44.301 | INFO | ================================================================================
+2026-02-10 19:13:44.301 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:13:44.301 | INFO | ================================================================================
+2026-02-10 19:13:44.761 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:15:57.744 | INFO | ================================================================================
+2026-02-10 19:15:57.744 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:15:57.744 | INFO | ================================================================================
+2026-02-10 19:15:58.211 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:17:19.789 | INFO | ================================================================================
+2026-02-10 19:17:19.789 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:17:19.789 | INFO | ================================================================================
+2026-02-10 19:17:20.279 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:18:14.426 | INFO | ================================================================================
+2026-02-10 19:18:14.426 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:18:14.426 | INFO | ================================================================================
+2026-02-10 19:18:14.909 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:19:26.148 | INFO | ================================================================================
+2026-02-10 19:19:26.148 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:19:26.148 | INFO | ================================================================================
+2026-02-10 19:19:26.607 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:19:59.224 | INFO | ================================================================================
+2026-02-10 19:19:59.224 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:19:59.224 | INFO | ================================================================================
+2026-02-10 19:19:59.684 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:20:25.834 | INFO | ================================================================================
+2026-02-10 19:20:25.834 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:20:25.834 | INFO | ================================================================================
+2026-02-10 19:20:26.294 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:20:31.383 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:51:16.747 | INFO | ================================================================================
+2026-02-10 19:51:16.747 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:51:16.747 | INFO | ================================================================================
+2026-02-10 19:51:17.222 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 19:57:33.835 | INFO | ================================================================================
+2026-02-10 19:57:33.835 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 19:57:33.835 | INFO | ================================================================================
+2026-02-10 19:57:34.294 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 20:03:03.273 | INFO | ================================================================================
+2026-02-10 20:03:03.273 | INFO | SESSION DEBUG LOGGER INITIALIZED
+2026-02-10 20:03:03.273 | INFO | ================================================================================
+2026-02-10 20:03:03.747 | INFO | ScannerPanel initialized - thread sync enabled
+2026-02-10 20:03:08.190 | INFO | ScannerPanel initialized - thread sync enabled

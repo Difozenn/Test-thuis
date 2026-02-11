@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 import csv
+import os
 import threading
 
 # Import existing calculator
@@ -702,6 +703,19 @@ class BestelberekeningApp:
             padx=20,
             pady=8,
             cursor="hand2"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Button(
+            button_container,
+            text="Saldo Trend",
+            command=self.show_saldo_trend,
+            bg=ModernTheme.WARNING,
+            fg=ModernTheme.TEXT_PRIMARY,
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=20,
+            pady=8,
+            cursor="hand2"
         ).pack(side=tk.LEFT)
 
         # Results section header
@@ -1178,19 +1192,21 @@ class BestelberekeningApp:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                     self.settings['rendement_pct'] = config.get('rendement_pct', 75.0)
+                    self.settings['trend_folder'] = config.get('trend_folder', '.')
                     self.safety_margins = config.get('safety_margins', {})
                     self.material_rendement = config.get('material_rendement', {})
                     self.artikel_nummers = config.get('artikel_nummers', {})
             except Exception as e:
                 print(f"Fout bij laden config: {e}")
 
-    def save_config(self):
+    def save_config(self, silent=False):
         """Save configuration to JSON file"""
         import json
 
         try:
             config = {
                 'rendement_pct': self.settings['rendement_pct'],
+                'trend_folder': self.settings.get('trend_folder', '.'),
                 'safety_margins': self.safety_margins,
                 'material_rendement': self.material_rendement,
                 'artikel_nummers': self.artikel_nummers
@@ -1199,8 +1215,9 @@ class BestelberekeningApp:
             with open("bestelberekening_config.json", 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
 
-            self.status_var.set("✓ Configuratie opgeslagen")
-            messagebox.showinfo("Succes", "Configuratie opgeslagen in bestelberekening_config.json")
+            if not silent:
+                self.status_var.set("✓ Configuratie opgeslagen")
+                messagebox.showinfo("Succes", "Configuratie opgeslagen in bestelberekening_config.json")
 
         except Exception as e:
             messagebox.showerror("Fout", f"Fout bij opslaan config:\n{e}")
@@ -1776,6 +1793,44 @@ class BestelberekeningApp:
         except Exception as e:
             messagebox.showerror("Fout", f"Fout bij berekenen:\n{e}")
             self.status_var.set("Fout bij berekenen")
+
+    def show_saldo_trend(self):
+        """Generate a weekly saldo trend report from historical exports"""
+        from saldo_trend import generate_saldo_trend
+
+        # Use saved folder or default to current directory
+        initial_dir = self.settings.get('trend_folder', '.')
+
+        folder = filedialog.askdirectory(
+            title="Selecteer map met bestelberekening_*.xlsx bestanden",
+            initialdir=initial_dir
+        )
+        if not folder:
+            return
+
+        # Save chosen folder for next time
+        self.settings['trend_folder'] = folder
+        self.save_config(silent=True)
+
+        self.status_var.set("Saldo trend genereren...")
+        self.root.update()
+
+        try:
+            output_path = generate_saldo_trend(folder)
+            self.status_var.set(f"✓ Saldo trend opgeslagen: {os.path.basename(output_path)}")
+            messagebox.showinfo(
+                "Succes",
+                f"Saldo trend rapport gegenereerd:\n{output_path}"
+            )
+            # Open the file (Windows)
+            os.startfile(output_path)
+
+        except FileNotFoundError as e:
+            messagebox.showwarning("Geen bestanden", str(e))
+            self.status_var.set("Geen bestanden gevonden voor trend")
+        except Exception as e:
+            messagebox.showerror("Fout", f"Fout bij genereren saldo trend:\n{e}")
+            self.status_var.set("Fout bij saldo trend")
 
     def export_csv(self):
         """Export results to Excel with color coding"""

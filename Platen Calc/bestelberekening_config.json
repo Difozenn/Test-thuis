@@ -1,5 +1,6 @@
 {
   "rendement_pct": 75.0,
+  "trend_folder": ".",
   "safety_margins": {
     "650": 0.0
   },

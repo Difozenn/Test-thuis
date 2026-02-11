@@ -13,12 +13,29 @@ import subprocess
 import threading
 import time
 from pathlib import Path
+from datetime import datetime
 
 # Get local version
 try:
     from build_info import BUILD_NUMBER
 except ImportError:
     BUILD_NUMBER = "v0"
+
+
+def _update_log(msg):
+    """Log to both console and update_monitor.log file."""
+    line = f"[UPDATE MONITOR] {msg}"
+    print(line)
+    try:
+        if getattr(sys, 'frozen', False):
+            log_dir = os.path.join(os.path.dirname(sys.executable), 'logs')
+        else:
+            log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        with open(os.path.join(log_dir, 'update_monitor.log'), 'a', encoding='utf-8') as f:
+            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {msg}\n")
+    except Exception:
+        pass
 
 
 def get_app_dir():
@@ -115,7 +132,7 @@ class UpdateChecker:
                 with open(version_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
-            print(f"[UPDATER] Error reading version.json: {e}")
+            _update_log(f" Error reading version.json: {e}")
 
         return None
 
@@ -129,20 +146,20 @@ class UpdateChecker:
         version_info = self.get_version_info()
 
         if not version_info:
-            print("[UPDATER] No version info found on server")
+            _update_log(" No version info found on server")
             return None
 
         remote_version = version_info.get('version', 'v0')
         local_version = BUILD_NUMBER
 
-        print(f"[UPDATER] Local version: {local_version}, Remote version: {remote_version}")
+        _update_log(f" Local version: {local_version}, Remote version: {remote_version}")
 
         if is_newer_version(remote_version, local_version):
             self.available_update = version_info
-            print(f"[UPDATER] Update available: {remote_version}")
+            _update_log(f" Update available: {remote_version}")
             return version_info
         else:
-            print("[UPDATER] No update available")
+            _update_log(" No update available")
             return None
 
     def check_for_updates_async(self):
@@ -153,7 +170,7 @@ class UpdateChecker:
                 if update_info and self.callback:
                     self.callback(update_info.get('version', '?'), update_info.get('changelog', ''))
             except Exception as e:
-                print(f"[UPDATER] Error checking for updates: {e}")
+                _update_log(f" Error checking for updates: {e}")
 
         self._check_thread = threading.Thread(target=check, daemon=True)
         self._check_thread.start()
@@ -169,11 +186,11 @@ class UpdateChecker:
             True if download successful and ready to install, False otherwise
         """
         if not self.available_update:
-            print("[UPDATER] No update available to download")
+            _update_log(" No update available to download")
             return False
 
         if self._is_downloading:
-            print("[UPDATER] Download already in progress")
+            _update_log(" Download already in progress")
             return False
 
         self._is_downloading = True
@@ -187,7 +204,7 @@ class UpdateChecker:
             source_path = os.path.join(self.update_server_path, exe_name)
 
             if not os.path.exists(source_path):
-                print(f"[UPDATER] Update file not found: {source_path}")
+                _update_log(f" Update file not found: {source_path}")
                 return False
 
             # Destination paths
@@ -206,7 +223,7 @@ class UpdateChecker:
             source_size = os.path.getsize(source_path)
             copied = 0
 
-            print(f"[UPDATER] Downloading {exe_name} ({source_size / 1024 / 1024:.1f} MB)...")
+            _update_log(f" Downloading {exe_name} ({source_size / 1024 / 1024:.1f} MB)...")
 
             with open(source_path, 'rb') as src, open(download_path, 'wb') as dst:
                 while True:
@@ -219,16 +236,16 @@ class UpdateChecker:
                     if progress_callback:
                         progress_callback(self.download_progress)
 
-            print(f"[UPDATER] Download complete: {download_path}")
+            _update_log(f" Download complete: {download_path}")
 
             # Verify hash if provided
             if expected_hash:
                 actual_hash = calculate_sha256(download_path)
                 if actual_hash.lower() != expected_hash.lower():
-                    print(f"[UPDATER] Hash mismatch! Expected: {expected_hash}, Got: {actual_hash}")
+                    _update_log(f" Hash mismatch! Expected: {expected_hash}, Got: {actual_hash}")
                     os.remove(download_path)
                     return False
-                print("[UPDATER] Hash verified successfully")
+                _update_log(" Hash verified successfully")
 
             # Create the update batch script
             self._create_update_script(download_path, archive_dir)
@@ -236,7 +253,7 @@ class UpdateChecker:
             return True
 
         except Exception as e:
-            print(f"[UPDATER] Download error: {e}")
+            _update_log(f" Download error: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -265,7 +282,7 @@ class UpdateChecker:
         current_exe = get_exe_path()
 
         if not current_exe:
-            print("[UPDATER] Not running as exe, cannot create update script")
+            _update_log(" Not running as exe, cannot create update script")
             return
 
         exe_name = os.path.basename(current_exe)
@@ -325,7 +342,7 @@ REM Delete this script
         with open(script_path, 'w', encoding='utf-8') as f:
             f.write(script_content)
 
-        print(f"[UPDATER] Update script created: {script_path}")
+        _update_log(f" Update script created: {script_path}")
 
     def execute_update(self):
         """
@@ -336,7 +353,7 @@ REM Delete this script
         script_path = os.path.join(app_dir, '.update', 'update.bat')
 
         if not os.path.exists(script_path):
-            print("[UPDATER] Update script not found")
+            _update_log(" Update script not found")
             return False
 
         try:
@@ -351,11 +368,11 @@ REM Delete this script
             else:
                 subprocess.Popen(['sh', script_path], cwd=app_dir)
 
-            print("[UPDATER] Update script started, application will close...")
+            _update_log(" Update script started, application will close...")
             return True
 
         except Exception as e:
-            print(f"[UPDATER] Error executing update: {e}")
+            _update_log(f" Error executing update: {e}")
             return False
 
 

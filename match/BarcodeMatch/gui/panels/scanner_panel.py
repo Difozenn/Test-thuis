@@ -177,7 +177,8 @@ class ScannerPanel(ttk.Frame):
 
         # --- Bottom Pane: Notebook with Opmerkingen + Logboek tabs ---
         self.bottom_notebook = ttk.Notebook(main_paned_window)
-        main_paned_window.add(self.bottom_notebook, weight=1)
+        self.bottom_notebook.configure(height=215)
+        main_paned_window.add(self.bottom_notebook, weight=0)
 
         # Tab 1: Opmerkingen (default, shown first)
         opmerkingen_frame = ttk.Frame(self.bottom_notebook)
@@ -185,7 +186,7 @@ class ScannerPanel(ttk.Frame):
         opmerkingen_frame.rowconfigure(0, weight=1)
         self.bottom_notebook.add(opmerkingen_frame, text="Opmerkingen")
 
-        self.opmerkingen_text = tk.Text(opmerkingen_frame, height=6, wrap=tk.WORD,
+        self.opmerkingen_text = tk.Text(opmerkingen_frame, height=4, wrap=tk.WORD,
                                          state='disabled', font=('TkDefaultFont', 10, 'bold'), bg='#FFFFFF')
         opm_scroll = ttk.Scrollbar(opmerkingen_frame, orient="vertical", command=self.opmerkingen_text.yview)
         self.opmerkingen_text.configure(yscrollcommand=opm_scroll.set)
@@ -331,7 +332,7 @@ class ScannerPanel(ttk.Frame):
         hsb.grid(row=1, column=0, sticky='ew')
 
         # --- Log Viewer ---
-        self.log_text = tk.Text(log_frame, height=6, wrap=tk.WORD, state='disabled')
+        self.log_text = tk.Text(log_frame, height=4, wrap=tk.WORD, state='disabled')
         log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=log_scroll.set)
         self.log_text.grid(row=0, column=0, sticky='nsew')
@@ -3399,8 +3400,9 @@ class ScannerPanel(ttk.Frame):
         self._macro_icons = {}
 
         macros = [
+            {'id': 'spiegel397', 'label': 'Spiegel 397', 'icon': 'spiegel.png'},
             {'id': 'deursensor', 'label': 'Deursensor', 'icon': 'deursensor.png'},
-            {'id': 'spiegel', 'label': 'Spiegel', 'icon': 'spiegel.png'},
+            {'id': 'spiegel497', 'label': 'Spiegel 497', 'icon': 'spiegel.png'},
             {'id': 'schuine_led', 'label': 'Schuine LED', 'icon': 'schuine_led.png'},
         ]
 
@@ -3426,13 +3428,80 @@ class ScannerPanel(ttk.Frame):
             btn = tk.Button(
                 self.macros_frame, image=photo, text=macro['label'],
                 compound='top', command=lambda m=macro: self._on_macro_click(m['id']),
-                relief='groove', bd=2, padx=8, pady=4, cursor='hand2'
+                relief='flat', bd=0, padx=8, pady=4, cursor='hand2',
+                highlightthickness=0
             )
             btn.grid(row=row, column=col, padx=6, pady=6, sticky='n')
 
     def _on_macro_click(self, macro_id):
-        """Handle macro button click. Placeholder for future CNC program modifications."""
-        self._log(f"Macro '{macro_id}' aangeklikt. (Functionaliteit wordt nog toegevoegd)")
+        """Handle macro button click. Dispatches to macro-specific handlers."""
+        # Get selected treeview row
+        selection = self.tree.selection()
+        if not selection:
+            self._log(f"Macro '{macro_id}': Geen rij geselecteerd in de treeview.")
+            return
+
+        item_value = self.tree.item(selection[0])['values'][1]  # Item column at index 1
+        item_value = str(item_value)
+
+        # Resolve .hop file path
+        excel_path = self.excel_file_path_var.get()
+        if not excel_path:
+            self._log(f"Macro '{macro_id}': Geen Excel bestand geopend.")
+            return
+
+        if not item_value.lower().endswith('.hop'):
+            item_value += '.hop'
+
+        hop_path = os.path.join(os.path.dirname(excel_path), item_value)
+
+        if not os.path.isfile(hop_path):
+            self._log(f"Macro '{macro_id}': HOP bestand niet gevonden: {hop_path}")
+            return
+
+        # Dispatch to macro-specific handler
+        if macro_id == 'spiegel397':
+            self._execute_macro_spiegel397(hop_path)
+        elif macro_id == 'spiegel497':
+            self._execute_macro_spiegel497(hop_path)
+        else:
+            self._log(f"Macro '{macro_id}' aangeklikt. (Functionaliteit wordt nog toegevoegd)")
+
+    def _execute_macro_spiegel397(self, hop_path):
+        """Append CALL SpiegelUItkamering397 to the .hop file if not already present."""
+        call_line = 'CALL SpiegelUItkamering397 ( VAL L:=2628,B:=403,D:=19)'
+        try:
+            with open(hop_path, 'r') as f:
+                content = f.read()
+
+            if 'CALL SpiegelUItkamering397' in content:
+                self._log(f"Spiegel 397: CALL regel bestaat al in {os.path.basename(hop_path)}")
+                return
+
+            with open(hop_path, 'a') as f:
+                f.write(call_line + '\n')
+
+            self._log(f"Spiegel 397: CALL regel toegevoegd aan {os.path.basename(hop_path)}")
+        except Exception as e:
+            self._log(f"Spiegel 397: Fout bij schrijven naar {os.path.basename(hop_path)}: {e}")
+
+    def _execute_macro_spiegel497(self, hop_path):
+        """Append CALL SpiegelUItkamering497 to the .hop file if not already present."""
+        call_line = 'CALL SpiegelUItkamering497 ( VAL L:=2321,B:=497,D:=19)'
+        try:
+            with open(hop_path, 'r') as f:
+                content = f.read()
+
+            if 'CALL SpiegelUItkamering497' in content:
+                self._log(f"Spiegel 497: CALL regel bestaat al in {os.path.basename(hop_path)}")
+                return
+
+            with open(hop_path, 'a') as f:
+                f.write(call_line + '\n')
+
+            self._log(f"Spiegel 497: CALL regel toegevoegd aan {os.path.basename(hop_path)}")
+        except Exception as e:
+            self._log(f"Spiegel 497: Fout bij schrijven naar {os.path.basename(hop_path)}: {e}")
 
     def _clear_opmerkingen(self):
         """Clear the opmerkingen text widget."""
@@ -3461,8 +3530,8 @@ class ScannerPanel(ttk.Frame):
         except Exception:
             content = self.opmerkingen_text.get('1.0', 'end-1c')
             display_lines = content.count('\n') + 1
-        # Clamp between 2 and 20 lines
-        self.opmerkingen_text.config(height=max(2, min(display_lines + 1, 20)))
+        # Minimum of 4 lines (matching Logboek / Opus Macro's fixed height)
+        self.opmerkingen_text.config(height=max(4, display_lines + 1))
 
     def _clear_item_status(self):
         """Clears the status of the selected item (sets to NIET OK)."""

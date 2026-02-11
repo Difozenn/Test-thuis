@@ -311,50 +311,83 @@ class BarcodeMatchApp:
         print('[SPOED MONITOR] Background monitoring started')
 
     def _start_update_checker(self):
-        """Start background update checking"""
-        def check_updates():
+        """Start background update monitor that checks periodically"""
+        UPDATE_CHECK_INTERVAL = 3600  # seconds (1 hour)
+
+        def _update_log(msg):
+            """Log to both console and file"""
+            line = f"[UPDATE MONITOR] {msg}"
+            print(line)
             try:
-                from updater import UpdateChecker
+                log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+                os.makedirs(log_dir, exist_ok=True)
+                from datetime import datetime
+                with open(os.path.join(log_dir, 'update_monitor.log'), 'a', encoding='utf-8') as f:
+                    f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {msg}\n")
+            except Exception:
+                pass
 
-                # Get config
-                config = load_config()
+        def monitor_updates():
+            from updater import UpdateChecker
 
-                # Check if auto-update is enabled
-                if not config.get('auto_update_enabled', False):
-                    print('[UPDATE CHECKER] Auto-update is disabled')
-                    return
+            _update_log('Starting update monitor loop...')
+            time.sleep(3)  # Initial short delay
 
-                # Get update server path from config
-                update_server_path = config.get('update_server_path', '')
+            update_found = False
 
-                if not update_server_path:
-                    print('[UPDATE CHECKER] No update server path configured')
-                    return
+            while True:
+                try:
+                    if self._shutdown_called:
+                        _update_log('Shutdown detected, stopping monitor')
+                        break
 
-                print(f'[UPDATE CHECKER] Checking for updates at: {update_server_path}')
+                    config = load_config()
 
-                def on_update_available(version, changelog):
-                    """Callback when update is found"""
-                    print(f'[UPDATE CHECKER] Update available: {version}')
-                    # Show notification in main thread
-                    if hasattr(self.root, 'show_update_notification'):
-                        self.root.after(0, lambda: self._show_update_notification(version, changelog))
+                    if not config.get('auto_update_enabled', False):
+                        _update_log('Auto-update is disabled')
+                        time.sleep(UPDATE_CHECK_INTERVAL)
+                        continue
 
-                # Create checker and store reference
-                checker = UpdateChecker(update_server_path, callback=on_update_available)
-                self.root.update_checker = checker
+                    update_server_path = config.get('update_server_path', '')
+                    if not update_server_path:
+                        _update_log('No update server path configured')
+                        time.sleep(UPDATE_CHECK_INTERVAL)
+                        continue
 
-                # Check for updates
-                checker.check_for_updates_async()
+                    _update_log(f'Checking for updates at: {update_server_path}')
 
-            except Exception as e:
-                print(f'[UPDATE CHECKER ERROR] {e}')
-                import traceback
-                traceback.print_exc()
+                    # Check if path is reachable
+                    if not os.path.exists(update_server_path):
+                        _update_log(f'Update path not reachable: {update_server_path}')
+                        time.sleep(UPDATE_CHECK_INTERVAL)
+                        continue
 
-        # Run in background thread
-        threading.Thread(target=check_updates, daemon=True).start()
-        print('[UPDATE CHECKER] Update checker started')
+                    checker = UpdateChecker(update_server_path)
+                    self.root.update_checker = checker
+                    update_info = checker.check_for_updates()
+
+                    if update_info:
+                        version = update_info.get('version', '?')
+                        changelog = update_info.get('changelog', '')
+                        _update_log(f'Update available: {version}')
+
+                        if not update_found:
+                            update_found = True
+                            if hasattr(self.root, 'show_update_notification'):
+                                self.root.after(0, lambda v=version, c=changelog: self._show_update_notification(v, c))
+                    else:
+                        from build_info import BUILD_NUMBER
+                        _update_log(f'No update available (local: {BUILD_NUMBER})')
+
+                except Exception as e:
+                    _update_log(f'ERROR: {e}')
+                    import traceback
+                    traceback.print_exc()
+
+                time.sleep(UPDATE_CHECK_INTERVAL)
+
+        threading.Thread(target=monitor_updates, daemon=True).start()
+        print('[UPDATE MONITOR] Background update monitor started')
 
     def _show_update_notification(self, version, changelog):
         """Show update notification in UI"""

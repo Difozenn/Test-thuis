@@ -72,11 +72,18 @@ class BestelberekeningApp:
         # Load settings from config
         self.load_config()
 
+        # Init history database for export comparison
+        from history_db import HistoryDB
+        self.history_db = HistoryDB()
+
         # Setup modern styles
         self.setup_styles()
 
         # Build UI
         self.setup_ui()
+
+        # Clean up DB on close
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def setup_styles(self):
         """Configure modern ttk styles"""
@@ -190,17 +197,20 @@ class BestelberekeningApp:
         self.tab2 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
         self.tab3 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
         self.tab4 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
+        self.tab5 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
 
         self.notebook.add(self.tab1, text="  1. Orders  ")
         self.notebook.add(self.tab2, text="  2. Magazijn  ")
         self.notebook.add(self.tab3, text="  3. Instellingen  ")
         self.notebook.add(self.tab4, text="  4. Berekening  ")
+        self.notebook.add(self.tab5, text="  5. Analyse  ")
 
         # Build each tab
         self.build_tab1_orders()
         self.build_tab2_magazijn()
         self.build_tab3_instellingen()
         self.build_tab4_berekening()
+        self.build_tab5_analyse()
 
         # Status bar
         status_frame = tk.Frame(main_container, bg=ModernTheme.BG_MAIN, relief="flat", bd=1)
@@ -705,19 +715,6 @@ class BestelberekeningApp:
             cursor="hand2"
         ).pack(side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            button_container,
-            text="Saldo Trend",
-            command=self.show_saldo_trend,
-            bg=ModernTheme.WARNING,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
-
         # Results section header
         tk.Label(
             container,
@@ -784,6 +781,163 @@ class BestelberekeningApp:
 
         # Bind double-click to edit "In Bestelling" column
         self.calc_tree.bind('<Double-1>', self.edit_in_bestelling)
+
+    def build_tab5_analyse(self):
+        """Build Analysis tab"""
+        container = tk.Frame(self.tab5, bg=ModernTheme.BG_MAIN)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
+
+        # Header
+        ttk.Label(
+            container,
+            text="Verbruiksanalyse",
+            style="Header.TLabel"
+        ).pack(anchor=tk.W)
+
+        ttk.Label(
+            container,
+            text="Analyse van verbruik, dood stock en service level op basis van historische snapshots",
+            style="Subtitle.TLabel"
+        ).pack(anchor=tk.W, pady=(5, 20))
+
+        # Action buttons
+        button_container = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        button_container.pack(fill=tk.X, pady=(0, 15))
+
+        tk.Button(
+            button_container,
+            text="Ververs Analyse",
+            command=self.refresh_analysis,
+            bg=ModernTheme.PRIMARY,
+            fg="white",
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=20,
+            pady=8,
+            cursor="hand2"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        self.analyse_info_var = tk.StringVar(value="")
+        tk.Label(
+            button_container,
+            textvariable=self.analyse_info_var,
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_SECONDARY,
+            font=ModernTheme.FONT_SMALL
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
+        # Results table
+        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+        table_frame.pack_propagate(False)
+
+        vsb = ttk.Scrollbar(table_frame, orient="vertical")
+        hsb = ttk.Scrollbar(table_frame, orient="horizontal")
+
+        analyse_columns = [
+            "Materiaal",
+            "Stock Nu (m\u00b2)",
+            "Verbruik/week",
+            "Weken Voorraad",
+            "Status",
+            "Bestel Freq.",
+            "Service %"
+        ]
+
+        self.analyse_tree = ttk.Treeview(
+            table_frame,
+            columns=analyse_columns,
+            show="headings",
+            yscrollcommand=vsb.set,
+            xscrollcommand=hsb.set,
+            style="Modern.Treeview"
+        )
+
+        vsb.config(command=self.analyse_tree.yview)
+        hsb.config(command=self.analyse_tree.xview)
+
+        for col in analyse_columns:
+            self.analyse_tree.heading(col, text=col)
+
+        self.analyse_tree.column("Materiaal", width=280, anchor=tk.W)
+        self.analyse_tree.column("Stock Nu (m\u00b2)", width=120, anchor=tk.E)
+        self.analyse_tree.column("Verbruik/week", width=120, anchor=tk.E)
+        self.analyse_tree.column("Weken Voorraad", width=130, anchor=tk.E)
+        self.analyse_tree.column("Status", width=130, anchor=tk.CENTER)
+        self.analyse_tree.column("Bestel Freq.", width=110, anchor=tk.E)
+        self.analyse_tree.column("Service %", width=100, anchor=tk.E)
+
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.analyse_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Color tags
+        self.analyse_tree.tag_configure('critical', foreground='#c62828')      # red: < 2 wk
+        self.analyse_tree.tag_configure('warning', foreground='#e65100')       # orange: 2-4 wk
+        self.analyse_tree.tag_configure('healthy', foreground='#2e7d32')       # green: 4+ wk
+        self.analyse_tree.tag_configure('dead', foreground='#9e9e9e')          # grey: dead stock
+
+    def refresh_analysis(self):
+        """Query the history DB and populate the analysis table."""
+        # Clear table
+        for item in self.analyse_tree.get_children():
+            self.analyse_tree.delete(item)
+
+        data = self.history_db.get_analysis_data()
+        if data is None:
+            snap_count = self.history_db.get_snapshot_count()
+            self.analyse_info_var.set(
+                f"Onvoldoende data: {snap_count} snapshot(s) gevonden, minimaal 3 nodig."
+            )
+            self.status_var.set("Analyse: onvoldoende snapshots")
+            messagebox.showinfo(
+                "Onvoldoende data",
+                f"Er zijn {snap_count} snapshot(s) in de database.\n"
+                "Minimaal 3 snapshots zijn nodig voor analyse.\n\n"
+                "Bereken regelmatig om meer snapshots op te bouwen."
+            )
+            return
+
+        # Sort: critical first (low weeks), dead stock last
+        def sort_key(item):
+            if item['status'] == "Dood Stock":
+                return (2, 0)
+            wk = item['weken_voorraad']
+            if wk == float('inf'):
+                return (1, 999999)
+            return (0, wk)
+
+        data.sort(key=sort_key)
+
+        for row in data:
+            wk = row['weken_voorraad']
+            wk_display = f"{wk:.1f}" if wk != float('inf') else "\u221e"
+            verbr = row['verbruik_per_week']
+            verbr_display = f"{verbr:.2f}" if verbr != 0 else "0.00"
+
+            # Determine color tag
+            if row['status'] == "Dood Stock":
+                tag = 'dead'
+            elif wk != float('inf') and wk < 2:
+                tag = 'critical'
+            elif wk != float('inf') and wk < 4:
+                tag = 'warning'
+            else:
+                tag = 'healthy'
+
+            self.analyse_tree.insert("", "end", values=(
+                row['material'],
+                f"{row['stock_nu']:.2f}",
+                verbr_display,
+                wk_display,
+                row['status'],
+                f"{row['bestel_frequentie']:.0%}",
+                f"{row['service_level']:.0f}%",
+            ), tags=(tag,))
+
+        snap_count = self.history_db.get_snapshot_count()
+        self.analyse_info_var.set(f"{len(data)} materialen geanalyseerd | {snap_count} snapshots")
+        self.status_var.set(f"\u2713 Analyse vernieuwd: {len(data)} materialen")
 
     # === EVENT HANDLERS ===
 
@@ -1662,6 +1816,51 @@ class BestelberekeningApp:
                 result['bestellen'] = saldo_m2
                 break
 
+    def _build_full_snapshot_data(self):
+        """Build a full snapshot with ALL magazijn materials, not just those with orders."""
+        # Start with calculation results (materials with orders/safety)
+        seen_ids = set()
+        snapshot_data = []
+
+        for r in self.calculation_results:
+            mid = r.get('materiaal_id', '')
+            seen_ids.add(mid)
+            snapshot_data.append({
+                'material': r['material'],
+                'artikel_nummer': r.get('artikel_nummer', ''),
+                'materiaal_id': mid,
+                'stock': r['stock'],
+                'bestellen': r['bestellen'],  # saldo
+                'bruto': r.get('bruto', 0),
+            })
+
+        # Add ALL remaining magazijn materials not yet included
+        # Group stock_details by materiaal_id
+        remaining = {}
+        for detail in self.stock_details:
+            mid = detail['materiaal_id']
+            if mid not in seen_ids:
+                if mid not in remaining:
+                    remaining[mid] = {
+                        'material': detail['material'],
+                        'materiaal_id': mid,
+                        'stock': 0.0,
+                    }
+                remaining[mid]['stock'] += detail['m2']
+
+        for mid, info in remaining.items():
+            safety = self.safety_margins.get(mid, 0.0)
+            snapshot_data.append({
+                'material': info['material'],
+                'artikel_nummer': self.artikel_nummers.get(mid, ''),
+                'materiaal_id': mid,
+                'stock': info['stock'],
+                'bestellen': info['stock'] - safety,  # saldo = stock - safety (no orders)
+                'bruto': 0.0,
+            })
+
+        return snapshot_data
+
     def calculate(self):
         """Perform calculation"""
         if not self.orders_data:
@@ -1748,6 +1947,7 @@ class BestelberekeningApp:
                 result = {
                     'material': material,
                     'artikel_nummer': artikel_nummer,
+                    'materiaal_id': materiaal_id or '',
                     'netto': netto_m2,
                     'rendement': rendement_decimal,
                     'bruto': bruto_m2,
@@ -1788,52 +1988,33 @@ class BestelberekeningApp:
                     f"Uitgesloten: {len(excluded_materials)} materialen"
                 )
 
-            self.status_var.set(f"✓ Berekening voltooid: {len(all_materials)} materialen ({len(excluded_materials)} uitgesloten)")
+            # Save full snapshot to history DB
+            history_msg = ""
+            try:
+                timestamp = datetime.now().strftime("%d_%m_%Y")
+                snapshot_data = self._build_full_snapshot_data()
+                self.history_db.save_snapshot(timestamp, snapshot_data)
+                snap_count = self.history_db.get_snapshot_count()
+                history_msg = f" | {snap_count} snapshots in DB"
+            except Exception:
+                pass
+
+            self.status_var.set(f"✓ Berekening voltooid: {len(all_materials)} materialen ({len(excluded_materials)} uitgesloten){history_msg}")
 
         except Exception as e:
             messagebox.showerror("Fout", f"Fout bij berekenen:\n{e}")
             self.status_var.set("Fout bij berekenen")
 
-    def show_saldo_trend(self):
-        """Generate a weekly saldo trend report from historical exports"""
-        from saldo_trend import generate_saldo_trend
-
-        # Use saved folder or default to current directory
-        initial_dir = self.settings.get('trend_folder', '.')
-
-        folder = filedialog.askdirectory(
-            title="Selecteer map met bestelberekening_*.xlsx bestanden",
-            initialdir=initial_dir
-        )
-        if not folder:
-            return
-
-        # Save chosen folder for next time
-        self.settings['trend_folder'] = folder
-        self.save_config(silent=True)
-
-        self.status_var.set("Saldo trend genereren...")
-        self.root.update()
-
+    def on_closing(self):
+        """Clean up resources on window close."""
         try:
-            output_path = generate_saldo_trend(folder)
-            self.status_var.set(f"✓ Saldo trend opgeslagen: {os.path.basename(output_path)}")
-            messagebox.showinfo(
-                "Succes",
-                f"Saldo trend rapport gegenereerd:\n{output_path}"
-            )
-            # Open the file (Windows)
-            os.startfile(output_path)
-
-        except FileNotFoundError as e:
-            messagebox.showwarning("Geen bestanden", str(e))
-            self.status_var.set("Geen bestanden gevonden voor trend")
-        except Exception as e:
-            messagebox.showerror("Fout", f"Fout bij genereren saldo trend:\n{e}")
-            self.status_var.set("Fout bij saldo trend")
+            self.history_db.close()
+        except Exception:
+            pass
+        self.root.destroy()
 
     def export_csv(self):
-        """Export results to Excel with color coding"""
+        """Export results to Excel with color coding and history comparison"""
         if not self.calculation_results:
             messagebox.showwarning("Waarschuwing", "Voer eerst de berekening uit!")
             return
@@ -1851,6 +2032,9 @@ class BestelberekeningApp:
         if filename:
             try:
                 import xlsxwriter
+
+                # Get previous snapshot for comparison
+                prev = self.history_db.get_previous_snapshot()
 
                 workbook = xlsxwriter.Workbook(filename)
                 worksheet = workbook.add_worksheet('Bestelberekening')
@@ -1901,41 +2085,102 @@ class BestelberekeningApp:
                     'locked': False
                 })
 
-                # Set column widths
-                worksheet.set_column(0, 0, 30)  # Materiaal
-                worksheet.set_column(1, 1, 18)  # Artikel Nummer
-                worksheet.set_column(2, 8, 15)  # Numbers
+                # Grey background for "Vorig" columns
+                grey_format = workbook.add_format({
+                    'num_format': '0.00',
+                    'border': 1,
+                    'bg_color': '#e8eaed',
+                    'font_color': '#5f6368'
+                })
 
-                # Prepare table data
+                grey_empty_format = workbook.add_format({
+                    'border': 1,
+                    'bg_color': '#e8eaed',
+                    'font_color': '#5f6368',
+                    'align': 'center'
+                })
+
+                # Delta formats (green = improved, red = worsened)
+                delta_green_format = workbook.add_format({
+                    'num_format': '+0.00;-0.00;0.00',
+                    'bg_color': '#e8f5e9',
+                    'font_color': '#2e7d32',
+                    'border': 1
+                })
+
+                delta_red_format = workbook.add_format({
+                    'num_format': '+0.00;-0.00;0.00',
+                    'bg_color': '#ffebee',
+                    'font_color': '#c62828',
+                    'border': 1
+                })
+
+                delta_normal_format = workbook.add_format({
+                    'num_format': '+0.00;-0.00;0.00',
+                    'border': 1
+                })
+
+                # Set column widths: A-M
+                worksheet.set_column(0, 0, 30)   # A: Materiaal
+                worksheet.set_column(1, 1, 18)   # B: Artikel Nummer
+                worksheet.set_column(2, 8, 15)   # C-I: Numbers
+                worksheet.set_column(9, 10, 15)  # J-K: Vorig columns
+                worksheet.set_column(11, 12, 13) # L-M: Delta columns
+
+                # Prepare table data (13 columns: A-M)
                 table_data = []
                 for result in self.calculation_results:
+                    material = result['material']
+                    stock = result['stock']
+                    saldo = result['bestellen']
+
+                    # Previous values
+                    if prev and material in prev:
+                        stock_vorig = prev[material]['stock']
+                        saldo_vorig = prev[material]['saldo']
+                        delta_stock = stock - stock_vorig
+                        delta_saldo = saldo - saldo_vorig
+                    else:
+                        stock_vorig = None
+                        saldo_vorig = None
+                        delta_stock = None
+                        delta_saldo = None
+
                     table_data.append([
-                        result['material'],
-                        result.get('artikel_nummer', ''),
-                        result['netto'],
-                        result['rendement'],
-                        result['bruto'],
-                        result['safety'],
-                        result['stock'],
-                        result.get('in_bestelling', 0.0),
-                        result['bestellen']
+                        material,                              # A
+                        result.get('artikel_nummer', ''),      # B
+                        result['netto'],                       # C
+                        result['rendement'],                   # D
+                        result['bruto'],                       # E
+                        result['safety'],                      # F
+                        stock,                                 # G
+                        result.get('in_bestelling', 0.0),      # H
+                        saldo,                                 # I
+                        stock_vorig,                           # J
+                        saldo_vorig,                           # K
+                        delta_stock,                           # L
+                        delta_saldo,                           # M
                     ])
 
-                # Define table columns with formats (no structured reference formula)
+                # Define table columns
                 table_columns = [
                     {'header': 'Materiaal', 'header_format': header_format, 'format': text_format},
                     {'header': 'Artikel Nummer', 'header_format': header_format, 'format': workbook.add_format({'border': 1, 'align': 'right'})},
-                    {'header': 'Netto (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Netto (m\u00b2)', 'header_format': header_format, 'format': normal_format},
                     {'header': 'R%', 'header_format': header_format, 'format': percent_format},
-                    {'header': 'Bruto (m²)', 'header_format': header_format, 'format': normal_format},
-                    {'header': 'Veiligh. (m²)', 'header_format': header_format, 'format': normal_format},
-                    {'header': 'Stock (m²)', 'header_format': header_format, 'format': normal_format},
-                    {'header': 'In Bestelling (m²)', 'header_format': header_format, 'format': editable_format},
-                    {'header': 'Saldo (m²)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Bruto (m\u00b2)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Veiligh. (m\u00b2)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Stock (m\u00b2)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'In Bestelling (m\u00b2)', 'header_format': header_format, 'format': editable_format},
+                    {'header': 'Saldo (m\u00b2)', 'header_format': header_format, 'format': normal_format},
+                    {'header': 'Stock Vorig (m\u00b2)', 'header_format': header_format, 'format': grey_format},
+                    {'header': 'Saldo Vorig (m\u00b2)', 'header_format': header_format, 'format': grey_format},
+                    {'header': '\u0394 Stock (m\u00b2)', 'header_format': header_format, 'format': delta_normal_format},
+                    {'header': '\u0394 Saldo (m\u00b2)', 'header_format': header_format, 'format': delta_normal_format},
                 ]
 
-                # Create Excel Table with sort/filter on header click
-                last_row = max(len(table_data), 1)  # At least 1 data row
+                # Create Excel Table
+                last_row = max(len(table_data), 1)
                 worksheet.add_table(0, 0, last_row, len(table_columns) - 1, {
                     'data': table_data,
                     'columns': table_columns,
@@ -1943,39 +2188,79 @@ class BestelberekeningApp:
                     'name': 'Bestelberekening',
                 })
 
-                # Overwrite Saldo column with regular cell formulas + cached value
-                # Formula: Stock (G) + In Bestelling (H) - (Bruto (E) + Veiligh (F))
+                # Overwrite formula columns with actual formulas + cached values
                 for r in range(1, last_row + 1):
-                    formula = f'=G{r+1}+H{r+1}-(E{r+1}+F{r+1})'
-                    cached_value = table_data[r - 1][8]  # bestellen value
-                    worksheet.write_formula(r, 8, formula, normal_format, cached_value)
+                    row_data = table_data[r - 1]
 
-                # Add conditional formatting for Saldo column (column I)
+                    # Column I (8): Saldo formula = Stock + In Bestelling - (Bruto + Veiligh)
+                    saldo_formula = f'=G{r+1}+H{r+1}-(E{r+1}+F{r+1})'
+                    worksheet.write_formula(r, 8, saldo_formula, normal_format, row_data[8])
+
+                    # Columns J-K: Vorig values (write as numbers or "-")
+                    if row_data[9] is not None:
+                        worksheet.write_number(r, 9, row_data[9], grey_format)
+                    else:
+                        worksheet.write_string(r, 9, "-", grey_empty_format)
+
+                    if row_data[10] is not None:
+                        worksheet.write_number(r, 10, row_data[10], grey_format)
+                    else:
+                        worksheet.write_string(r, 10, "-", grey_empty_format)
+
+                    # Column L (11): Delta Stock formula = G - J (only if Vorig exists)
+                    if row_data[9] is not None:
+                        delta_stock_formula = f'=G{r+1}-J{r+1}'
+                        worksheet.write_formula(r, 11, delta_stock_formula, delta_normal_format, row_data[11])
+                    else:
+                        worksheet.write_string(r, 11, "-", grey_empty_format)
+
+                    # Column M (12): Delta Saldo formula = I - K (only if Vorig exists)
+                    if row_data[10] is not None:
+                        delta_saldo_formula = f'=I{r+1}-K{r+1}'
+                        worksheet.write_formula(r, 12, delta_saldo_formula, delta_normal_format, row_data[12])
+                    else:
+                        worksheet.write_string(r, 12, "-", grey_empty_format)
+
+                # Add conditional formatting
                 if table_data:
-                    row = last_row + 1  # For range reference (1-based)
-                    worksheet.conditional_format(f'I2:I{row}', {
-                        'type': 'cell',
-                        'criteria': '<',
-                        'value': 0,
-                        'format': red_format
+                    data_range_end = last_row + 1  # 1-based row for range
+
+                    # Saldo column (I): red < 0, green > 0
+                    worksheet.conditional_format(f'I2:I{data_range_end}', {
+                        'type': 'cell', 'criteria': '<', 'value': 0, 'format': red_format
                     })
-                    worksheet.conditional_format(f'I2:I{row}', {
-                        'type': 'cell',
-                        'criteria': '>',
-                        'value': 0,
-                        'format': green_format
+                    worksheet.conditional_format(f'I2:I{data_range_end}', {
+                        'type': 'cell', 'criteria': '>', 'value': 0, 'format': green_format
+                    })
+
+                    # Delta Stock (L): green > 0 (stock increased), red < 0 (stock decreased)
+                    worksheet.conditional_format(f'L2:L{data_range_end}', {
+                        'type': 'cell', 'criteria': '>', 'value': 0, 'format': delta_green_format
+                    })
+                    worksheet.conditional_format(f'L2:L{data_range_end}', {
+                        'type': 'cell', 'criteria': '<', 'value': 0, 'format': delta_red_format
+                    })
+
+                    # Delta Saldo (M): green > 0 (saldo improved), red < 0 (saldo worsened)
+                    worksheet.conditional_format(f'M2:M{data_range_end}', {
+                        'type': 'cell', 'criteria': '>', 'value': 0, 'format': delta_green_format
+                    })
+                    worksheet.conditional_format(f'M2:M{data_range_end}', {
+                        'type': 'cell', 'criteria': '<', 'value': 0, 'format': delta_red_format
                     })
 
                 # Add note below table
                 note_row = last_row + 2
+                note_format = workbook.add_format({'italic': True, 'font_color': '#5f6368'})
                 worksheet.write(note_row, 0,
-                    "Let op: Wijzig de 'In Bestelling (m²)' kolom om de Saldo automatisch te herberekenen.",
-                    workbook.add_format({'italic': True, 'font_color': '#5f6368'}))
+                    "Wijzig 'In Bestelling (m\u00b2)' om Saldo automatisch te herberekenen. "
+                    "Kolommen J-M tonen vergelijking met vorige export.",
+                    note_format)
 
                 workbook.close()
 
-                self.status_var.set(f"✓ Geëxporteerd naar {Path(filename).name}")
-                messagebox.showinfo("Succes", f"Bestelberekening geëxporteerd naar:\n{filename}")
+                self.status_var.set(f"\u2713 Ge\u00ebxporteerd naar {Path(filename).name}")
+                messagebox.showinfo("Succes", f"Bestelberekening ge\u00ebxporteerd naar:\n{filename}")
 
             except ImportError:
                 messagebox.showerror("Fout", "xlsxwriter module niet gevonden!\n\nInstalleer met: pip install xlsxwriter")

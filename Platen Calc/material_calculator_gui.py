@@ -9,10 +9,13 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 from pathlib import Path
 from datetime import datetime
 import threading
+import json
 import sys
 
 # Import the main calculator
 from material_calculator import MaterialCalculator
+
+CONFIG_FILE = "platen_calc_config.json"
 
 
 class MaterialCalculatorGUI:
@@ -25,6 +28,9 @@ class MaterialCalculatorGUI:
 
         self.calculator = None
         self.files = []
+
+        # Load saved paths from config
+        self.config = self.load_config()
 
         self.setup_ui()
 
@@ -50,7 +56,7 @@ class MaterialCalculatorGUI:
         folder_frame.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E), pady=5)
         folder_frame.columnconfigure(0, weight=1)
 
-        self.folder_var = tk.StringVar(value="Stuklijsten")
+        self.folder_var = tk.StringVar(value=self.config.get('folder_path', 'Stuklijsten'))
         ttk.Entry(folder_frame, textvariable=self.folder_var).grid(
             row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5)
         )
@@ -176,6 +182,27 @@ class MaterialCalculatorGUI:
         )
         if folder:
             self.folder_var.set(folder)
+            self.save_config()
+
+    def load_config(self):
+        """Load saved paths from config file"""
+        config_file = Path(CONFIG_FILE)
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
+
+    def save_config(self):
+        """Save paths to config file"""
+        try:
+            self.config['folder_path'] = self.folder_var.get()
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
 
     def get_filters(self):
         """Get filter settings from UI"""

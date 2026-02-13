@@ -203,7 +203,7 @@ class BestelberekeningApp:
         self.notebook.add(self.tab2, text="  2. Magazijn  ")
         self.notebook.add(self.tab3, text="  3. Instellingen  ")
         self.notebook.add(self.tab4, text="  4. Berekening  ")
-        self.notebook.add(self.tab5, text="  5. Analyse  ")
+        self.notebook.add(self.tab5, text="  5. Historiek  ")
 
         # Build each tab
         self.build_tab1_orders()
@@ -266,7 +266,7 @@ class BestelberekeningApp:
         path_frame = tk.Frame(folder_inner, bg=ModernTheme.BG_SECONDARY)
         path_frame.pack(fill=tk.X)
 
-        self.orders_folder_var = tk.StringVar(value="Stuklijsten")
+        self.orders_folder_var = tk.StringVar(value=self.settings.get('orders_folder', 'Stuklijsten'))
         folder_entry = tk.Entry(
             path_frame,
             textvariable=self.orders_folder_var,
@@ -425,7 +425,7 @@ class BestelberekeningApp:
         path_frame = tk.Frame(file_inner, bg=ModernTheme.BG_SECONDARY)
         path_frame.pack(fill=tk.X)
 
-        self.magazijn_file_var = tk.StringVar(value="t_temp_ContentResult.csv")
+        self.magazijn_file_var = tk.StringVar(value=self.settings.get('magazijn_file', 't_temp_ContentResult.csv'))
         file_entry = tk.Entry(
             path_frame,
             textvariable=self.magazijn_file_var,
@@ -783,20 +783,20 @@ class BestelberekeningApp:
         self.calc_tree.bind('<Double-1>', self.edit_in_bestelling)
 
     def build_tab5_analyse(self):
-        """Build Analysis tab"""
+        """Build Analysis tab — static shell only, Treeview is created dynamically."""
         container = tk.Frame(self.tab5, bg=ModernTheme.BG_MAIN)
         container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
         # Header
         ttk.Label(
             container,
-            text="Verbruiksanalyse",
+            text="Stock Saldo Historiek",
             style="Header.TLabel"
         ).pack(anchor=tk.W)
 
         ttk.Label(
             container,
-            text="Analyse van verbruik, dood stock en service level op basis van historische snapshots",
+            text="Stock / Saldo per materiaal per snapshot-datum",
             style="Subtitle.TLabel"
         ).pack(anchor=tk.W, pady=(5, 20))
 
@@ -817,6 +817,19 @@ class BestelberekeningApp:
             cursor="hand2"
         ).pack(side=tk.LEFT, padx=(0, 10))
 
+        tk.Button(
+            button_container,
+            text="Exporteer Historiek",
+            command=self.export_pivot,
+            bg=ModernTheme.SECONDARY,
+            fg="white",
+            font=ModernTheme.FONT_NORMAL,
+            relief="flat",
+            padx=20,
+            pady=8,
+            cursor="hand2"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
         self.analyse_info_var = tk.StringVar(value="")
         tk.Label(
             button_container,
@@ -826,118 +839,333 @@ class BestelberekeningApp:
             font=ModernTheme.FONT_SMALL
         ).pack(side=tk.LEFT, padx=(10, 0))
 
-        # Results table
-        table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
-        table_frame.pack(fill=tk.BOTH, expand=True)
-        table_frame.pack_propagate(False)
-
-        vsb = ttk.Scrollbar(table_frame, orient="vertical")
-        hsb = ttk.Scrollbar(table_frame, orient="horizontal")
-
-        analyse_columns = [
-            "Materiaal",
-            "Stock Nu (m\u00b2)",
-            "Verbruik/week",
-            "Weken Voorraad",
-            "Status",
-            "Bestel Freq.",
-            "Service %"
-        ]
-
-        self.analyse_tree = ttk.Treeview(
-            table_frame,
-            columns=analyse_columns,
-            show="headings",
-            yscrollcommand=vsb.set,
-            xscrollcommand=hsb.set,
-            style="Modern.Treeview"
-        )
-
-        vsb.config(command=self.analyse_tree.yview)
-        hsb.config(command=self.analyse_tree.xview)
-
-        for col in analyse_columns:
-            self.analyse_tree.heading(col, text=col)
-
-        self.analyse_tree.column("Materiaal", width=280, anchor=tk.W)
-        self.analyse_tree.column("Stock Nu (m\u00b2)", width=120, anchor=tk.E)
-        self.analyse_tree.column("Verbruik/week", width=120, anchor=tk.E)
-        self.analyse_tree.column("Weken Voorraad", width=130, anchor=tk.E)
-        self.analyse_tree.column("Status", width=130, anchor=tk.CENTER)
-        self.analyse_tree.column("Bestel Freq.", width=110, anchor=tk.E)
-        self.analyse_tree.column("Service %", width=100, anchor=tk.E)
-
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        hsb.pack(side=tk.BOTTOM, fill=tk.X)
-        self.analyse_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Color tags
-        self.analyse_tree.tag_configure('critical', foreground='#c62828')      # red: < 2 wk
-        self.analyse_tree.tag_configure('warning', foreground='#e65100')       # orange: 2-4 wk
-        self.analyse_tree.tag_configure('healthy', foreground='#2e7d32')       # green: 4+ wk
-        self.analyse_tree.tag_configure('dead', foreground='#9e9e9e')          # grey: dead stock
+        # Placeholder frame for the dynamic Treeview
+        self.analyse_table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        self.analyse_table_frame.pack(fill=tk.BOTH, expand=True)
 
     def refresh_analysis(self):
-        """Query the history DB and populate the analysis table."""
-        # Clear table
-        for item in self.analyse_tree.get_children():
-            self.analyse_tree.delete(item)
+        """Query the history DB and build a pivot grid with per-cell coloring."""
+        for child in self.analyse_table_frame.winfo_children():
+            child.destroy()
 
-        data = self.history_db.get_analysis_data()
-        if data is None:
-            snap_count = self.history_db.get_snapshot_count()
-            self.analyse_info_var.set(
-                f"Onvoldoende data: {snap_count} snapshot(s) gevonden, minimaal 3 nodig."
-            )
-            self.status_var.set("Analyse: onvoldoende snapshots")
+        pivot = self.history_db.get_pivot_data()
+        if pivot is None:
+            self.analyse_info_var.set("Geen snapshots gevonden.")
+            self.status_var.set("Analyse: geen data")
             messagebox.showinfo(
-                "Onvoldoende data",
-                f"Er zijn {snap_count} snapshot(s) in de database.\n"
-                "Minimaal 3 snapshots zijn nodig voor analyse.\n\n"
-                "Bereken regelmatig om meer snapshots op te bouwen."
+                "Geen data",
+                "Er zijn geen snapshots in de database.\n"
+                "Bereken eerst om snapshots op te bouwen."
             )
             return
 
-        # Sort: critical first (low weeks), dead stock last
-        def sort_key(item):
-            if item['status'] == "Dood Stock":
-                return (2, 0)
-            wk = item['weken_voorraad']
-            if wk == float('inf'):
-                return (1, 999999)
-            return (0, wk)
+        dates = pivot['dates']  # oldest first
+        materials = pivot['materials']
+        artikel_nrs = pivot.get('artikel_nrs', {})
 
-        data.sort(key=sort_key)
+        date_headers = []
+        for d in dates:
+            parts = d.split('-')
+            date_headers.append(f"{parts[2]}-{parts[1]}-{parts[0]}")
 
-        for row in data:
-            wk = row['weken_voorraad']
-            wk_display = f"{wk:.1f}" if wk != float('inf') else "\u221e"
-            verbr = row['verbruik_per_week']
-            verbr_display = f"{verbr:.2f}" if verbr != 0 else "0.00"
+        sorted_materials = sorted(materials.keys())
+        hdr_font = (ModernTheme.FONT_FAMILY, 9, "bold")
+        cell_font = (ModernTheme.FONT_FAMILY, 9)
+        hdr_bg = ModernTheme.BG_TERTIARY
 
-            # Determine color tag
-            if row['status'] == "Dood Stock":
-                tag = 'dead'
-            elif wk != float('inf') and wk < 2:
-                tag = 'critical'
-            elif wk != float('inf') and wk < 4:
-                tag = 'warning'
-            else:
-                tag = 'healthy'
+        # ── Layout (grid): frozen headers + frozen material column ──
+        #   (0,0) corner header   (0,1) date header canvas          (0,2) empty
+        #   (1,0) left canvas     (1,1) right canvas (data)         (1,2) vsb
+        #   (2,0) empty           (2,1) hsb                         (2,2) empty
 
-            self.analyse_tree.insert("", "end", values=(
-                row['material'],
-                f"{row['stock_nu']:.2f}",
-                verbr_display,
-                wk_display,
-                row['status'],
-                f"{row['bestel_frequentie']:.0%}",
-                f"{row['service_level']:.0f}%",
-            ), tags=(tag,))
+        corner_frame = tk.Frame(self.analyse_table_frame, bg=hdr_bg)
+        tk.Label(
+            corner_frame, text="Materiaal", bg=hdr_bg,
+            font=hdr_font, padx=8, pady=4, anchor=tk.W, relief="groove"
+        ).grid(row=0, column=0, sticky="nsew")
+        tk.Label(
+            corner_frame, text="Artikel Nr", bg=hdr_bg,
+            font=hdr_font, padx=8, pady=4, anchor=tk.W, relief="groove"
+        ).grid(row=0, column=1, sticky="nsew")
+        corner_frame.grid_columnconfigure(0, minsize=250)
+        corner_frame.grid_columnconfigure(1, minsize=120)
+        hdr_canvas = tk.Canvas(
+            self.analyse_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        left_canvas = tk.Canvas(
+            self.analyse_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        right_canvas = tk.Canvas(
+            self.analyse_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        vsb = ttk.Scrollbar(self.analyse_table_frame, orient="vertical")
+        hsb = ttk.Scrollbar(self.analyse_table_frame, orient="horizontal")
 
-        snap_count = self.history_db.get_snapshot_count()
-        self.analyse_info_var.set(f"{len(data)} materialen geanalyseerd | {snap_count} snapshots")
-        self.status_var.set(f"\u2713 Analyse vernieuwd: {len(data)} materialen")
+        corner_frame.grid(row=0, column=0, sticky="nsew")
+        hdr_canvas.grid(row=0, column=1, sticky="ew")
+        left_canvas.grid(row=1, column=0, sticky="ns")
+        right_canvas.grid(row=1, column=1, sticky="nsew")
+        vsb.grid(row=1, column=2, sticky="ns")
+        hsb.grid(row=2, column=1, sticky="ew")
+
+        self.analyse_table_frame.grid_rowconfigure(1, weight=1)
+        self.analyse_table_frame.grid_columnconfigure(1, weight=1)
+
+        # Sync horizontal scroll: header + data
+        def _sync_xview(*args):
+            right_canvas.xview(*args)
+            hdr_canvas.xview(*args)
+
+        hsb.config(command=_sync_xview)
+
+        def _on_right_xscroll(*args):
+            hsb.set(*args)
+            hdr_canvas.xview_moveto(args[0])
+
+        right_canvas.configure(xscrollcommand=_on_right_xscroll)
+
+        # Sync vertical scroll: material names + data
+        def _sync_yview(*args):
+            left_canvas.yview(*args)
+            right_canvas.yview(*args)
+
+        vsb.config(command=_sync_yview)
+
+        def _on_left_yscroll(*args):
+            vsb.set(*args)
+            right_canvas.yview_moveto(args[0])
+
+        def _on_right_yscroll(*args):
+            vsb.set(*args)
+            left_canvas.yview_moveto(args[0])
+
+        left_canvas.configure(yscrollcommand=_on_left_yscroll)
+        right_canvas.configure(yscrollcommand=_on_right_yscroll)
+
+        # Inner frames
+        hdr_frame = tk.Frame(hdr_canvas, bg=ModernTheme.BG_MAIN)
+        hdr_canvas.create_window((0, 0), window=hdr_frame, anchor="nw")
+
+        left_grid = tk.Frame(left_canvas, bg=ModernTheme.BG_MAIN)
+        left_canvas.create_window((0, 0), window=left_grid, anchor="nw")
+
+        right_grid = tk.Frame(right_canvas, bg=ModernTheme.BG_MAIN)
+        right_canvas.create_window((0, 0), window=right_grid, anchor="nw")
+
+        # Date headers (frozen row, scrolls horizontally)
+        for col_idx, dh in enumerate(date_headers):
+            tk.Label(
+                hdr_frame, text=dh, bg=hdr_bg, font=hdr_font,
+                padx=8, pady=4, anchor=tk.CENTER, relief="groove"
+            ).grid(row=0, column=col_idx, sticky="nsew")
+
+        # Data rows — use Frame wrappers per row for single outline selection
+        row_frames = {}  # row_idx -> (left_row_frame, right_row_frame)
+        row_all_widgets = {}  # row_idx -> all clickable widgets
+        self._analyse_selected_row = None
+
+        def _select_row(row_idx):
+            """Outline the clicked row with a single border per side."""
+            prev = self._analyse_selected_row
+            if prev is not None and prev in row_frames:
+                lf, rf = row_frames[prev]
+                lf.configure(highlightthickness=0)
+                rf.configure(highlightthickness=0)
+            if row_idx == prev:
+                self._analyse_selected_row = None
+                return
+            self._analyse_selected_row = row_idx
+            lf, rf = row_frames[row_idx]
+            lf.configure(highlightbackground=ModernTheme.PRIMARY, highlightthickness=2)
+            rf.configure(highlightbackground=ModernTheme.PRIMARY, highlightthickness=2)
+
+        num_dates = len(dates)
+
+        for row_idx, mat in enumerate(sorted_materials):
+            mat_dates = materials[mat]
+            row_all_widgets[row_idx] = []
+
+            # Left row frame (material + artikel)
+            left_row_frame = tk.Frame(left_grid, bg="white", highlightthickness=0)
+            left_row_frame.grid(row=row_idx, column=0, sticky="nsew")
+            left_row_frame.grid_columnconfigure(0, minsize=250)
+            left_row_frame.grid_columnconfigure(1, minsize=120)
+
+            lbl_mat = tk.Label(
+                left_row_frame, text=mat, bg="white", font=cell_font,
+                padx=8, pady=3, anchor=tk.W, relief="groove"
+            )
+            lbl_mat.grid(row=0, column=0, sticky="nsew")
+
+            lbl_art = tk.Label(
+                left_row_frame, text=artikel_nrs.get(mat, ''), bg="white", font=cell_font,
+                padx=8, pady=3, anchor=tk.W, relief="groove"
+            )
+            lbl_art.grid(row=0, column=1, sticky="nsew")
+
+            row_all_widgets[row_idx].extend([left_row_frame, lbl_mat, lbl_art])
+
+            # Right row frame (data columns)
+            right_row_frame = tk.Frame(right_grid, bg=ModernTheme.BG_MAIN, highlightthickness=0)
+            right_row_frame.grid(row=row_idx, column=0, sticky="nsew")
+            for ci in range(num_dates):
+                right_row_frame.grid_columnconfigure(ci, minsize=130)
+
+            for col_idx, d in enumerate(dates):
+                if d in mat_dates:
+                    s = mat_dates[d]
+                    text = f"{s['stock']:.1f} / {s['saldo']:.1f}"
+                    if s['saldo'] < 0:
+                        bg, fg = '#ffcdd2', '#c62828'
+                    elif s['stock'] > 0 and s['stock'] == s['saldo']:
+                        bg, fg = '#bbdefb', '#1565c0'  # blue: stock without movement
+                    else:
+                        bg, fg = '#c8e6c9', '#2e7d32'
+                else:
+                    text, bg, fg = "", "white", ModernTheme.TEXT_PRIMARY
+
+                lbl_cell = tk.Label(
+                    right_row_frame, text=text, bg=bg, fg=fg, font=cell_font,
+                    padx=8, pady=3, anchor=tk.CENTER, relief="groove"
+                )
+                lbl_cell.grid(row=0, column=col_idx, sticky="nsew")
+                row_all_widgets[row_idx].append(lbl_cell)
+
+            row_frames[row_idx] = (left_row_frame, right_row_frame)
+
+            # Bind click to all widgets in this row
+            for w in row_all_widgets[row_idx]:
+                w.bind("<Button-1>", lambda e, r=row_idx: _select_row(r))
+
+        # Column sizing for header row (row frames handle their own column sizing)
+        for col_idx in range(num_dates):
+            hdr_frame.grid_columnconfigure(col_idx, minsize=130)
+
+        # Finalize sizes and scroll regions
+        hdr_frame.update_idletasks()
+        left_grid.update_idletasks()
+        right_grid.update_idletasks()
+
+        left_w = left_grid.winfo_reqwidth()
+        hdr_h = hdr_frame.winfo_reqheight()
+
+        corner_frame.configure(width=left_w)  # match left grid width
+        left_canvas.configure(scrollregion=left_canvas.bbox("all"), width=left_w)
+        hdr_canvas.configure(scrollregion=hdr_canvas.bbox("all"), height=hdr_h)
+        right_canvas.configure(scrollregion=right_canvas.bbox("all"))
+
+        # Mousewheel — bind to every widget so it works wherever the cursor is
+        def _on_mousewheel(event):
+            _sync_yview("scroll", int(-1 * (event.delta / 120)), "units")
+
+        all_widgets = [left_canvas, right_canvas]
+        for widgets in row_all_widgets.values():
+            all_widgets.extend(widgets)
+        for w in all_widgets:
+            w.bind("<MouseWheel>", _on_mousewheel)
+
+        self.analyse_info_var.set(
+            f"{len(sorted_materials)} materialen | {len(dates)} snapshots"
+        )
+        self.status_var.set(f"\u2713 Analyse vernieuwd: {len(sorted_materials)} materialen")
+
+    def export_pivot(self):
+        """Export the pivot table to xlsx with the same color coding as on screen."""
+        pivot = self.history_db.get_pivot_data()
+        if pivot is None:
+            messagebox.showinfo("Geen data", "Geen snapshots om te exporteren.")
+            return
+
+        dates = pivot['dates']
+        materials = pivot['materials']
+        artikel_nrs = pivot.get('artikel_nrs', {})
+        sorted_materials = sorted(materials.keys())
+
+        date_headers = []
+        for d in dates:
+            parts = d.split('-')
+            date_headers.append(f"{parts[2]}-{parts[1]}-{parts[0]}")
+
+        timestamp = datetime.now().strftime("%d_%m_%Y")
+        filename = filedialog.asksaveasfilename(
+            title="Exporteer Historiek",
+            initialdir=self.settings.get('export_folder', '.'),
+            initialfile=f"stock_saldo_historiek_{timestamp}.xlsx",
+            defaultextension=".xlsx",
+            filetypes=[("Excel bestanden", "*.xlsx")]
+        )
+        if not filename:
+            return
+        self.settings['export_folder'] = str(Path(filename).parent)
+        self.save_config(silent=True)
+
+        try:
+            import xlsxwriter
+
+            wb = xlsxwriter.Workbook(filename)
+            ws = wb.add_worksheet("Stock Saldo Historiek")
+
+            # Formats
+            hdr_fmt = wb.add_format({
+                'bold': True, 'bg_color': '#1a73e8', 'font_color': 'white',
+                'align': 'center', 'border': 1
+            })
+            green_fmt = wb.add_format({
+                'bg_color': '#c8e6c9', 'font_color': '#2e7d32',
+                'align': 'center', 'border': 1
+            })
+            red_fmt = wb.add_format({
+                'bg_color': '#ffcdd2', 'font_color': '#c62828',
+                'align': 'center', 'border': 1
+            })
+            blue_fmt = wb.add_format({
+                'bg_color': '#bbdefb', 'font_color': '#1565c0',
+                'align': 'center', 'border': 1
+            })
+            empty_fmt = wb.add_format({'border': 1, 'align': 'center'})
+            mat_fmt = wb.add_format({'border': 1})
+
+            # Column widths
+            ws.set_column(0, 0, 35)   # Materiaal
+            ws.set_column(1, 1, 18)   # Artikel Nr
+            ws.set_column(2, 1 + len(dates), 18)  # Date columns
+
+            # Header row
+            ws.write(0, 0, "Materiaal", hdr_fmt)
+            ws.write(0, 1, "Artikel Nr", hdr_fmt)
+            for col, dh in enumerate(date_headers, start=2):
+                ws.write(0, col, dh, hdr_fmt)
+
+            # Data rows
+            for row, mat in enumerate(sorted_materials, start=1):
+                ws.write(row, 0, mat, mat_fmt)
+                ws.write(row, 1, artikel_nrs.get(mat, ''), mat_fmt)
+                mat_dates = materials[mat]
+
+                for col, d in enumerate(dates, start=2):
+                    if d in mat_dates:
+                        s = mat_dates[d]
+                        text = f"{s['stock']:.1f} / {s['saldo']:.1f}"
+                        if s['saldo'] < 0:
+                            fmt = red_fmt
+                        elif s['stock'] > 0 and s['stock'] == s['saldo']:
+                            fmt = blue_fmt
+                        else:
+                            fmt = green_fmt
+                        ws.write(row, col, text, fmt)
+                    else:
+                        ws.write(row, col, "", empty_fmt)
+
+            # Freeze header row + material & artikel columns
+            ws.freeze_panes(1, 2)
+
+            wb.close()
+
+            self.status_var.set(f"\u2713 Historiek geëxporteerd: {filename}")
+            messagebox.showinfo("Export", f"Historiek geëxporteerd naar:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Fout", f"Export mislukt:\n{e}")
 
     # === EVENT HANDLERS ===
 
@@ -949,6 +1177,7 @@ class BestelberekeningApp:
         )
         if folder:
             self.orders_folder_var.set(folder)
+            self.save_config(silent=True)
 
     def scan_orders(self):
         """Scan orders and calculate netto m²"""
@@ -1229,6 +1458,7 @@ class BestelberekeningApp:
         )
         if csv_file:
             self.magazijn_file_var.set(csv_file)
+            self.save_config(silent=True)
 
     def load_magazijn_data(self):
         """Load magazijn stock from CSV"""
@@ -1347,6 +1577,9 @@ class BestelberekeningApp:
                     config = json.load(f)
                     self.settings['rendement_pct'] = config.get('rendement_pct', 75.0)
                     self.settings['trend_folder'] = config.get('trend_folder', '.')
+                    self.settings['orders_folder'] = config.get('orders_folder', 'Stuklijsten')
+                    self.settings['magazijn_file'] = config.get('magazijn_file', 't_temp_ContentResult.csv')
+                    self.settings['export_folder'] = config.get('export_folder', '.')
                     self.safety_margins = config.get('safety_margins', {})
                     self.material_rendement = config.get('material_rendement', {})
                     self.artikel_nummers = config.get('artikel_nummers', {})
@@ -1361,6 +1594,9 @@ class BestelberekeningApp:
             config = {
                 'rendement_pct': self.settings['rendement_pct'],
                 'trend_folder': self.settings.get('trend_folder', '.'),
+                'orders_folder': self.orders_folder_var.get(),
+                'magazijn_file': self.magazijn_file_var.get(),
+                'export_folder': self.settings.get('export_folder', '.'),
                 'safety_margins': self.safety_margins,
                 'material_rendement': self.material_rendement,
                 'artikel_nummers': self.artikel_nummers
@@ -2024,12 +2260,15 @@ class BestelberekeningApp:
 
         filename = filedialog.asksaveasfilename(
             title="Exporteer Bestelberekening",
+            initialdir=self.settings.get('export_folder', '.'),
             initialfile=default_filename,
             defaultextension=".xlsx",
             filetypes=[("Excel bestanden", "*.xlsx"), ("Alle bestanden", "*.*")]
         )
 
         if filename:
+            self.settings['export_folder'] = str(Path(filename).parent)
+            self.save_config(silent=True)
             try:
                 import xlsxwriter
 

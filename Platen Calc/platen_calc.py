@@ -9,11 +9,14 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 from pathlib import Path
 from datetime import datetime
 import threading
+import json
 from collections import defaultdict
 from typing import Dict, List
 
 # Import de hoofd calculator
 from material_calculator import MaterialCalculator
+
+CONFIG_FILE = "platen_calc_config.json"
 
 
 class PlatenCalcGUI:
@@ -33,6 +36,9 @@ class PlatenCalcGUI:
         self.all_materials = []  # All unique materials across all files
         self.visible_materials = []  # Materials to show in table (filtered)
         self.material_visibility = {}  # Dict of material: visible (bool)
+
+        # Load saved paths from config
+        self.config = self.load_config()
 
         self.setup_menu()
         self.setup_ui()
@@ -247,7 +253,7 @@ class PlatenCalcGUI:
         path_frame.grid(row=0, column=1, sticky=(tk.W, tk.E))
         path_frame.columnconfigure(0, weight=1)
 
-        self.folder_var = tk.StringVar(value="Stuklijsten")
+        self.folder_var = tk.StringVar(value=self.config.get('folder_path', 'Stuklijsten'))
         ttk.Entry(path_frame, textvariable=self.folder_var).grid(
             row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5)
         )
@@ -400,6 +406,27 @@ class PlatenCalcGUI:
         )
         if folder:
             self.folder_var.set(folder)
+            self.save_config()
+
+    def load_config(self):
+        """Load saved paths from config file"""
+        config_file = Path(CONFIG_FILE)
+        if config_file.exists():
+            try:
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
+
+    def save_config(self):
+        """Save paths to config file"""
+        try:
+            self.config['folder_path'] = self.folder_var.get()
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
 
     def get_filters(self):
         """Haal filter instellingen op uit UI"""

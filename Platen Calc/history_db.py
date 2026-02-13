@@ -159,22 +159,43 @@ class HistoryDB:
         ws = wb["Bestelberekening"] if "Bestelberekening" in wb.sheetnames else wb.worksheets[0]
 
         results = []
-        first_row = True
+        col_map = None
         for row in ws.iter_rows(min_col=1, max_col=9, values_only=True):
-            if first_row:
-                first_row = False
+            if col_map is None:
+                # Detect column layout from header row
+                headers = [str(c).strip() if c else '' for c in row]
+                col_map = {}
+                for idx, h in enumerate(headers):
+                    hl = h.lower()
+                    if 'materiaal' in hl and 'id' not in hl:
+                        col_map['material'] = idx
+                    elif 'artikel' in hl:
+                        col_map['artikel'] = idx
+                    elif 'bruto' in hl:
+                        col_map['bruto'] = idx
+                    elif 'stock' in hl:
+                        col_map['stock'] = idx
+                    elif 'saldo' in hl:
+                        col_map['saldo'] = idx
                 continue
 
-            material = row[0]   # A: Materiaal
-            bruto = row[4]      # E: Bruto (m²)
-            stock = row[6]      # G: Stock (m²)
-            saldo = row[8]      # I: Saldo (m²)
+            material_idx = col_map.get('material', 0)
+            artikel_idx = col_map.get('artikel')
+            bruto_idx = col_map.get('bruto')
+            stock_idx = col_map.get('stock')
+            saldo_idx = col_map.get('saldo')
+
+            material = row[material_idx] if material_idx is not None and material_idx < len(row) else None
+            stock = row[stock_idx] if stock_idx is not None and stock_idx < len(row) else None
+            saldo = row[saldo_idx] if saldo_idx is not None and saldo_idx < len(row) else None
+            bruto = row[bruto_idx] if bruto_idx is not None and bruto_idx < len(row) else None
+            artikel = row[artikel_idx] if artikel_idx is not None and artikel_idx < len(row) else ''
 
             if material and stock is not None and saldo is not None:
                 try:
                     results.append({
                         'material': str(material),
-                        'artikel_nummer': str(row[1] or ''),
+                        'artikel_nummer': str(artikel or ''),
                         'materiaal_id': '',
                         'stock': float(stock),
                         'bestellen': float(saldo),
@@ -196,104 +217,52 @@ class HistoryDB:
         self.conn.execute("DELETE FROM snapshots")
         self.conn.commit()
 
-    def get_analysis_data(self):
-        """Calculate consumption analysis across all snapshots.
+    def get_pivot_data(self):
+        """Return raw snapshot data as a pivot structure.
 
-        Returns None if fewer than 3 snapshots exist.
-        Otherwise returns a list of dicts with analysis per material.
+        Returns None if no snapshots exist.
+        Otherwise returns:
+            {
+                'dates': ['2025-11-13', '2025-12-02', ...],  # ISO, sorted
+                'materials': {
+                    'HSP 18mm MELxMEL wit': {
+                        '2025-11-13': {'stock': 488.8, 'saldo': 460.3},
+                        ...
+                    },
+                }
+            }
         """
         cur = self.conn.cursor()
 
-        # Check minimum snapshots
         cur.execute("SELECT COUNT(*) FROM snapshots")
-        count = cur.fetchone()[0]
-        if count < 3:
+        if cur.fetchone()[0] == 0:
             return None
 
-        # Get all snapshots ordered by date
-        cur.execute("SELECT id, snapshot_date FROM snapshots ORDER BY snapshot_date ASC")
-        snapshots = cur.fetchall()
+        # Single JOIN query for all data
+        cur.execute("""
+            SELECT s.snapshot_date, r.material, r.artikel_nummer, r.stock_m2, r.saldo_m2
+            FROM snapshot_rows r
+            JOIN snapshots s ON s.id = r.snapshot_id
+            ORDER BY s.snapshot_date, r.material
+        """)
 
-        oldest_date = snapshots[0][1]
-        newest_date = snapshots[-1][1]
-        total_snapshots = len(snapshots)
+        dates_set = set()
+        materials = {}
+        artikel_nrs = {}
 
-        # Calculate weeks between oldest and newest
-        from datetime import datetime
-        d_oldest = datetime.strptime(oldest_date, "%Y-%m-%d")
-        d_newest = datetime.strptime(newest_date, "%Y-%m-%d")
-        days_between = (d_newest - d_oldest).days
-        weken_tussen = max(days_between / 7.0, 1)
+        for snap_date, material, artikel_nr, stock, saldo in cur.fetchall():
+            dates_set.add(snap_date)
+            if material not in materials:
+                materials[material] = {}
+            materials[material][snap_date] = {'stock': stock, 'saldo': saldo}
+            if artikel_nr:
+                artikel_nrs[material] = artikel_nr
 
-        # Collect all data per material across all snapshots
-        # {material: [{'stock': x, 'saldo': y, 'bruto': z, 'snapshot_idx': i}, ...]}
-        material_data = {}
-
-        for snap_idx, (snap_id, snap_date) in enumerate(snapshots):
-            cur.execute(
-                "SELECT material, stock_m2, saldo_m2, bruto_m2 FROM snapshot_rows WHERE snapshot_id = ?",
-                (snap_id,)
-            )
-            for material, stock, saldo, bruto in cur.fetchall():
-                if material not in material_data:
-                    material_data[material] = []
-                material_data[material].append({
-                    'stock': stock,
-                    'saldo': saldo,
-                    'bruto': bruto,
-                    'snapshot_idx': snap_idx,
-                })
-
-        # Analyse per material
-        results = []
-        for material, entries in material_data.items():
-            # Sort by snapshot index
-            entries.sort(key=lambda e: e['snapshot_idx'])
-
-            stock_oudste = entries[0]['stock']
-            stock_nieuwste = entries[-1]['stock']
-            stock_nu = stock_nieuwste
-
-            # Verbruik per week
-            verbruik_per_week = (stock_oudste - stock_nieuwste) / weken_tussen
-            if verbruik_per_week > 0:
-                weken_voorraad = stock_nu / verbruik_per_week
-            else:
-                weken_voorraad = float('inf')
-
-            # Dead stock check: bruto == 0 in ALL snapshots AND stock > 0
-            all_bruto_zero = all(e['bruto'] == 0 for e in entries)
-            dead_stock = all_bruto_zero and stock_nu > 0
-
-            # Bestelfrequentie: snapshots met bruto > 0 / totaal
-            snapshots_met_bruto = sum(1 for e in entries if e['bruto'] > 0)
-            bestel_frequentie = snapshots_met_bruto / total_snapshots
-
-            # Service level: snapshots met saldo >= 0 / totaal
-            snapshots_met_saldo_ok = sum(1 for e in entries if e['saldo'] >= 0)
-            service_level = (snapshots_met_saldo_ok / total_snapshots) * 100
-
-            # Status bepaling
-            if dead_stock:
-                status = "Dood Stock"
-            elif bestel_frequentie >= 0.75:
-                status = "Hoog Verbruik"
-            elif bestel_frequentie <= 0.25:
-                status = "Incidenteel"
-            else:
-                status = "Normaal"
-
-            results.append({
-                'material': material,
-                'stock_nu': stock_nu,
-                'verbruik_per_week': verbruik_per_week,
-                'weken_voorraad': weken_voorraad,
-                'status': status,
-                'bestel_frequentie': bestel_frequentie,
-                'service_level': service_level,
-            })
-
-        return results
+        return {
+            'dates': sorted(dates_set),
+            'materials': materials,
+            'artikel_nrs': artikel_nrs,
+        }
 
     def close(self):
         """Close the database connection."""

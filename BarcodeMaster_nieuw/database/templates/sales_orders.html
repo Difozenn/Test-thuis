@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Orders - Project Datalog{% endblock %}
+
+{% block extra_styles %}
+.filter-controls {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.so-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.so-table {
+    margin-bottom: 0;
+}
+
+.so-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark-blue);
+    border-bottom: 2px solid var(--border-color);
+    padding: 15px;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.so-table td {
+    padding: 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.so-table tbody tr {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.so-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.so-link {
+    color: var(--primary-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.so-link:hover {
+    color: var(--secondary-blue);
+    text-decoration: underline;
+}
+
+.progress-cell {
+    min-width: 150px;
+}
+
+.progress-bar-small {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill-small {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-blue), var(--primary-blue));
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 data-translate="sales_orders_title">Sales Orders Overzicht</h1>
+    <p data-translate="sales_orders_subtitle">Samengevoegd overzicht van alle Sales Orders en hun Manufacturing Orders</p>
+</div>
+
+<!-- Filter Controls -->
+<div class="filter-controls">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchInput" placeholder="Zoek SO nummer of klant..." data-translate-placeholder="search_so_placeholder">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="statusFilter">
+                <option value="" data-translate="filter_all_status">Alle Status</option>
+                <option value="completed" data-translate="filter_completed">Voltooid</option>
+                <option value="in-progress" data-translate="filter_in_progress">In Uitvoering</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="sortBy">
+                <option value="activity-desc" data-translate="sort_activity_newest">Activiteit (Nieuwste)</option>
+                <option value="activity-asc" data-translate="sort_activity_oldest">Activiteit (Oudste)</option>
+                <option value="so-desc" data-translate="sort_so_newest">SO Nummer (Nieuwste)</option>
+                <option value="so-asc" data-translate="sort_so_oldest">SO Nummer (Oudste)</option>
+                <option value="mos" data-translate="sort_most_mos">Meeste MOs</option>
+                <option value="items" data-translate="sort_most_items">Meeste Items</option>
+                <option value="completion" data-translate="sort_completion">Voltooiing %</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> <span data-translate="apply_button">Toepassen</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Orders Table -->
+<div class="so-table-container">
+    <table class="table so-table" id="soTable">
+        <thead>
+            <tr>
+                <th style="cursor: pointer;" onclick="sortTable('so')" data-translate="th_so_number">SO Nummer <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('customer')" data-translate="th_customer">Klant <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('mos')" data-translate="th_mo_count">MO Aantal <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('items')" data-translate="th_total_items">Totaal Items <i class="fas fa-sort"></i></th>
+                <th data-translate="th_work_time">Werktijd</th>
+                <th data-translate="th_project_time">Projecttijd</th>
+                <th style="cursor: pointer;" onclick="sortTable('completion')" data-translate="th_status">Status <i class="fas fa-sort"></i></th>
+                <th style="cursor: pointer;" onclick="sortTable('activity')" data-translate="th_activity">ACTIVITEIT <i class="fas fa-sort"></i></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for so in sales_orders %}
+            <tr onclick="window.location.href='/sales_order/{{ so.so_number }}'"
+                data-so="{{ so.so_number }}"
+                data-customer="{{ so.customer_name or '' }}"
+                data-status="{% if so.completion_percentage == 100 %}completed{% else %}in-progress{% endif %}"
+                data-mos="{{ so.mo_count }}"
+                data-items="{{ so.total_items }}"
+                data-completion="{{ so.completion_percentage }}"
+                data-activity="{{ so.last_activity or '' }}">
+                
+                <td>
+                    <a href="/sales_order/{{ so.so_number }}" class="so-link" onclick="event.stopPropagation();">
+                        {{ so.so_number }}
+                    </a>
+                </td>
+                <td>{{ so.customer_name or '-' }}</td>
+                <td class="text-center">{{ so.mo_count }}</td>
+                <td class="text-center">{{ so.total_items }}</td>
+                <td>
+                    {% if so.total_work_minutes %}
+                        {{ "%d"|format(so.total_work_minutes // 60) }}h {{ "%d"|format(so.total_work_minutes % 60) }}m
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if so.total_project_minutes %}
+                        {{ "%d"|format(so.total_project_minutes // 60) }}h {{ "%d"|format(so.total_project_minutes % 60) }}m
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if so.completion_percentage == 100 %}
+                    <span class="badge bg-success" data-translate="status_completed">Voltooid</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark" data-translate="status_in_progress">In Uitvoering</span>
+                    {% endif %}
+                    <small class="text-muted d-block">{{ so.completed_mos }}/{{ so.total_mos }} MOs</small>
+                </td>
+                <td>
+                    <small>{{ so.last_activity[:10] if so.last_activity else '-' }}</small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if not sales_orders %}
+    <div class="p-4 text-center">
+        <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+        <p class="mt-3 text-muted" data-translate="no_sales_orders">Geen Sales Orders gevonden met SO nummers in de database.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Helper function to parse dates from various formats
+function parseDate(dateStr) {
+    if (!dateStr || dateStr === '-' || dateStr === '') return new Date(0); // Return epoch for empty/invalid dates
+
+    // Replace space with 'T' for ISO format compatibility (SQLite returns "YYYY-MM-DD HH:MM:SS")
+    let dateStrNormalized = dateStr.replace(' ', 'T');
+
+    // Try to parse as ISO format
+    let date = new Date(dateStrNormalized);
+
+    // If invalid, try parsing DD-MM-YYYY HH:MM format (used by projects page display)
+    if (isNaN(date.getTime())) {
+        const parts = dateStr.match(/(\d{2})-(\d{2})-(\d{4})\s*(\d{2})?:?(\d{2})?/);
+        if (parts) {
+            const day = parseInt(parts[1]);
+            const month = parseInt(parts[2]) - 1; // JS months are 0-indexed
+            const year = parseInt(parts[3]);
+            const hour = parts[4] ? parseInt(parts[4]) : 0;
+            const minute = parts[5] ? parseInt(parts[5]) : 0;
+            date = new Date(year, month, day, hour, minute);
+        }
+    }
+
+    // If still invalid, return epoch
+    if (isNaN(date.getTime())) {
+        console.warn('Failed to parse date:', dateStr);
+        return new Date(0);
+    }
+
+    return date;
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const sortBy = document.getElementById('sortBy').value;
+    
+    const rows = Array.from(document.querySelectorAll('#soTable tbody tr'));
+    
+    // Filter rows
+    rows.forEach(row => {
+        const soNumber = row.dataset.so.toLowerCase();
+        const customer = row.dataset.customer.toLowerCase();
+        const status = row.dataset.status;
+        
+        let show = true;
+        
+        // Search filter
+        if (searchTerm && !soNumber.includes(searchTerm) && !customer.includes(searchTerm)) {
+            show = false;
+        }
+        
+        // Status filter
+        if (statusFilter && status !== statusFilter) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+    
+    // Sort rows
+    const visibleRows = rows.filter(row => row.style.display !== 'none');
+    visibleRows.sort((a, b) => {
+        switch(sortBy) {
+            case 'so-asc':
+                return a.dataset.so.localeCompare(b.dataset.so);
+            case 'so-desc':
+                return b.dataset.so.localeCompare(a.dataset.so);
+            case 'mos':
+                return parseInt(b.dataset.mos) - parseInt(a.dataset.mos);
+            case 'items':
+                return parseInt(b.dataset.items) - parseInt(a.dataset.items);
+            case 'completion':
+                return parseFloat(b.dataset.completion) - parseFloat(a.dataset.completion);
+            case 'activity-desc':
+                // Parse dates for proper comparison (newest first)
+                return parseDate(b.dataset.activity) - parseDate(a.dataset.activity);
+            case 'activity-asc':
+                // Parse dates for proper comparison (oldest first)
+                return parseDate(a.dataset.activity) - parseDate(b.dataset.activity);
+            default:
+                return 0;
+        }
+    });
+    
+    // Reorder in DOM
+    const tbody = document.querySelector('#soTable tbody');
+    visibleRows.forEach(row => tbody.appendChild(row));
+}
+
+// Real-time search
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+// Header sorting
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
+function sortTable(column) {
+    // Toggle direction if clicking same column
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+
+    // Update sort select dropdown to match
+    if (column === 'so') {
+        document.getElementById('sortBy').value = currentSortDirection === 'desc' ? 'so-desc' : 'so-asc';
+    } else if (column === 'customer') {
+        document.getElementById('sortBy').value = 'customer';
+    } else if (column === 'mos') {
+        document.getElementById('sortBy').value = 'mos';
+    } else if (column === 'items') {
+        document.getElementById('sortBy').value = 'items';
+    } else if (column === 'completion') {
+        document.getElementById('sortBy').value = 'completion';
+    } else if (column === 'activity') {
+        document.getElementById('sortBy').value = currentSortDirection === 'desc' ? 'activity-desc' : 'activity-asc';
+    }
+
+    applyFilters();
+}
+
+// Language translations
+const translations = {
+    'nl': {
+        'sales_orders_title': 'Sales Orders Overzicht',
+        'sales_orders_subtitle': 'Samengevoegd overzicht van alle Sales Orders en hun Manufacturing Orders',
+        'search_so_placeholder': 'Zoek SO nummer of klant...',
+        'filter_all_status': 'Alle Status',
+        'filter_completed': 'Voltooid',
+        'filter_in_progress': 'In Uitvoering',
+        'sort_so_newest': 'SO Nummer (Nieuwste)',
+        'sort_so_oldest': 'SO Nummer (Oudste)',
+        'sort_most_mos': 'Meeste MOs',
+        'sort_most_items': 'Meeste Items',
+        'sort_completion': 'Voltooiing %',
+        'sort_activity_newest': 'Activiteit (Nieuwste)',
+        'sort_activity_oldest': 'Activiteit (Oudste)',
+        'apply_button': 'Toepassen',
+        'th_so_number': 'SO Nummer',
+        'th_customer': 'Klant',
+        'th_mo_count': 'MO Aantal',
+        'th_total_items': 'Totaal Items',
+        'th_work_time': 'Werktijd',
+        'th_project_time': 'Projecttijd',
+        'th_departments': 'Afdelingen',
+        'th_status': 'Status',
+        'th_progress': 'Voortgang',
+        'th_activity': 'ACTIVITEIT',
+        'status_completed': 'Voltooid',
+        'status_in_progress': 'In Uitvoering',
+        'no_sales_orders': 'Geen Sales Orders gevonden met SO nummers in de database.'
+    },
+    'en': {
+        'sales_orders_title': 'Sales Orders Overview',
+        'sales_orders_subtitle': 'Aggregated view of all Sales Orders and their Manufacturing Orders',
+        'search_so_placeholder': 'Search SO number or customer...',
+        'filter_all_status': 'All Status',
+        'filter_completed': 'Completed',
+        'filter_in_progress': 'In Progress',
+        'sort_so_newest': 'SO Number (Newest)',
+        'sort_so_oldest': 'SO Number (Oldest)',
+        'sort_most_mos': 'Most MOs',
+        'sort_most_items': 'Most Items',
+        'sort_completion': 'Completion %',
+        'sort_activity_newest': 'Activity (Newest)',
+        'sort_activity_oldest': 'Activity (Oldest)',
+        'apply_button': 'Apply',
+        'th_so_number': 'SO Number',
+        'th_customer': 'Customer',
+        'th_mo_count': 'MO Count',
+        'th_total_items': 'Total Items',
+        'th_work_time': 'Work Time',
+        'th_project_time': 'Project Time',
+        'th_departments': 'Departments',
+        'th_status': 'Status',
+        'th_progress': 'Progress',
+        'th_activity': 'ACTIVITY',
+        'status_completed': 'Completed',
+        'status_in_progress': 'In Progress',
+        'no_sales_orders': 'No Sales Orders found with SO numbers in the database.'
+    }
+};
+
+function translatePage(lang) {
+    const elements = document.querySelectorAll('[data-translate]');
+    elements.forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (translations[lang] && translations[lang][key]) {
+            // Check if element has a sort icon
+            const sortIcon = el.querySelector('.fa-sort');
+            if (sortIcon) {
+                // Preserve the sort icon by only replacing text nodes
+                const textNode = Array.from(el.childNodes).find(node => node.nodeType === 3);
+                if (textNode) {
+                    textNode.textContent = translations[lang][key] + ' ';
+                }
+            } else {
+                el.textContent = translations[lang][key];
+            }
+        }
+    });
+
+    // Translate placeholders
+    const placeholderElements = document.querySelectorAll('[data-translate-placeholder]');
+    placeholderElements.forEach(el => {
+        const key = el.getAttribute('data-translate-placeholder');
+        if (translations[lang] && translations[lang][key]) {
+            el.placeholder = translations[lang][key];
+        }
+    });
+}
+
+// Apply saved language on load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedLang = localStorage.getItem('selectedLanguage') || 'nl';
+    translatePage(savedLang);
+
+    // Listen for language changes
+    const languageSelector = document.getElementById('languageSelector');
+    if (languageSelector) {
+        languageSelector.value = savedLang;
+        languageSelector.addEventListener('change', function() {
+            localStorage.setItem('selectedLanguage', this.value);
+            translatePage(this.value);
+        });
+    }
+
+    // Apply default sort (activity-desc) on page load
+    applyFilters();
+});
+</script>
+{% endblock %}

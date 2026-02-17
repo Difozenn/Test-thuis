@@ -1,0 +1,8 @@
+{
+    "version": "v2.2",
+    "exe_name": "BarcodeMatch_32bit.exe",
+    "sha256": "61043b6848a4908eae706b73011b15725f9c425c60dbfce8084673c5301b907c",
+    "changelog": "- Build v2.2 (2026-02-14)",
+    "mandatory": false,
+    "release_date": "2026-02-14"
+}

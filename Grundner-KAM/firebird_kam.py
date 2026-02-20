@@ -9,6 +9,9 @@ Requirements:
 
 import os
 import sys
+import socket
+import threading
+import logging
 from datetime import datetime
 
 try:
@@ -205,9 +208,180 @@ class FirebirdKAM:
         cur.close()
         return count
 
+    def get_parts_ready_for_edging(self):
+        """Return rows from TEILE where any Kante Status = 1 (ready for edging)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(
+            'SELECT * FROM TEILE WHERE "Kante1 Status"=1 OR "Kante2 Status"=1 '
+            'OR "Kante3 Status"=1 OR "Kante4 Status"=1'
+        )
+        cols = [desc[0].strip() for desc in cur.description]
+        rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+        cur.close()
+        return rows
+
+    def set_kantenstatus(self, teile_id, durchlauf, new_status):
+        """Call stored procedure Set_Kantenstatus to update an edge status.
+
+        Args:
+            teile_id: The TeileID value
+            durchlauf: Edge pass number (1-4)
+            new_status: New status value (e.g. 2=in progress, 99=done)
+        """
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                f"EXECUTE PROCEDURE Set_Kantenstatus '{teile_id}',{durchlauf},{new_status}"
+            )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
+    def get_completed_parts(self):
+        """Return parts with Report Status=0 where all edges are done (99) or unused (0)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(
+            'SELECT * FROM TEILE WHERE "Report Status"=0 '
+            'AND ("Kante1 Status"=99 OR "Kante1 Status"=0 OR "Kante1"=0) '
+            'AND ("Kante2 Status"=99 OR "Kante2 Status"=0 OR "Kante2"=0) '
+            'AND ("Kante3 Status"=99 OR "Kante3 Status"=0 OR "Kante3"=0) '
+            'AND ("Kante4 Status"=99 OR "Kante4 Status"=0 OR "Kante4"=0)'
+        )
+        cols = [desc[0].strip() for desc in cur.description]
+        rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+        cur.close()
+        return rows
+
+    def mark_part_reported(self, vlow_id):
+        """Set Report Status=1 for a part (individual part done)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            cur.execute('UPDATE TEILE SET "Report Status"=1 WHERE "VlowID"=?', (vlow_id,))
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
+    def count_object_parts(self, prefix):
+        """Count all parts belonging to an object (by VlowID prefix)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(
+            'SELECT COUNT(*) FROM TEILE WHERE "VlowID" LIKE ?',
+            (prefix + "%",),
+        )
+        count = cur.fetchone()[0]
+        cur.close()
+        return count
+
+    def count_done_object_parts(self, prefix):
+        """Count parts of an object that have Report Status=1 and all edges done."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(
+            'SELECT COUNT(*) FROM TEILE WHERE "VlowID" LIKE ? '
+            'AND "Report Status"=1 '
+            'AND ("Kante1 Status"=99 OR "Kante1 Status"=0 OR "Kante1"=0) '
+            'AND ("Kante2 Status"=99 OR "Kante2 Status"=0 OR "Kante2"=0) '
+            'AND ("Kante3 Status"=99 OR "Kante3 Status"=0 OR "Kante3"=0) '
+            'AND ("Kante4 Status"=99 OR "Kante4 Status"=0 OR "Kante4"=0)',
+            (prefix + "%",),
+        )
+        count = cur.fetchone()[0]
+        cur.close()
+        return count
+
+    def mark_object_reported(self, prefix):
+        """Set Report Status=2 for all parts of an object (whole object done)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                'UPDATE TEILE SET "Report Status"=2 WHERE "VlowID" LIKE ? AND "Report Status"=1',
+                (prefix + "%",),
+            )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
     def _require_connection(self):
         if self.conn is None:
             raise RuntimeError("Not connected. Call connect() first.")
+
+
+class HolzherTCP:
+    """TCP client for the Holzher KAM edge bander."""
+
+    def __init__(self, host="192.168.244.99", port=60000, timeout=5):
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.sock = None
+        self.logger = logging.getLogger("HolzherTCP")
+
+    def connect(self):
+        """Open a TCP connection to the Holzher KAM."""
+        if self.sock is not None:
+            return
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect((self.host, self.port))
+        self.logger.info("TCP connected to %s:%d", self.host, self.port)
+
+    def disconnect(self):
+        """Close the TCP connection."""
+        if self.sock is not None:
+            try:
+                self.sock.close()
+            except OSError:
+                pass
+            self.sock = None
+            self.logger.info("TCP disconnected")
+
+    def send_command(self, cmd):
+        """Send a plain-text command and return the response line."""
+        if self.sock is None:
+            raise RuntimeError("TCP not connected")
+        self.logger.debug("TCP send: %s", cmd)
+        self.sock.sendall((cmd + "\r\n").encode("utf-8"))
+        data = b""
+        while True:
+            try:
+                chunk = self.sock.recv(4096)
+            except socket.timeout:
+                break
+            if not chunk:
+                break
+            data += chunk
+            if b"\n" in data:
+                break
+        response = data.decode("utf-8", errors="replace").strip()
+        self.logger.debug("TCP recv: %s", response)
+        return response
+
+    def load_program(self, prog, kant_id):
+        """Send LOAD_PROGRAM command."""
+        return self.send_command(f"LOAD_PROGRAM {prog} {kant_id}")
+
+    def check_program(self, prog):
+        """Send CHECK_PROGRAM command."""
+        return self.send_command(f"CHECK_PROGRAM {prog}")
+
+    def get_current_program(self):
+        """Send GET_CURRENT_PROGRAM command."""
+        return self.send_command("GET_CURRENT_PROGRAM")
 
 
 def main():
@@ -285,16 +459,43 @@ def main():
 
 
 def gui():
-    """Simple tkinter GUI for connecting and inserting into TEILE."""
+    """Tkinter GUI for connecting, inserting into TEILE, and running automation loops."""
     import tkinter as tk
-    from tkinter import messagebox, filedialog
+    from tkinter import messagebox, filedialog, scrolledtext
 
+    # --- Logging handler that writes to a tkinter ScrolledText widget ---
+    class TextHandler(logging.Handler):
+        def __init__(self, widget):
+            super().__init__()
+            self.widget = widget
+
+        def emit(self, record):
+            msg = self.format(record) + "\n"
+            self.widget.after(0, self._append, msg)
+
+        def _append(self, msg):
+            self.widget.configure(state=tk.NORMAL)
+            self.widget.insert(tk.END, msg)
+            self.widget.see(tk.END)
+            self.widget.configure(state=tk.DISABLED)
+
+    # --- State ---
     db = None
+    tcp = None
+    polling_active = False
+    polling_stop_event = threading.Event()
+
+    logger = logging.getLogger("KAM_GUI")
+    logger.setLevel(logging.DEBUG)
 
     def update_status(msg, error=False):
         status_var.set(msg)
         status_label.config(fg="red" if error else "green")
 
+    def log(msg):
+        logger.info(msg)
+
+    # ── Firebird connection ──────────────────────────────────────────
     def do_connect():
         nonlocal db
         path = db_path_var.get().strip()
@@ -319,19 +520,24 @@ def gui():
             send_btn.config(state=tk.NORMAL)
             n = db.count_rows("TEILE")
             update_status(f"Connected  —  TEILE has {n} rows")
+            log(f"DB connected — TEILE has {n} rows")
         except Exception as e:
             db = None
             send_btn.config(state=tk.DISABLED)
             update_status(str(e), error=True)
+            log(f"DB connect failed: {e}")
 
     def do_disconnect():
         nonlocal db
+        if polling_active:
+            do_stop_polling()
         if db is not None:
             db.disconnect()
             db = None
         connect_btn.config(text="Connect")
         send_btn.config(state=tk.DISABLED)
         update_status("Disconnected")
+        log("DB disconnected")
 
     def browse_db():
         path = filedialog.askopenfilename(
@@ -341,18 +547,89 @@ def gui():
         if path:
             db_path_var.set(path)
 
+    # ── TCP connection ───────────────────────────────────────────────
+    def do_tcp_connect():
+        nonlocal tcp
+        h = tcp_host_var.get().strip()
+        p = tcp_port_var.get().strip()
+        if not h or not p:
+            messagebox.showerror("Error", "TCP host and port required")
+            return
+        try:
+            p = int(p)
+        except ValueError:
+            messagebox.showerror("Error", "TCP port must be a number")
+            return
+        try:
+            if tcp is not None:
+                tcp.disconnect()
+            tcp = HolzherTCP(host=h, port=p)
+            tcp.connect()
+            log(f"TCP connected to {h}:{p}")
+            tcp_status_var.set("Connected")
+        except Exception as e:
+            tcp = None
+            log(f"TCP connect failed: {e}")
+            tcp_status_var.set("Failed")
+
+    def do_tcp_disconnect():
+        nonlocal tcp
+        if tcp is not None:
+            tcp.disconnect()
+            tcp = None
+        tcp_status_var.set("Disconnected")
+        log("TCP disconnected")
+
+    def do_tcp_get_current():
+        if tcp is None:
+            log("TCP not connected")
+            return
+        try:
+            resp = tcp.get_current_program()
+            log(f"GET_CURRENT_PROGRAM -> {resp}")
+        except Exception as e:
+            log(f"TCP error: {e}")
+
+    def do_tcp_check():
+        if tcp is None:
+            log("TCP not connected")
+            return
+        prog = tcp_prog_var.get().strip()
+        if not prog:
+            log("Enter a program name first")
+            return
+        try:
+            resp = tcp.check_program(prog)
+            log(f"CHECK_PROGRAM {prog} -> {resp}")
+        except Exception as e:
+            log(f"TCP error: {e}")
+
+    def do_tcp_load():
+        if tcp is None:
+            log("TCP not connected")
+            return
+        prog = tcp_prog_var.get().strip()
+        kant = tcp_kant_var.get().strip()
+        if not prog or not kant:
+            log("Enter program name and kant_id first")
+            return
+        try:
+            resp = tcp.load_program(prog, kant)
+            log(f"LOAD_PROGRAM {prog} {kant} -> {resp}")
+        except Exception as e:
+            log(f"TCP error: {e}")
+
+    # ── Data entry / send ────────────────────────────────────────────
     def do_send():
         if db is None:
             messagebox.showerror("Error", "Not connected")
             return
 
-        # Validate required field
         vlow = fields["VlowID"][0].get().strip()
         if not vlow:
             messagebox.showerror("Error", "VlowID is required")
             return
 
-        # Build data dict from filled-in fields (empty = NULL = skip)
         data = {}
         for col_name, (entry, col_type) in fields.items():
             val = entry.get().strip()
@@ -370,16 +647,93 @@ def gui():
             db.insert_teil(data)
             n = db.count_rows("TEILE")
             update_status(f"Sent!  —  TEILE now has {n} rows")
+            log(f"Inserted part {data.get('VlowID', '?')} into TEILE")
         except Exception as e:
             update_status(f"Insert failed: {e}", error=True)
+            log(f"Insert failed: {e}")
 
-    # --- Window ---
+    # ── Polling loops (background threads) ───────────────────────────
+    def procedure1_loop(stop_event):
+        """Poll every 1s: pick up parts with Kante Status=1, set to 2."""
+        while not stop_event.is_set():
+            try:
+                if db is not None and db.conn is not None:
+                    parts = db.get_parts_ready_for_edging()
+                    for part in parts:
+                        teile_id = part.get("TeileID", "")
+                        vlow_id = part.get("VlowID", "?")
+                        for durchlauf in range(1, 5):
+                            status_key = f"Kante{durchlauf} Status"
+                            if part.get(status_key) == 1:
+                                db.set_kantenstatus(teile_id, durchlauf, 2)
+                                log(f"[P1] {vlow_id} Kante{durchlauf} Status: 1 -> 2 (in progress)")
+            except Exception as e:
+                logger.error(f"[P1] Error: {e}")
+            stop_event.wait(1)
+
+    def procedure2_loop(stop_event):
+        """Poll every 5s: report completed parts and check object completeness."""
+        while not stop_event.is_set():
+            try:
+                if db is not None and db.conn is not None:
+                    # Step 1: mark individual parts done (Report Status 0 -> 1)
+                    completed = db.get_completed_parts()
+                    prefixes_to_check = set()
+                    for part in completed:
+                        vlow_id = part.get("VlowID", "")
+                        db.mark_part_reported(vlow_id)
+                        log(f"[P2] {vlow_id} Report Status: 0 -> 1 (part done)")
+                        prefix = vlow_id[:35] if len(vlow_id) >= 35 else vlow_id
+                        prefixes_to_check.add(prefix)
+
+                    # Step 2: check if whole objects are complete
+                    for prefix in prefixes_to_check:
+                        total = db.count_object_parts(prefix)
+                        done = db.count_done_object_parts(prefix)
+                        if total > 0 and total == done:
+                            db.mark_object_reported(prefix)
+                            log(f"[P2] Object '{prefix}' complete ({total} parts) -> Report Status=2")
+            except Exception as e:
+                logger.error(f"[P2] Error: {e}")
+            stop_event.wait(5)
+
+    def do_start_polling():
+        nonlocal polling_active, polling_stop_event
+        if db is None:
+            messagebox.showerror("Error", "Connect to database first")
+            return
+        if polling_active:
+            log("Polling already running")
+            return
+        polling_stop_event.clear()
+        t1 = threading.Thread(target=procedure1_loop, args=(polling_stop_event,), daemon=True)
+        t2 = threading.Thread(target=procedure2_loop, args=(polling_stop_event,), daemon=True)
+        t1.start()
+        t2.start()
+        polling_active = True
+        start_btn.config(state=tk.DISABLED)
+        stop_btn.config(state=tk.NORMAL)
+        log("Polling started (P1 @ 1s, P2 @ 5s)")
+
+    def do_stop_polling():
+        nonlocal polling_active
+        if not polling_active:
+            return
+        polling_stop_event.set()
+        polling_active = False
+        start_btn.config(state=tk.NORMAL)
+        stop_btn.config(state=tk.DISABLED)
+        log("Polling stopped")
+
+    # ══════════════════════════════════════════════════════════════════
+    # Window
+    # ══════════════════════════════════════════════════════════════════
     root = tk.Tk()
     root.title("Firebird KAM - TEILE")
-    root.resizable(False, False)
+    root.resizable(True, True)
 
-    # --- Connection frame ---
-    conn_frame = tk.LabelFrame(root, text="Connection", padx=10, pady=5)
+    # --- Firebird connection frame ---
+    conn_frame = tk.LabelFrame(root, text="Firebird Connection", padx=10, pady=5)
     conn_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
 
     default_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holzher_KAM.gdb")
@@ -412,11 +766,45 @@ def gui():
     connect_btn.pack(side=tk.LEFT, padx=5)
     tk.Button(btn_frame, text="Disconnect", command=do_disconnect, width=12).pack(side=tk.LEFT, padx=5)
 
+    # --- TCP connection frame ---
+    tcp_frame = tk.LabelFrame(root, text="Holzher KAM TCP", padx=10, pady=5)
+    tcp_frame.pack(fill=tk.X, padx=10, pady=5)
+
+    tk.Label(tcp_frame, text="Host:").grid(row=0, column=0, sticky=tk.W)
+    tcp_host_var = tk.StringVar(value="192.168.244.99")
+    tk.Entry(tcp_frame, textvariable=tcp_host_var, width=20).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+    tk.Label(tcp_frame, text="Port:").grid(row=0, column=2, sticky=tk.W, padx=(10, 0))
+    tcp_port_var = tk.StringVar(value="60000")
+    tk.Entry(tcp_frame, textvariable=tcp_port_var, width=8).grid(row=0, column=3, sticky=tk.W, padx=5)
+
+    tcp_status_var = tk.StringVar(value="Disconnected")
+    tk.Label(tcp_frame, textvariable=tcp_status_var, fg="gray").grid(row=0, column=4, padx=10)
+
+    tcp_btn_frame = tk.Frame(tcp_frame)
+    tcp_btn_frame.grid(row=1, column=0, columnspan=5, pady=5)
+    tk.Button(tcp_btn_frame, text="TCP Connect", command=do_tcp_connect, width=12).pack(side=tk.LEFT, padx=3)
+    tk.Button(tcp_btn_frame, text="TCP Disconnect", command=do_tcp_disconnect, width=14).pack(side=tk.LEFT, padx=3)
+
+    # Manual TCP commands
+    tcp_cmd_frame = tk.Frame(tcp_frame)
+    tcp_cmd_frame.grid(row=2, column=0, columnspan=5, pady=2)
+    tk.Button(tcp_cmd_frame, text="GET_CURRENT", command=do_tcp_get_current, width=14).pack(side=tk.LEFT, padx=3)
+
+    tk.Label(tcp_cmd_frame, text="Prog:").pack(side=tk.LEFT, padx=(10, 2))
+    tcp_prog_var = tk.StringVar()
+    tk.Entry(tcp_cmd_frame, textvariable=tcp_prog_var, width=12).pack(side=tk.LEFT, padx=2)
+    tk.Button(tcp_cmd_frame, text="CHECK", command=do_tcp_check, width=7).pack(side=tk.LEFT, padx=3)
+
+    tk.Label(tcp_cmd_frame, text="Kant:").pack(side=tk.LEFT, padx=(10, 2))
+    tcp_kant_var = tk.StringVar()
+    tk.Entry(tcp_cmd_frame, textvariable=tcp_kant_var, width=6).pack(side=tk.LEFT, padx=2)
+    tk.Button(tcp_cmd_frame, text="LOAD", command=do_tcp_load, width=7).pack(side=tk.LEFT, padx=3)
+
     # --- Data entry frame ---
     data_frame = tk.LabelFrame(root, text="TEILE Data", padx=10, pady=5)
     data_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    # All 22 TEILE columns: (db_name, type, required)
     column_defs = [
         ("VlowID",           "text",   True),
         ("TeileID",          "text",   False),
@@ -442,8 +830,8 @@ def gui():
         ("OrgStackPosition", "number", False),
     ]
 
-    fields = {}  # {col_name: (entry_widget, col_type)}
-    half = (len(column_defs) + 1) // 2  # 11 left, 11 right
+    fields = {}
+    half = (len(column_defs) + 1) // 2
     for i, (col_name, col_type, required) in enumerate(column_defs):
         label_text = col_name
         if required:
@@ -454,23 +842,54 @@ def gui():
         entry = tk.Entry(data_frame, width=20)
         entry.grid(row=row, column=col_offset + 1, padx=5, pady=1)
         fields[col_name] = (entry, col_type)
-    # Separator between left and right columns
     tk.Frame(data_frame, width=10).grid(row=0, column=2, rowspan=half)
 
-    # --- Send button ---
-    send_btn = tk.Button(root, text="Send to TEILE", command=do_send, width=20, height=2, state=tk.DISABLED)
-    send_btn.pack(pady=10)
+    # --- Send + Automation buttons ---
+    action_frame = tk.Frame(root)
+    action_frame.pack(pady=5)
+
+    send_btn = tk.Button(action_frame, text="Send to TEILE", command=do_send, width=16, height=2, state=tk.DISABLED)
+    send_btn.pack(side=tk.LEFT, padx=10)
+
+    auto_frame = tk.LabelFrame(action_frame, text="Automation", padx=5, pady=2)
+    auto_frame.pack(side=tk.LEFT, padx=10)
+    start_btn = tk.Button(auto_frame, text="Start", command=do_start_polling, width=8, bg="#d4edda")
+    start_btn.pack(side=tk.LEFT, padx=3)
+    stop_btn = tk.Button(auto_frame, text="Stop", command=do_stop_polling, width=8, bg="#f8d7da", state=tk.DISABLED)
+    stop_btn.pack(side=tk.LEFT, padx=3)
 
     # --- Status bar ---
     status_var = tk.StringVar(value="Not connected")
     status_label = tk.Label(root, textvariable=status_var, fg="gray", anchor=tk.W)
-    status_label.pack(fill=tk.X, padx=10, pady=(0, 10))
+    status_label.pack(fill=tk.X, padx=10)
 
+    # --- Log panel ---
+    log_frame = tk.LabelFrame(root, text="Log", padx=5, pady=5)
+    log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
+
+    log_text = scrolledtext.ScrolledText(log_frame, height=12, state=tk.DISABLED, wrap=tk.WORD,
+                                         font=("Consolas", 9))
+    log_text.pack(fill=tk.BOTH, expand=True)
+
+    # Wire up logging to the text widget
+    text_handler = TextHandler(log_text)
+    text_handler.setFormatter(logging.Formatter("%(asctime)s  %(message)s", datefmt="%H:%M:%S"))
+    logger.addHandler(text_handler)
+    # Also capture HolzherTCP logs
+    logging.getLogger("HolzherTCP").addHandler(text_handler)
+    logging.getLogger("HolzherTCP").setLevel(logging.DEBUG)
+
+    def on_close():
+        if polling_active:
+            do_stop_polling()
+        if tcp is not None:
+            do_tcp_disconnect()
+        if db is not None:
+            db.disconnect()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
     root.mainloop()
-
-    # Clean up on close
-    if db is not None:
-        db.disconnect()
 
 
 if __name__ == "__main__":

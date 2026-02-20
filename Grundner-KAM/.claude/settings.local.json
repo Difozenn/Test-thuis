@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(# The TCP commands exist as UTF-16 literals. Let me find what''s sent WITH them # Look for format strings near LOAD_PROGRAM - how is the message constructed? strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
+      "Bash(# Look for the EXACT format of what gets sent - sprintf/format patterns with LOAD_PROGRAM strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
+      "Bash(# Great! \"\"Text: \"\"%s\"\"\"\" and \"\"Host: \"\"%s\"\"\"\", \"\"Port: %d\"\" - these are the log messages # The TCP message is literally just the text. Let me find the exact construction # Look for what goes between the command and the program name strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
+      "Bash(# Look for the actual format string that constructs the TCP message # It''s likely something like \"\"LOAD_PROGRAM;programname;kantid\"\" or \"\"LOAD_PROGRAM programname kantid\"\" strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")"
+    ]
+  }
+}

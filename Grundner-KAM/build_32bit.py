@@ -64,6 +64,12 @@ def check_dependencies():
     except ImportError:
         missing.append("fdb")
 
+    try:
+        import serial
+        print("pyserial found")
+    except ImportError:
+        missing.append("pyserial")
+
     if missing:
         print(f"\nMissing packages: {', '.join(missing)}")
         print(f"Installing: pip install {' '.join(missing)}")
@@ -86,6 +92,9 @@ def build():
         "--hidden-import", "fdb.ibase",
         "--hidden-import", "tkinter",
         "--hidden-import", "tkinter.scrolledtext",
+        "--hidden-import", "serial",
+        "--hidden-import", "serial.tools",
+        "--hidden-import", "serial.tools.list_ports",
         MAIN_SCRIPT,
     ]
 

@@ -15,6 +15,13 @@ import logging
 from datetime import datetime
 
 try:
+    import serial
+    import serial.tools.list_ports
+    HAS_SERIAL = True
+except ImportError:
+    HAS_SERIAL = False
+
+try:
     # Patch for old Firebird 2.x client libraries that lack fb_shutdown_callback.
     # fdb tries to bind this function during connect(), but it only exists in
     # Firebird 2.5+. Since it's bound near the end of __init__ (after all essential
@@ -243,15 +250,18 @@ class FirebirdKAM:
             cur.close()
 
     def get_completed_parts(self):
-        """Return parts with Report Status=0 where all edges are done (99) or unused (0)."""
+        """Return parts with Report Status=0 where all edges are done (99) or unused (Kante=0).
+
+        Uses the exact query from Vlecad_ITD production code.
+        """
         self._require_connection()
         cur = self.conn.cursor()
         cur.execute(
             'SELECT * FROM TEILE WHERE "Report Status"=0 '
-            'AND ("Kante1 Status"=99 OR "Kante1 Status"=0 OR "Kante1"=0) '
-            'AND ("Kante2 Status"=99 OR "Kante2 Status"=0 OR "Kante2"=0) '
-            'AND ("Kante3 Status"=99 OR "Kante3 Status"=0 OR "Kante3"=0) '
-            'AND ("Kante4 Status"=99 OR "Kante4 Status"=0 OR "Kante4"=0)'
+            'AND ("Kante1"=0 OR ("Kante1" <> 0 AND "Kante1 Status"=99)) '
+            'AND ("Kante2"=0 OR ("Kante2" <> 0 AND "Kante2 Status"=99)) '
+            'AND ("Kante3"=0 OR ("Kante3" <> 0 AND "Kante3 Status"=99)) '
+            'AND ("Kante4"=0 OR ("Kante4" <> 0 AND "Kante4 Status"=99))'
         )
         cols = [desc[0].strip() for desc in cur.description]
         rows = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -284,16 +294,19 @@ class FirebirdKAM:
         return count
 
     def count_done_object_parts(self, prefix):
-        """Count parts of an object that have Report Status=1 and all edges done."""
+        """Count parts of an object that have Report Status=1 and all edges done.
+
+        Uses the exact query from Vlecad_ITD production code.
+        """
         self._require_connection()
         cur = self.conn.cursor()
         cur.execute(
             'SELECT COUNT(*) FROM TEILE WHERE "VlowID" LIKE ? '
             'AND "Report Status"=1 '
-            'AND ("Kante1 Status"=99 OR "Kante1 Status"=0 OR "Kante1"=0) '
-            'AND ("Kante2 Status"=99 OR "Kante2 Status"=0 OR "Kante2"=0) '
-            'AND ("Kante3 Status"=99 OR "Kante3 Status"=0 OR "Kante3"=0) '
-            'AND ("Kante4 Status"=99 OR "Kante4 Status"=0 OR "Kante4"=0)',
+            'AND ("Kante1"=0 OR ("Kante1" <> 0 AND "Kante1 Status"=99)) '
+            'AND ("Kante2"=0 OR ("Kante2" <> 0 AND "Kante2 Status"=99)) '
+            'AND ("Kante3"=0 OR ("Kante3" <> 0 AND "Kante3 Status"=99)) '
+            'AND ("Kante4"=0 OR ("Kante4" <> 0 AND "Kante4 Status"=99))',
             (prefix + "%",),
         )
         count = cur.fetchone()[0]
@@ -301,14 +314,101 @@ class FirebirdKAM:
         return count
 
     def mark_object_reported(self, prefix):
-        """Set Report Status=2 for all parts of an object (whole object done)."""
+        """Set Report Status=2 for all parts of an object (whole object done).
+
+        Uses the exact query from Vlecad_ITD production code.
+        """
         self._require_connection()
         cur = self.conn.cursor()
         try:
             cur.execute(
-                'UPDATE TEILE SET "Report Status"=2 WHERE "VlowID" LIKE ? AND "Report Status"=1',
+                'UPDATE TEILE SET "Report Status"=2 WHERE "VlowID" LIKE ? '
+                'AND "Report Status"=1 '
+                'AND ("Kante1"=0 OR ("Kante1" <> 0 AND "Kante1 Status"=99)) '
+                'AND ("Kante2"=0 OR ("Kante2" <> 0 AND "Kante2 Status"=99)) '
+                'AND ("Kante3"=0 OR ("Kante3" <> 0 AND "Kante3 Status"=99)) '
+                'AND ("Kante4"=0 OR ("Kante4" <> 0 AND "Kante4 Status"=99))',
                 (prefix + "%",),
             )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
+    def get_teiledaten(self, teile_id):
+        """Call stored procedure Get_Teiledaten to retrieve part data."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(f"EXECUTE PROCEDURE Get_Teiledaten '{teile_id}'")
+        row = cur.fetchone()
+        cur.close()
+        return row
+
+    def update_abstapelplatz(self, vlow_id, platz):
+        """Update the stacking position for a part."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            cur.execute(
+                'UPDATE TEILE SET "Abstapelplatz"=? WHERE "VlowID"=?',
+                (platz, vlow_id),
+            )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
+    def get_part_by_teileid(self, teile_id):
+        """Get the latest part row by TeileID (matches Vlecad_ITD SKIP query)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        cur.execute(
+            'SELECT SKIP ((SELECT count(*) - 1 FROM TEILE WHERE "TeileID"=?)) '
+            '* FROM TEILE WHERE "TeileID"=?',
+            (teile_id, teile_id),
+        )
+        if cur.description:
+            cols = [desc[0].strip() for desc in cur.description]
+            row = cur.fetchone()
+            cur.close()
+            return dict(zip(cols, row)) if row else None
+        cur.close()
+        return None
+
+    def reset_incomplete_edges(self, vlow_id):
+        """Reset edge statuses that are still in progress (<=2) back to 0."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            for k in range(1, 5):
+                cur.execute(
+                    f'UPDATE TEILE SET "Kante{k} Status"=0 '
+                    f'WHERE ("Kante{k}" <> 0 AND "Kante{k} Status" <= 2) '
+                    f'AND "VlowID"=?',
+                    (vlow_id,),
+                )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+        finally:
+            cur.close()
+
+    def mark_all_edges_finished(self, vlow_id):
+        """Mark all used edges as finished (status=99)."""
+        self._require_connection()
+        cur = self.conn.cursor()
+        try:
+            for k in range(1, 5):
+                cur.execute(
+                    f'UPDATE TEILE SET "Kante{k} Status"=99 '
+                    f'WHERE "Kante{k}" <> 0 AND "VlowID"=?',
+                    (vlow_id,),
+                )
             self.conn.commit()
         except Exception:
             self.conn.rollback()
@@ -382,6 +482,77 @@ class HolzherTCP:
     def get_current_program(self):
         """Send GET_CURRENT_PROGRAM command."""
         return self.send_command("GET_CURRENT_PROGRAM")
+
+
+class CncBarcodeSerial:
+    """RS-232 serial output for CNC-barcode to Grundner Treturn.
+
+    Channel B in the original Vlecad_ITD setup — sends the CNC-barcode
+    (TeileID) over a COM port so the Grundner knows which part is coming.
+    """
+
+    def __init__(self, port="COM1", baudrate=9600, bytesize=8, stopbits=1,
+                 parity="N", rtscts=False, xonxoff=False, timeout=1):
+        self.port = port
+        self.baudrate = baudrate
+        self.bytesize = bytesize
+        self.stopbits = stopbits
+        self.parity = parity
+        self.rtscts = rtscts
+        self.xonxoff = xonxoff
+        self.timeout = timeout
+        self.ser = None
+        self.logger = logging.getLogger("CncSerial")
+
+    def connect(self):
+        """Open the serial port."""
+        if not HAS_SERIAL:
+            raise RuntimeError("pyserial not installed. Run: pip install pyserial")
+        if self.ser is not None and self.ser.is_open:
+            return
+        parity_map = {"N": serial.PARITY_NONE, "E": serial.PARITY_EVEN,
+                      "O": serial.PARITY_ODD, "M": serial.PARITY_MARK,
+                      "S": serial.PARITY_SPACE}
+        stopbits_map = {1: serial.STOPBITS_ONE, 1.5: serial.STOPBITS_ONE_POINT_FIVE,
+                        2: serial.STOPBITS_TWO}
+        bytesize_map = {5: serial.FIVEBITS, 6: serial.SIXBITS,
+                        7: serial.SEVENBITS, 8: serial.EIGHTBITS}
+        self.ser = serial.Serial(
+            port=self.port,
+            baudrate=self.baudrate,
+            bytesize=bytesize_map.get(self.bytesize, serial.EIGHTBITS),
+            stopbits=stopbits_map.get(self.stopbits, serial.STOPBITS_ONE),
+            parity=parity_map.get(self.parity, serial.PARITY_NONE),
+            rtscts=self.rtscts,
+            xonxoff=self.xonxoff,
+            timeout=self.timeout,
+        )
+        self.logger.info("Serial opened %s @ %d %d%s%s%s",
+                         self.port, self.baudrate, self.bytesize, self.parity,
+                         self.stopbits,
+                         " RTS/CTS" if self.rtscts else (" XON/XOFF" if self.xonxoff else ""))
+
+    def disconnect(self):
+        """Close the serial port."""
+        if self.ser is not None and self.ser.is_open:
+            self.ser.close()
+            self.logger.info("Serial closed %s", self.port)
+        self.ser = None
+
+    def send_barcode(self, barcode):
+        """Send a CNC-barcode string over the serial port (with CR+LF)."""
+        if self.ser is None or not self.ser.is_open:
+            raise RuntimeError("Serial port not open")
+        payload = (barcode + "\r\n").encode("ascii", errors="replace")
+        self.ser.write(payload)
+        self.logger.info("Serial TX [%s]: %s", self.port, barcode)
+
+    @staticmethod
+    def list_ports():
+        """Return list of available COM ports (name, description)."""
+        if not HAS_SERIAL:
+            return []
+        return [(p.device, p.description) for p in serial.tools.list_ports.comports()]
 
 
 def main():
@@ -482,6 +653,7 @@ def gui():
     # --- State ---
     db = None
     tcp = None
+    com_serial = None
     polling_active = False
     polling_stop_event = threading.Event()
 
@@ -618,6 +790,134 @@ def gui():
             log(f"LOAD_PROGRAM {prog} {kant} -> {resp}")
         except Exception as e:
             log(f"TCP error: {e}")
+
+    # ── COM port serial ─────────────────────────────────────────────
+    def do_com_connect():
+        nonlocal com_serial
+        if not HAS_SERIAL:
+            log("pyserial not installed. Run: pip install pyserial")
+            return
+        port = com_port_var.get().strip()
+        if not port:
+            messagebox.showerror("Error", "Select a COM port")
+            return
+        try:
+            baud = int(com_baud_var.get())
+        except ValueError:
+            messagebox.showerror("Error", "Baud rate must be a number")
+            return
+        try:
+            if com_serial is not None:
+                com_serial.disconnect()
+            com_serial = CncBarcodeSerial(
+                port=port,
+                baudrate=baud,
+                bytesize=int(com_databits_var.get()),
+                stopbits=float(com_stopbits_var.get()),
+                parity=com_parity_var.get()[0],  # first char: N, E, O
+                rtscts=(com_flow_var.get() == "RTS/CTS"),
+                xonxoff=(com_flow_var.get() == "XON/XOFF"),
+            )
+            com_serial.connect()
+            com_status_var.set("Connected")
+            log(f"COM connected: {port} @ {baud}")
+        except Exception as e:
+            com_serial = None
+            com_status_var.set("Failed")
+            log(f"COM connect failed: {e}")
+
+    def do_com_disconnect():
+        nonlocal com_serial
+        if com_serial is not None:
+            com_serial.disconnect()
+            com_serial = None
+        com_status_var.set("Disconnected")
+        log("COM disconnected")
+
+    def do_com_refresh_ports():
+        ports = CncBarcodeSerial.list_ports()
+        menu = com_port_menu["menu"]
+        menu.delete(0, tk.END)
+        if ports:
+            for dev, desc in ports:
+                label = f"{dev}  ({desc})"
+                menu.add_command(label=label, command=lambda d=dev: com_port_var.set(d))
+            com_port_var.set(ports[0][0])
+        else:
+            menu.add_command(label="(none)", command=lambda: None)
+            com_port_var.set("")
+        log(f"Found {len(ports)} COM port(s)")
+
+    def do_com_lookup_send():
+        """Look up a VlowID in TEILE and send the part data to Grundner via COM."""
+        if db is None:
+            log("DB not connected — connect to Firebird first")
+            return
+        if com_serial is None:
+            log("COM not connected — connect COM port first")
+            return
+        vlow_id = com_lookup_var.get().strip()
+        if not vlow_id:
+            log("Enter a VlowID to look up")
+            return
+        try:
+            # Look up part by VlowID
+            cur = db.conn.cursor()
+            cur.execute('SELECT * FROM TEILE WHERE "VlowID"=?', (vlow_id,))
+            if cur.description:
+                cols = [desc[0].strip() for desc in cur.description]
+                row = cur.fetchone()
+            else:
+                row = None
+                cols = []
+            cur.close()
+
+            if row is None:
+                log(f"VlowID '{vlow_id}' not found in TEILE")
+                return
+
+            part = dict(zip(cols, row))
+
+            # Log the found data
+            teile_id = part.get("TeileID", "")
+            log(f"Found: VlowID={vlow_id}  TeileID={teile_id}  "
+                f"{part.get('Teilelaenge','')}x{part.get('Teilebreite','')}x{part.get('Teiledicke','')}  "
+                f"Abstapelplatz={part.get('Abstapelplatz','')}  "
+                f"Report Status={part.get('Report Status','')}")
+            for k in range(1, 5):
+                kante = part.get(f"Kante{k}", 0)
+                status = part.get(f"Kante{k} Status", 0)
+                prog = part.get(f"Kante{k} Programm", "")
+                if kante:
+                    log(f"  Kante{k}={kante}  Status={status}  Programm={prog}")
+
+            # Send over COM in GDB column order, excluding VlowID
+            values = []
+            for col, val in zip(cols, row):
+                if col == "VlowID":
+                    continue
+                values.append(str(val) if val is not None else "")
+            payload = ";".join(values)
+            com_serial.send_barcode(payload)
+            log(f"Sent to Grundner ({len(values)} fields): {payload}")
+
+        except Exception as e:
+            log(f"Lookup/send failed: {e}")
+
+    def do_com_send_raw():
+        """Send raw text over COM (for testing)."""
+        if com_serial is None:
+            log("COM not connected")
+            return
+        text = com_raw_var.get().strip()
+        if not text:
+            log("Enter text to send")
+            return
+        try:
+            com_serial.send_barcode(text)
+            log(f"COM raw TX: {text}")
+        except Exception as e:
+            log(f"COM send failed: {e}")
 
     # ── Data entry / send ────────────────────────────────────────────
     def do_send():
@@ -801,6 +1101,67 @@ def gui():
     tk.Entry(tcp_cmd_frame, textvariable=tcp_kant_var, width=6).pack(side=tk.LEFT, padx=2)
     tk.Button(tcp_cmd_frame, text="LOAD", command=do_tcp_load, width=7).pack(side=tk.LEFT, padx=3)
 
+    # --- COM port frame ---
+    com_frame = tk.LabelFrame(root, text="COM Port (CNC-Barcode to Grundner)", padx=10, pady=5)
+    com_frame.pack(fill=tk.X, padx=10, pady=5)
+
+    tk.Label(com_frame, text="Port:").grid(row=0, column=0, sticky=tk.W)
+    com_port_var = tk.StringVar(value="")
+    com_port_menu = tk.OptionMenu(com_frame, com_port_var, "(none)")
+    com_port_menu.config(width=20)
+    com_port_menu.grid(row=0, column=1, sticky=tk.W, padx=5)
+    tk.Button(com_frame, text="Refresh", command=do_com_refresh_ports, width=7).grid(row=0, column=2, padx=3)
+
+    tk.Label(com_frame, text="Baud:").grid(row=0, column=3, sticky=tk.W, padx=(10, 0))
+    com_baud_var = tk.StringVar(value="9600")
+    tk.OptionMenu(com_frame, com_baud_var, "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200").grid(
+        row=0, column=4, sticky=tk.W, padx=5)
+
+    tk.Label(com_frame, text="Data:").grid(row=1, column=0, sticky=tk.W)
+    com_databits_var = tk.StringVar(value="8")
+    tk.OptionMenu(com_frame, com_databits_var, "7", "8").grid(row=1, column=1, sticky=tk.W, padx=5)
+
+    tk.Label(com_frame, text="Stop:").grid(row=1, column=3, sticky=tk.W, padx=(10, 0))
+    com_stopbits_var = tk.StringVar(value="1")
+    tk.OptionMenu(com_frame, com_stopbits_var, "1", "1.5", "2").grid(row=1, column=4, sticky=tk.W, padx=5)
+
+    tk.Label(com_frame, text="Parity:").grid(row=2, column=0, sticky=tk.W)
+    com_parity_var = tk.StringVar(value="None")
+    tk.OptionMenu(com_frame, com_parity_var, "None", "Even", "Odd").grid(row=2, column=1, sticky=tk.W, padx=5)
+
+    tk.Label(com_frame, text="Flow:").grid(row=2, column=3, sticky=tk.W, padx=(10, 0))
+    com_flow_var = tk.StringVar(value="None")
+    tk.OptionMenu(com_frame, com_flow_var, "None", "RTS/CTS", "XON/XOFF").grid(row=2, column=4, sticky=tk.W, padx=5)
+
+    com_status_var = tk.StringVar(value="Disconnected")
+    tk.Label(com_frame, textvariable=com_status_var, fg="gray").grid(row=0, column=5, padx=10)
+
+    com_btn_frame = tk.Frame(com_frame)
+    com_btn_frame.grid(row=3, column=0, columnspan=6, pady=5)
+    tk.Button(com_btn_frame, text="COM Connect", command=do_com_connect, width=12).pack(side=tk.LEFT, padx=3)
+    tk.Button(com_btn_frame, text="COM Disconnect", command=do_com_disconnect, width=14).pack(side=tk.LEFT, padx=3)
+
+    # VlowID lookup → send to Grundner
+    com_lookup_frame = tk.Frame(com_frame)
+    com_lookup_frame.grid(row=4, column=0, columnspan=6, pady=(2, 0))
+    tk.Label(com_lookup_frame, text="VlowID:").pack(side=tk.LEFT)
+    com_lookup_var = tk.StringVar()
+    tk.Entry(com_lookup_frame, textvariable=com_lookup_var, width=40).pack(side=tk.LEFT, padx=5)
+    tk.Button(com_lookup_frame, text="Lookup & Send to Grundner", command=do_com_lookup_send,
+              width=24, bg="#d4edda").pack(side=tk.LEFT, padx=5)
+
+    # Raw test send
+    com_raw_frame = tk.Frame(com_frame)
+    com_raw_frame.grid(row=5, column=0, columnspan=6, pady=(2, 0))
+    tk.Label(com_raw_frame, text="Raw:").pack(side=tk.LEFT)
+    com_raw_var = tk.StringVar()
+    tk.Entry(com_raw_frame, textvariable=com_raw_var, width=40).pack(side=tk.LEFT, padx=5)
+    tk.Button(com_raw_frame, text="Send Raw", command=do_com_send_raw, width=10).pack(side=tk.LEFT, padx=5)
+
+    # Auto-detect COM ports on startup
+    if HAS_SERIAL:
+        root.after(100, do_com_refresh_ports)
+
     # --- Data entry frame ---
     data_frame = tk.LabelFrame(root, text="TEILE Data", padx=10, pady=5)
     data_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -875,13 +1236,17 @@ def gui():
     text_handler = TextHandler(log_text)
     text_handler.setFormatter(logging.Formatter("%(asctime)s  %(message)s", datefmt="%H:%M:%S"))
     logger.addHandler(text_handler)
-    # Also capture HolzherTCP logs
+    # Also capture HolzherTCP and CncSerial logs
     logging.getLogger("HolzherTCP").addHandler(text_handler)
     logging.getLogger("HolzherTCP").setLevel(logging.DEBUG)
+    logging.getLogger("CncSerial").addHandler(text_handler)
+    logging.getLogger("CncSerial").setLevel(logging.DEBUG)
 
     def on_close():
         if polling_active:
             do_stop_polling()
+        if com_serial is not None:
+            do_com_disconnect()
         if tcp is not None:
             do_tcp_disconnect()
         if db is not None:

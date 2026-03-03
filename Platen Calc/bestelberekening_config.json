@@ -1,5 +1,10 @@
 {
   "rendement_pct": 75.0,
+  "trend_folder": ".",
+  "orders_folder": "Y:/Stuklijsten",
+  "magazijn_file": "T:/Temp/ContentResult.csv",
+  "export_folder": "C:\\Users\\Rob\\Desktop\\Test-thuis\\Platen Calc",
+  "handmagazijn_folder": "C:\\Users\\Rob\\Desktop\\Test-thuis\\Platen Calc",
   "safety_margins": {
     "650": 0.0,
     "667": 0.0,

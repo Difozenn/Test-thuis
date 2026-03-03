@@ -23,13 +23,17 @@ class ModernTheme:
     # Colors
     PRIMARY = "#1a73e8"  # Google Blue
     PRIMARY_DARK = "#1557b0"
+    PRIMARY_HOVER = "#1765cc"
     SECONDARY = "#34a853"  # Success Green
+    SECONDARY_HOVER = "#2d9249"
     WARNING = "#fbbc04"
     DANGER = "#ea4335"
+    DANGER_HOVER = "#d33426"
 
     BG_MAIN = "#ffffff"
     BG_SECONDARY = "#f8f9fa"
     BG_TERTIARY = "#e8eaed"
+    BG_TERTIARY_HOVER = "#d3d5d8"
 
     TEXT_PRIMARY = "#202124"
     TEXT_SECONDARY = "#5f6368"
@@ -43,6 +47,73 @@ class ModernTheme:
     FONT_HEADER = (FONT_FAMILY, 12, "bold")
     FONT_NORMAL = (FONT_FAMILY, 10)
     FONT_SMALL = (FONT_FAMILY, 9)
+    FONT_BUTTON = (FONT_FAMILY, 10)
+
+    @staticmethod
+    def create_button(parent, text, command, style="primary", **pack_opts):
+        """Create a styled button with hover effects.
+
+        style: 'primary' (blue), 'secondary' (green), 'tertiary' (gray),
+               'danger' (red)
+        """
+        styles = {
+            'primary': {
+                'bg': ModernTheme.PRIMARY,
+                'fg': 'white',
+                'hover': ModernTheme.PRIMARY_HOVER,
+                'active': ModernTheme.PRIMARY_DARK,
+            },
+            'secondary': {
+                'bg': ModernTheme.SECONDARY,
+                'fg': 'white',
+                'hover': ModernTheme.SECONDARY_HOVER,
+                'active': '#247a3d',
+            },
+            'tertiary': {
+                'bg': ModernTheme.BG_TERTIARY,
+                'fg': ModernTheme.TEXT_PRIMARY,
+                'hover': ModernTheme.BG_TERTIARY_HOVER,
+                'active': '#c4c7ca',
+            },
+            'danger': {
+                'bg': ModernTheme.DANGER,
+                'fg': 'white',
+                'hover': ModernTheme.DANGER_HOVER,
+                'active': '#b92d20',
+            },
+        }
+        s = styles.get(style, styles['primary'])
+
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=s['bg'],
+            fg=s['fg'],
+            activebackground=s['active'],
+            activeforeground=s['fg'],
+            font=ModernTheme.FONT_BUTTON,
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            padx=22,
+            pady=9,
+            cursor="hand2",
+        )
+
+        def on_enter(e):
+            btn.configure(bg=s['hover'])
+
+        def on_leave(e):
+            btn.configure(bg=s['bg'])
+
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+
+        if pack_opts is not None:
+            btn.pack(**pack_opts)
+
+        return btn
 
 
 class BestelberekeningApp:
@@ -198,12 +269,14 @@ class BestelberekeningApp:
         self.tab3 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
         self.tab4 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
         self.tab5 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
+        self.tab6 = tk.Frame(self.notebook, bg=ModernTheme.BG_MAIN)
 
         self.notebook.add(self.tab1, text="  1. Orders  ")
         self.notebook.add(self.tab2, text="  2. Magazijn  ")
         self.notebook.add(self.tab3, text="  3. Instellingen  ")
         self.notebook.add(self.tab4, text="  4. Berekening  ")
         self.notebook.add(self.tab5, text="  5. Historiek  ")
+        self.notebook.add(self.tab6, text="  6. Handmagazijn  ")
 
         # Build each tab
         self.build_tab1_orders()
@@ -211,6 +284,7 @@ class BestelberekeningApp:
         self.build_tab3_instellingen()
         self.build_tab4_berekening()
         self.build_tab5_analyse()
+        self.build_tab6_handmagazijn()
 
         # Status bar
         status_frame = tk.Frame(main_container, bg=ModernTheme.BG_MAIN, relief="flat", bd=1)
@@ -277,33 +351,13 @@ class BestelberekeningApp:
         )
         folder_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        browse_btn = tk.Button(
-            path_frame,
-            text="Bladeren...",
-            command=self.browse_orders_folder,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        )
-        browse_btn.pack(side=tk.LEFT)
+        browse_btn = ModernTheme.create_button(
+            path_frame, "Bladeren...", self.browse_orders_folder,
+            style="tertiary", side=tk.LEFT)
 
-        scan_btn = tk.Button(
-            folder_inner,
-            text="Scan Orders",
-            command=self.scan_orders,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=30,
-            pady=10,
-            cursor="hand2"
-        )
-        scan_btn.pack(pady=(15, 0))
+        scan_btn = ModernTheme.create_button(
+            folder_inner, "Scan Orders", self.scan_orders,
+            style="primary", pady=(15, 0))
 
         # Progress bar (hidden by default)
         self.orders_progress = ttk.Progressbar(
@@ -323,31 +377,13 @@ class BestelberekeningApp:
         actions_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
         actions_frame.pack(fill=tk.X, pady=(15, 15))
 
-        tk.Button(
-            actions_frame,
-            text="Selecteer Alles",
-            command=self.select_all_orders,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_SMALL,
-            relief="flat",
-            padx=15,
-            pady=6,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            actions_frame, "Selecteer Alles", self.select_all_orders,
+            style="tertiary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            actions_frame,
-            text="Deselecteer Alles",
-            command=self.deselect_all_orders,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_SMALL,
-            relief="flat",
-            padx=15,
-            pady=6,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
+        ModernTheme.create_button(
+            actions_frame, "Deselecteer Alles", self.deselect_all_orders,
+            style="tertiary", side=tk.LEFT)
 
         # Results section header
         tk.Label(
@@ -436,33 +472,13 @@ class BestelberekeningApp:
         )
         file_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        browse_btn = tk.Button(
-            path_frame,
-            text="Bladeren...",
-            command=self.browse_magazijn_file,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        )
-        browse_btn.pack(side=tk.LEFT)
+        browse_btn = ModernTheme.create_button(
+            path_frame, "Bladeren...", self.browse_magazijn_file,
+            style="tertiary", side=tk.LEFT)
 
-        load_btn = tk.Button(
-            file_inner,
-            text="Laad Magazijn",
-            command=self.load_magazijn_data,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=30,
-            pady=10,
-            cursor="hand2"
-        )
-        load_btn.pack(pady=(15, 0))
+        load_btn = ModernTheme.create_button(
+            file_inner, "Laad Magazijn", self.load_magazijn_data,
+            style="primary", pady=(15, 0))
 
         # Results section header
         tk.Label(
@@ -573,18 +589,9 @@ class BestelberekeningApp:
         )
         rendement_entry.pack(side=tk.LEFT, padx=(10, 10))
 
-        tk.Button(
-            rendement_frame,
-            text="Rendement Toepassen",
-            command=self.apply_rendement,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
+        ModernTheme.create_button(
+            rendement_frame, "Rendement Toepassen", self.apply_rendement,
+            style="primary", side=tk.LEFT)
 
         # Safety margins section header
         tk.Label(
@@ -599,31 +606,13 @@ class BestelberekeningApp:
         actions_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
         actions_frame.pack(fill=tk.X, pady=(0, 15))
 
-        tk.Button(
-            actions_frame,
-            text="Laad Magazijn Materialen",
-            command=self.load_safety_materials,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            actions_frame, "Laad Magazijn Materialen", self.load_safety_materials,
+            style="primary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            actions_frame,
-            text="Opslaan",
-            command=self.save_config,
-            bg=ModernTheme.SECONDARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
+        ModernTheme.create_button(
+            actions_frame, "Opslaan", self.save_config,
+            style="secondary", side=tk.LEFT)
 
         # Table for safety margins - fixed height for consistency
         table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN, height=400)
@@ -689,31 +678,13 @@ class BestelberekeningApp:
         button_container = tk.Frame(container, bg=ModernTheme.BG_MAIN)
         button_container.pack(fill=tk.X, pady=(0, 15))
 
-        tk.Button(
-            button_container,
-            text="Berekenen",
-            command=self.calculate,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_container, "Berekenen", self.calculate,
+            style="primary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            button_container,
-            text="Exporteer CSV",
-            command=self.export_csv,
-            bg=ModernTheme.SECONDARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_container, "Exporteer CSV", self.export_csv,
+            style="secondary", side=tk.LEFT, padx=(0, 10))
 
         # Results section header
         tk.Label(
@@ -804,31 +775,13 @@ class BestelberekeningApp:
         button_container = tk.Frame(container, bg=ModernTheme.BG_MAIN)
         button_container.pack(fill=tk.X, pady=(0, 15))
 
-        tk.Button(
-            button_container,
-            text="Ververs Analyse",
-            command=self.refresh_analysis,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_container, "Ververs Analyse", self.refresh_analysis,
+            style="primary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            button_container,
-            text="Exporteer Historiek",
-            command=self.export_pivot,
-            bg=ModernTheme.SECONDARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=20,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_container, "Exporteer Historiek", self.export_pivot,
+            style="secondary", side=tk.LEFT, padx=(0, 10))
 
         self.analyse_info_var = tk.StringVar(value="")
         tk.Label(
@@ -1015,9 +968,13 @@ class BestelberekeningApp:
                 if d in mat_dates:
                     s = mat_dates[d]
                     text = f"{s['stock']:.1f} / {s['saldo']:.1f}"
-                    if s['saldo'] < 0:
+                    stock_r = round(s['stock'], 1)
+                    saldo_r = round(s['saldo'], 1)
+                    if saldo_r < 0:
                         bg, fg = '#ffcdd2', '#c62828'
-                    elif s['stock'] > 0 and s['stock'] == s['saldo']:
+                    elif stock_r == 0 and saldo_r == 0:
+                        bg, fg = '#bbdefb', '#1565c0'  # blue: no stock/saldo
+                    elif stock_r == saldo_r:
                         bg, fg = '#bbdefb', '#1565c0'  # blue: stock without movement
                     else:
                         bg, fg = '#c8e6c9', '#2e7d32'
@@ -1146,9 +1103,13 @@ class BestelberekeningApp:
                     if d in mat_dates:
                         s = mat_dates[d]
                         text = f"{s['stock']:.1f} / {s['saldo']:.1f}"
-                        if s['saldo'] < 0:
+                        stock_r = round(s['stock'], 1)
+                        saldo_r = round(s['saldo'], 1)
+                        if saldo_r < 0:
                             fmt = red_fmt
-                        elif s['stock'] > 0 and s['stock'] == s['saldo']:
+                        elif stock_r == 0 and saldo_r == 0:
+                            fmt = blue_fmt
+                        elif stock_r == saldo_r:
                             fmt = blue_fmt
                         else:
                             fmt = green_fmt
@@ -1163,6 +1124,585 @@ class BestelberekeningApp:
 
             self.status_var.set(f"\u2713 Historiek geëxporteerd: {filename}")
             messagebox.showinfo("Export", f"Historiek geëxporteerd naar:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Fout", f"Export mislukt:\n{e}")
+
+    # ── Tab 6: Handmagazijn Historiek ─────────────────────────────────
+
+    def build_tab6_handmagazijn(self):
+        """Build Handmagazijn Historiek tab — reststukken m² per materiaal per datum."""
+        container = tk.Frame(self.tab6, bg=ModernTheme.BG_MAIN)
+        container.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
+
+        # Header
+        ttk.Label(
+            container,
+            text="Handmagazijn Historiek",
+            style="Header.TLabel"
+        ).pack(anchor=tk.W)
+
+        ttk.Label(
+            container,
+            text="Reststukken m² per materiaal per datum",
+            style="Subtitle.TLabel"
+        ).pack(anchor=tk.W, pady=(5, 20))
+
+        # Action buttons
+        button_container = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        button_container.pack(fill=tk.X, pady=(0, 15))
+
+        ModernTheme.create_button(
+            button_container, "Importeer CSV", self.import_handmagazijn_csvs,
+            style="primary", side=tk.LEFT, padx=(0, 10))
+
+        ModernTheme.create_button(
+            button_container, "Exporteer", self.export_handmagazijn,
+            style="secondary", side=tk.LEFT, padx=(0, 10))
+
+        ModernTheme.create_button(
+            button_container, "Ververs", self.refresh_handmagazijn,
+            style="tertiary", side=tk.LEFT, padx=(0, 10))
+
+        self.handmagazijn_info_var = tk.StringVar(value="")
+        tk.Label(
+            button_container,
+            textvariable=self.handmagazijn_info_var,
+            bg=ModernTheme.BG_MAIN,
+            fg=ModernTheme.TEXT_SECONDARY,
+            font=ModernTheme.FONT_SMALL
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
+        # Placeholder frame for the dynamic pivot grid
+        self.handmagazijn_table_frame = tk.Frame(container, bg=ModernTheme.BG_MAIN)
+        self.handmagazijn_table_frame.pack(fill=tk.BOTH, expand=True)
+
+    def import_handmagazijn_csvs(self):
+        """Let the user pick one or more CSV files to import."""
+        initial_dir = self.settings.get('handmagazijn_folder', '')
+        if not initial_dir or not Path(initial_dir).is_dir():
+            initial_dir = None
+
+        files = filedialog.askopenfilenames(
+            title="Selecteer Handmagazijn CSV bestand(en)",
+            initialdir=initial_dir,
+            filetypes=[("CSV bestanden", "*.csv *.Csv"), ("Alle bestanden", "*.*")]
+        )
+        if not files:
+            return
+
+        # Remember the folder for next time
+        self.settings['handmagazijn_folder'] = str(Path(files[0]).parent)
+        self.save_config(silent=True)
+
+        imported = 0
+        already = 0
+        invalid = 0
+        for filepath in files:
+            result = self.history_db.import_handmagazijn_csv(filepath)
+            if result == 'EXISTS':
+                already += 1
+            elif result:
+                imported += 1
+            else:
+                invalid += 1
+
+        self.status_var.set(
+            f"\u2713 Handmagazijn import: {imported} nieuw, {already} reeds aanwezig, {invalid} ongeldig"
+        )
+        if imported > 0:
+            parts = [f"{imported} bestand(en) geïmporteerd."]
+            if already:
+                parts.append(f"{already} overgeslagen (reeds aanwezig).")
+            if invalid:
+                parts.append(f"{invalid} overgeslagen (geen geldige data).")
+            messagebox.showinfo("Import voltooid", "\n".join(parts))
+        elif already > 0 and invalid == 0:
+            messagebox.showinfo(
+                "Geen nieuwe data",
+                f"Alle {already} bestanden waren reeds geïmporteerd."
+            )
+        elif invalid > 0 and already == 0:
+            messagebox.showinfo(
+                "Geen geldige data",
+                f"{invalid} bestand(en) bevatten geen geldige handmagazijn data.\n"
+                "(Geen rijen met Referentie nummer tussen 10.000 en 100.000)"
+            )
+        else:
+            parts = []
+            if already:
+                parts.append(f"{already} reeds geïmporteerd.")
+            if invalid:
+                parts.append(f"{invalid} zonder geldige data.")
+            messagebox.showinfo("Geen nieuwe data", "\n".join(parts))
+
+        self.history_db.backfill_handmagazijn_zeros()
+        self.refresh_handmagazijn(show_empty_msg=False)
+
+    def refresh_handmagazijn(self, show_empty_msg=True):
+        """Query the history DB and build a pivot grid for handmagazijn data."""
+        for child in self.handmagazijn_table_frame.winfo_children():
+            child.destroy()
+
+        pivot = self.history_db.get_handmagazijn_pivot()
+        if pivot is None:
+            self.handmagazijn_info_var.set("Geen snapshots gevonden.")
+            self.status_var.set("Handmagazijn: geen data")
+            if show_empty_msg:
+                messagebox.showinfo(
+                    "Geen data",
+                    "Er zijn geen handmagazijn snapshots in de database.\n"
+                    "Klik op 'Importeer CSV's' om data te laden."
+                )
+            return
+
+        dates = pivot['dates']  # oldest first (ISO)
+        materials = pivot['materials']
+
+        # Format date headers as DD-MM-YYYY for display
+        date_headers = []
+        for d in dates:
+            parts = d.split('-')
+            date_headers.append(f"{parts[2]}-{parts[1]}-{parts[0]}")
+
+        sorted_materials = sorted(materials.keys())
+        hdr_font = (ModernTheme.FONT_FAMILY, 9, "bold")
+        cell_font = (ModernTheme.FONT_FAMILY, 9)
+        hdr_bg = ModernTheme.BG_TERTIARY
+        totaal_font = (ModernTheme.FONT_FAMILY, 9, "bold")
+        totaal_bg = '#e8eaf6'
+        totaal_fg = '#283593'
+
+        # ── Layout (grid): totaal row + frozen headers + frozen material column ──
+        # Row 0: Totaal m² (frozen)
+        # Row 1: Materiaal / date headers (frozen)
+        # Row 2: scrollable data
+        # Row 3: horizontal scrollbar
+        mat_col_width = 250
+        totaal_corner = tk.Frame(self.handmagazijn_table_frame, bg=totaal_bg, width=mat_col_width)
+        totaal_corner.grid_propagate(False)
+        totaal_canvas = tk.Canvas(
+            self.handmagazijn_table_frame, bg=totaal_bg, highlightthickness=0
+        )
+
+        corner_frame = tk.Frame(self.handmagazijn_table_frame, bg=hdr_bg, width=mat_col_width)
+        corner_frame.grid_propagate(False)
+        tk.Label(
+            corner_frame, text="Materiaal", bg=hdr_bg,
+            font=hdr_font, padx=8, pady=4, anchor=tk.W, relief="groove"
+        ).pack(fill=tk.BOTH, expand=True)
+
+        hdr_canvas = tk.Canvas(
+            self.handmagazijn_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        left_canvas = tk.Canvas(
+            self.handmagazijn_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        right_canvas = tk.Canvas(
+            self.handmagazijn_table_frame, bg=ModernTheme.BG_MAIN, highlightthickness=0
+        )
+        vsb = ttk.Scrollbar(self.handmagazijn_table_frame, orient="vertical")
+        hsb = ttk.Scrollbar(self.handmagazijn_table_frame, orient="horizontal")
+
+        totaal_corner.grid(row=0, column=0, sticky="nsew")
+        totaal_canvas.grid(row=0, column=1, sticky="ew")
+        corner_frame.grid(row=1, column=0, sticky="nsew")
+        hdr_canvas.grid(row=1, column=1, sticky="ew")
+        left_canvas.grid(row=2, column=0, sticky="ns")
+        right_canvas.grid(row=2, column=1, sticky="nsew")
+        vsb.grid(row=2, column=2, sticky="ns")
+        hsb.grid(row=3, column=1, sticky="ew")
+
+        self.handmagazijn_table_frame.grid_rowconfigure(2, weight=1)
+        self.handmagazijn_table_frame.grid_columnconfigure(1, weight=1)
+
+        # Sync horizontal scroll: totaal + header + data
+        def _sync_xview(*args):
+            right_canvas.xview(*args)
+            hdr_canvas.xview(*args)
+            totaal_canvas.xview(*args)
+
+        hsb.config(command=_sync_xview)
+
+        def _on_right_xscroll(*args):
+            hsb.set(*args)
+            hdr_canvas.xview_moveto(args[0])
+            totaal_canvas.xview_moveto(args[0])
+
+        right_canvas.configure(xscrollcommand=_on_right_xscroll)
+
+        # Sync vertical scroll: material names + data
+        def _sync_yview(*args):
+            left_canvas.yview(*args)
+            right_canvas.yview(*args)
+
+        vsb.config(command=_sync_yview)
+
+        def _on_left_yscroll(*args):
+            vsb.set(*args)
+            right_canvas.yview_moveto(args[0])
+
+        def _on_right_yscroll(*args):
+            vsb.set(*args)
+            left_canvas.yview_moveto(args[0])
+
+        left_canvas.configure(yscrollcommand=_on_left_yscroll)
+        right_canvas.configure(yscrollcommand=_on_right_yscroll)
+
+        # Inner frames
+        hdr_frame = tk.Frame(hdr_canvas, bg=ModernTheme.BG_MAIN)
+        hdr_canvas.create_window((0, 0), window=hdr_frame, anchor="nw")
+
+        left_grid = tk.Frame(left_canvas, bg=ModernTheme.BG_MAIN)
+        left_canvas.create_window((0, 0), window=left_grid, anchor="nw")
+
+        right_grid = tk.Frame(right_canvas, bg=ModernTheme.BG_MAIN)
+        right_canvas.create_window((0, 0), window=right_grid, anchor="nw")
+
+        # Date headers
+        for col_idx, dh in enumerate(date_headers):
+            tk.Label(
+                hdr_frame, text=dh, bg=hdr_bg, font=hdr_font,
+                padx=8, pady=4, anchor=tk.CENTER, relief="groove"
+            ).grid(row=0, column=col_idx, sticky="nsew")
+
+        # Data rows with color coding
+        row_frames = {}
+        row_all_widgets = {}
+        self._handmagazijn_selected_row = None
+
+        def _select_row(row_idx):
+            prev = self._handmagazijn_selected_row
+            if prev is not None and prev in row_frames:
+                lf, rf = row_frames[prev]
+                lf.configure(highlightthickness=0)
+                rf.configure(highlightthickness=0)
+            if row_idx == prev:
+                self._handmagazijn_selected_row = None
+                return
+            self._handmagazijn_selected_row = row_idx
+            lf, rf = row_frames[row_idx]
+            lf.configure(highlightbackground=ModernTheme.PRIMARY, highlightthickness=2)
+            rf.configure(highlightbackground=ModernTheme.PRIMARY, highlightthickness=2)
+
+        num_dates = len(dates)
+
+        # ── Totaal m² row (frozen, above headers) ──
+        # Calculate totals and in/out per date
+        date_totals = {}
+        date_in = {}   # sum of increases per material
+        date_out = {}  # sum of decreases per material
+        for col_idx, d in enumerate(dates):
+            total = 0
+            m_in = 0
+            m_out = 0
+            for mat_dates in materials.values():
+                val = mat_dates.get(d, 0)
+                total += val
+                if col_idx > 0:
+                    prev_val = mat_dates.get(dates[col_idx - 1], 0)
+                    diff = val - prev_val
+                    if diff > 0:
+                        m_in += diff
+                    elif diff < 0:
+                        m_out += abs(diff)
+            date_totals[d] = total
+            date_in[d] = m_in
+            date_out[d] = m_out
+
+        # Left corner: "Totaal m²" label
+        tk.Label(
+            totaal_corner, text="Totaal m\u00b2", bg=totaal_bg, fg=totaal_fg,
+            font=totaal_font, padx=8, pady=4, anchor=tk.W, relief="groove"
+        ).pack(fill=tk.BOTH, expand=True)
+
+        # Right: totals per date with in/out indicators (inside totaal_canvas)
+        totaal_frame = tk.Frame(totaal_canvas, bg=totaal_bg)
+        totaal_canvas.create_window((0, 0), window=totaal_frame, anchor="nw")
+        totaal_detail_font = (ModernTheme.FONT_FAMILY, 8)
+        for ci in range(num_dates):
+            totaal_frame.grid_columnconfigure(ci, minsize=110)
+        for col_idx, d in enumerate(dates):
+            total_val = date_totals[d]
+            cell = tk.Frame(totaal_frame, bg=totaal_bg, relief="groove", borderwidth=2)
+            cell.grid(row=0, column=col_idx, sticky="nsew")
+
+            tk.Label(
+                cell, text=f"{total_val:.2f}", bg=totaal_bg, fg=totaal_fg,
+                font=totaal_font, padx=4, anchor=tk.CENTER
+            ).pack(fill=tk.X)
+
+            if col_idx > 0:
+                delta_frame = tk.Frame(cell, bg=totaal_bg)
+                delta_frame.pack(fill=tk.X)
+                m_in = date_in[d]
+                m_out = date_out[d]
+                if m_in > 0:
+                    tk.Label(
+                        delta_frame, text=f"\u25b2{m_in:.2f}", bg=totaal_bg,
+                        fg='#2e7d32', font=totaal_font
+                    ).pack(side=tk.LEFT, expand=True)
+                if m_out > 0:
+                    tk.Label(
+                        delta_frame, text=f"\u25bc{m_out:.2f}", bg=totaal_bg,
+                        fg='#c62828', font=totaal_font
+                    ).pack(side=tk.LEFT, expand=True)
+
+        # ── Material rows ──
+        for row_idx, mat in enumerate(sorted_materials):
+            mat_dates = materials[mat]
+            row_all_widgets[row_idx] = []
+
+            # Left row frame (material name)
+            left_row_frame = tk.Frame(left_grid, bg="white", highlightthickness=0,
+                                      width=mat_col_width)
+            left_row_frame.grid(row=row_idx, column=0, sticky="nsew")
+            left_row_frame.grid_propagate(False)
+
+            lbl_mat = tk.Label(
+                left_row_frame, text=mat, bg="white", font=cell_font,
+                padx=8, pady=3, anchor=tk.W, relief="groove"
+            )
+            lbl_mat.pack(fill=tk.BOTH, expand=True)
+            row_all_widgets[row_idx].extend([left_row_frame, lbl_mat])
+
+            # Right row frame (data columns)
+            right_row_frame = tk.Frame(right_grid, bg=ModernTheme.BG_MAIN, highlightthickness=0)
+            right_row_frame.grid(row=row_idx, column=0, sticky="nsew")
+            for ci in range(num_dates):
+                right_row_frame.grid_columnconfigure(ci, minsize=110)
+
+            for col_idx, d in enumerate(dates):
+                if d in mat_dates:
+                    m2_val = mat_dates[d]
+                    text = f"{m2_val:.2f}"
+
+                    # Color coding: compare to previous date column
+                    if col_idx == 0:
+                        # First column: blue (no previous to compare)
+                        bg, fg = '#bbdefb', '#1565c0'
+                    else:
+                        prev_date = dates[col_idx - 1]
+                        prev_val = mat_dates.get(prev_date, 0)
+                        if m2_val > prev_val:
+                            bg, fg = '#c8e6c9', '#2e7d32'   # green: increased
+                        elif m2_val < prev_val:
+                            bg, fg = '#ffcdd2', '#c62828'    # red: decreased
+                        else:
+                            bg, fg = '#bbdefb', '#1565c0'    # blue: unchanged
+                else:
+                    text, bg, fg = "", "white", ModernTheme.TEXT_PRIMARY
+
+                lbl_cell = tk.Label(
+                    right_row_frame, text=text, bg=bg, fg=fg, font=cell_font,
+                    padx=8, pady=3, anchor=tk.CENTER, relief="groove"
+                )
+                lbl_cell.grid(row=0, column=col_idx, sticky="nsew")
+                row_all_widgets[row_idx].append(lbl_cell)
+
+            row_frames[row_idx] = (left_row_frame, right_row_frame)
+
+            # Bind click to all widgets in this row
+            for w in row_all_widgets[row_idx]:
+                w.bind("<Button-1>", lambda e, r=row_idx: _select_row(r))
+
+        # Column sizing for header row
+        for col_idx in range(num_dates):
+            hdr_frame.grid_columnconfigure(col_idx, minsize=110)
+
+        # Finalize sizes and scroll regions
+        totaal_frame.update_idletasks()
+        hdr_frame.update_idletasks()
+        left_grid.update_idletasks()
+        right_grid.update_idletasks()
+
+        hdr_h = hdr_frame.winfo_reqheight()
+        totaal_h = totaal_frame.winfo_reqheight()
+
+        totaal_corner.configure(width=mat_col_width, height=totaal_h)
+        totaal_canvas.configure(scrollregion=totaal_canvas.bbox("all"), height=totaal_h)
+        corner_frame.configure(width=mat_col_width)
+        left_canvas.configure(scrollregion=left_canvas.bbox("all"), width=mat_col_width)
+        hdr_canvas.configure(scrollregion=hdr_canvas.bbox("all"), height=hdr_h)
+        right_canvas.configure(scrollregion=right_canvas.bbox("all"))
+
+        # Mousewheel
+        def _on_mousewheel(event):
+            _sync_yview("scroll", int(-1 * (event.delta / 120)), "units")
+
+        all_widgets = [left_canvas, right_canvas]
+        for widgets in row_all_widgets.values():
+            all_widgets.extend(widgets)
+        for w in all_widgets:
+            w.bind("<MouseWheel>", _on_mousewheel)
+
+        snapshot_count = self.history_db.get_handmagazijn_snapshot_count()
+        self.handmagazijn_info_var.set(
+            f"{len(sorted_materials)} materialen | {snapshot_count} snapshots"
+        )
+        self.status_var.set(
+            f"\u2713 Handmagazijn vernieuwd: {len(sorted_materials)} materialen"
+        )
+
+    def export_handmagazijn(self):
+        """Export the handmagazijn pivot table to xlsx with color coding."""
+        pivot = self.history_db.get_handmagazijn_pivot()
+        if pivot is None:
+            messagebox.showinfo("Geen data", "Geen snapshots om te exporteren.")
+            return
+
+        dates = pivot['dates']
+        materials = pivot['materials']
+        sorted_materials = sorted(materials.keys())
+
+        date_headers = []
+        for d in dates:
+            parts = d.split('-')
+            date_headers.append(f"{parts[2]}-{parts[1]}-{parts[0]}")
+
+        timestamp = datetime.now().strftime("%d_%m_%Y")
+        filename = filedialog.asksaveasfilename(
+            title="Exporteer Handmagazijn",
+            initialdir=self.settings.get('export_folder', '.'),
+            initialfile=f"handmagazijn_historiek_{timestamp}.xlsx",
+            defaultextension=".xlsx",
+            filetypes=[("Excel bestanden", "*.xlsx")]
+        )
+        if not filename:
+            return
+        self.settings['export_folder'] = str(Path(filename).parent)
+        self.save_config(silent=True)
+
+        try:
+            import xlsxwriter
+
+            wb = xlsxwriter.Workbook(filename)
+            ws = wb.add_worksheet("Handmagazijn Historiek")
+
+            # Formats
+            hdr_fmt = wb.add_format({
+                'bold': True, 'bg_color': '#1a73e8', 'font_color': 'white',
+                'align': 'center', 'border': 1
+            })
+            totaal_fmt = wb.add_format({
+                'bold': True, 'bg_color': '#e8eaf6', 'font_color': '#283593',
+                'align': 'center', 'valign': 'vcenter', 'border': 1,
+                'text_wrap': True
+            })
+            totaal_label_fmt = wb.add_format({
+                'bold': True, 'bg_color': '#e8eaf6', 'font_color': '#283593',
+                'border': 1, 'valign': 'vcenter'
+            })
+            green_fmt = wb.add_format({
+                'bg_color': '#c8e6c9', 'font_color': '#2e7d32',
+                'align': 'center', 'border': 1, 'num_format': '0.00'
+            })
+            red_fmt = wb.add_format({
+                'bg_color': '#ffcdd2', 'font_color': '#c62828',
+                'align': 'center', 'border': 1, 'num_format': '0.00'
+            })
+            blue_fmt = wb.add_format({
+                'bg_color': '#bbdefb', 'font_color': '#1565c0',
+                'align': 'center', 'border': 1, 'num_format': '0.00'
+            })
+            mat_fmt = wb.add_format({'border': 1})
+
+            # Rich string fragment formats (no bg/border — applied via cell format)
+            totaal_text_fmt = wb.add_format({
+                'bold': True, 'font_color': '#283593', 'font_size': 10
+            })
+            up_text_fmt = wb.add_format({
+                'bold': True, 'font_color': '#2e7d32', 'font_size': 10
+            })
+            down_text_fmt = wb.add_format({
+                'bold': True, 'font_color': '#c62828', 'font_size': 10
+            })
+
+            # Column widths
+            ws.set_column(0, 0, 35)
+            ws.set_column(1, len(dates), 22)
+
+            # Calculate totals and deltas per date
+            date_totals = {}
+            date_in = {}
+            date_out = {}
+            for col_idx, d in enumerate(dates):
+                total = 0
+                m_in = 0
+                m_out = 0
+                for mat_dates in materials.values():
+                    val = mat_dates.get(d, 0)
+                    total += val
+                    if col_idx > 0:
+                        prev_val = mat_dates.get(dates[col_idx - 1], 0)
+                        diff = val - prev_val
+                        if diff > 0:
+                            m_in += diff
+                        elif diff < 0:
+                            m_out += abs(diff)
+                date_totals[d] = total
+                date_in[d] = m_in
+                date_out[d] = m_out
+
+            # Row 0: Totaal m² with ▲/▼ in one cell (double row height)
+            ws.set_row(0, 30)
+            ws.write(0, 0, "Totaal m\u00b2", totaal_label_fmt)
+            for col, d in enumerate(dates, start=1):
+                total_str = f"{date_totals[d]:.2f}"
+                if col == 1:
+                    ws.write(0, col, total_str, totaal_fmt)
+                else:
+                    m_in = date_in[d]
+                    m_out = date_out[d]
+                    parts = [totaal_text_fmt, total_str]
+                    delta_parts = []
+                    if m_in > 0:
+                        delta_parts.extend([up_text_fmt, f"\u25b2{m_in:.2f}"])
+                    if m_in > 0 and m_out > 0:
+                        delta_parts.extend([totaal_text_fmt, " "])
+                    if m_out > 0:
+                        delta_parts.extend([down_text_fmt, f"\u25bc{m_out:.2f}"])
+                    if delta_parts:
+                        parts.extend([totaal_text_fmt, "\n"])
+                        parts.extend(delta_parts)
+                        ws.write_rich_string(0, col, *parts, totaal_fmt)
+                    else:
+                        ws.write(0, col, total_str, totaal_fmt)
+
+            # Row 1: Headers
+            ws.write(1, 0, "Materiaal", hdr_fmt)
+            for col, dh in enumerate(date_headers, start=1):
+                ws.write(1, col, dh, hdr_fmt)
+
+            # Data rows
+            for row, mat in enumerate(sorted_materials, start=2):
+                ws.write(row, 0, mat, mat_fmt)
+                mat_dates = materials[mat]
+
+                for col, d in enumerate(dates, start=1):
+                    val = mat_dates.get(d, 0)
+
+                    if col == 1:
+                        fmt = blue_fmt
+                    else:
+                        prev_date = dates[col - 2]
+                        prev_val = mat_dates.get(prev_date, 0)
+                        if val < prev_val:
+                            fmt = red_fmt
+                        elif val > prev_val:
+                            fmt = green_fmt
+                        else:
+                            fmt = blue_fmt
+
+                    ws.write(row, col, val, fmt)
+
+            # Freeze totaal + header rows and material column
+            ws.freeze_panes(2, 1)
+
+            wb.close()
+
+            self.status_var.set(f"\u2713 Handmagazijn ge\u00ebxporteerd: {filename}")
+            messagebox.showinfo("Export", f"Handmagazijn ge\u00ebxporteerd naar:\n{filename}")
 
         except Exception as e:
             messagebox.showerror("Fout", f"Export mislukt:\n{e}")
@@ -1580,6 +2120,7 @@ class BestelberekeningApp:
                     self.settings['orders_folder'] = config.get('orders_folder', 'Stuklijsten')
                     self.settings['magazijn_file'] = config.get('magazijn_file', 't_temp_ContentResult.csv')
                     self.settings['export_folder'] = config.get('export_folder', '.')
+                    self.settings['handmagazijn_folder'] = config.get('handmagazijn_folder', '')
                     self.safety_margins = config.get('safety_margins', {})
                     self.material_rendement = config.get('material_rendement', {})
                     self.artikel_nummers = config.get('artikel_nummers', {})
@@ -1597,6 +2138,7 @@ class BestelberekeningApp:
                 'orders_folder': self.orders_folder_var.get(),
                 'magazijn_file': self.magazijn_file_var.get(),
                 'export_folder': self.settings.get('export_folder', '.'),
+                'handmagazijn_folder': self.settings.get('handmagazijn_folder', ''),
                 'safety_margins': self.safety_margins,
                 'material_rendement': self.material_rendement,
                 'artikel_nummers': self.artikel_nummers
@@ -1858,31 +2400,13 @@ class BestelberekeningApp:
         button_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
         button_frame.pack()
 
-        tk.Button(
-            button_frame,
-            text="Opslaan",
-            command=save,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=25,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_frame, "Opslaan", save,
+            style="primary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            button_frame,
-            text="Annuleren",
-            command=dialog.destroy,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=25,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
+        ModernTheme.create_button(
+            button_frame, "Annuleren", dialog.destroy,
+            style="tertiary", side=tk.LEFT)
 
         # Bind Enter key
         artikel_entry.bind('<Return>', lambda e: save())
@@ -1984,31 +2508,13 @@ class BestelberekeningApp:
         button_frame = tk.Frame(main, bg=ModernTheme.BG_MAIN)
         button_frame.pack()
 
-        tk.Button(
-            button_frame,
-            text="Opslaan",
-            command=save,
-            bg=ModernTheme.PRIMARY,
-            fg="white",
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=25,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ModernTheme.create_button(
+            button_frame, "Opslaan", save,
+            style="primary", side=tk.LEFT, padx=(0, 10))
 
-        tk.Button(
-            button_frame,
-            text="Annuleren",
-            command=dialog.destroy,
-            bg=ModernTheme.BG_TERTIARY,
-            fg=ModernTheme.TEXT_PRIMARY,
-            font=ModernTheme.FONT_NORMAL,
-            relief="flat",
-            padx=25,
-            pady=8,
-            cursor="hand2"
-        ).pack(side=tk.LEFT)
+        ModernTheme.create_button(
+            button_frame, "Annuleren", dialog.destroy,
+            style="tertiary", side=tk.LEFT)
 
         # Bind Enter key
         value_entry.bind('<Return>', lambda e: save())
@@ -2272,9 +2778,6 @@ class BestelberekeningApp:
             try:
                 import xlsxwriter
 
-                # Get previous snapshot for comparison
-                prev = self.history_db.get_previous_snapshot()
-
                 workbook = xlsxwriter.Workbook(filename)
                 worksheet = workbook.add_worksheet('Bestelberekening')
 
@@ -2324,81 +2827,24 @@ class BestelberekeningApp:
                     'locked': False
                 })
 
-                # Grey background for "Vorig" columns
-                grey_format = workbook.add_format({
-                    'num_format': '0.00',
-                    'border': 1,
-                    'bg_color': '#e8eaed',
-                    'font_color': '#5f6368'
-                })
-
-                grey_empty_format = workbook.add_format({
-                    'border': 1,
-                    'bg_color': '#e8eaed',
-                    'font_color': '#5f6368',
-                    'align': 'center'
-                })
-
-                # Delta formats (green = improved, red = worsened)
-                delta_green_format = workbook.add_format({
-                    'num_format': '+0.00;-0.00;0.00',
-                    'bg_color': '#e8f5e9',
-                    'font_color': '#2e7d32',
-                    'border': 1
-                })
-
-                delta_red_format = workbook.add_format({
-                    'num_format': '+0.00;-0.00;0.00',
-                    'bg_color': '#ffebee',
-                    'font_color': '#c62828',
-                    'border': 1
-                })
-
-                delta_normal_format = workbook.add_format({
-                    'num_format': '+0.00;-0.00;0.00',
-                    'border': 1
-                })
-
-                # Set column widths: A-M
+                # Set column widths: A-I
                 worksheet.set_column(0, 0, 30)   # A: Materiaal
                 worksheet.set_column(1, 1, 18)   # B: Artikel Nummer
                 worksheet.set_column(2, 8, 15)   # C-I: Numbers
-                worksheet.set_column(9, 10, 15)  # J-K: Vorig columns
-                worksheet.set_column(11, 12, 13) # L-M: Delta columns
 
-                # Prepare table data (13 columns: A-M)
+                # Prepare table data (9 columns: A-I)
                 table_data = []
                 for result in self.calculation_results:
-                    material = result['material']
-                    stock = result['stock']
-                    saldo = result['bestellen']
-
-                    # Previous values
-                    if prev and material in prev:
-                        stock_vorig = prev[material]['stock']
-                        saldo_vorig = prev[material]['saldo']
-                        delta_stock = stock - stock_vorig
-                        delta_saldo = saldo - saldo_vorig
-                    else:
-                        stock_vorig = None
-                        saldo_vorig = None
-                        delta_stock = None
-                        delta_saldo = None
-
                     table_data.append([
-                        material,                              # A
+                        result['material'],                    # A
                         result.get('artikel_nummer', ''),      # B
                         result['netto'],                       # C
                         result['rendement'],                   # D
                         result['bruto'],                       # E
                         result['safety'],                      # F
-                        stock,                                 # G
+                        result['stock'],                       # G
                         result.get('in_bestelling', 0.0),      # H
-                        saldo,                                 # I
-                        stock_vorig,                           # J
-                        saldo_vorig,                           # K
-                        delta_stock,                           # L
-                        delta_saldo,                           # M
+                        result['bestellen'],                   # I (Saldo)
                     ])
 
                 # Define table columns
@@ -2412,10 +2858,6 @@ class BestelberekeningApp:
                     {'header': 'Stock (m\u00b2)', 'header_format': header_format, 'format': normal_format},
                     {'header': 'In Bestelling (m\u00b2)', 'header_format': header_format, 'format': editable_format},
                     {'header': 'Saldo (m\u00b2)', 'header_format': header_format, 'format': normal_format},
-                    {'header': 'Stock Vorig (m\u00b2)', 'header_format': header_format, 'format': grey_format},
-                    {'header': 'Saldo Vorig (m\u00b2)', 'header_format': header_format, 'format': grey_format},
-                    {'header': '\u0394 Stock (m\u00b2)', 'header_format': header_format, 'format': delta_normal_format},
-                    {'header': '\u0394 Saldo (m\u00b2)', 'header_format': header_format, 'format': delta_normal_format},
                 ]
 
                 # Create Excel Table
@@ -2435,31 +2877,6 @@ class BestelberekeningApp:
                     saldo_formula = f'=G{r+1}+H{r+1}-(E{r+1}+F{r+1})'
                     worksheet.write_formula(r, 8, saldo_formula, normal_format, row_data[8])
 
-                    # Columns J-K: Vorig values (write as numbers or "-")
-                    if row_data[9] is not None:
-                        worksheet.write_number(r, 9, row_data[9], grey_format)
-                    else:
-                        worksheet.write_string(r, 9, "-", grey_empty_format)
-
-                    if row_data[10] is not None:
-                        worksheet.write_number(r, 10, row_data[10], grey_format)
-                    else:
-                        worksheet.write_string(r, 10, "-", grey_empty_format)
-
-                    # Column L (11): Delta Stock formula = G - J (only if Vorig exists)
-                    if row_data[9] is not None:
-                        delta_stock_formula = f'=G{r+1}-J{r+1}'
-                        worksheet.write_formula(r, 11, delta_stock_formula, delta_normal_format, row_data[11])
-                    else:
-                        worksheet.write_string(r, 11, "-", grey_empty_format)
-
-                    # Column M (12): Delta Saldo formula = I - K (only if Vorig exists)
-                    if row_data[10] is not None:
-                        delta_saldo_formula = f'=I{r+1}-K{r+1}'
-                        worksheet.write_formula(r, 12, delta_saldo_formula, delta_normal_format, row_data[12])
-                    else:
-                        worksheet.write_string(r, 12, "-", grey_empty_format)
-
                 # Add conditional formatting
                 if table_data:
                     data_range_end = last_row + 1  # 1-based row for range
@@ -2471,30 +2888,6 @@ class BestelberekeningApp:
                     worksheet.conditional_format(f'I2:I{data_range_end}', {
                         'type': 'cell', 'criteria': '>', 'value': 0, 'format': green_format
                     })
-
-                    # Delta Stock (L): green > 0 (stock increased), red < 0 (stock decreased)
-                    worksheet.conditional_format(f'L2:L{data_range_end}', {
-                        'type': 'cell', 'criteria': '>', 'value': 0, 'format': delta_green_format
-                    })
-                    worksheet.conditional_format(f'L2:L{data_range_end}', {
-                        'type': 'cell', 'criteria': '<', 'value': 0, 'format': delta_red_format
-                    })
-
-                    # Delta Saldo (M): green > 0 (saldo improved), red < 0 (saldo worsened)
-                    worksheet.conditional_format(f'M2:M{data_range_end}', {
-                        'type': 'cell', 'criteria': '>', 'value': 0, 'format': delta_green_format
-                    })
-                    worksheet.conditional_format(f'M2:M{data_range_end}', {
-                        'type': 'cell', 'criteria': '<', 'value': 0, 'format': delta_red_format
-                    })
-
-                # Add note below table
-                note_row = last_row + 2
-                note_format = workbook.add_format({'italic': True, 'font_color': '#5f6368'})
-                worksheet.write(note_row, 0,
-                    "Wijzig 'In Bestelling (m\u00b2)' om Saldo automatisch te herberekenen. "
-                    "Kolommen J-M tonen vergelijking met vorige export.",
-                    note_format)
 
                 workbook.close()
 

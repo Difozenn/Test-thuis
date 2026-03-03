@@ -411,53 +411,61 @@ class BarcodeMatchApp:
             print('[SPOED TEST] Warning system not initialized')
 
     def _start_db_connection_check(self):
-        """Start database connection checking"""
-        def check():
-            config = load_config()
-            if not config.get('database_enabled', True):
-                if DEBUG:
-                    print('[DB CHECK] Database disabled in config.')
-                self._set_db_status("Uitgeschakeld", "orange")
-                return
-            
-            url = config.get('api_url', 'http://localhost:5001/log')
-            # Robustly replace only the trailing '/log' with '/logs'
-            if url.endswith('/log'):
-                url = url[:-4] + '/logs'
-            elif not url.endswith('/logs'):
-                url = url.rstrip('/') + '/logs'
-            
-            if DEBUG:
-                print(f'[DB CHECK] Checking database connection at: {url}')
-            try:
-                import requests
-                resp = requests.get(url, timeout=5, proxies={"http": None, "https": None})
-                if resp.status_code == 200:
+        """Start periodic database connection checking (every 60 seconds)"""
+        def check_loop():
+            import time
+            while True:
+                try:
+                    if not self.root.winfo_exists():
+                        break
+                except Exception:
+                    break
+
+                config = load_config()
+                if not config.get('database_enabled', True):
+                    if DEBUG:
+                        print('[DB CHECK] Database disabled in config.')
+                    self._set_db_status("Uitgeschakeld", "orange")
+                else:
+                    url = config.get('api_url', 'http://localhost:5001/log')
+                    # Robustly replace only the trailing '/log' with '/logs'
+                    if url.endswith('/log'):
+                        url = url[:-4] + '/logs'
+                    elif not url.endswith('/logs'):
+                        url = url.rstrip('/') + '/logs'
+
+                    if DEBUG:
+                        print(f'[DB CHECK] Checking database connection at: {url}')
                     try:
-                        # Optionally check if response is valid JSON (list of logs)
-                        data = resp.json()
-                        if isinstance(data, list):
-                            if DEBUG:
-                                print('[DB CHECK] Connection successful, valid logs received.')
-                            self._set_db_status("Verbonden", "green")
+                        import requests
+                        resp = requests.get(url, timeout=5, proxies={"http": None, "https": None})
+                        if resp.status_code == 200:
+                            try:
+                                data = resp.json()
+                                if isinstance(data, list):
+                                    if DEBUG:
+                                        print('[DB CHECK] Connection successful, valid logs received.')
+                                    self._set_db_status("Verbonden", "green")
+                                else:
+                                    if DEBUG:
+                                        print(f'[DB CHECK] Connection OK but unexpected response: {data}')
+                                    self._set_db_status("Verbonden", "green")
+                            except Exception as e:
+                                if DEBUG:
+                                    print(f'[DB CHECK] Connection OK but JSON decode failed: {e}')
+                                self._set_db_status("Verbonden", "green")
                         else:
                             if DEBUG:
-                                print(f'[DB CHECK] Connection OK but unexpected response: {data}')
-                            self._set_db_status("Verbonden", "green")
+                                print(f'[DB CHECK] Connection failed, status: {resp.status_code}, body: {resp.text}')
+                            self._set_db_status("Niet verbonden", "red")
                     except Exception as e:
                         if DEBUG:
-                            print(f'[DB CHECK] Connection OK but JSON decode failed: {e}')
-                        self._set_db_status("Verbonden", "green")
-                else:
-                    if DEBUG:
-                        print(f'[DB CHECK] Connection failed, status: {resp.status_code}, body: {resp.text}')
-                    self._set_db_status("Niet verbonden", "red")
-            except Exception as e:
-                if DEBUG:
-                    print(f'[DB CHECK] Exception during GET: {e}')
-                self._set_db_status("Niet verbonden", "red")
-        
-        threading.Thread(target=check, daemon=True).start()
+                            print(f'[DB CHECK] Exception during GET: {e}')
+                        self._set_db_status("Niet verbonden", "red")
+
+                time.sleep(60)
+
+        threading.Thread(target=check_loop, daemon=True).start()
 
     def recheck_db_connection(self):
         """Public method for panels to trigger a database connection recheck."""

@@ -872,7 +872,8 @@ class DatabasePanel(ttk.Frame):
                     break  # Widget destroyed
                 except Exception as e:
                     print(f"[ERROR] Background refresh error: {e}")
-                    break
+                    # Don't break - continue the loop so refresh recovers from transient errors
+                    # (breaking here kills auto-refresh permanently on long-running instances)
                     
                 time.sleep(10)  # Refresh every 10 seconds
             

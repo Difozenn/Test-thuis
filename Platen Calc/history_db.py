@@ -4,6 +4,7 @@ History DB - SQLite snapshot storage for bestelberekening exports.
 Saves a snapshot on each export so the next export can show comparison columns.
 """
 
+import csv
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -50,6 +51,23 @@ class HistoryDB:
 
             CREATE INDEX IF NOT EXISTS idx_snapshot_rows_snapshot
                 ON snapshot_rows(snapshot_id);
+
+            CREATE TABLE IF NOT EXISTS handmagazijn_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_date TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            );
+
+            CREATE TABLE IF NOT EXISTS handmagazijn_rows (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id INTEGER NOT NULL,
+                material TEXT NOT NULL,
+                m2 REAL NOT NULL DEFAULT 0,
+                FOREIGN KEY (snapshot_id) REFERENCES handmagazijn_snapshots(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_handmagazijn_rows_snapshot
+                ON handmagazijn_rows(snapshot_id);
         """)
         # Migrate existing DBs: add bruto_m2 column if missing
         try:
@@ -263,6 +281,189 @@ class HistoryDB:
             'materials': materials,
             'artikel_nrs': artikel_nrs,
         }
+
+    # ── Handmagazijn methods ──────────────────────────────────────────
+
+    def save_handmagazijn_snapshot(self, date_str, data):
+        """Save (or replace) a handmagazijn snapshot for the given date.
+
+        Args:
+            date_str: Date string like "11_02_2026" (DD_MM_YYYY).
+            data: Dict of {material: m2_total}.
+        """
+        iso_date = _to_iso(date_str)
+        cur = self.conn.cursor()
+
+        # Delete existing snapshot for this date (upsert)
+        cur.execute("SELECT id FROM handmagazijn_snapshots WHERE snapshot_date = ?", (iso_date,))
+        row = cur.fetchone()
+        if row:
+            cur.execute("DELETE FROM handmagazijn_rows WHERE snapshot_id = ?", (row[0],))
+            cur.execute("DELETE FROM handmagazijn_snapshots WHERE id = ?", (row[0],))
+
+        cur.execute(
+            "INSERT INTO handmagazijn_snapshots (snapshot_date) VALUES (?)",
+            (iso_date,)
+        )
+        snapshot_id = cur.lastrowid
+
+        for material, m2 in data.items():
+            cur.execute(
+                "INSERT INTO handmagazijn_rows (snapshot_id, material, m2) VALUES (?, ?, ?)",
+                (snapshot_id, material, m2)
+            )
+
+        self.conn.commit()
+
+    def get_handmagazijn_pivot(self):
+        """Return handmagazijn data as a pivot structure.
+
+        Returns None if no snapshots exist.
+        Otherwise returns:
+            {
+                'dates': ['2025-11-13', ...],  # ISO, sorted
+                'materials': {
+                    'HSP 18mm MELxMEL wit': {
+                        '2025-11-13': 23.29,
+                        ...
+                    },
+                }
+            }
+        """
+        cur = self.conn.cursor()
+
+        cur.execute("SELECT COUNT(*) FROM handmagazijn_snapshots")
+        if cur.fetchone()[0] == 0:
+            return None
+
+        cur.execute("""
+            SELECT s.snapshot_date, r.material, r.m2
+            FROM handmagazijn_rows r
+            JOIN handmagazijn_snapshots s ON s.id = r.snapshot_id
+            ORDER BY s.snapshot_date, r.material
+        """)
+
+        dates_set = set()
+        materials = {}
+
+        for snap_date, material, m2 in cur.fetchall():
+            dates_set.add(snap_date)
+            if material not in materials:
+                materials[material] = {}
+            materials[material][snap_date] = m2
+
+        return {
+            'dates': sorted(dates_set),
+            'materials': materials,
+        }
+
+    def import_handmagazijn_csv(self, filepath):
+        """Import a single DD_MM_YYYY_autofit.Csv file.
+
+        Parses the CSV, filters rows where Referentie nummer is between
+        10,000 and 100,000, aggregates m² by Materiaal, and saves snapshot.
+
+        Returns the date string on success, 'EXISTS' if already imported,
+        None if no valid data or failed.
+        """
+        import re
+
+        basename = Path(filepath).name
+        match = re.search(r'(\d{2}_\d{2}_\d{4})_autofit', basename, re.IGNORECASE)
+        if not match:
+            return None
+
+        date_str = match.group(1)
+        iso_date = _to_iso(date_str)
+
+        # Skip if already in DB
+        cur = self.conn.cursor()
+        cur.execute("SELECT id FROM handmagazijn_snapshots WHERE snapshot_date = ?", (iso_date,))
+        if cur.fetchone():
+            return 'EXISTS'
+
+        aggregated = {}  # {material: total_m2}
+
+        try:
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
+                reader = csv.reader(f, delimiter=';')
+                header = None
+                for row in reader:
+                    if header is None:
+                        header = row
+                        continue
+                    if len(row) < 10:
+                        continue
+
+                    # Column indices (0-based):
+                    # 0=(row nr), 1=Materiaal, 2=Dikte, 3=Nerf, 4=Lengte,
+                    # 5=Breedte, 6=Aantal platen, 7=Referentie, 8=Bemerking, 9=Referentie nummer
+                    try:
+                        ref_str = row[9].strip()
+                        if not ref_str:
+                            continue
+                        ref_num = float(ref_str)
+                        if ref_num < 10000 or ref_num >= 100000:
+                            continue
+
+                        materiaal = row[1].strip()
+                        lengte = float(row[4].strip().replace(',', '.'))
+                        breedte = float(row[5].strip().replace(',', '.'))
+                        aantal = float(row[6].strip().replace(',', '.'))
+
+                        m2 = (lengte * breedte * aantal) / 1_000_000
+                        aggregated[materiaal] = aggregated.get(materiaal, 0) + m2
+                    except (ValueError, IndexError):
+                        continue
+        except Exception:
+            return None
+
+        if aggregated:
+            # Round values for cleaner display
+            aggregated = {k: round(v, 2) for k, v in aggregated.items()}
+            self.save_handmagazijn_snapshot(date_str, aggregated)
+            return date_str
+        return None
+
+    def backfill_handmagazijn_zeros(self):
+        """Fill in m2=0 rows for materials missing from snapshots.
+
+        Ensures every material that appears in any snapshot has a row
+        in every snapshot (with m2=0 if it was absent).
+        """
+        cur = self.conn.cursor()
+
+        # Get all unique materials
+        cur.execute("SELECT DISTINCT material FROM handmagazijn_rows")
+        all_materials = {row[0] for row in cur.fetchall()}
+        if not all_materials:
+            return
+
+        # Get all snapshots
+        cur.execute("SELECT id FROM handmagazijn_snapshots")
+        snapshot_ids = [row[0] for row in cur.fetchall()]
+
+        inserted = 0
+        for sid in snapshot_ids:
+            cur.execute("SELECT material FROM handmagazijn_rows WHERE snapshot_id = ?", (sid,))
+            existing = {row[0] for row in cur.fetchall()}
+            missing = all_materials - existing
+            for mat in missing:
+                cur.execute(
+                    "INSERT INTO handmagazijn_rows (snapshot_id, material, m2) VALUES (?, ?, 0)",
+                    (sid, mat)
+                )
+                inserted += 1
+
+        if inserted > 0:
+            self.conn.commit()
+        return inserted
+
+    def get_handmagazijn_snapshot_count(self):
+        """Return the total number of stored handmagazijn snapshots."""
+        cur = self.conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM handmagazijn_snapshots")
+        return cur.fetchone()[0]
 
     def close(self):
         """Close the database connection."""

@@ -4,7 +4,21 @@
       "Bash(# The TCP commands exist as UTF-16 literals. Let me find what''s sent WITH them # Look for format strings near LOAD_PROGRAM - how is the message constructed? strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
       "Bash(# Look for the EXACT format of what gets sent - sprintf/format patterns with LOAD_PROGRAM strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
       "Bash(# Great! \"\"Text: \"\"%s\"\"\"\" and \"\"Host: \"\"%s\"\"\"\", \"\"Port: %d\"\" - these are the log messages # The TCP message is literally just the text. Let me find the exact construction # Look for what goes between the command and the program name strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
-      "Bash(# Look for the actual format string that constructs the TCP message # It''s likely something like \"\"LOAD_PROGRAM;programname;kantid\"\" or \"\"LOAD_PROGRAM programname kantid\"\" strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")"
+      "Bash(# Look for the actual format string that constructs the TCP message # It''s likely something like \"\"LOAD_PROGRAM;programname;kantid\"\" or \"\"LOAD_PROGRAM programname kantid\"\" strings -el \"\"/mnt/c/Users/Rob/Desktop/Test-thuis/Grundner-KAM/Vlecad_ITD/Vlecad_ITD.exe\"\")",
+      "Read(///DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM/**)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(done)",
+      "Bash(find \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" -type f \\\\\\( -name \"README*\" -o -name \"*.md\" -o -name \"*.txt\" -o -name \"*.doc\" \\\\\\) 2>/dev/null | head -20)",
+      "Bash(find \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" -type f -name \"*.ini\" | xargs grep -l \"Gateway\\\\|Rest\\\\|Auslagerliste\\\\|temp\\\\|Grundner\\\\|Holzher\" 2>/dev/null | head -10)",
+      "Bash(grep -r \"Rest\\\\|REST\\\\|HTTP\\\\|POST\\\\|Gateway\\\\|Auslagerliste\\\\|empfangen\\\\|SENDEN\" \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" --include=\"*.py\" --include=\"*.ini\" --include=\"*.txt\" --include=\"*.md\" 2>/dev/null | head -30)",
+      "Bash(grep -r \"PocoNet\\\\|socket\\\\|TCP\\\\|192\\\\.168\" \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" --include=\"*.py\" --include=\"*.txt\" --include=\"*.ini\" 2>/dev/null | head -20)",
+      "Bash(find \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" -type f \\\\\\( -name \"README*\" -o -name \"*.txt\" -o -name \"*.md\" \\\\\\) 2>/dev/null | xargs ls -la 2>/dev/null | head -30)",
+      "Bash(grep -r \"Vlecad\\\\|ITD\\\\|VleCore\\\\|VlePost\" \"\\\\\\\\DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM\" --include=\"*.txt\" --include=\"*.md\" --include=\"*.ini\" 2>/dev/null | head -30)",
+      "Bash(xxd \"//DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM/LagerPC/Data/Einstellungen.bin\" | head -100)",
+      "Bash(xxd \"//DESKTOP-9PNEF5Q/Test-thuis/Grundner-KAM/LagerPC/Data/DataFromPLC/Teileliste_TRE.bin\" | head -80)",
+      "Bash(xxd \"//desktop-9pnef5q/Test-thuis/Grundner-KAM/LagerPC/Logging/SerialLog.bk2\" | head -n 5)",
+      "Bash(xxd)"
     ]
   }
 }

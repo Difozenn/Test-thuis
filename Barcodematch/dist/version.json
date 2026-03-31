@@ -1,8 +1,8 @@
 {
-    "version": "v2.3",
+    "version": "v2.5",
     "exe_name": "BarcodeMatch_32bit.exe",
-    "sha256": "",
-    "changelog": "- Fix: auto-refresh thread no longer dies on transient network errors (long-running instances)\n- Fix: connection status check now runs periodically instead of only at startup",
+    "sha256": "1839df109d4fbe505500c45fcd8575810cd60a477b6cb230fb23f763ef92ca16",
+    "changelog": "- Build v2.5 (2026-03-31)",
     "mandatory": false,
-    "release_date": "2026-02-27"
+    "release_date": "2026-03-31"
 }

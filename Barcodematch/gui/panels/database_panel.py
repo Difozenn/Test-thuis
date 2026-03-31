@@ -17,6 +17,10 @@ class DatabasePanel(ttk.Frame):
         self._logs_refresh_running = False
         self._logs_thread = None
         self._all_log_items = []  # Store all log items for filtering
+        # Shared HTTP session for connection pooling
+        self._http_session = requests.Session()
+        self._http_session.trust_env = False
+        self._http_session.proxies = {"http": "", "https": ""}
         self._setup_ui()
 
     def load_config(self):
@@ -340,8 +344,8 @@ class DatabasePanel(ttk.Frame):
                 try:
                     api_url = self.api_url_var.get()
                     logs_url = api_url.replace('/log', '/logs')
-                    response = requests.get(logs_url, params={'user': log_user, 'project': project_name},
-                                            timeout=2, proxies={"http": None, "https": None})
+                    response = self._http_session.get(logs_url, params={'user': log_user, 'project': project_name},
+                                            timeout=2)
                     if response.status_code == 200:
                         for log in response.json():
                             fp = log.get('file_path', '')
@@ -587,7 +591,7 @@ class DatabasePanel(ttk.Frame):
                 'details': 'Sessie gepauzeerd via database panel'
             }
             
-            response = requests.post(api_url, json=data, timeout=5, proxies={"http": None, "https": None})
+            response = self._http_session.post(api_url, json=data, timeout=5)
             if response.ok:
                 messagebox.showinfo("Sessie Gepauzeerd", 
                     f"Werk sessie voor {user} op project '{project}' is gepauzeerd.\n\n"
@@ -638,8 +642,8 @@ class DatabasePanel(ttk.Frame):
                         }
                         
                         try:
-                            response = requests.post(api_url.replace('/log', '/session/close'),
-                                                   json=close_data, timeout=2, proxies={"http": None, "https": None})
+                            response = self._http_session.post(api_url.replace('/log', '/session/close'),
+                                                   json=close_data, timeout=2)
                             if response.ok:
                                 result = response.json()
                                 if result.get('sessions_closed', 0) > 0:
@@ -697,13 +701,13 @@ class DatabasePanel(ttk.Frame):
             api_url = self.api_url_var.get()
             base_url = api_url.replace('/log', '')
             
-            response = requests.post(f"{base_url}/session/manual_start",
+            response = self._http_session.post(f"{base_url}/session/manual_start",
                                    json={
                                        'user': user,
                                        'project': project_name,
                                        'timestamp': datetime.now().isoformat()
                                    },
-                                   timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
+                                   timeout=2)
             
             if response.status_code == 200:
                 result = response.json()
@@ -808,14 +812,14 @@ class DatabasePanel(ttk.Frame):
             api_url = self.api_url_var.get()
             base_url = api_url.replace('/log', '')
             
-            response = requests.post(f"{base_url}/session/manual_finish",
+            response = self._http_session.post(f"{base_url}/session/manual_finish",
                                    json={
                                        'user': user,
                                        'project': project_name,
                                        'item_count': result['item_count'],
                                        'timestamp': datetime.now().isoformat()
                                    },
-                                   timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
+                                   timeout=2)
             
             if response.status_code == 200:
                 api_result = response.json()
@@ -856,6 +860,9 @@ class DatabasePanel(ttk.Frame):
         Call this method after the panel is packed/shown to start background log refresh.
         Example: panel = DatabasePanel(...); panel.pack(); panel.start_auto_refresh()
         """
+        # Guard: don't spawn another thread if one is already running
+        if self._logs_thread and self._logs_thread.is_alive():
+            return
         self._logs_refresh_running = True
         def background_refresh():
             import time
@@ -864,21 +871,21 @@ class DatabasePanel(ttk.Frame):
                     # Check if widget still exists
                     if not self.winfo_exists():
                         break
-                        
+
                     # Schedule refresh in main thread
                     self.after(0, self.refresh_logs)
-                    
+
                 except tk.TclError:
                     break  # Widget destroyed
                 except Exception as e:
                     print(f"[ERROR] Background refresh error: {e}")
                     # Don't break - continue the loop so refresh recovers from transient errors
                     # (breaking here kills auto-refresh permanently on long-running instances)
-                    
+
                 time.sleep(10)  # Refresh every 10 seconds
-            
+
             print("[INFO] Background refresh thread ended")
-            
+
         self._logs_thread = threading.Thread(target=background_refresh, daemon=True)
         self._logs_thread.start()
 
@@ -900,7 +907,7 @@ class DatabasePanel(ttk.Frame):
             "user": self.user_var.get() if hasattr(self, 'user_var') else 'testuser'
         }
         try:
-            response = requests.post(url, json=payload, timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
+            response = self._http_session.post(url, json=payload, timeout=2)
             if response.status_code == 200 and response.json().get('success'):
                 self.connection_status_label.config(text="Verbonden (TEST)", foreground="green")
                 print('[DB PANEL] Manual test connection successful')
@@ -934,7 +941,7 @@ class DatabasePanel(ttk.Frame):
             payload['item_count'] = item_count
 
         try:
-            resp = requests.post(api_url, json=payload, timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
+            resp = self._http_session.post(api_url, json=payload, timeout=2)
             if resp.status_code in [200, 201] and resp.json().get('success'):
                 messagebox.showinfo("Succes", f"Event '{event}' voor '{project_name}' succesvol gelogd.")
                 self.refresh_logs()
@@ -981,7 +988,7 @@ class DatabasePanel(ttk.Frame):
                 user = self.user_var.get() if hasattr(self, 'user_var') else ''
                 params = {'user': user} if user else {}
 
-                response = requests.get(logs_url, params=params, timeout=2, proxies={"http": None, "https": None})  # Reduced timeout
+                response = self._http_session.get(logs_url, params=params, timeout=2)
                 if response.status_code == 200:
                     logs = response.json()
                     # Update connection status on successful logs fetch

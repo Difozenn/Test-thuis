@@ -107,6 +107,13 @@ class ScannerPanel(ttk.Frame):
         self._session_lock = threading.Lock()  # Protects session state changes
         self._pause_complete_event = threading.Event()  # Signals when pause is complete
         self._pause_complete_event.set()  # Initially set (not pausing)
+        self._api_session_ready = threading.Event()  # Signals when api_session_id is set
+        self._api_session_ready.set()  # Initially set (no pending session start)
+
+        # --- Shared HTTP session for connection pooling ---
+        self._http_session = requests.Session()
+        self._http_session.trust_env = False
+        self._http_session.proxies = {"http": "", "https": ""}
 
         session_logger.info(f"ScannerPanel initialized - thread sync enabled")
 
@@ -621,7 +628,7 @@ class ScannerPanel(ttk.Frame):
                 'timestamp': datetime.now().isoformat()
             }
             
-            response = requests.post(api_url, json=afgemeld_data, timeout=3, proxies={"http": None, "https": None})
+            response = self._http_session.post(api_url, json=afgemeld_data, timeout=3)
             if response.ok:
                 self._log(f"Project {project_name} succesvol afgemeld met {item_count} items")
                 messagebox.showinfo(
@@ -920,7 +927,7 @@ class ScannerPanel(ttk.Frame):
                 'project': project_name
             }
             
-            response = requests.get(check_url, params=params, timeout=2, proxies={"http": None, "https": None})
+            response = self._http_session.get(check_url, params=params, timeout=2)
             
             if response.status_code == 200:
                 result = response.json()
@@ -1102,36 +1109,62 @@ class ScannerPanel(ttk.Frame):
                     'timestamp': self.session_start_time.isoformat(),
                     'session_id': self.current_session_id  # Include session_id for tracking
                 }
-                
-                # Make API call in background thread
-                def start_session_api():
-                    try:
-                        endpoint = api_url.replace('/log', '/session/xlsx_updated')
-                        session_logger.info(f"  API CALL: POST {endpoint}")
-                        session_logger.info(f"  API DATA: {json.dumps(data, default=str)}")
-                        self._log(f"[DEBUG] Sending session start to: {endpoint}")
 
-                        response = requests.post(endpoint,
-                                               json=data, timeout=3, proxies={"http": None, "https": None})
-                        if response.ok:
-                            result = response.json()
-                            if result.get('session_id'):
-                                # Use lock to safely update session IDs (Fix #4)
+                # Signal that API session is not yet ready (pause/resume must wait)
+                self._api_session_ready.clear()
+
+                # Make API call in background thread with retry
+                def start_session_api():
+                    max_retries = 3
+                    for attempt in range(1, max_retries + 1):
+                        try:
+                            endpoint = api_url.replace('/log', '/session/xlsx_updated')
+                            session_logger.info(f"  API CALL (attempt {attempt}/{max_retries}): POST {endpoint}")
+                            session_logger.info(f"  API DATA: {json.dumps(data, default=str)}")
+                            if attempt == 1:
+                                self._log(f"[DEBUG] Sending session start to: {endpoint}")
+
+                            response = self._http_session.post(endpoint, json=data, timeout=5)
+                            if response.ok:
+                                result = response.json()
+                                if result.get('session_id'):
+                                    # Use lock to safely update session IDs (Fix #4)
+                                    with self._session_lock:
+                                        # API session_id is AUTHORITATIVE (Fix #2)
+                                        self.api_session_id = result['session_id']
+                                        session_logger.info(f"  API RESPONSE: session_id={result['session_id']}")
+                                        session_logger.info(f"  SESSION IDs NOW: api={self.api_session_id}, local={self.current_session_id}")
+                                    self._log(f"Started XLSX session - Local: {self.current_session_id}, API: {self.api_session_id}")
+                                else:
+                                    session_logger.warning(f"  API RESPONSE: No session_id returned")
+                                    self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
+                                # Success - signal ready and stop retrying
+                                self._api_session_ready.set()
+                                return
+                            elif response.status_code == 400:
+                                # AFGEMELD or other client error - don't retry, clear session
+                                session_logger.error(f"  API REJECTED (400): {response.text}")
+                                self._log(f"Session rejected by API: {response.text}")
                                 with self._session_lock:
-                                    # API session_id is AUTHORITATIVE (Fix #2)
-                                    self.api_session_id = result['session_id']
-                                    session_logger.info(f"  API RESPONSE: session_id={result['session_id']}")
-                                    session_logger.info(f"  SESSION IDs NOW: api={self.api_session_id}, local={self.current_session_id}")
-                                self._log(f"Started XLSX session - Local: {self.current_session_id}, API: {self.api_session_id}")
+                                    self.current_session_id = None
+                                    self.api_session_id = None
+                                    self.session_start_time = None
+                                    self.session_paused = False
+                                self._api_session_ready.set()
+                                return
                             else:
-                                session_logger.warning(f"  API RESPONSE: No session_id returned")
-                                self._log(f"Started XLSX session for {user}: {self.current_session_id} - Status: BEZIG")
-                        else:
-                            session_logger.error(f"  API ERROR: HTTP {response.status_code} - {response.text}")
-                            self._log(f"Failed to start XLSX session: HTTP {response.status_code}")
-                    except Exception as e:
-                        session_logger.error(f"  API EXCEPTION: {e}")
-                        self._log(f"Failed to start XLSX session: {e}")
+                                session_logger.error(f"  API ERROR (attempt {attempt}): HTTP {response.status_code} - {response.text}")
+                        except Exception as e:
+                            session_logger.error(f"  API EXCEPTION (attempt {attempt}): {e}")
+
+                        # Wait before retry (exponential backoff: 1s, 2s)
+                        if attempt < max_retries:
+                            time.sleep(attempt)
+
+                    # All retries exhausted
+                    session_logger.error(f"  SESSION START FAILED after {max_retries} attempts")
+                    self._log(f"Failed to start XLSX session after {max_retries} attempts")
+                    self._api_session_ready.set()  # Unblock pause/resume even on failure
 
                 threading.Thread(target=start_session_api, daemon=True).start()
                         
@@ -1198,7 +1231,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to find project by file path
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
+                    logs_response = self._http_session.get(f"{api_url.replace('/log', '/logs')}", timeout=1)
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -1251,7 +1284,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract project information
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
+                    logs_response = self._http_session.get(f"{api_url.replace('/log', '/logs')}", timeout=1)
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -1309,7 +1342,7 @@ class ScannerPanel(ttk.Frame):
                 api_url = self._ensure_url_protocol(config.get('api_url', ''))
                 if api_url:
                     # Get logs to extract user information
-                    logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
+                    logs_response = self._http_session.get(f"{api_url.replace('/log', '/logs')}", timeout=1)
                     if logs_response.ok:
                         logs_data = logs_response.json()
                         if isinstance(logs_data, list):
@@ -1360,7 +1393,7 @@ class ScannerPanel(ttk.Frame):
                         config = json.load(f)
                         api_url = self._ensure_url_protocol(config.get('api_url', ''))
                         if api_url:
-                            logs_response = requests.get(f"{api_url.replace('/log', '/logs')}", timeout=0.5, proxies={"http": None, "https": None})
+                            logs_response = self._http_session.get(f"{api_url.replace('/log', '/logs')}", timeout=1)
                             if logs_response.ok:
                                 logs_data = logs_response.json()
                                 if isinstance(logs_data, list):
@@ -1403,6 +1436,10 @@ class ScannerPanel(ttk.Frame):
 
         # Only pause if we have an active session that's not already paused
         if self.current_session_id and not self.session_paused:
+            # Wait for session start API call to complete before pausing (prevents race condition)
+            if not self._api_session_ready.wait(timeout=8):
+                session_logger.warning(f"  Timeout waiting for API session ready - proceeding with best available ID")
+
             # Use lock to safely update session state (Fix #4)
             with self._session_lock:
                 # Mark as paused immediately to prevent duplicate pause attempts
@@ -1463,7 +1500,7 @@ class ScannerPanel(ttk.Frame):
                                 print(f"[PAUSE_API] Pause data: {data}")
 
                                 # Send pause event to session endpoint
-                                response = requests.post(pause_url, json=data, timeout=3, proxies={"http": None, "https": None})
+                                response = self._http_session.post(pause_url, json=data, timeout=3)
                                 session_logger.info(f"  PAUSE API RESPONSE: {response.status_code}")
                                 print(f"[PAUSE_API] Session pause response status: {response.status_code}")
                                 print(f"[PAUSE_API] Session pause response body: {response.text}")
@@ -1490,9 +1527,9 @@ class ScannerPanel(ttk.Frame):
                                     # Check if project has been marked as AFGEMELD before sending SESSION_PAUSE
                                     should_send_pause = True
                                     try:
-                                        check_response = requests.get(api_url.replace('/log', '/project/status'),
+                                        check_response = self._http_session.get(api_url.replace('/log', '/project/status'),
                                                                      params={'project': project, 'user': user},
-                                                                     timeout=1, proxies={"http": None, "https": None})
+                                                                     timeout=1)
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
@@ -1519,7 +1556,7 @@ class ScannerPanel(ttk.Frame):
                                         print(f"[PAUSE_API] Sending SESSION_PAUSE event to {api_url}")
 
                                         try:
-                                            pause_log_response = requests.post(api_url, json=log_data, timeout=3, proxies={"http": None, "https": None})
+                                            pause_log_response = self._http_session.post(api_url, json=log_data, timeout=3)
                                             session_logger.info(f"  SESSION_PAUSE log response: {pause_log_response.status_code}")
                                             print(f"[PAUSE_API] SESSION_PAUSE event response: {pause_log_response.status_code}")
                                         except Exception as log_error:
@@ -1629,7 +1666,7 @@ class ScannerPanel(ttk.Frame):
                             try:
                                 resume_url = api_url.replace('/log', '/session/resume')
                                 session_logger.info(f"  RESUME API CALL: POST {resume_url}")
-                                response = requests.post(resume_url, json=data, timeout=1, proxies={"http": None, "https": None})
+                                response = self._http_session.post(resume_url, json=data, timeout=3)
                                 session_logger.info(f"  RESUME API RESPONSE: {response.status_code}")
 
                                 if response.ok:
@@ -1637,9 +1674,9 @@ class ScannerPanel(ttk.Frame):
 
                                     # Check if project has been marked as AFGEMELD before sending SESSION_RESUME
                                     try:
-                                        check_response = requests.get(api_url.replace('/log', '/project/status'),
+                                        check_response = self._http_session.get(api_url.replace('/log', '/project/status'),
                                                                      params={'project': project, 'user': user},
-                                                                     timeout=1, proxies={"http": None, "https": None})
+                                                                     timeout=1)
                                         if check_response.ok:
                                             status_data = check_response.json()
                                             if status_data.get('has_afgemeld', False):
@@ -1664,7 +1701,7 @@ class ScannerPanel(ttk.Frame):
                                     session_logger.info(f"  SESSION_RESUME log event: {json.dumps(log_data, default=str)}")
                                     print(f"[RESUME_API] Sending SESSION_RESUME event with data: {log_data}")
 
-                                    resume_response = requests.post(api_url, json=log_data, timeout=1, proxies={"http": None, "https": None})
+                                    resume_response = self._http_session.post(api_url, json=log_data, timeout=3)
                                     session_logger.info(f"  SESSION_RESUME log response: {resume_response.status_code}")
                                     print(f"[RESUME_API] SESSION_RESUME response: {resume_response.status_code}, body: {resume_response.text}")
                                 else:
@@ -1742,7 +1779,7 @@ class ScannerPanel(ttk.Frame):
             user = config.get('user', 'UNKNOWN')
             
             # Query database for active sessions from this user
-            response = requests.get(api_url.replace('/log', '/api/user/') + user + '/active-sessions', timeout=5, proxies={"http": None, "https": None})
+            response = self._http_session.get(api_url.replace('/log', '/api/user/') + user + '/active-sessions', timeout=5)
             if response.ok and response.json().get('success'):
                 active_sessions = response.json().get('sessions', [])
                 for session in active_sessions:
@@ -1759,7 +1796,7 @@ class ScannerPanel(ttk.Frame):
                             'user': user,
                             'project': session.get('project', '')
                         }
-                        pause_response = requests.post(api_url.replace('/log', '/session/pause'), json=pause_data, timeout=1, proxies={"http": None, "https": None})
+                        pause_response = self._http_session.post(api_url.replace('/log', '/session/pause'), json=pause_data, timeout=3)
                         if pause_response.ok:
                             print(f"[ScannerPanel] Paused orphaned session: {session_id}")
                         else:
@@ -1789,20 +1826,21 @@ class ScannerPanel(ttk.Frame):
                 
                 if api_url:
                     # Don't calculate pause duration locally - the API tracks it correctly with work-hours awareness
-                    
-                    # Send session end event
+
+                    # Send session end event - use AUTHORITATIVE api_session_id
+                    session_id_for_api = self.api_session_id if self.api_session_id else self.current_session_id
                     data = {
-                        'session_id': self.current_session_id,
+                        'session_id': session_id_for_api,
                         'timestamp': datetime.now().isoformat(),
                         'item_count': self.session_item_count,
                         'total_pause_duration': self.total_pause_duration
                     }
-                    
+
                     # Make API call in background thread to avoid blocking UI
                     def end_session_api():
                         try:
-                            response = requests.post(api_url.replace('/log', '/session/end'),
-                                                   json=data, timeout=1, proxies={"http": None, "https": None})  # Reduced timeout
+                            response = self._http_session.post(api_url.replace('/log', '/session/end'),
+                                                   json=data, timeout=3)
                             if response.ok:
                                 self._log(f"Session ended: {self.current_session_id}")
                         except Exception as e:
@@ -3509,8 +3547,8 @@ class ScannerPanel(ttk.Frame):
                                 # Make API call in background thread to avoid blocking UI
                                 def send_api_call():
                                     try:
-                                        response = requests.post(api_url.replace('/log', '/session/xlsx_updated'),
-                                                               json=data, timeout=1, proxies={"http": None, "https": None})
+                                        response = self._http_session.post(api_url.replace('/log', '/session/xlsx_updated'),
+                                                               json=data, timeout=3)
                                         if response.ok:
                                             self._log(f"Session started for {user} via XLSX update")
                                         else:

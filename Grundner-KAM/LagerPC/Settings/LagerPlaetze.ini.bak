@@ -1,0 +1,512 @@
+[LagerUebersicht]
+Ebenen = 1
+Laengemm = 36000	
+Breitemm = 12000
+LaengePixel = -1200
+BreitePixel = 450
+FaktorAutom = 0
+Ausrichtung = 0
+Schrifthoehe = 8
+
+Dateiname = PlatzEinteilung.bin
+DateinameEA = E_A_Einteilung.bin
+DateinameEAConfig = E_A_Einteilung_Konfig.ini
+
+MenuID = 16
+MenuID2 = 16
+
+RandLinksPix = 10
+RandRechtsPix = 10
+RandObenPix = 10
+RandUntenPix = 10
+
+Bitmap1_x =15000
+Bitmap1_y =11000
+Bitmap1_Laenge =7000
+Bitmap1_Breite =8000
+Bitmap1_Drehung =0
+Bitmap1_Spiegeln =0
+Bitmap1_InHintergrund =1
+Bitmap1_Dateiname =C:\Program Files\LagerPC\Bitmaps\saege1.bmp
+
+DropDownText1=Etage 1;floor 1;étage 1;Ïñïöïò 1;piano 1;floor 1;floor 1;poschodie 1;Piso 1;ANDAR 1;
+DropDownText2=Etage 2;floor 2;étage 2;Ïñïöïò 2;piano2;floor 2;floor 2;poschodie 2;Piso 2;ANDAR 2;
+
+IndexLagerPlatzEbene1= 128
+IndexLagerPlatzEbene2= 256
+Bitmap1_AutomAusrichten=-1
+
+[GreiferPosition]
+Greifer = 3
+EbeneGreifer1=1
+EbeneGreifer2=2
+EbeneGreifer3=3
+EbeneGreifer4=4
+
+
+BitmapSchieneLaenge1 = krahnbahn_k.bmp
+BitmapSchieneLaenge2 = krahnbahn_k.bmp
+BitmapSchieneLaenge3 = krahnbahn_k.bmp
+BitmapSchieneQuer1 = bruecke_k.bmp
+BitmapSchieneQuer2 = bruecke_k.bmp
+BitmapSchieneQuer3 = bruecke_k.bmp
+BitmapGreifer1 = schlitten_k.bmp
+BitmapGreifer2 = schlitten_k.bmp
+BitmapGreifer3 = schlitten_k.bmp
+
+'Antriebe ein
+[Lampe1]
+Schriftoehe = 8
+TextOFF =O;O;O;O;O;O;O;O;O;O;
+TextON =I;I;I;I;I;I;I;I;I;I;
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 1
+Position = 34;1
+Groesse = 15;39
+Hint=Sind die Antriebe gestartet?;is the motorcontrol startet?;is the motorcontrol startet?;is the motorcontrol startet?;is the motorcontrol startet?;is the motorcontrol startet?;is the motorcontrol startet?;is the motorcontrol startet?;El control del motor esta en marcha?;Motores Comutados
+
+'Manipulator 1 referiert
+[Lampe2]
+Schriftoehe = 8
+TextOFF =R;R;R;R;R;R;R;R;R;R;
+TextON =R;R;R;R;R;R;R;R;R;R;
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 2
+Position = 48;1
+Groesse = 15;13
+Hint=Ist der Manipulator 1 referiert?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;El manipulador 1 termino en el punto inicial?;eixos referenciados
+
+'Manipulator 1 gestartet
+[Lampe3]
+Schriftoehe = 8
+TextOFF =0;0;0;0;0;0;0;0;0;0;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 3
+Position = 48;14
+Groesse = 15;13
+Hint=Ist der Manipulator 1 im Automatikmodus?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;is manipulator 1 in automatic mode?;El manipulador 1 esta en modo automático?;Automatico ativo
+
+'Manipulator 1 aktiv
+[Lampe4]
+Schriftoehe = 4
+TextOFF =0;0;0;0;0;0;0;0;0;0;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = 6
+Flag = 4
+Position = 48;27
+Groesse = 15;13
+Hint=Ist der Manipulator 1 momentan aktiv?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;is manipulator 1 working at this moment?;El manipulador 1 esta trabajando en este momento?;O manipulador 1 esta ativo
+
+//'Manipulator 2 referiert
+//[Lampe5]
+//Schriftoehe = 8
+//TextOFF = R;R;R;R;R;R;R;R;R;R;
+//TextON = R;R;R;R;R;R;R;R;R;R;
+//FarbeOFF = 1
+//FarbeON = $0080C000
+//Flag = 5
+//Position = 340;1
+//Groesse = 15;13
+//Hint=Ist der Manipulator 2 referiert?;has the manipulator 2 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;has the manipulator 1 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;has the manipulator 2 already finished the reference drive?;eixos referenciados;
+
+//'Manipulator 2 gestartet
+//[Lampe6]
+//Schriftoehe = 8
+//TextOFF = 0;0;0;0;0;0;0;0;;;
+//TextON = 1;1;1;1;1;1;1;1;;;
+//FarbeOFF = 7
+//FarbeON = $0080C000
+//Flag = 6
+//Position = 340;13
+//Groesse = 15;13
+//Hint=Ist der Manipulator 2 im Automatikmodus?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;is manipulator 2 in automatic mode?;Automatico ativo;
+
+//'Manipulator 2 aktiv
+//[Lampe7]
+//Schriftoehe = 8
+//TextOFF = 0;0;0;0;0;0;0;0;;;
+//TextON = 1;1;1;1;1;1;1;1;;;
+//FarbeOFF = 7
+//FarbeON = 6
+//Flag = 7
+//Position = 340;27
+//Groesse = 15;13
+//Hint=Ist der Manipulator 2 momentan aktiv?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;is manipulator 2 working at this moment?;O manipulador 2 esta ativo;
+
+'Zugangskontrolle LS 1
+[Lampe8]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =;;;;;;;;;;
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 8
+Position = 780;1
+Groesse = 15;13
+Hint=Zutritt bei Lichtschranke 1;access at gate 1;access at BI 1;access at gate 1;access at gate 1;access at gate 1;access at gate 1;access at gate 1;Acceso a la puerta 1;Acesso a barreira de luz 1
+
+[Text1]
+Schriftoehe = 8
+Text =LS 1;gate 1;BI 1;gate 1;gate 1;gate 1;gate 1;gate 1;Puerta 1;Barreira luz 1
+Farbe = 0
+Position = 800;0
+FarbeHintergrund= $00F5F5F5
+
+'Zugangskontrolle LS 2
+[Lampe9]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =;;;;;;;;;;
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 9
+Position = 780;14
+Groesse = 15;13
+Hint=Zutritt bei Lichtschranke 2;access at gate 2;access at BI 2;access at gate 2;access at gate 2;access at gate 2;access at gate 2;access at gate 2;Acceso a la puerta 2;Acesso a barreira de luz  2
+
+[Text2]
+Schriftoehe = 8
+Text =LS 2;gate 2;BI 2;gate 2;gate 2;gate 2;gate 2;gate 2;Puerta 2;Barreira luz 2
+Farbe = 0
+Position = 800;14
+FarbeHintergrund= $00F5F5F5
+
+'Zugangskontrolle Tuer
+[Lampe10]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =;;;;;;;;;;
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 10
+Position = 780;27
+Groesse = 15;13
+Hint=Türe geöffnet;door is open;Porte ouvert;door is open;door is open;door is open;door is open;door is open;La puerta esta abierta;Porta esta aberto
+
+[Text3]
+Schriftoehe = 8
+Text =TÜR;door;PORTE;door;door;door;door;door;Puerta;porta
+Farbe = 0
+Position = 800;27
+FarbeHintergrund= $00F5F5F5
+
+'Sägen Daten
+[Lampe11]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =;;;;;;;;;;
+FarbeOFF = 7
+FarbeON = 3
+Flag = 11
+Position = 4;132
+Groesse = 8;10
+Hint=Daten vorhanden;data ready;data ready;data ready;data ready;data ready;data ready;data ready;Datos correctos;dados disponíveis
+
+'Säge 1 bereit
+[Lampe12]
+Schriftoehe = 8
+TextOFF =1;1;1;1;1;1;1;1;1;1;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 15
+Position = 4;145
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Säge 2 bereit
+[Lampe13]
+Schriftoehe = 5
+TextOFF =2;2;2;2;2;2;2;2;2;2;
+TextON =2;2;2;2;2;2;2;2;2;2;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 16
+Position = 4;160
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Säge 3 bereit
+[Lampe14]
+Schriftoehe = 5
+TextOFF =3;3;3;3;3;3;3;3;3;3;
+TextON =3;3;3;3;3;3;3;3;3;3;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 17
+Position = 4;175
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Etikettierer bereit
+[Lampe15]
+Schriftoehe = 8
+TextOFF = 
+TextON = 
+FarbeOFF = 1
+FarbeON = $0080C000
+Flag = 32
+Position = 840;1
+Groesse = 15;13
+
+[Text4]
+Schriftoehe = 8
+Text = Eti bereit;Labelm. ready;Labelm. ready;Labelm. ready;Labelm. ready;Labelm. ready;Labelm. ready;Labelm. ready;Etique. Lista;Labelm. ready
+Farbe = 0
+Position = 860;0
+FarbeHintergrund= $00F5F5F5
+
+'Reste Einlagerung Daten
+[Lampe16]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =.;;;;;;;;;;
+FarbeOFF = 7
+FarbeON = 3
+Flag = 14
+Position = 4;307
+Groesse = 8;11
+Hint=;;;;;;;;;;
+
+'Reste Einlagerung 1 bereit
+[Lampe17]
+Schriftoehe = 8
+TextOFF =1;1;1;1;1;1;1;1;1;1;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 19
+Position = 4;320
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Reste Einlagerung 2 bereit
+[Lampe18]
+Schriftoehe = 8
+TextOFF =2;2;2;2;2;2;2;2;2;2;
+TextON =2;2;2;2;2;2;2;2;2;2;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 20
+Position = 4;335
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Einlagerplätze Daten
+[Lampe22]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =.;;;;;;;;;;
+FarbeOFF = 7
+FarbeON = 3
+Flag = 13
+Position = 4;248
+Groesse = 8;11
+Hint=;;;;;;;;;;
+
+'Einlagerplatz 1 bereit
+[Lampe23]
+Schriftoehe = 8
+TextOFF =1;1;1;1;1;1;1;1;1;1;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 21
+Position = 4;262
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Einlagerplatz 2 bereit
+[Lampe24]
+Schriftoehe = 8
+TextOFF =2;2;2;2;2;2;2;2;2;2;
+TextON =2;2;2;2;2;2;2;2;2;2;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 22
+Position = 4;277
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Einlagerplatz 3 bereit
+[Lampe25]
+Schriftoehe = 8
+TextOFF =3;3;3;3;3;3;3;3;3;3;
+TextON =3;3;3;3;3;3;3;3;3;3;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 23
+Position = 4;290
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Auslagerplätze Daten
+[Lampe28]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =.;;;;;;;;;;
+FarbeOFF = 7
+FarbeON = 3
+Flag = 12
+Position = 4;190
+Groesse = 8;11
+Hint=;;;;;;;;;;
+
+'Auslagerplatz 1 bereit
+[Lampe29]
+Schriftoehe = 8
+TextOFF =1;1;1;1;1;1;1;1;1;1;
+TextON =1;1;1;1;1;1;1;1;1;1;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 26
+Position = 4;203
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Auslagerplatz 2 bereit
+[Lampe30]
+Schriftoehe = 8
+TextOFF =2;2;2;2;2;2;2;2;2;2;
+TextON =2;2;2;2;2;2;2;2;2;2;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 27
+Position = 4;218
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Auslagerplatz 3 bereit
+[Lampe31]
+Schriftoehe = 8
+TextOFF =3;3;3;3;3;3;3;3;3;3;
+TextON =3;3;3;3;3;3;3;3;3;3;
+FarbeOFF = 7
+FarbeON = $0080C000
+Flag = 28
+Position = 4;233
+Groesse = 8;12
+Hint=;;;;;;;;;;
+
+'Reset Auslagerplaetze
+[Lampe32]
+Schriftoehe = 8
+TextOFF =;;;;;;;;;; 
+TextON =.;;;;;;;;;;
+FarbeOFF = $0080C000
+FarbeON = 1
+Flag = 31
+Position = 840;14
+Groesse = 15;13
+Hint=;;;;;;;;;;
+
+[Text5]
+Schriftoehe = 8
+Text = Auslagerplatz voll;output place full;output place full;output place full;output place full;uitvoerhoogte full;output place full;output place full;output place full;output place full;
+Farbe = 0
+Position = 860;14
+FarbeHintergrund= $00F5F5F5
+
+[Greifer1]
+FeldAktiv = 1
+FeldLinks = 65
+FeldOben = 1   
+FeldBreite = 200
+FeldHöhe = 40
+FeldFarbe = $00e0c0b8
+Schriftgröße = 9
+
+AnzeigeNrAktiv = 1
+AnzeigeNrLinks = 3
+AnzeigeNrOben = 2
+
+AnzeigeXAktiv = 1
+AnzeigeXLinks = 20
+AnzeigeXOben = 2
+
+AnzeigeYAktiv = 1
+AnzeigeYLinks = 80
+AnzeigeYOben = 2
+
+AnzeigeZAktiv = 1
+AnzeigeZLinks = 140
+AnzeigeZOben = 2
+
+AnzeigeRotAktiv = 1
+AnzeigeRotLinks = 80
+AnzeigeRotOben = 18
+
+AnzeigeLAktiv = 1
+AnzeigeLLinks = 140
+AnzeigeLOben = 18
+
+[Greifer2]
+FeldAktiv = 1
+FeldLinks = 300
+FeldOben = 1   
+FeldBreite = 200
+FeldHöhe = 40
+FeldFarbe = $00FACE87
+Schriftgröße = 9
+
+AnzeigeNrAktiv = 1
+AnzeigeNrLinks = 3
+AnzeigeNrOben = 2
+
+AnzeigeXAktiv = 1
+AnzeigeXLinks = 20
+AnzeigeXOben = 2
+
+AnzeigeYAktiv = 1
+AnzeigeYLinks = 80
+AnzeigeYOben = 2
+
+AnzeigeZAktiv = 1
+AnzeigeZLinks = 140
+AnzeigeZOben = 2
+
+AnzeigeRotAktiv = 1
+AnzeigeRotLinks = 80
+AnzeigeRotOben = 18
+
+AnzeigeLAktiv = 1
+AnzeigeLLinks = 140
+AnzeigeLOben = 18
+
+[Greifer3]
+FeldAktiv = 1
+FeldLinks = 535
+FeldOben = 1   
+FeldBreite = 200
+FeldHöhe = 40
+FeldFarbe = $00FACE87
+Schriftgröße = 9
+
+AnzeigeNrAktiv = 1
+AnzeigeNrLinks = 3
+AnzeigeNrOben = 2
+
+AnzeigeXAktiv = 1
+AnzeigeXLinks = 20
+AnzeigeXOben = 2
+
+AnzeigeYAktiv = 1
+AnzeigeYLinks = 80
+AnzeigeYOben = 2
+
+AnzeigeZAktiv = 1
+AnzeigeZLinks = 140
+AnzeigeZOben = 2
+
+AnzeigeRotAktiv = 1
+AnzeigeRotLinks = 80
+AnzeigeRotOben = 18
+
+AnzeigeLAktiv = 1
+AnzeigeLLinks = 140
+AnzeigeLOben = 18

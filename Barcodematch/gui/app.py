@@ -31,6 +31,7 @@ from gui.asset_utils import get_asset_path, asset_exists
 import threading
 import time
 import json
+import requests
 from config_utils import get_config_path, load_config
 
 class BarcodeMatchApp:
@@ -44,6 +45,10 @@ class BarcodeMatchApp:
         self.db_connection_status_color = "red"
         self._db_status_callbacks = []
         self._shutdown_called = False  # Prevent multiple shutdown calls
+        self._db_check_thread = None  # Track connection check thread to prevent duplicates
+        self._http_session = requests.Session()  # Reuse TCP connections to prevent socket exhaustion
+        self._http_session.trust_env = False
+        self._http_session.proxies = {"http": "", "https": ""}
 
         # Initialize panels lazily - only create when needed
         self.panels = {}
@@ -206,7 +211,6 @@ class BarcodeMatchApp:
         """Start background monitoring for SPOED projects"""
         def monitor_spoed():
             import time
-            import requests
 
             print('[SPOED MONITOR] Starting monitoring loop...')
 
@@ -241,10 +245,9 @@ class BarcodeMatchApp:
                     logs_url = api_url.replace('/log', '/logs')
 
                     # Fetch logs
-                    response = requests.get(logs_url,
+                    response = self._http_session.get(logs_url,
                                           params={'user': current_user},
-                                          timeout=2,
-                                          proxies={"http": None, "https": None})
+                                          timeout=2)
 
                     if response.status_code == 200:
                         logs_data = response.json()
@@ -411,14 +414,22 @@ class BarcodeMatchApp:
             print('[SPOED TEST] Warning system not initialized')
 
     def _start_db_connection_check(self):
-        """Start periodic database connection checking (every 60 seconds)"""
+        """Start periodic database connection checking (every 15 seconds)"""
+        # Guard: only one check thread at a time
+        if self._db_check_thread and self._db_check_thread.is_alive():
+            if DEBUG:
+                print('[DB CHECK] Check thread already running, skipping duplicate')
+            return
+
         def check_loop():
-            import time
             while True:
                 try:
                     if not self.root.winfo_exists():
                         break
                 except Exception:
+                    break
+
+                if self._shutdown_called:
                     break
 
                 config = load_config()
@@ -437,8 +448,7 @@ class BarcodeMatchApp:
                     if DEBUG:
                         print(f'[DB CHECK] Checking database connection at: {url}')
                     try:
-                        import requests
-                        resp = requests.get(url, timeout=5, proxies={"http": None, "https": None})
+                        resp = self._http_session.get(url, timeout=5)
                         if resp.status_code == 200:
                             try:
                                 data = resp.json()
@@ -463,15 +473,37 @@ class BarcodeMatchApp:
                             print(f'[DB CHECK] Exception during GET: {e}')
                         self._set_db_status("Niet verbonden", "red")
 
-                time.sleep(60)
+                time.sleep(15)
 
-        threading.Thread(target=check_loop, daemon=True).start()
+        self._db_check_thread = threading.Thread(target=check_loop, daemon=True)
+        self._db_check_thread.start()
 
     def recheck_db_connection(self):
-        """Public method for panels to trigger a database connection recheck."""
+        """Public method for panels to trigger a database connection recheck.
+        Runs a single immediate check without spawning a new thread."""
         if DEBUG:
             print('[DB CHECK] Manual recheck requested')
-        self._start_db_connection_check()
+
+        def single_check():
+            config = load_config()
+            if not config.get('database_enabled', True):
+                self._set_db_status("Uitgeschakeld", "orange")
+                return
+            url = config.get('api_url', 'http://localhost:5001/log')
+            if url.endswith('/log'):
+                url = url[:-4] + '/logs'
+            elif not url.endswith('/logs'):
+                url = url.rstrip('/') + '/logs'
+            try:
+                resp = self._http_session.get(url, timeout=5)
+                if resp.status_code == 200:
+                    self._set_db_status("Verbonden", "green")
+                else:
+                    self._set_db_status("Niet verbonden", "red")
+            except Exception:
+                self._set_db_status("Niet verbonden", "red")
+
+        threading.Thread(target=single_check, daemon=True).start()
 
     def _set_db_status(self, status, color):
         """Set database status and notify subscribers"""

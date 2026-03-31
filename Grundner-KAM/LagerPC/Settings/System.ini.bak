@@ -1,0 +1,665 @@
+[System]
+Sprachen=deutsch;english;france;greek;italy;nederlands;finland;Slowakia;Espanol;Portuguese;
+
+[Menu1]
+Name = Teileliste TRE	
+Menu =Teileliste TRE;;;;;;;;;;
+QuickButtonAktiv = 1
+QuickButtonText =Teileliste TRE;;;;;;;;;;
+QuickButtonImage =
+MenuID = 1
+Art = Tab
+Level1 = 0
+Level2 = 0
+INIFile = Teileliste_TRE.ini
+
+[Menu2]
+Name = Teileliste MKL
+Menu =Teileliste MKL;;;;;;;;;;
+QuickButtonAktiv = 1
+QuickButtonText =Teileliste MKL;;;;;;;;;;
+QuickButtonImage =
+MenuID = 2
+Art = Tab
+Level1 = 0
+Level2 = 0
+INIFile = Teileliste_MKL.ini
+
+[Menu3]
+Name = Ordnen
+Menu =Ordnen;sortings;Classer;Ôáîéíïìçóåéò;spostare;herschikken;paikkojen järjestely;usporiadanie;Ordenar;Ordem;
+QuickButtonAktiv = 1
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = umstapeln.bmp
+MenuID = 3
+Art = Tab
+Level1 = 0
+Level2 = 0
+INIFile = Ordnen.ini
+
+[Menu4]
+Name = Ein-Auslagerplätze
+Menu =Ein-Auslagerplatz;in- output places;Postes de stockage / déstockage;in- output places;postazioni ingresso - uscita;in -uitvoerplaats;in / out paikat;nasklad. a vysklad. miesto;Sitos E/S;Lugar dos Postos;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 4
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = E-A-Platz.ini
+
+[Menu5]
+Name = Platzeinteilung
+Menu =Platzeinteilung;place arrangement;Répartition des postes;place arrangement;preparazione postazioni;plaatsindeling;paikkojen järjestys;rozdelenie miesta;Disposición de pilas;Distribuicao dos postos;
+QuickButtonAktiv = 0
+QuickButtonText=;;;;;;;;;;
+QuickButtonImage =
+MenuID = 5
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Platzeinteilung.ini
+
+
+[Menu6]
+Name = Abstapelplätze
+Menu =Abstapelplätze;stacking places;stacking places;stacking places;;herschikken;;;;;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 6
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = Abstapelplaetze.ini
+
+[Menu7]
+Name = Paletteneröffnung
+Menu =Paletteneröffnung;pallet opening;pallet opening;pallet opening;pallet opening;pallet opening;pallet opening;pallet opening;pallet opening;pallet opening;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 7
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = Paletteneroeffnung.ini
+
+[Menu8]
+Name = Anlagenparameter
+Menu =Anlagenparameter;System parameters;System parameters;System parameters;System parameters;System parameters;System parameters;System parameters;System parameters;System parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 8
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile =Anlagenparameter.ini
+
+
+[Menu9]
+Name = Benutzerparameter
+Menu =Benutzerparameter;User parameters;User parameters;User parameters;User parameters;User parameters;User parameters;User parameters;User parameters;User parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 9
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = BenutzerParameter.ini
+
+[Menu10]
+Name = Greifer Parameter
+Menu =Greifer Parameter;gripper parameter;gripper parameter;gripper parameter;gripper parameter;Grijper parameters;gripper parameter;gripper parameter;gripper parameter;gripper parameter
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =   
+MenuID = 10
+Art = Menu
+Level1 = 0
+Level2 = 0
+INIFile = 
+
+
+[Menu10-1]
+Name = G1-Parameter
+Menu =G1-Parameter;G1 parameters;G1 parameters;G1 parameters;G1 parameters;G1 parameters;G1 parameters;G1 parameters;G1 parameters;G1 parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 10 
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = G1_Parameter.ini
+
+
+[Menu10-2]
+Name = G2-Parameter
+Menu =G2-Parameter;G2 parameters;G2 parameters;G2 parameters;G2 parameters;G2 parameters;G2 parameters;G2 parameters;G2 parameters;G2 parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 11
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = G2_Parameter.ini
+
+
+[Menu10-3]
+Name = G3-Parameter
+Menu =G3-Parameter;G3 parameters;G3 parameters;G3 parameters;G3 parameters;G3 parameters;G3 parameters;G3 parameters;G3 parameters;G3 parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 12
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = G3_Parameter.ini
+
+
+[Menu10-4]
+Name = G4-Parameter
+Menu =G4-Parameter;G4 parameters;G4 parameters;G4 parameters;G4 parameters;G4 parameters;G4 parameters;G4 parameters;G4 parameters;G4 parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 13
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = G4_Parameter.ini
+
+
+[Menu11]
+Name = TR-Parameter
+Menu =TR-Parameter;TR parameters;TR parameters;TR parameters;TR parameters;TR parameters;TR parameters;TR parameters;TR parameters;TR parameters;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 14
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = TR_Parameter.ini
+
+
+[Menu12]
+Name = Achsparameter
+Menu =Achsparameter;parameter for axis;Paramètres axes;parameter for axis;parametri assi;parameter voor assen;parametri akselille;osové parametre;Parámetros de ejes;Parametros dos Eixos;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 15
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Achsparameter.ini
+
+
+[Menu13]
+Name = Teilespeicher Lager
+Menu =Teilespeicher Lager;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 16
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Teilespeicher_Lager.ini
+
+[Menu14]
+Name = Teilespeicher Schubladenpuffer
+Menu =Teilespeicher Schubladenpuffer;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 17
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Teilespeicher_Schubladenpuffer.ini
+
+[Menu15]
+Name = Stapelflächen Lager
+Menu =Stapelflächen Lager;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 18
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Stapelflächen_Lager.ini
+
+[Menu16]
+Name = Stapelflächen Schubladenpuffer
+Menu =Stapelflächen Schubladenpuffer;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 19
+Art = Tab
+Level1 = 3
+Level2 = 3
+INIFile = Stapelflächen_Schubladenpuffer.ini
+
+[Menu17]
+Name = Backup
+Menu =Backup;backup;Backup;Backup;Backup;Backup;varmuuskopio;backup;Backup;Backup;
+MenuID = 50
+Art = Menu
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-1]
+Name = Backup Teilespeicher Lager
+Menu =Backup Teilespeicher Lager;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 51
+Art = Bak1
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-2]
+Name = Backup Teilespeicher Schubladenpuffer
+Menu =Backup Teilespeicher Schubladenpuffer;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 52
+Art = Bak2
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-3]
+Name = Backup Stapelflächen Lager
+Menu =Backup Stapelflächen Lager;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 53
+Art = Bak3
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-4]
+Name = Backup Stapelflächen Schubladenpuffer
+Menu =Backup Stapelflächen Schubladenpuffer;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 54
+Art = Bak4
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-5]
+Name = Backup E-A-Platz
+Menu =Backup E-A-Platz;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 55
+Art = Bak5
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-6]
+Name = Backup Platzeinteilung
+Menu =Backup Platzeinteilung;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 56
+Art = Bak6
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-7]
+Name = Backup Anlagenparameter
+Menu =Backup Anlagenparameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 57
+Art = Bak7
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-8]
+Name = Backup BenutzerParameter
+Menu =Backup BenutzerParameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 58
+Art = Bak8
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-9]
+Name = Backup TR-Parameter
+Menu =Backup TR-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 59
+Art = Bak9
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-10]
+Name = Backup Abstapelplaetze
+Menu =Backup Abstapelplaetze;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 60
+Art = Bk10
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-11]
+Name = Backup Achsparameter
+Menu =Backup Achsparameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 61
+Art = Bk11
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-12]
+Name = Backup G1-Parameter
+Menu =Backup G1-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 62
+Art = Bk12
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-13]
+Name = Backup G2-Parameter
+Menu =Backup G2-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 63
+Art = Bk13
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-14]
+Name = Backup G3-Parameter
+Menu =Backup G3-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 64
+Art = Bk14
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu17-15]
+Name = Backup G4-Parameter
+Menu =Backup G4-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 65
+Art = Bk15
+Level1 = 0
+Level2 = 0
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18]
+Name = Restore
+Menu =Restore;restore;Restore;Åğáíáöïñá;Restore;Restore;varasto;restore;Restore;Restore;
+MenuID = 80
+Art = Menu
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-1]
+Name = Restore Teilespeicher Lager
+Menu =Restore Teilespeicher Lager;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 81
+Art = Rsr1
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-2]
+Name = Restore Teilespeicher Schubladenpuffer
+Menu =Restore Teilespeicher Schubladenpuffer;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 82
+Art = Rsr2
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-3]
+Name = Restore Stapelflächen Lager
+Menu =Restore Stapelflächen Lager;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 83
+Art = Rsr3
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-4]
+Name = Restore Stapelflächen Schubladenpuffer
+Menu =Restore Stapelflächen Schubladenpuffer;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 84
+Art = Rsr4
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-5]
+Name = Restore E-A-Platz
+Menu =Restore E-A-Platz;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 85
+Art = Rsr5
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-6]
+Name = Restore Platzeinteilung
+Menu =Restore Platzeinteilung;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 86
+Art = Rsr6
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-7]
+Name = Restore Anlagenparameter
+Menu =Restore Anlagenparameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 87
+Art = Rsr7
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-8]
+Name = Restore BenutzerParameter
+Menu =Restore BenutzerParameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 88
+Art = Rsr8
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-9]
+Name = Restore TR-Parameter
+Menu =Restore TR-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 89
+Art = Rsr9
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-10]
+Name = Restore Abstapelplaetze
+Menu =Restore Abstapelplaetze;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 90
+Art = Rr10
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-11]
+Name = Restore Achsparameter
+Menu =Restore Achsparameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 91
+Art = Rr11
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-12]
+Name = Restore G1-Parameter
+Menu =Restore G1-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 92
+Art = Rr12
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-13]
+Name = Restore G2-Parameter
+Menu =Restore G2-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 93
+Art = Rr13
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-14]
+Name = Restore G3-Parameter
+Menu =Restore G3-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 94
+Art = Rr14
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu18-15]
+Name = Restore G4-Parameter
+Menu =Restore G4-Parameter;partlist;Magasin de pièces;Ëéóôá êïììáôéùí;lista parti;pardlijst;levylista;zoznam casti;Ubicaciones;Lista de amazenamento;
+MenuID = 95
+Art = Rr15
+Level1 = 3
+Level2 = 3
+INIFile =
+QuickButtonText=;;;;;;;;;;
+
+[Menu19]
+Name = Handsteuerung
+Menu =Handbetrieb;manual mode;manual mode;manual mode;manual mode;manual mode;manual mode;manual mode;manual mode;manual mode;
+QuickButtonAktiv = 1
+QuickButtonText=;;;;;;;;;;
+QuickButtonImage = hand.bmp
+MenuID = 101
+Art = Hand
+Level1 = 0
+Level2 = 0
+INIFile = Handfunktion.ini
+
+[Menu20]
+Name = Teileliste Einlauf A
+Menu =Teileliste Einlauf A;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 20
+Art = Tab
+Level1 = 0
+Level2 = 0
+INIFile = Teileliste_Einlauf_A.ini
+
+[Menu21]
+Name = Teileliste Einlauf B
+Menu =Teileliste Einlauf B;partlist;Magasin de pièces;partlist;lista pezzi;pardlijst;levylista;pamat dielov;Ubicaciones;Lista de amazenamento;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage = 
+MenuID = 21
+Art = Tab
+Level1 = 0
+Level2 = 0
+INIFile = Teileliste_Einlauf_B.ini
+
+[Menu22]
+Name = Diagnosewerte
+Menu =Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;Diagnosewerte;
+QuickButtonAktiv = 0
+QuickButtonText =;;;;;;;;;;
+QuickButtonImage =     
+MenuID = 22 
+Art = Tab
+Level1 = 2
+Level2 = 2
+INIFile = Diagnose.ini
+
+
+[Buttons]
+Anzahl = 3
+Text1 =Reset Auslagerplatz;reset output place;Mise á Zero hauteur pile;reset hight of place;reset hight of place;reset uitvoerhoogte;reset hight of place;vymaz vysku miesta;Reinicio lugar de salida;reset hight of place;
+Bitmap1 = refresh.bmp
+Cmd1 = C1
+Level1 = 0
+
+Text2 =Reset Fehler;reset errors;Reset erreur;reset errors;reset errors;reset fouten;reset errors;vymaz chybove hlasenie;Error de reinicio;reset errors;
+Cmd2 = C2
+Level2 = 0
+
+Text3 =
+Cmd3 = 
+Level2 = 0
+
+[Logging]
+LoggenAus=0
+MaxDateigroesse=10
+
+[SystemLog]
+Ueberschrift =Systemstatus;system status;système situation;Êáôáóôáóç óõóôçìáôïò;stato sistema;systeemstatus;systeemin tila;stav systemu;stato sistema;;
+Anzahl = 5
+Button0 = Alle;all;alo;all;all;all;all;all;Todos;all;
+Farbe0 = 0
+Button1 =G1 Fehler;G1 error;P1 erreur;G1 error;G1 error;G1 error;G1 error;G1 error;G1 error;G1 error;
+Farbe1 = 1
+Button2=G2 Fehler;G2 error;P2 erreur;G2 error;G2 error;G2 error;G2 error;G2 error;G2 error;G2 error;
+Farbe2 = 5
+Button3 =Fehlermeldungen;error messages;erreurs données;error messages;;error messages;error messages;error messages;Error de mensajes;;
+;;
+Farbe3 = 3
+Button4 =Transport;transport;transport;transport;trasporto;transport;transport;transport;Trasporte;transport;
+Farbe4 = 8
+Button5=;;;;;;;;;;
+
+[Betriebsstundenzaehler]
+VonUhrzeit=00:00:00
+BisUhrzeit=00:00:00
+
+[GreiferAnzeigen]
+Greifer1=0
+Greifer2=0
+Greifer3=0
+Greifer4=0

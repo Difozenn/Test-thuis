@@ -1,0 +1,116 @@
+[Tabelle]
+AnzahlSpalten = 2
+AnzahlZeilen = 56
+HaederZeile = 1
+HaederSpalte = 1
+BreiteHaederSpalte = 400
+Quelle = extern
+Schrifthoehe = 12
+ZeilenHoehe = -1
+TimeOut = 600
+
+[System]
+AnzahlZeilen =56
+
+[Spalte1]
+Breite = 40
+Editierbar = 0
+Maske = 
+Ausrichtung = R
+
+[Spalte2]
+Breite = 70
+Editierbar = 1
+Maske = 99999
+Ausrichtung = R
+
+[Commands]
+Lesen =#M
+Senden =$M
+ZeileSenden =$Z
+
+[Buttons]
+Anzahl = 0
+
+[SystemButtons]
+Sprungweite1 = 12
+Sprungweite2 = 24 
+Hint1=;;;;;;;;;;
+Hint2=;;;;;;;;;;
+Hint3=;;;;;;;;;;
+Hint4=;;;;;;;;;;
+Hint5=;;;;;;;;;;
+Hint6=;;;;;;;;;;
+Hint7=;;;;;;;;;;
+Hint8=;;;;;;;;;;
+Hint9=;;;;;;;;;;
+Hint10=;;;;;;;;;;
+Hint11=;;;;;;;;;;
+Hint12=;;;;;;;;;;
+Hint13=;;;;;;;;;;
+Hint14=;;;;;;;;;;
+
+[Texte]
+Ueberschrift =Diagnosewerte;diagnostic;Valeurs diagnostic;Äéáãíùóôéêï;diagnostica;diagnosewaardes;diagnostiikka;hodnoty diagnozy;Diagnostico;diagnostic;
+Spalte1 =NR;nr;N°;Íïõì.;n°;nr;nr.;cislo;NR;nr;
+Spalte2 =Wert;amount;Valeur;Ðïóïôçôá;valore;waarde;määrä;hodnota;Cantidad;amount;
+
+Zeile1 =Datenfehler G1;data error G1;Erreur données G1;data error G1;errore dati G1;gegevensfout G1;data virhe G1;cislo datovej chyby G1;Error en Datos G1;data error G1;
+Zeile2 =Datenfehler G2;data error G2;Erreur données G1;data error G2;errore dati G2;gegevensfout G2;data virhe G2;cislo datovej chyby G2;Error en Datos G2;data error G2;
+Zeile3 =Hoehe Auslagerplatz Saege 1;height output saw 1;Hauteur poste déstockage scie 1;height output saw 1;altezza postazione carico sez. 1;hoogte uitvoer zaag 1;sahan kuljettimen korkeus 1;vyska vyskladnovacieho miesta pila 1;Altura de salida de la sierra 1;height output saw 1;
+Zeile4 =Hoehe Auslagerplatz Saege 2;height output saw 2;Hauteur poste déstockage scie 2;height output saw 2;altezza postazione carico sez. 2;hoogte uitvoer zaag 2;sahan kuljettimen korkeus 2;vyska vyskladnovacieho miesta pila 2;Altura de salida de la sierra 2;height output saw 2;
+Zeile5 =Hoehe Ein-Auslagerplatz 1;height in-output place 1;Hauteur poste sto./ désto. 1;height input place;altezza postazione entrata;hoogte invoerplaats;syöttöpaikan korkeus;vyska naskladnovacieho miesta;Altura E/S lugar 1;height in-output place 1;
+Zeile6 =Hoehe Ein-Auslagerplatz 2;height in-output place 2;Hauteur poste sto./ désto. 2;height input place;altezza postazione entrata;hoogte invoerplaats;syöttöpaikan korkeus;vyska naskladnovacieho miesta;Altura E/S lugar 2;height in-output place 2;
+Zeile7 =Hoehe Ein-Auslagerplatz 3;height in-output place 3;Hauteur poste sto./ désto. 3;height input place;altezza postazione entrata;hoogte invoerplaats;syöttöpaikan korkeus;vyska naskladnovacieho miesta;Altura E/S lugar 3;height in-output place 3;
+Zeile8 =Hoehe Ein-Auslagerplatz 4;height in-output place 4;Hauteur poste sto./ désto. 4;height input place;altezza postazione entrata;hoogte invoerplaats;syöttöpaikan korkeus;vyska naskladnovacieho miesta;Altura E/S lugar 4;height in-output place 4;
+Zeile9 =Hoehe Ein-Auslagerplatz 5;height in-output place 5;Hauteur poste sto./ désto. 5;height input place;altezza postazione entrata;hoogte invoerplaats;syöttöpaikan korkeus;vyska naskladnovacieho miesta;Altura E/S lugar 5;height in-output place 5;
+Zeile10 =Hoehe Resteinlagerplatz 1;height input drops 1;Hauteur poste stockage reste 1;height input drops 1;altezza inserimento resti 1;hoogte resteninvoer 1;drop-kuljettimen korkeus 1;vyska naskladnovacieho miesta zvyskov 1;Entrada de altura de restos 1;height input drops 1;
+Zeile11 =Hoehe Resteinlagerplatz 2;height input drops 2;Hauteur poste stockage reste 2;height input drops 2;altezza inserimento resti 2;hoogte resteninvoer 2;drop-kuljettimen korkeus 2;vyska naskladnovacieho miesta zvyskov 2;Entrada de altura de restos 2;height input drops 2;
+Zeile12 =G1 Kollspace X+;G1 collision space X+;G1 espace collision X+;G1 collision space X+;G1 zona collisione X+;G1 speling X+;G1 vapaa törmäystila X+;G1 priestor kolizie X+;G1 Espacio en Colisión en  X+;G1 collision space X+;
+Zeile13 =G1 Kollspace X-;G1 collision space X-;G1 espace collision X-;G1 collision space X-;G1 zona collisione X-;G1 speling X-;G1 vapaa törmäystila X-;G1 priestor kolizie X-;G1 Espacio en Colisión en  X-;G1 collision space X-;
+Zeile14 =G1 Kollspace Y+;G1 collision space Y+;G1 espace collision Y+;G1 collision space Y+;G1 zona collisione Y+;G1 speling Y+;G1 vapaa törmäystila Y+;G1 priestor kolizie Y+;G1 Espacio en Colisión en  Y+;G1 collision space Y+;
+Zeile15 =G1 Kollspace Y-;G1 collision space Y-;G1 espace collision Y-;G1 collision space Y-;G1 zona collisione Y-;G1 speling Y-;G1 vapaa törmäystila Y-;G1 priestor kolizie Y-;G1 Espacio en Colisión en  Y-;G1 collision space Y-;
+Zeile16 =G1 Positionskorr. X;G1 position corr. X;G1 corr. pos. X;G1 position corr. X;G1 position corr. X;G1 position corr. X;G1 position corr. X;G1 position corr. X;G1 posición corr. X;G1 position corr. X;
+Zeile17 =G1 Positionskorr. Y;G1 position corr. Y;G1 corr. pos. Y;G1 position corr. Y;G1 position corr. Y;G1 position corr. Y;G1 position corr. Y;G1 position corr. Y;G1 posición corr. Y;G1 position corr. Y;
+Zeile18 =G1 gemessene Breite;G1 detected width;G1 largeur panneau mes. sym.;G1 detected width;G1 dedected width;G1 dedected width;G1 dedected width;G1 dedected width;G1 detectado el ancho;G1 dedected width;
+Zeile19 =G1 Positionskorr. R;G1 position corr. R;G1 corr. pos. R;G1 position corr. R;G1 position corr. R;G1 position corr. R;G1 position corr. R;G1 position corr. R;G1 posición corr. R;G1 position corr. R;
+Zeile20 =G1 Pos. Timer;G1 pos. timer;G1 pos. timer;G1 pos. timer;G1 pos. timer;G1 pos. timer;G1 pos. timer;G1 pos. timer;G1 pos. Tiempo;G1 pos. timer;
+Zeile21 =G1 Plattengewicht max.;G1 weight of panel max.;G1 cons. poids panneaux;G1 weight of panel max.;G1 wight of panel max.;G1 wight of panel max.;G1 wight of panel max.;G1 wight of panel max.;G1 peso max. Del panel;G1 wight of panel max.;
+Zeile22 =G1 Plattengewicht ist;G1 weight real;G1 poids réel panneaux;G1 weight real;G1 wight real;G1 wight real;G1 wight real;G1 wight real;G1 Real Peso;G1 wight real;
+Zeile23 =G2 Kollspace X+;G2 collision space X+;G2 espace collision X+;G2 collision space X+;G2 zona collisione X+;G2 speling X+;G2 vapaa törmäystila X+;G2 priestor kolizie X+;G2 Espacio en Colisión en  X+;G2 collision space X+;
+Zeile24 =G2 Kollspace X-;G2 collision space X-;G2 espace collision X-;G2 collision space X-;G2 zona collisione X-;G2 speling X-;G2 vapaa törmäystila X-;G2 priestor kolizie X-;G2 Espacio en Colisión en  X-;G2 collision space X-;
+Zeile25 =G2 Kollspace Y+;G2 collision space Y+;G2 espace collision Y+;G2 collision space Y+;G2 zona collisione Y+;G2 speling Y+;G2 vapaa törmäystila Y+;G2 priestor kolizie Y+;G2 Espacio en Colisión en  Y+;G2 collision space Y+;
+Zeile26 =G2 Kollspace Y-;G2 collision space Y-;G2 espace collision Y-;G2 collision space Y-;G2 zona collisione Y-;G2 speling Y-;G2 vapaa törmäystila Y-;G2 priestor kolizie Y-;G2 Espacio en Colisión en  Y-;G2 collision space Y-;
+Zeile27 =G2 Positionskorr. X;G2 position corr. X;G2 corr. pos. X;G2 position corr. X;G2 position corr. X;G2 position corr. X;G2 position corr. X;G2 position corr. X;G2 posición corr. X;G2 position corr. X;
+Zeile28 =G2 Positionskorr. Y;G2 position corr. Y;G2 corr. pos. Y;G2 position corr. Y;G2 position corr. Y;G2 position corr. Y;G2 position corr. Y;G2 position corr. Y;G2 posición corr. Y;G2 position corr. Y;
+Zeile29 =G2 gemessene Breite;G2 detected width;G2 largeur panneau mes. sym.;G2 detected width;G2 dedected width;G2 dedected width;G2 dedected width;G2 dedected width;G2 detectado el ancho;G2 dedected width;
+Zeile30 =G2 Positionskorr. R;G2 position corr. R;G2 corr. R;G2 position corr. R;G2 position corr. R;G2 position corr. R;G2 position corr. R;G2 position corr. R;G2 posición corr. R;G2 position corr. R;
+Zeile31 =G2 Pos. Timer;G2 pos. timer;G2 pos. timer;G2 pos. timer;G2 pos. timer;G2 pos. timer;G2 pos. timer;G2 pos. timer;G2 pos. Tiempo;G2 pos. timer;
+Zeile32 =G2 Plattengewicht  max.;G2 weight of panel max.;G2 cons. poids panneaux;G2 weight of panel max.;G2 wight of panel max.;G2 wight of panel max.;G2 wight of panel max.;G2 wight of panel max.;G2 peso max. Del panel;G2 wight of panel max.;
+Zeile33 =G2 Plattengewicht ist;G2 weight real;G2 poids réel panneaux;G2 weight real;G2 wight real;G2 wight real;G2 wight real;G2 wight real;G2 Real Peso;G2 wight real;
+Zeile34 =Plattenlänge auf Einl. 1;length of panel input 1;Longueur panneau sur sto. 1;length of panel input 1;lengthe of panel input 1;lengthe of panel input 1;lengthe of panel input 1;lengthe of panel input 1;Longitud de entrada del panel 1;lengthe of panel input 1;
+Zeile35 =Plattenbreite auf Einl. 1;width of panel input 1;Largeur panneau sur sto. 1;width of panel input 1;width of panel input 1;width of panel input 1;width of panel input 1;width of panel input 1;Ancho del panel de entrada 1;width of panel input 1;
+Zeile36 =Plattenlänge auf Einl. 2;length of panel input 2;Longueur panneau sur sto. 2;length of panel input 2;lengthe of panel input 2;lengthe of panel input 2;lengthe of panel input 2;lengthe of panel input 2;Longitud de entrada del panel 2;lengthe of panel input 2;
+Zeile37 =Plattenbreite auf Einl. 2;width of panel input 2;Largeur panneau sur sto. 2;width of panel input 2;width of panel input 2;width of panel input 2;width of panel input 2;width of panel input 2;Ancho del panel de entrada 2;width of panel input 2;
+Zeile38 =Restlänge auf Einl. 1;length of rest input 1;Longueur reste sur sto. 1;length of rest input 1;lengthe of rest input 1;lengthe of rest input 1;lengthe of rest input 1;lengthe of rest input 1;Longitud del resto de entrada 1;lengthe of rest input 1;
+Zeile39 =Restbreite auf Einl. 1;width of rest input 1;Largeur reste sur sto. 1;width of rest input 1;width of rest input 1;width of rest input 1;width of rest input 1;width of rest input 1;Ancho del resto 1;width of rest input 1;
+Zeile40 =Restlänge auf Einl. 2;length of rest input 2;Longueur reste sur sto. 2;length of rest input 2;lengthe of rest input 2;lengthe of rest input 2;lengthe of rest input 2;lengthe of rest input 2;Longitud del resto de entrada 2;lengthe of rest input 2;
+Zeile41 =Restbreite auf Einl. 2;width of rest input 2;Largeur reste sur sto. 2;width of rest input 2;width of rest input 2;width of rest input 2;width of rest input 2;width of rest input 2;Ancho del resto 2;width of rest input 2;
+Zeile42 =Bewertung Zielplatz;statistic movement;Évaluation poste cible;statistic movement;statistica movimenti;valorisatie put plaats;liikestatistiikka;hodnotenie ciel;Estadistica de Movimiento;statistic movement;
+Zeile43 =Adr. Lager ext.;adr. stock ext.;Adr. stock ext.;adr. stock ext.;adr. stock ext.;adr. stock ext.;adr. stock ext.;adr. stock ext.;adr. stock ext.;adr. stock ext.;
+Zeile44 =Adr. Auftrag;adr. order;Adr. order;adr. order;adr. order;adr. order;adr. order;adr. order;adr. Orden;adr. order;
+Zeile45 =Type auf S1;type on S1;Type on S1;type on S1;type on S1;type on S1;type on S1;type on S1;Tipo en S1;type on S1;
+Zeile46 =Type auf S2;type on S2;Type on S2;type on S2;type on S2;type on S2;type on S2;type on S2;Tipo en S2;type on S2;
+Zeile47 =Type auf S3;type on S3;Type on S3;type on S3;type on S3;type on S3;type on S3;type on S3;Tipo en S3;type on S3;
+Zeile48 =Type auf S4;type on S4;Type on S4;type on S4;type on S4;type on S4;type on S4;type on S4;Tipo en S4;type on S4;
+Zeile49 =G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_diff.;G1X ref_dif.;G1X ref_diff.;
+Zeile50 =G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_diff.;G1Y ref_dif.;G1Y ref_diff.;
+Zeile51 =G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_diff.;G1Z ref_dif.;G1Z ref_diff.;
+Zeile52 =G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1R ref_diff.;G1Z ref_dif.;G1R ref_diff.;
+Zeile53 =;;;;;;;;;;
+Zeile54 =;;;;;;;;;;
+Zeile55 =;;;;;;;;;;
+Zeile56 =;;;;;;;;;;
+
+[Spracheditor]
+DateiKennung=Diagnose.ini;;;;;;;;;;

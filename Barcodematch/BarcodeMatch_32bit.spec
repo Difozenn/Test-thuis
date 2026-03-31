@@ -8,7 +8,7 @@ block_cipher = None
 is_32bit = sys.maxsize <= 2**32
 
 # Get absolute paths
-ROOT_DIR = Path(r'C:\Users\Rob\Desktop\Test-thuis\Barcodematch').resolve()
+ROOT_DIR = Path(r'C:\Users\Rob\Desktop\20_03\test-werk-main\Barcodematch').resolve()
 ASSETS_DIR = ROOT_DIR / 'assets'
 GUI_DIR = ROOT_DIR / 'gui'
 PANELS_DIR = GUI_DIR / 'panels'

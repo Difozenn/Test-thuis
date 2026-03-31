@@ -149,6 +149,11 @@ class SessionManager:
                 import requests
                 from config_utils import get_config_path
 
+                # Create session that bypasses system/WAMP proxy
+                http_session = requests.Session()
+                http_session.trust_env = False
+                http_session.proxies = {"http": "", "https": ""}
+
                 config_path = get_config_path()
                 if os.path.exists(config_path):
                     with open(config_path, 'r') as f:
@@ -167,7 +172,7 @@ class SessionManager:
                             }
 
                             pause_url = api_url.replace('/log', '/session/pause')
-                            response = requests.post(pause_url, json=pause_data, timeout=3)
+                            response = http_session.post(pause_url, json=pause_data, timeout=3)
 
                             if response.ok:
                                 print("[SESSION_MANAGER] Successfully sent crash recovery pause event")
@@ -182,7 +187,7 @@ class SessionManager:
                                     'status': 'PAUZE',
                                     'timestamp': datetime.now().isoformat()
                                 }
-                                requests.post(api_url, json=log_data, timeout=3)
+                                http_session.post(api_url, json=log_data, timeout=3)
 
                         except Exception as e:
                             print(f"[SESSION_MANAGER ERROR] Failed to send recovery pause: {e}")
